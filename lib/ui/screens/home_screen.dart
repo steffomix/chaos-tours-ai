@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../models/saved_place.dart';
+import '../../models/stay.dart';
 import '../../models/tour.dart';
 import '../../services/calendar_service.dart';
 import '../../services/database_service.dart';
 import '../../services/foreground_service_handler.dart';
+import '../../services/settings_service.dart';
 import '../../utils/permission_helper.dart';
+import '../widgets/stay_detail_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,23 +22,51 @@ class _HomeScreenState extends State<HomeScreen> {
   Tour? _activeTour;
   bool _isLoading = false;
 
+  // Tracking state
+  bool _trackingEnabled = false;
+  Stay? _activeStay;
+  SavedPlace? _activeStayPlace;
+  String _trackingStatusText = 'Inaktiv';
+
   @override
   void initState() {
     super.initState();
+    _trackingEnabled = SettingsService.instance.trackingEnabled;
     _loadTours();
-    // Listen for position updates from foreground service
-    ForegroundServiceManager.addPositionListener(_onPosition);
+    _loadActiveStay();
+    ForegroundServiceManager.addDataListener(_onServiceData);
   }
 
   @override
   void dispose() {
-    ForegroundServiceManager.removePositionListener(_onPosition);
+    ForegroundServiceManager.removeDataListener();
     super.dispose();
   }
 
-  void _onPosition(Map data) {
-    // Could display live position; for now just keep UI in sync.
-    if (mounted) setState(() {});
+  void _onServiceData(Map data) {
+    final cmd = data['cmd'] as String?;
+    if (cmd == FgTaskKeys.position) {
+      if (mounted) setState(() {});
+    } else if (cmd == FgTaskKeys.trackingStatus) {
+      final statusName = data['status'] as String? ?? 'idle';
+      final placeName = data['place_name'] as String?;
+      final address = data['address'] as String?;
+      String text;
+      switch (statusName) {
+        case 'haltAtKnown':
+          text = 'Halten bei ${placeName ?? 'bekanntem Ort'}';
+        case 'haltAtUnknown':
+          text = address != null ? 'Halten: $address' : 'Halten';
+        case 'detectingHalt':
+          text = 'Aufenthalt wird erkannt…';
+        case 'moving':
+          text = 'Unterwegs';
+        default:
+          text = 'Tracking aktiv';
+      }
+      _loadActiveStay();
+      if (mounted) setState(() => _trackingStatusText = text);
+    }
   }
 
   Future<void> _loadTours() async {
@@ -44,6 +76,21 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _tours = tours;
         _activeTour = active;
+      });
+    }
+  }
+
+  Future<void> _loadActiveStay() async {
+    final stay = await DatabaseService.instance.loadActiveStay();
+    SavedPlace? place;
+    if (stay?.placeId != null) {
+      final places = await DatabaseService.instance.loadAllPlaces();
+      place = places.where((p) => p.id == stay!.placeId).firstOrNull;
+    }
+    if (mounted) {
+      setState(() {
+        _activeStay = stay;
+        _activeStayPlace = place;
       });
     }
   }
@@ -102,7 +149,9 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       // Start foreground service
-      await ForegroundServiceManager.startService(tour);
+      await ForegroundServiceManager.startService(
+        notificationText: 'Tour "${tour.name}" wird aufgezeichnet…',
+      );
       ForegroundServiceManager.sendStartTour(id);
 
       await _loadTours();
@@ -131,6 +180,25 @@ class _HomeScreenState extends State<HomeScreen> {
       await _loadTours();
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _toggleTracking(bool value) async {
+    final granted = await PermissionHelper.instance.requestLocationPermission();
+    if (!granted) return;
+    setState(() => _trackingEnabled = value);
+    SettingsService.instance.trackingEnabled = value;
+    if (value) {
+      await ForegroundServiceManager.startService(
+        notificationText: 'Automatisches Tracking aktiv',
+      );
+    }
+    ForegroundServiceManager.sendSetTracking(value);
+    if (!value) {
+      // Only stop service if no manual tour is running
+      if (_activeTour == null) {
+        await ForegroundServiceManager.stopService();
+      }
     }
   }
 
@@ -183,6 +251,68 @@ class _HomeScreenState extends State<HomeScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
+                // Tracking switch
+                SwitchListTile(
+                  secondary: Icon(
+                    _trackingEnabled
+                        ? Icons.my_location
+                        : Icons.location_disabled,
+                    color: _trackingEnabled
+                        ? Theme.of(context).colorScheme.primary
+                        : null,
+                  ),
+                  title: const Text('Automatisches Tracking'),
+                  subtitle: _trackingEnabled
+                      ? Text(_trackingStatusText)
+                      : const Text('Aufenthalte automatisch erkennen'),
+                  value: _trackingEnabled,
+                  onChanged: _toggleTracking,
+                ),
+                // Active auto-stay card
+                if (_activeStay != null && _trackingEnabled)
+                  Card(
+                    margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer.withValues(alpha: 0.5),
+                    child: ListTile(
+                      leading: Icon(
+                        Icons.location_on,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      title: Text(
+                        _activeStayPlace?.name ??
+                            _activeStay!.address ??
+                            'Unbekannter Ort',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Builder(
+                        builder: (ctx) {
+                          final dur = _activeStay!.duration;
+                          final h = dur.inHours;
+                          final m = dur.inMinutes % 60;
+                          return Text(
+                            h > 0 ? 'Seit ${h}h ${m}min' : 'Seit ${m}min',
+                          );
+                        },
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.edit_note),
+                        tooltip: 'Aufenthalt bearbeiten',
+                        onPressed: () {
+                          showModalBottomSheet<void>(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (_) => StayDetailSheet(
+                              stay: _activeStay!,
+                              onUpdated: _loadActiveStay,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                const Divider(height: 1),
                 // Active tour card
                 if (_activeTour != null)
                   Card(

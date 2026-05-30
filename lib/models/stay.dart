@@ -1,0 +1,90 @@
+enum StayStatus { detecting, active, completed }
+
+class Stay {
+  final int? id;
+  final int? placeId;
+  final int startTime;
+  final int? endTime;
+  final String notes;
+  final String? calendarEventId;
+  final String? address;
+  final StayStatus status;
+
+  Stay({
+    this.id,
+    this.placeId,
+    required this.startTime,
+    this.endTime,
+    this.notes = '',
+    this.calendarEventId,
+    this.address,
+    this.status = StayStatus.detecting,
+  });
+
+  bool get isActive => status != StayStatus.completed;
+
+  DateTime get startDateTime => DateTime.fromMillisecondsSinceEpoch(startTime);
+  DateTime? get endDateTime =>
+      endTime != null ? DateTime.fromMillisecondsSinceEpoch(endTime!) : null;
+
+  Duration get duration {
+    final end = endDateTime ?? DateTime.now();
+    return end.difference(startDateTime);
+  }
+
+  factory Stay.fromMap(Map<String, dynamic> map) {
+    return Stay(
+      id: map['id'] as int?,
+      placeId: map['place_id'] as int?,
+      startTime: map['start_time'] as int,
+      endTime: map['end_time'] as int?,
+      notes: (map['notes'] as String?) ?? '',
+      calendarEventId: map['calendar_event_id'] as String?,
+      address: map['address'] as String?,
+      status: StayStatus.values.firstWhere(
+        (s) => s.name == (map['status'] as String? ?? 'detecting'),
+        orElse: () => StayStatus.detecting,
+      ),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      if (id != null) 'id': id,
+      if (placeId != null) 'place_id': placeId,
+      'start_time': startTime,
+      if (endTime != null) 'end_time': endTime,
+      'notes': notes,
+      if (calendarEventId != null) 'calendar_event_id': calendarEventId,
+      if (address != null) 'address': address,
+      'status': status.name,
+    };
+  }
+
+  Stay copyWith({
+    int? id,
+    int? placeId,
+    int? startTime,
+    int? endTime,
+    String? notes,
+    String? calendarEventId,
+    String? address,
+    StayStatus? status,
+    bool clearEndTime = false,
+    bool clearPlaceId = false,
+    bool clearCalendarEventId = false,
+  }) {
+    return Stay(
+      id: id ?? this.id,
+      placeId: clearPlaceId ? null : (placeId ?? this.placeId),
+      startTime: startTime ?? this.startTime,
+      endTime: clearEndTime ? null : (endTime ?? this.endTime),
+      notes: notes ?? this.notes,
+      calendarEventId: clearCalendarEventId
+          ? null
+          : (calendarEventId ?? this.calendarEventId),
+      address: address ?? this.address,
+      status: status ?? this.status,
+    );
+  }
+}

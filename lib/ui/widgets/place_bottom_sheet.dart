@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../models/place_group.dart';
 import '../../models/saved_place.dart';
 import '../../services/database_service.dart';
 
@@ -24,6 +25,8 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
   late TextEditingController _notesCtrl;
   late double _radius;
   late int _colorType;
+  int? _groupId;
+  List<PlaceGroup> _groups = [];
 
   @override
   void initState() {
@@ -32,6 +35,13 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     _notesCtrl = TextEditingController(text: widget.place.notes);
     _radius = widget.place.radius;
     _colorType = widget.place.colorType;
+    _groupId = widget.place.groupId;
+    _loadGroups();
+  }
+
+  Future<void> _loadGroups() async {
+    final groups = await DatabaseService.instance.loadAllPlaceGroups();
+    if (mounted) setState(() => _groups = groups);
   }
 
   @override
@@ -42,11 +52,14 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
   }
 
   Future<void> _save() async {
+    final groupId = _groupId;
     final updated = widget.place.copyWith(
       name: _nameCtrl.text.trim(),
       notes: _notesCtrl.text.trim(),
       radius: _radius,
       colorType: _colorType,
+      groupId: groupId,
+      clearGroupId: groupId == null,
     );
     await DatabaseService.instance.updatePlace(updated);
     widget.onUpdated();
@@ -147,6 +160,25 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                   ),
                 );
               }),
+            ),
+            const SizedBox(height: 12),
+            // Group dropdown
+            DropdownButtonFormField<int?>(
+              value: _groupId,
+              decoration: const InputDecoration(
+                labelText: 'Gruppe',
+                border: OutlineInputBorder(),
+              ),
+              items: [
+                const DropdownMenuItem(
+                  value: null,
+                  child: Text('Keine Gruppe'),
+                ),
+                ..._groups.map(
+                  (g) => DropdownMenuItem(value: g.id, child: Text(g.name)),
+                ),
+              ],
+              onChanged: (v) => setState(() => _groupId = v),
             ),
             const SizedBox(height: 16),
             Row(

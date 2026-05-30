@@ -1,0 +1,249 @@
+import 'package:flutter/material.dart';
+
+import '../../models/place_group.dart';
+import '../../services/calendar_service.dart';
+import '../../services/database_service.dart';
+
+class PlaceGroupsScreen extends StatefulWidget {
+  const PlaceGroupsScreen({super.key});
+
+  @override
+  State<PlaceGroupsScreen> createState() => _PlaceGroupsScreenState();
+}
+
+class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
+  List<PlaceGroup> _groups = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final groups = await DatabaseService.instance.loadAllPlaceGroups();
+    if (mounted) setState(() => _groups = groups);
+  }
+
+  Future<void> _addGroup() async {
+    final result = await _showEditDialog(null);
+    if (result != null) {
+      await DatabaseService.instance.insertPlaceGroup(result);
+      await _load();
+    }
+  }
+
+  Future<void> _editGroup(PlaceGroup group) async {
+    final result = await _showEditDialog(group);
+    if (result != null) {
+      await DatabaseService.instance.updatePlaceGroup(result);
+      await _load();
+    }
+  }
+
+  Future<void> _deleteGroup(PlaceGroup group) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Gruppe löschen?'),
+        content: Text('„${group.name}" wirklich löschen?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Löschen', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await DatabaseService.instance.deletePlaceGroup(group.id!);
+      await _load();
+    }
+  }
+
+  Future<PlaceGroup?> _showEditDialog(PlaceGroup? existing) async {
+    final nameCtrl = TextEditingController(text: existing?.name ?? '');
+    String? calendarId = existing?.calendarId;
+    bool includeNotes = existing?.includeNotes ?? true;
+    bool includePersons = existing?.includePersons ?? true;
+    bool includeActivities = existing?.includeActivities ?? true;
+    bool isAutoGroup = existing?.isAutoGroup ?? false;
+
+    return showDialog<PlaceGroup>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          title: Text(existing == null ? 'Neue Gruppe' : 'Gruppe bearbeiten'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Name',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Calendar picker
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.calendar_today),
+                  title: Text(
+                    calendarId != null ? 'Kalender gewählt' : 'Kein Kalender',
+                  ),
+                  subtitle: calendarId != null ? Text(calendarId!) : null,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () async {
+                          final id = await _pickCalendar(ctx);
+                          if (id != null) setS(() => calendarId = id);
+                        },
+                      ),
+                      if (calendarId != null)
+                        IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () => setS(() => calendarId = null),
+                        ),
+                    ],
+                  ),
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Notizen in Kalender'),
+                  value: includeNotes,
+                  onChanged: (v) => setS(() => includeNotes = v ?? true),
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Personen in Kalender'),
+                  value: includePersons,
+                  onChanged: (v) => setS(() => includePersons = v ?? true),
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Tätigkeiten in Kalender'),
+                  value: includeActivities,
+                  onChanged: (v) => setS(() => includeActivities = v ?? true),
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Auto-Gruppe'),
+                  subtitle: const Text(
+                    'Automatisch erkannte Orte werden hier einsortiert',
+                  ),
+                  value: isAutoGroup,
+                  onChanged: (v) => setS(() => isAutoGroup = v ?? false),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Abbrechen'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final name = nameCtrl.text.trim();
+                if (name.isEmpty) return;
+                final group = PlaceGroup(
+                  id: existing?.id,
+                  name: name,
+                  calendarId: calendarId,
+                  includeNotes: includeNotes,
+                  includePersons: includePersons,
+                  includeActivities: includeActivities,
+                  isAutoGroup: isAutoGroup,
+                );
+                Navigator.pop(ctx, group);
+              },
+              child: const Text('Speichern'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<String?> _pickCalendar(BuildContext ctx) async {
+    final granted = await CalendarService.instance.requestPermissions();
+    if (!granted) return null;
+
+    final calendars = await CalendarService.instance.loadCalendars();
+    if (!ctx.mounted) return null;
+
+    return showDialog<String>(
+      context: ctx,
+      builder: (dCtx) => AlertDialog(
+        title: const Text('Kalender wählen'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView(
+            shrinkWrap: true,
+            children: calendars
+                .map(
+                  (c) => ListTile(
+                    leading: const Icon(Icons.calendar_month),
+                    title: Text(c.name ?? ''),
+                    subtitle: Text(c.accountName ?? ''),
+                    onTap: () => Navigator.pop(dCtx, c.id),
+                  ),
+                )
+                .toList(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Ortsgruppen')),
+      body: _groups.isEmpty
+          ? const Center(child: Text('Noch keine Gruppen vorhanden.'))
+          : ListView.builder(
+              itemCount: _groups.length,
+              itemBuilder: (ctx, i) {
+                final g = _groups[i];
+                return ListTile(
+                  leading: Icon(
+                    g.isAutoGroup ? Icons.auto_awesome : Icons.folder,
+                  ),
+                  title: Text(g.name),
+                  subtitle: g.calendarId != null
+                      ? const Text('Mit Kalender verknüpft')
+                      : null,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () => _editGroup(g),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => _deleteGroup(g),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addGroup,
+        tooltip: 'Gruppe hinzufügen',
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+}

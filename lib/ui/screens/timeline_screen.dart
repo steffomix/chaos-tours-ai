@@ -1,0 +1,304 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+
+import '../../models/saved_place.dart';
+import '../../models/stay.dart';
+import '../../models/stay_activity.dart';
+import '../../models/stay_person.dart';
+import '../../services/database_service.dart';
+import '../widgets/stay_card.dart';
+import '../widgets/stay_detail_sheet.dart';
+
+class TimelineScreen extends StatefulWidget {
+  const TimelineScreen({super.key});
+
+  @override
+  State<TimelineScreen> createState() => _TimelineScreenState();
+}
+
+class _TimelineScreenState extends State<TimelineScreen> {
+  List<Stay> _stays = [];
+  List<SavedPlace> _places = [];
+  Map<int, List<StayPerson>> _personsByStay = {};
+  Map<int, List<StayActivity>> _activitiesByStay = {};
+  bool _loading = true;
+
+  // Filter state
+  DateTimeRange? _filterRange;
+  int? _filterPlaceId;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    if (mounted) setState(() => _loading = true);
+
+    final results = await Future.wait([
+      DatabaseService.instance.loadCompletedStays(),
+      DatabaseService.instance.loadAllPlaces(),
+    ]);
+
+    final stays = results[0] as List<Stay>;
+    final places = results[1] as List<SavedPlace>;
+
+    // Load relations for all stays
+    final personLists = await Future.wait(
+      stays.map((s) => DatabaseService.instance.loadPersonsForStay(s.id!)),
+    );
+    final activityLists = await Future.wait(
+      stays.map((s) => DatabaseService.instance.loadActivitiesForStay(s.id!)),
+    );
+
+    if (mounted) {
+      setState(() {
+        _stays = stays;
+        _places = places;
+        _personsByStay = {
+          for (var i = 0; i < stays.length; i++) stays[i].id!: personLists[i],
+        };
+        _activitiesByStay = {
+          for (var i = 0; i < stays.length; i++) stays[i].id!: activityLists[i],
+        };
+        _loading = false;
+      });
+    }
+  }
+
+  List<Stay> get _filteredStays {
+    return _stays.where((s) {
+      if (_filterRange != null) {
+        final dt = s.startDateTime;
+        if (dt.isBefore(_filterRange!.start) || dt.isAfter(_filterRange!.end)) {
+          return false;
+        }
+      }
+      if (_filterPlaceId != null && s.placeId != _filterPlaceId) {
+        return false;
+      }
+      return true;
+    }).toList();
+  }
+
+  SavedPlace? _placeForStay(Stay s) {
+    if (s.placeId == null) return null;
+    return _places.where((p) => p.id == s.placeId).firstOrNull;
+  }
+
+  Future<void> _pickDateRange() async {
+    final range = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
+      initialDateRange: _filterRange,
+    );
+    if (range != null && mounted) {
+      setState(() => _filterRange = range);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Zeitachse'),
+        actions: [
+          // Filter by date
+          IconButton(
+            icon: Badge(
+              isLabelVisible: _filterRange != null,
+              child: const Icon(Icons.date_range),
+            ),
+            onPressed: _pickDateRange,
+            tooltip: 'Datumsbereich filtern',
+          ),
+          // Filter by place
+          IconButton(
+            icon: Badge(
+              isLabelVisible: _filterPlaceId != null,
+              child: const Icon(Icons.filter_list),
+            ),
+            onPressed: _showPlaceFilterSheet,
+            tooltip: 'Nach Ort filtern',
+          ),
+          // Clear filters
+          if (_filterRange != null || _filterPlaceId != null)
+            IconButton(
+              icon: const Icon(Icons.clear),
+              onPressed: () => setState(() {
+                _filterRange = null;
+                _filterPlaceId = null;
+              }),
+              tooltip: 'Filter zurücksetzen',
+            ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
+        ],
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : DefaultTabController(
+              length: 2,
+              child: Column(
+                children: [
+                  const TabBar(
+                    tabs: [
+                      Tab(icon: Icon(Icons.list), text: 'Liste'),
+                      Tab(icon: Icon(Icons.map), text: 'Karte'),
+                    ],
+                  ),
+                  Expanded(
+                    child: TabBarView(children: [_buildList(), _buildMap()]),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildList() {
+    final filtered = _filteredStays;
+    if (filtered.isEmpty) {
+      return const Center(
+        child: Text(
+          'Keine Aufenthalte gefunden.\nTracking einschalten um Aufenthalte aufzuzeichnen.',
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+
+    // Group by date
+    final grouped = <String, List<Stay>>{};
+    for (final s in filtered) {
+      final dt = s.startDateTime;
+      final key =
+          '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+      grouped.putIfAbsent(key, () => []).add(s);
+    }
+    final dates = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
+
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView.builder(
+        itemCount: dates.fold<int>(
+          0,
+          (acc, d) => acc + 1 + (grouped[d]?.length ?? 0),
+        ),
+        itemBuilder: (ctx, index) {
+          int offset = 0;
+          for (final date in dates) {
+            if (index == offset) {
+              // Date header
+              final parts = date.split('-');
+              final dt = DateTime(
+                int.parse(parts[0]),
+                int.parse(parts[1]),
+                int.parse(parts[2]),
+              );
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: Text(
+                  '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}',
+                  style: Theme.of(ctx).textTheme.labelLarge?.copyWith(
+                    color: Theme.of(ctx).colorScheme.primary,
+                  ),
+                ),
+              );
+            }
+            offset++;
+            final staysForDate = grouped[date]!;
+            if (index < offset + staysForDate.length) {
+              final stay = staysForDate[index - offset];
+              return StayCard(
+                stay: stay,
+                place: _placeForStay(stay),
+                persons: _personsByStay[stay.id] ?? [],
+                activities: _activitiesByStay[stay.id] ?? [],
+                onUpdated: _load,
+              );
+            }
+            offset += staysForDate.length;
+          }
+          return const SizedBox.shrink();
+        },
+      ),
+    );
+  }
+
+  Widget _buildMap() {
+    final filtered = _filteredStays;
+    final staysWithCoords = filtered
+        .map((s) => (stay: s, place: _placeForStay(s)))
+        .where((e) => e.place != null || e.stay.address != null)
+        .toList();
+
+    // Build markers for stays that have a known place
+    final markers = staysWithCoords.where((e) => e.place != null).map((e) {
+      final p = e.place!;
+      return Marker(
+        point: LatLng(p.lat, p.lng),
+        width: 36,
+        height: 36,
+        child: GestureDetector(
+          onTap: () => showModalBottomSheet<void>(
+            context: context,
+            isScrollControlled: true,
+            builder: (_) => StayDetailSheet(stay: e.stay, onUpdated: _load),
+          ),
+          child: const Icon(Icons.location_pin, color: Colors.teal, size: 36),
+        ),
+      );
+    }).toList();
+
+    final center = markers.isNotEmpty
+        ? LatLng(
+            staysWithCoords.first.place!.lat,
+            staysWithCoords.first.place!.lng,
+          )
+        : const LatLng(48.1351, 11.5820); // Munich fallback
+
+    return FlutterMap(
+      options: MapOptions(initialCenter: center, initialZoom: 12),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.example.chaos_tours_ai',
+        ),
+        MarkerLayer(markers: markers),
+      ],
+    );
+  }
+
+  void _showPlaceFilterSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => ListView(
+        shrinkWrap: true,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.clear),
+            title: const Text('Alle Orte'),
+            selected: _filterPlaceId == null,
+            onTap: () {
+              setState(() => _filterPlaceId = null);
+              Navigator.pop(ctx);
+            },
+          ),
+          ..._places.map(
+            (p) => ListTile(
+              leading: const Icon(Icons.location_on),
+              title: Text(p.name),
+              selected: _filterPlaceId == p.id,
+              onTap: () {
+                setState(() => _filterPlaceId = p.id);
+                Navigator.pop(ctx);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

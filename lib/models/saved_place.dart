@@ -39,6 +39,7 @@ class SavedPlace {
   final double radius;
   final int colorType;
   final String notes;
+  final int? groupId;
 
   SavedPlace({
     this.id,
@@ -48,6 +49,7 @@ class SavedPlace {
     this.radius = 50.0,
     this.colorType = 0,
     this.notes = '',
+    this.groupId,
   });
 
   PlaceColorType get placeColorType =>
@@ -62,6 +64,7 @@ class SavedPlace {
       radius: (map['radius'] as num?)?.toDouble() ?? 50.0,
       colorType: (map['color_type'] as int?) ?? 0,
       notes: (map['notes'] as String?) ?? '',
+      groupId: map['group_id'] as int?,
     );
   }
 
@@ -74,6 +77,7 @@ class SavedPlace {
       'radius': radius,
       'color_type': colorType,
       'notes': notes,
+      if (groupId != null) 'group_id': groupId,
     };
   }
 
@@ -85,6 +89,8 @@ class SavedPlace {
     double? radius,
     int? colorType,
     String? notes,
+    int? groupId,
+    bool clearGroupId = false,
   }) {
     return SavedPlace(
       id: id ?? this.id,
@@ -94,6 +100,7 @@ class SavedPlace {
       radius: radius ?? this.radius,
       colorType: colorType ?? this.colorType,
       notes: notes ?? this.notes,
+      groupId: clearGroupId ? null : (groupId ?? this.groupId),
     );
   }
 }

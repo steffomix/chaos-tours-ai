@@ -4,31 +4,77 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../models/location_point.dart';
-import '../models/tour.dart';
 import '../services/database_service.dart';
+import '../services/settings_service.dart';
+import '../services/tracking_engine.dart';
 
 /// Keys used when communicating via SendPort.
 class FgTaskKeys {
   static const String startTour = 'start_tour';
   static const String stopTour = 'stop_tour';
+  static const String setTracking = 'set_tracking';
   static const String position = 'position';
   static const String tourId = 'tour_id';
+  static const String enabled = 'enabled';
+  static const String trackingStatus = 'tracking_status';
+  static const String stayChanged = 'stay_changed';
 }
 
 /// Task handler that runs in the foreground service isolate.
 class GpsForegroundTaskHandler extends TaskHandler {
   int? _activeTourId;
   StreamSubscription<Position>? _positionSub;
+  bool _trackingEnabled = false;
+  final TrackingEngine _engine = TrackingEngine();
 
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
     FlutterForegroundTask.initCommunicationPort();
     FlutterForegroundTask.addTaskDataCallback(_onDataFromMain);
+    await SettingsService.instance.init();
+    _trackingEnabled = SettingsService.instance.trackingEnabled;
+    if (_trackingEnabled) {
+      await _engine.initialize();
+    }
   }
 
   @override
-  void onRepeatEvent(DateTime timestamp) {
-    // Heartbeat — nothing needed; GPS driven by stream.
+  Future<void> onRepeatEvent(DateTime timestamp) async {
+    if (!_trackingEnabled) return;
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+      final result = await _engine.onNewPoint(
+        position.latitude,
+        position.longitude,
+        position.timestamp.millisecondsSinceEpoch,
+      );
+
+      // Update notification text
+      if (result.notificationText != null) {
+        await FlutterForegroundTask.updateService(
+          notificationTitle: 'Chaos Tours',
+          notificationText: result.notificationText!,
+        );
+      }
+
+      // Notify main isolate
+      FlutterForegroundTask.sendDataToMain({
+        'cmd': FgTaskKeys.trackingStatus,
+        'status': result.status.name,
+        'stay_id': result.currentStay?.id,
+        'place_name': result.currentPlace?.name,
+        'address': result.currentStay?.address,
+        'lat': position.latitude,
+        'lng': position.longitude,
+        'ts': position.timestamp.millisecondsSinceEpoch,
+      });
+    } catch (_) {
+      // GPS unavailable — silently skip this tick
+    }
   }
 
   @override
@@ -40,16 +86,20 @@ class GpsForegroundTaskHandler extends TaskHandler {
   void _onDataFromMain(Object data) {
     if (data is Map) {
       final cmd = data['cmd'] as String?;
-      if (cmd == FgTaskKeys.startTour) {
-        _activeTourId = data[FgTaskKeys.tourId] as int?;
-        _startTracking();
-      } else if (cmd == FgTaskKeys.stopTour) {
-        _stopTracking();
+      switch (cmd) {
+        case FgTaskKeys.startTour:
+          _activeTourId = data[FgTaskKeys.tourId] as int?;
+          _startTourTracking();
+        case FgTaskKeys.stopTour:
+          _stopTourTracking();
+        case FgTaskKeys.setTracking:
+          final enabled = data[FgTaskKeys.enabled] as bool? ?? false;
+          _setTracking(enabled);
       }
     }
   }
 
-  void _startTracking() {
+  void _startTourTracking() {
     _positionSub?.cancel();
     _positionSub =
         Geolocator.getPositionStream(
@@ -69,7 +119,6 @@ class GpsForegroundTaskHandler extends TaskHandler {
           );
           await DatabaseService.instance.insertLocationPoint(point);
 
-          // Send position back to UI
           FlutterForegroundTask.sendDataToMain({
             'cmd': FgTaskKeys.position,
             'lat': position.latitude,
@@ -79,10 +128,20 @@ class GpsForegroundTaskHandler extends TaskHandler {
         });
   }
 
-  void _stopTracking() {
+  void _stopTourTracking() {
     _positionSub?.cancel();
     _positionSub = null;
     _activeTourId = null;
+  }
+
+  Future<void> _setTracking(bool enabled) async {
+    _trackingEnabled = enabled;
+    SettingsService.instance.trackingEnabled = enabled;
+    if (enabled) {
+      await _engine.initialize();
+    } else {
+      await _engine.stopTracking();
+    }
   }
 }
 
@@ -104,21 +163,23 @@ class ForegroundServiceManager {
         playSound: false,
       ),
       foregroundTaskOptions: ForegroundTaskOptions(
-        eventAction: ForegroundTaskEventAction.repeat(5000),
+        eventAction: ForegroundTaskEventAction.repeat(15000),
         autoRunOnBoot: false,
         allowWifiLock: false,
       ),
     );
   }
 
-  static Future<ServiceRequestResult> startService(Tour tour) async {
+  static Future<ServiceRequestResult> startService({
+    required String notificationText,
+  }) async {
     if (await FlutterForegroundTask.isRunningService) {
       return FlutterForegroundTask.restartService();
     }
     return FlutterForegroundTask.startService(
       serviceId: 1001,
       notificationTitle: 'Chaos Tours',
-      notificationText: 'Tour "${tour.name}" wird aufgezeichnet…',
+      notificationText: notificationText,
       callback: _startGpsTask,
     );
   }
@@ -126,6 +187,8 @@ class ForegroundServiceManager {
   static Future<ServiceRequestResult> stopService() {
     return FlutterForegroundTask.stopService();
   }
+
+  // ── Manual Tour Commands ─────────────────────────────────────────────────
 
   static void sendStartTour(int tourId) {
     FlutterForegroundTask.sendDataToTask({
@@ -138,25 +201,30 @@ class ForegroundServiceManager {
     FlutterForegroundTask.sendDataToTask({'cmd': FgTaskKeys.stopTour});
   }
 
-  static void Function(Object)? _positionCallbackWrapper;
+  // ── Auto-Tracking Commands ───────────────────────────────────────────────
 
-  static void addPositionListener(
-    void Function(Map<dynamic, dynamic>) callback,
-  ) {
-    _positionCallbackWrapper = (Object data) {
-      if (data is Map && data['cmd'] == FgTaskKeys.position) {
-        callback(data);
-      }
-    };
-    FlutterForegroundTask.addTaskDataCallback(_positionCallbackWrapper!);
+  static void sendSetTracking(bool enabled) {
+    FlutterForegroundTask.sendDataToTask({
+      'cmd': FgTaskKeys.setTracking,
+      FgTaskKeys.enabled: enabled,
+    });
   }
 
-  static void removePositionListener(
-    void Function(Map<dynamic, dynamic>) callback,
-  ) {
-    if (_positionCallbackWrapper != null) {
-      FlutterForegroundTask.removeTaskDataCallback(_positionCallbackWrapper!);
-      _positionCallbackWrapper = null;
+  // ── Listeners ────────────────────────────────────────────────────────────
+
+  static void Function(Object)? _dataCallbackWrapper;
+
+  static void addDataListener(void Function(Map<dynamic, dynamic>) callback) {
+    _dataCallbackWrapper = (Object data) {
+      if (data is Map) callback(data);
+    };
+    FlutterForegroundTask.addTaskDataCallback(_dataCallbackWrapper!);
+  }
+
+  static void removeDataListener() {
+    if (_dataCallbackWrapper != null) {
+      FlutterForegroundTask.removeTaskDataCallback(_dataCallbackWrapper!);
+      _dataCallbackWrapper = null;
     }
   }
 }
