@@ -58,8 +58,9 @@
             android:name="flutterEmbedding"
             android:value="2" />
         <!-- FlutterForegroundTask: foreground service with location type -->
+        <!-- Warning: Do not change service name. -->
         <service
-            android:name="com.pravera.flutter_foreground_task.service.ForegroundTaskService"
+            android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
             android:exported="false"
             android:foregroundServiceType="location" />
     </application>
