@@ -42,6 +42,8 @@ class _MapScreenState extends State<MapScreen> {
     super.initState();
     _loadPlaces();
     _loadTrackingPoints();
+    // Move map to current location once the map controller is ready.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _goToCurrentLocation());
     // Refresh live tracking points every 15 s (matches GPS interval default).
     _liveRefreshTimer = Timer.periodic(const Duration(seconds: 15), (_) {
       if (!kDebugMode || !TestModeService.instance.isActive) {
@@ -233,6 +235,11 @@ class _MapScreenState extends State<MapScreen> {
               onPressed: _toggleTestMode,
             ),
           ],
+          IconButton(
+            icon: const Icon(Icons.my_location),
+            onPressed: _goToCurrentLocation,
+            tooltip: 'Aktuellen Standort anzeigen',
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadPlaces,

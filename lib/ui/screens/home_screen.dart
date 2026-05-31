@@ -35,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _trackingEnabled = SettingsService.instance.trackingEnabled;
+    if (_trackingEnabled) _trackingStatusText = 'Tracking läuft…';
     _loadActiveStay();
     _loadCurrentAktivitaet();
     _loadRecentStays();
@@ -192,8 +193,40 @@ class _HomeScreenState extends State<HomeScreen> {
     ForegroundServiceManager.sendSetTracking(value);
 
     if (!value) {
-      await ForegroundServiceManager.stopService();
+      try {
+        await ForegroundServiceManager.stopService();
+      } catch (_) {
+        // Ignore errors when stopping the service
+      }
     }
+  }
+
+  Future<void> _confirmToggleTracking() async {
+    final newValue = !_trackingEnabled;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          newValue ? 'Tracking aktivieren?' : 'Tracking deaktivieren?',
+        ),
+        content: Text(
+          newValue
+              ? 'Soll das automatische Hintergrund-Tracking gestartet werden?'
+              : 'Soll das automatische Hintergrund-Tracking gestoppt werden?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(newValue ? 'Aktivieren' : 'Deaktivieren'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) await _toggleTracking(newValue);
   }
 
   @override
@@ -203,8 +236,14 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('Chaos Tours'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => Navigator.pushNamed(context, '/settings'),
+            icon: Icon(
+              _trackingEnabled ? Icons.my_location : Icons.location_disabled,
+              color: _trackingEnabled
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
+            tooltip: _trackingEnabled ? 'Tracking aktiv' : 'Tracking inaktiv',
+            onPressed: _confirmToggleTracking,
           ),
         ],
       ),
@@ -251,73 +290,102 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          // Tracking switch
-          SwitchListTile(
-            secondary: Icon(
-              _trackingEnabled ? Icons.my_location : Icons.location_disabled,
-              color: _trackingEnabled
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
+          // Tracking status row
+          if (_trackingEnabled)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.sensors,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    _trackingStatusText,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            title: const Text('Automatisches Tracking'),
-            subtitle: _trackingEnabled
-                ? Text(_trackingStatusText)
-                : const Text('Aufenthalte automatisch erkennen'),
-            value: _trackingEnabled,
-            onChanged: _toggleTracking,
-          ),
           // ── Aktueller Aufenthalt ───────────────────────────────
-          if (_activeStay != null && _trackingEnabled)
+          if (_activeStay != null)
             Card(
               margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
               elevation: 3,
               color: Theme.of(context).colorScheme.primaryContainer,
-              child: ListTile(
-                leading: _activeStayPlace != null
-                    ? CircleAvatar(
-                        backgroundColor: _activeStayPlace!.placeType.dotColor
-                            .withValues(alpha: 0.2),
-                        child: Icon(
-                          _activeStayPlace!.placeType.icon,
-                          color: _activeStayPlace!.placeType.dotColor,
-                        ),
-                      )
-                    : CircleAvatar(
-                        backgroundColor: Theme.of(
-                          context,
-                        ).colorScheme.primary.withValues(alpha: 0.15),
-                        child: Icon(
-                          Icons.location_on,
-                          color: Theme.of(context).colorScheme.primary,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () {
+                  showModalBottomSheet<void>(
+                    context: context,
+                    isScrollControlled: true,
+                    builder: (_) => StayDetailSheet(
+                      stay: _activeStay!,
+                      onUpdated: _loadActiveStay,
+                    ),
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    children: [
+                      _activeStayPlace != null
+                          ? CircleAvatar(
+                              backgroundColor: _activeStayPlace!
+                                  .placeType
+                                  .dotColor
+                                  .withValues(alpha: 0.2),
+                              child: Icon(
+                                _activeStayPlace!.placeType.icon,
+                                color: _activeStayPlace!.placeType.dotColor,
+                              ),
+                            )
+                          : CircleAvatar(
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary.withValues(alpha: 0.15),
+                              child: Icon(
+                                Icons.location_on,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _activeStayPlace?.name ??
+                                  _activeStay!.address ??
+                                  'Unbekannter Ort',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Builder(
+                              builder: (ctx) {
+                                final dur = _activeStay!.duration;
+                                final h = dur.inHours;
+                                final m = dur.inMinutes % 60;
+                                return Text(
+                                  h > 0 ? 'Seit ${h}h ${m}min' : 'Seit ${m}min',
+                                  style: Theme.of(ctx).textTheme.bodySmall,
+                                );
+                              },
+                            ),
+                          ],
                         ),
                       ),
-                title: Text(
-                  _activeStayPlace?.name ??
-                      _activeStay!.address ??
-                      'Unbekannter Ort',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Builder(
-                  builder: (ctx) {
-                    final dur = _activeStay!.duration;
-                    final h = dur.inHours;
-                    final m = dur.inMinutes % 60;
-                    return Text(h > 0 ? 'Seit ${h}h ${m}min' : 'Seit ${m}min');
-                  },
-                ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.edit_note),
-                  tooltip: 'Aufenthalt bearbeiten',
-                  onPressed: () {
-                    showModalBottomSheet<void>(
-                      context: context,
-                      isScrollControlled: true,
-                      builder: (_) => StayDetailSheet(
-                        stay: _activeStay!,
-                        onUpdated: _loadActiveStay,
-                      ),
-                    );
-                  },
+                      const Icon(Icons.chevron_right, color: Colors.grey),
+                    ],
+                  ),
                 ),
               ),
             ),

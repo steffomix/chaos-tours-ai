@@ -28,10 +28,24 @@ class _TimelineScreenState extends State<TimelineScreen> {
   DateTimeRange? _filterRange;
   int? _filterPlaceId;
 
+  // Map
+  final MapController _mapController = MapController();
+  LatLng? _lastKnownPosition;
+
   @override
   void initState() {
     super.initState();
     _load();
+    _loadLastPosition();
+  }
+
+  Future<void> _loadLastPosition() async {
+    // Use most recent tracking point as last known position
+    final pts = await DatabaseService.instance.loadTrackingPointsSince(0);
+    if (pts.isNotEmpty && mounted) {
+      final last = pts.last;
+      setState(() => _lastKnownPosition = LatLng(last.lat, last.lng));
+    }
   }
 
   Future<void> _load() async {
@@ -252,21 +266,41 @@ class _TimelineScreenState extends State<TimelineScreen> {
       );
     }).toList();
 
-    final center = markers.isNotEmpty
-        ? LatLng(
-            staysWithCoords.first.place!.lat,
-            staysWithCoords.first.place!.lng,
-          )
-        : const LatLng(48.1351, 11.5820); // Munich fallback
+    final center =
+        _lastKnownPosition ??
+        (markers.isNotEmpty
+            ? LatLng(
+                staysWithCoords.first.place!.lat,
+                staysWithCoords.first.place!.lng,
+              )
+            : const LatLng(48.1351, 11.5820));
 
-    return FlutterMap(
-      options: MapOptions(initialCenter: center, initialZoom: 12),
+    return Stack(
       children: [
-        TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          userAgentPackageName: 'com.example.chaos_tours_ai',
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(initialCenter: center, initialZoom: 12),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'de.chaostours.chaos_tours_ai',
+            ),
+            MarkerLayer(markers: markers),
+          ],
         ),
-        MarkerLayer(markers: markers),
+        Positioned(
+          bottom: 16,
+          right: 16,
+          child: FloatingActionButton.small(
+            heroTag: 'timeline_location',
+            onPressed: () {
+              final pos = _lastKnownPosition;
+              if (pos != null) _mapController.move(pos, 14);
+            },
+            tooltip: 'Zur letzten Position',
+            child: const Icon(Icons.my_location),
+          ),
+        ),
       ],
     );
   }
