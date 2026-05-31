@@ -13,8 +13,16 @@
     <!-- Calendar -->
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <!-- Foreground service type data sync (Android 14+) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
+
+
+
     <!-- Keep CPU alive for foreground service -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Required to request battery-optimization exemption (needed for reliable
+         foreground-service start on Samsung / aggressive-battery-OEM devices) -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <!-- Internet for OSM map tiles -->
     <uses-permission android:name="android.permission.INTERNET" />
 

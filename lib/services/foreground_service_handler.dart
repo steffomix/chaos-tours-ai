@@ -177,6 +177,7 @@ class ForegroundServiceManager {
     }
     return FlutterForegroundTask.startService(
       serviceId: 1001,
+      serviceTypes: [ForegroundServiceTypes.location],
       notificationTitle: 'Chaos Tours',
       notificationText: notificationText,
       callback: _startGpsTask,

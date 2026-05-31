@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 import '../../models/saved_place.dart';
 import '../../models/stay.dart';
@@ -129,6 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
       await PermissionHelper.instance.requestBackgroundLocationPermission();
       await PermissionHelper.instance.requestNotificationPermission();
     }
+    await _ensureBatteryOptimizationExempt();
 
     setState(() => _isLoading = true);
     try {
@@ -183,17 +185,87 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// Checks battery-optimization status and requests exemption if needed.
+  /// Returns false when the user must first grant the exemption manually and
+  /// the service start should be aborted.
+  Future<bool> _ensureBatteryOptimizationExempt() async {
+    final ignoring = await FlutterForegroundTask.isIgnoringBatteryOptimizations;
+    if (ignoring) return true;
+
+    // Ask Android to whitelist this app via the standard system dialog.
+    // Requires REQUEST_IGNORE_BATTERY_OPTIMIZATIONS in the manifest.
+    final result =
+        await FlutterForegroundTask.requestIgnoreBatteryOptimization();
+    if (result is ServiceRequestSuccess) return true;
+
+    // If the direct request failed (e.g. Samsung blocks it), open the
+    // battery settings page and tell the user what to do.
+    if (!mounted) return false;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Akkuoptimierung deaktivieren'),
+        content: const Text(
+          'Der Hintergrund-Dienst konnte nicht gestartet werden.\n\n'
+          'Bitte deaktiviere die Akkuoptimierung für Chaos Tours:\n'
+          'Einstellungen → Apps → Chaos Tours → Akku → Nicht eingeschränkt',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await FlutterForegroundTask.openIgnoreBatteryOptimizationSettings();
+            },
+            child: const Text('Einstellungen öffnen'),
+          ),
+        ],
+      ),
+    );
+    return false;
+  }
+
   Future<void> _toggleTracking(bool value) async {
-    final granted = await PermissionHelper.instance.requestLocationPermission();
-    if (!granted) return;
+    if (value) {
+      // All three permissions are required for the foreground service:
+      // location (fine), background location, and POST_NOTIFICATIONS (Android 13+).
+      final hasPerms = await PermissionHelper.instance.hasAllPermissions();
+      if (!hasPerms) {
+        await PermissionHelper.instance.requestLocationPermission();
+        await PermissionHelper.instance.requestBackgroundLocationPermission();
+        await PermissionHelper.instance.requestNotificationPermission();
+      }
+      final locationGranted = await PermissionHelper.instance
+          .requestLocationPermission();
+      if (!locationGranted) return;
+
+      final batteryOk = await _ensureBatteryOptimizationExempt();
+      if (!batteryOk) return;
+    }
+
     setState(() => _trackingEnabled = value);
     SettingsService.instance.trackingEnabled = value;
+
     if (value) {
-      await ForegroundServiceManager.startService(
+      final result = await ForegroundServiceManager.startService(
         notificationText: 'Automatisches Tracking aktiv',
       );
+      if (result is ServiceRequestFailure) {
+        debugPrint('[Tracking] startService FAILED: ${result.error}');
+        // Revert optimistic UI state on failure.
+        if (mounted) {
+          setState(() => _trackingEnabled = false);
+          SettingsService.instance.trackingEnabled = false;
+        }
+        return;
+      }
+      debugPrint('[Tracking] startService OK');
     }
     ForegroundServiceManager.sendSetTracking(value);
+
     if (!value) {
       // Only stop service if no manual tour is running
       if (_activeTour == null) {
