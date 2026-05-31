@@ -17,8 +17,6 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Internet for OSM map tiles -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Receive boot complete to restart foreground service -->
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:label="chaos_tours_ai"
@@ -56,14 +54,6 @@
             android:name="com.pravera.flutter_foreground_task.service.ForegroundTaskService"
             android:exported="false"
             android:foregroundServiceType="location" />
-        <!-- FlutterForegroundTask: restart receiver on boot -->
-        <receiver
-            android:name="com.pravera.flutter_foreground_task.receiver.TaskRestartReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-        </receiver>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

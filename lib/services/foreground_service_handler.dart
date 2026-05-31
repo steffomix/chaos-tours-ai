@@ -164,7 +164,6 @@ class ForegroundServiceManager {
       ),
       foregroundTaskOptions: ForegroundTaskOptions(
         eventAction: ForegroundTaskEventAction.repeat(15000),
-        autoRunOnBoot: false,
         allowWifiLock: false,
       ),
     );
