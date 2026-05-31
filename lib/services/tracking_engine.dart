@@ -83,9 +83,13 @@ class TrackingEngine {
     if (shortWindow.isEmpty) {
       return _result();
     }
-    final shortWindowDuration = timestamp - shortWindow.first.timestamp;
+    // The window is "full" once its oldest point is within one GPS-tick of the
+    // window start. loadTrackingPointsSince() returns points with
+    // timestamp >= shortWindowStart, so the oldest point can never be exactly
+    // at shortWindowStart — we allow 20 s margin (GPS fires every 15 s).
+    const gpsTickMs = 20000;
     final shortWindowFull =
-        shortWindowDuration >= settings.stayDetectionSeconds * 1000;
+        shortWindow.first.timestamp <= shortWindowStart + gpsTickMs;
 
     // 4. Check if short window is a cluster
     final pts = shortWindow.map((p) => (lat: p.lat, lng: p.lng)).toList();
