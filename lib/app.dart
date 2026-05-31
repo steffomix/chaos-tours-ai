@@ -38,7 +38,7 @@ class _AppState extends State<App> {
           selectedIndex: _currentIndex,
           onDestinationSelected: (i) => setState(() => _currentIndex = i),
           destinations: const [
-            NavigationDestination(icon: Icon(Icons.list), label: 'Touren'),
+            NavigationDestination(icon: Icon(Icons.home), label: 'Übersicht'),
             NavigationDestination(icon: Icon(Icons.map), label: 'Karte'),
             NavigationDestination(
               icon: Icon(Icons.timeline),

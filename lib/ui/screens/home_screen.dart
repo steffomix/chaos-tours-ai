@@ -4,8 +4,6 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import '../../models/aktivitaet.dart';
 import '../../models/saved_place.dart';
 import '../../models/stay.dart';
-import '../../models/tour.dart';
-import '../../services/calendar_service.dart';
 import '../../services/database_service.dart';
 import '../../services/foreground_service_handler.dart';
 import '../../services/settings_service.dart';
@@ -20,10 +18,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<Tour> _tours = [];
-  Tour? _activeTour;
-  bool _isLoading = false;
-
   // Active Aktivitaet
   Aktivitaet? _currentAktivitaet;
 
@@ -37,7 +31,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _trackingEnabled = SettingsService.instance.trackingEnabled;
-    _loadTours();
     _loadActiveStay();
     _loadCurrentAktivitaet();
     ForegroundServiceManager.addDataListener(_onServiceData);
@@ -75,17 +68,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadTours() async {
-    final tours = await DatabaseService.instance.loadAllTours();
-    final active = await DatabaseService.instance.loadActiveTour();
-    if (mounted) {
-      setState(() {
-        _tours = tours;
-        _activeTour = active;
-      });
-    }
-  }
-
   Future<void> _loadCurrentAktivitaet() async {
     final id = SettingsService.instance.activeAktivitaetId;
     if (id == null) return;
@@ -105,95 +87,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _activeStay = stay;
         _activeStayPlace = place;
       });
-    }
-  }
-
-  Future<void> _startTour() async {
-    final nameController = TextEditingController(
-      text: 'Tour ${DateTime.now().toLocal().toString().substring(0, 16)}',
-    );
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Tour starten'),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(labelText: 'Tour-Name'),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Starten'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-
-    // Check permissions first
-    final hasPerms = await PermissionHelper.instance.hasAllPermissions();
-    if (!hasPerms) {
-      await PermissionHelper.instance.requestLocationPermission();
-      await PermissionHelper.instance.requestBackgroundLocationPermission();
-      await PermissionHelper.instance.requestNotificationPermission();
-    }
-    await _ensureBatteryOptimizationExempt();
-
-    setState(() => _isLoading = true);
-    try {
-      final now = DateTime.now().millisecondsSinceEpoch;
-      var tour = Tour(name: nameController.text.trim(), startTime: now);
-      final id = await DatabaseService.instance.insertTour(tour);
-      tour = tour.copyWith(id: id);
-
-      // Calendar event
-      final calPerms = await PermissionHelper.instance
-          .requestCalendarPermission();
-      if (calPerms) {
-        final eventId = await CalendarService.instance.createTourEvent(tour);
-        if (eventId != null) {
-          tour = tour.copyWith(calendarEventId: eventId);
-          await DatabaseService.instance.updateTour(tour);
-        }
-      }
-
-      // Start foreground service
-      await ForegroundServiceManager.startService(
-        notificationText: 'Tour "${tour.name}" wird aufgezeichnet…',
-      );
-      ForegroundServiceManager.sendStartTour(id);
-
-      await _loadTours();
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _stopTour() async {
-    final active = _activeTour;
-    if (active == null) return;
-
-    setState(() => _isLoading = true);
-    try {
-      ForegroundServiceManager.sendStopTour();
-      await ForegroundServiceManager.stopService();
-
-      final ended = active.copyWith(
-        endTime: DateTime.now().millisecondsSinceEpoch,
-      );
-      await DatabaseService.instance.updateTour(ended);
-
-      // Update calendar event with actual end time
-      await CalendarService.instance.updateTourEvent(ended);
-
-      await _loadTours();
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -279,44 +172,8 @@ class _HomeScreenState extends State<HomeScreen> {
     ForegroundServiceManager.sendSetTracking(value);
 
     if (!value) {
-      // Only stop service if no manual tour is running
-      if (_activeTour == null) {
-        await ForegroundServiceManager.stopService();
-      }
+      await ForegroundServiceManager.stopService();
     }
-  }
-
-  Future<void> _deleteTour(Tour tour) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Tour löschen?'),
-        content: Text('„${tour.name}" wirklich löschen?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Löschen', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    await CalendarService.instance.deleteTourEvent(tour);
-    await DatabaseService.instance.deleteTour(tour.id!);
-    await _loadTours();
-  }
-
-  String _formatDuration(Tour tour) {
-    final start = tour.startDateTime;
-    final end = tour.endDateTime ?? DateTime.now();
-    final diff = end.difference(start);
-    final h = diff.inHours;
-    final m = diff.inMinutes % 60;
-    return '${h}h ${m}min';
   }
 
   @override
@@ -331,194 +188,109 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                // ── Active Aktivitaet banner ───────────────────────────
-                Material(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  child: InkWell(
-                    onTap: () async {
-                      await Navigator.pushNamed(context, '/settings');
-                      _loadCurrentAktivitaet();
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.bolt,
-                            size: 18,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onPrimaryContainer,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _currentAktivitaet?.name ?? 'Aktivität laden…',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onPrimaryContainer,
-                              ),
-                            ),
-                          ),
-                          Icon(
-                            Icons.chevron_right,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onPrimaryContainer,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+      body: Column(
+        children: [
+          // ── Active Aktivitaet banner ───────────────────────────
+          Material(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            child: InkWell(
+              onTap: () async {
+                await Navigator.pushNamed(context, '/settings');
+                _loadCurrentAktivitaet();
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
                 ),
-                // Tracking switch
-                SwitchListTile(
-                  secondary: Icon(
-                    _trackingEnabled
-                        ? Icons.my_location
-                        : Icons.location_disabled,
-                    color: _trackingEnabled
-                        ? Theme.of(context).colorScheme.primary
-                        : null,
-                  ),
-                  title: const Text('Automatisches Tracking'),
-                  subtitle: _trackingEnabled
-                      ? Text(_trackingStatusText)
-                      : const Text('Aufenthalte automatisch erkennen'),
-                  value: _trackingEnabled,
-                  onChanged: _toggleTracking,
-                ),
-                // Active auto-stay card
-                if (_activeStay != null && _trackingEnabled)
-                  Card(
-                    margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primaryContainer.withValues(alpha: 0.5),
-                    child: ListTile(
-                      leading: Icon(
-                        Icons.location_on,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      title: Text(
-                        _activeStayPlace?.name ??
-                            _activeStay!.address ??
-                            'Unbekannter Ort',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Builder(
-                        builder: (ctx) {
-                          final dur = _activeStay!.duration;
-                          final h = dur.inHours;
-                          final m = dur.inMinutes % 60;
-                          return Text(
-                            h > 0 ? 'Seit ${h}h ${m}min' : 'Seit ${m}min',
-                          );
-                        },
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.edit_note),
-                        tooltip: 'Aufenthalt bearbeiten',
-                        onPressed: () {
-                          showModalBottomSheet<void>(
-                            context: context,
-                            isScrollControlled: true,
-                            builder: (_) => StayDetailSheet(
-                              stay: _activeStay!,
-                              onUpdated: _loadActiveStay,
-                            ),
-                          );
-                        },
-                      ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.bolt,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
-                  ),
-                const Divider(height: 1),
-                // Active tour card
-                if (_activeTour != null)
-                  Card(
-                    margin: const EdgeInsets.all(12),
-                    color: Colors.green.shade50,
-                    child: ListTile(
-                      leading: const Icon(
-                        Icons.play_circle,
-                        color: Colors.green,
-                        size: 32,
-                      ),
-                      title: Text(
-                        _activeTour!.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(
-                        'Läuft seit ${_formatDuration(_activeTour!)}',
-                      ),
-                      trailing: FilledButton.icon(
-                        onPressed: _stopTour,
-                        icon: const Icon(Icons.stop),
-                        label: const Text('Stopp'),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Colors.red,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _currentAktivitaet?.name ?? 'Aktivität laden…',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
                         ),
                       ),
                     ),
-                  ),
-                // Tour list
-                Expanded(
-                  child: _tours.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'Noch keine Touren vorhanden.\nDrücke + um eine Tour zu starten.',
-                            textAlign: TextAlign.center,
-                          ),
-                        )
-                      : ListView.builder(
-                          itemCount: _tours.length,
-                          itemBuilder: (ctx, i) {
-                            final tour = _tours[i];
-                            final running = tour.isRunning;
-                            return ListTile(
-                              leading: Icon(
-                                running
-                                    ? Icons.play_circle
-                                    : Icons.check_circle,
-                                color: running ? Colors.green : Colors.grey,
-                              ),
-                              title: Text(tour.name),
-                              subtitle: Text(
-                                running
-                                    ? 'Läuft – ${_formatDuration(tour)}'
-                                    : _formatDuration(tour),
-                              ),
-                              trailing: running
-                                  ? null
-                                  : IconButton(
-                                      icon: const Icon(
-                                        Icons.delete,
-                                        color: Colors.red,
-                                      ),
-                                      onPressed: () => _deleteTour(tour),
-                                    ),
-                            );
-                          },
-                        ),
+                    Icon(
+                      Icons.chevron_right,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-      floatingActionButton: _activeTour == null
-          ? FloatingActionButton(
-              onPressed: _startTour,
-              tooltip: 'Tour starten',
-              child: const Icon(Icons.add),
-            )
-          : null,
+          ),
+          // Tracking switch
+          SwitchListTile(
+            secondary: Icon(
+              _trackingEnabled ? Icons.my_location : Icons.location_disabled,
+              color: _trackingEnabled
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
+            title: const Text('Automatisches Tracking'),
+            subtitle: _trackingEnabled
+                ? Text(_trackingStatusText)
+                : const Text('Aufenthalte automatisch erkennen'),
+            value: _trackingEnabled,
+            onChanged: _toggleTracking,
+          ),
+          // Active auto-stay card
+          if (_activeStay != null && _trackingEnabled)
+            Card(
+              margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              color: Theme.of(
+                context,
+              ).colorScheme.primaryContainer.withValues(alpha: 0.5),
+              child: ListTile(
+                leading: Icon(
+                  Icons.location_on,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: Text(
+                  _activeStayPlace?.name ??
+                      _activeStay!.address ??
+                      'Unbekannter Ort',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Builder(
+                  builder: (ctx) {
+                    final dur = _activeStay!.duration;
+                    final h = dur.inHours;
+                    final m = dur.inMinutes % 60;
+                    return Text(h > 0 ? 'Seit ${h}h ${m}min' : 'Seit ${m}min');
+                  },
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.edit_note),
+                  tooltip: 'Aufenthalt bearbeiten',
+                  onPressed: () {
+                    showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      builder: (_) => StayDetailSheet(
+                        stay: _activeStay!,
+                        onUpdated: _loadActiveStay,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          const Divider(height: 1),
+        ],
+      ),
     );
   }
 }

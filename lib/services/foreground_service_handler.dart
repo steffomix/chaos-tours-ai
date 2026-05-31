@@ -3,18 +3,13 @@ import 'dart:async';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:geolocator/geolocator.dart';
 
-import '../models/location_point.dart';
-import '../services/database_service.dart';
 import '../services/settings_service.dart';
 import '../services/tracking_engine.dart';
 
 /// Keys used when communicating via SendPort.
 class FgTaskKeys {
-  static const String startTour = 'start_tour';
-  static const String stopTour = 'stop_tour';
   static const String setTracking = 'set_tracking';
   static const String position = 'position';
-  static const String tourId = 'tour_id';
   static const String enabled = 'enabled';
   static const String trackingStatus = 'tracking_status';
   static const String stayChanged = 'stay_changed';
@@ -22,7 +17,6 @@ class FgTaskKeys {
 
 /// Task handler that runs in the foreground service isolate.
 class GpsForegroundTaskHandler extends TaskHandler {
-  int? _activeTourId;
   StreamSubscription<Position>? _positionSub;
   bool _trackingEnabled = false;
   final TrackingEngine _engine = TrackingEngine();
@@ -87,51 +81,11 @@ class GpsForegroundTaskHandler extends TaskHandler {
     if (data is Map) {
       final cmd = data['cmd'] as String?;
       switch (cmd) {
-        case FgTaskKeys.startTour:
-          _activeTourId = data[FgTaskKeys.tourId] as int?;
-          _startTourTracking();
-        case FgTaskKeys.stopTour:
-          _stopTourTracking();
         case FgTaskKeys.setTracking:
           final enabled = data[FgTaskKeys.enabled] as bool? ?? false;
           _setTracking(enabled);
       }
     }
-  }
-
-  void _startTourTracking() {
-    _positionSub?.cancel();
-    _positionSub =
-        Geolocator.getPositionStream(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            distanceFilter: 5,
-          ),
-        ).listen((position) async {
-          final tourId = _activeTourId;
-          if (tourId == null) return;
-
-          final point = LocationPoint(
-            tourId: tourId,
-            lat: position.latitude,
-            lng: position.longitude,
-            timestamp: position.timestamp.millisecondsSinceEpoch,
-          );
-          await DatabaseService.instance.insertLocationPoint(point);
-
-          FlutterForegroundTask.sendDataToMain({
-            'cmd': FgTaskKeys.position,
-            'lat': position.latitude,
-            'lng': position.longitude,
-            'ts': position.timestamp.millisecondsSinceEpoch,
-          });
-        });
-  }
-
-  void _stopTourTracking() {
-    _positionSub?.cancel();
-    _positionSub = null;
-    _activeTourId = null;
   }
 
   Future<void> _setTracking(bool enabled) async {
@@ -186,19 +140,6 @@ class ForegroundServiceManager {
 
   static Future<ServiceRequestResult> stopService() {
     return FlutterForegroundTask.stopService();
-  }
-
-  // ── Manual Tour Commands ─────────────────────────────────────────────────
-
-  static void sendStartTour(int tourId) {
-    FlutterForegroundTask.sendDataToTask({
-      'cmd': FgTaskKeys.startTour,
-      FgTaskKeys.tourId: tourId,
-    });
-  }
-
-  static void sendStopTour() {
-    FlutterForegroundTask.sendDataToTask({'cmd': FgTaskKeys.stopTour});
   }
 
   // ── Auto-Tracking Commands ───────────────────────────────────────────────
