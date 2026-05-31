@@ -491,4 +491,9 @@ class DatabaseService {
         .millisecondsSinceEpoch;
     await deleteTrackingPointsOlderThan(cutoff);
   }
+
+  Future<void> deleteAllTrackingPoints() async {
+    final db = await database;
+    await db.delete('tracking_points');
+  }
 }
