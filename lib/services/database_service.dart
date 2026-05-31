@@ -41,9 +41,10 @@ class DatabaseService {
         lat REAL NOT NULL,
         lng REAL NOT NULL,
         radius REAL NOT NULL DEFAULT 50.0,
-        color_type INTEGER NOT NULL DEFAULT 0,
+        place_type INTEGER NOT NULL DEFAULT 1,
         notes TEXT NOT NULL DEFAULT '',
-        group_id INTEGER
+        group_id INTEGER,
+        created_at INTEGER NOT NULL DEFAULT 0
       )
     ''');
     await db.execute('''
@@ -154,6 +155,31 @@ class DatabaseService {
   Future<void> deletePlace(int id) async {
     final db = await database;
     await db.delete('saved_places', where: 'id = ?', whereArgs: [id]);
+  }
+
+  /// Returns the number of completed stays at [placeId].
+  Future<int> visitCountForPlace(int placeId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      "SELECT COUNT(*) AS cnt FROM stays WHERE place_id = ? AND status = 'completed'",
+      [placeId],
+    );
+    return (result.first['cnt'] as int?) ?? 0;
+  }
+
+  /// Returns the start_time of the most recent completed stay at [placeId], or null.
+  Future<int?> lastVisitedAtForPlace(int placeId) async {
+    final db = await database;
+    final rows = await db.query(
+      'stays',
+      columns: ['start_time'],
+      where: "place_id = ? AND status = 'completed'",
+      whereArgs: [placeId],
+      orderBy: 'start_time DESC',
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return rows.first['start_time'] as int?;
   }
 
   // ── PlaceGroups ──────────────────────────────────────────────────────────

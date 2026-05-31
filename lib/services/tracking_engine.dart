@@ -1,6 +1,7 @@
 import '../models/saved_place.dart';
 import '../models/stay.dart';
 import '../models/tracking_point.dart';
+import '../services/calendar_service.dart';
 import '../services/database_service.dart';
 import '../services/nominatim_service.dart';
 import '../services/settings_service.dart';
@@ -111,10 +112,11 @@ class TrackingEngine {
     // Short window is a full cluster → confirmed halt
     final c = GeoUtils.centroid(pts);
 
-    // 5. Check known places
+    // 5. Check known places — only public/private places trigger stays
     final places = await DatabaseService.instance.loadAllPlaces();
     SavedPlace? nearestPlace;
     for (final place in places) {
+      if (!place.placeType.tracksStay) continue; // secret/forbidden — skip
       final dist = GeoUtils.distanceMeters(c.lat, c.lng, place.lat, place.lng);
       if (dist <= place.radius) {
         nearestPlace = place;
@@ -228,6 +230,7 @@ class TrackingEngine {
         lat: centroidLat,
         lng: centroidLng,
         radius: settings.defaultRadiusMeters,
+        placeType: PlaceType.private,
         groupId: settings.autoPlaceGroupId,
       );
       final placeId = await DatabaseService.instance.insertPlace(place);
@@ -258,6 +261,29 @@ class TrackingEngine {
     if (stay == null) return;
     final ended = stay.copyWith(endTime: endTime, status: StayStatus.completed);
     await DatabaseService.instance.updateStay(ended);
+
+    // Calendar sync for public places
+    final place = _currentPlace;
+    if (place != null &&
+        place.placeType.syncsCalendar &&
+        place.groupId != null) {
+      final group = await DatabaseService.instance.loadPlaceGroup(
+        place.groupId!,
+      );
+      if (group != null) {
+        final eventId = await CalendarService.instance.createStayEvent(
+          ended,
+          group,
+          place.name,
+        );
+        if (eventId != null) {
+          await DatabaseService.instance.updateStay(
+            ended.copyWith(calendarEventId: eventId),
+          );
+        }
+      }
+    }
+
     _currentStay = null;
     _currentPlace = null;
   }

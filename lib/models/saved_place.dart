@@ -1,34 +1,71 @@
 import 'package:flutter/material.dart';
 
-/// Color type index: 0=Red, 1=Green, 2=Blue, 3=Yellow
-enum PlaceColorType { red, green, blue, yellow }
+/// Type of a saved place — determines behaviour and map appearance.
+enum PlaceType {
+  /// Green dot. Notification on arrival, Nominatim lookup, DB stay, Calendar event.
+  public,
 
-extension PlaceColorTypeExtension on PlaceColorType {
-  Color get color {
+  /// Blue dot. Notification on arrival, Nominatim lookup, DB stay. No calendar.
+  private,
+
+  /// Red dot. Shown on map only — no notification, no stay tracking.
+  secret,
+
+  /// Only visible in the places list when "Verbotene Orte auflisten" is enabled.
+  forbidden,
+}
+
+extension PlaceTypeExtension on PlaceType {
+  String get label {
     switch (this) {
-      case PlaceColorType.red:
-        return Colors.red.withValues(alpha: 0.5);
-      case PlaceColorType.green:
-        return Colors.green.withValues(alpha: 0.5);
-      case PlaceColorType.blue:
-        return Colors.blue.withValues(alpha: 0.5);
-      case PlaceColorType.yellow:
-        return Colors.yellow.withValues(alpha: 0.5);
+      case PlaceType.public:
+        return 'Öffentlich';
+      case PlaceType.private:
+        return 'Privat';
+      case PlaceType.secret:
+        return 'Geheim';
+      case PlaceType.forbidden:
+        return 'Verboten';
     }
   }
 
-  Color get borderColor {
+  IconData get icon {
     switch (this) {
-      case PlaceColorType.red:
-        return Colors.red;
-      case PlaceColorType.green:
+      case PlaceType.public:
+        return Icons.public;
+      case PlaceType.private:
+        return Icons.lock;
+      case PlaceType.secret:
+        return Icons.visibility_off;
+      case PlaceType.forbidden:
+        return Icons.block;
+    }
+  }
+
+  Color get dotColor {
+    switch (this) {
+      case PlaceType.public:
         return Colors.green;
-      case PlaceColorType.blue:
+      case PlaceType.private:
         return Colors.blue;
-      case PlaceColorType.yellow:
-        return Colors.yellow;
+      case PlaceType.secret:
+        return Colors.red;
+      case PlaceType.forbidden:
+        return Colors.grey;
     }
   }
+
+  Color get fillColor => dotColor.withValues(alpha: 0.45);
+
+  /// Whether arrival at this place triggers stay tracking.
+  bool get tracksStay => this == PlaceType.public || this == PlaceType.private;
+
+  /// Whether arrival triggers a system notification.
+  bool get notifiesOnArrival =>
+      this == PlaceType.public || this == PlaceType.private;
+
+  /// Whether a completed stay is written to the calendar.
+  bool get syncsCalendar => this == PlaceType.public;
 }
 
 class SavedPlace {
@@ -37,9 +74,12 @@ class SavedPlace {
   final double lat;
   final double lng;
   final double radius;
-  final int colorType;
+  final PlaceType placeType;
   final String notes;
   final int? groupId;
+
+  /// Creation timestamp (milliseconds since epoch).
+  final int createdAt;
 
   SavedPlace({
     this.id,
@@ -47,24 +87,26 @@ class SavedPlace {
     required this.lat,
     required this.lng,
     this.radius = 50.0,
-    this.colorType = 0,
+    this.placeType = PlaceType.private,
     this.notes = '',
     this.groupId,
-  });
-
-  PlaceColorType get placeColorType =>
-      PlaceColorType.values[colorType.clamp(0, 3)];
+    int? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch;
 
   factory SavedPlace.fromMap(Map<String, dynamic> map) {
+    final typeIndex = (map['place_type'] as int?) ?? 0;
     return SavedPlace(
       id: map['id'] as int?,
       name: map['name'] as String,
       lat: (map['lat'] as num).toDouble(),
       lng: (map['lng'] as num).toDouble(),
       radius: (map['radius'] as num?)?.toDouble() ?? 50.0,
-      colorType: (map['color_type'] as int?) ?? 0,
+      placeType:
+          PlaceType.values[typeIndex.clamp(0, PlaceType.values.length - 1)],
       notes: (map['notes'] as String?) ?? '',
       groupId: map['group_id'] as int?,
+      createdAt:
+          (map['created_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
     );
   }
 
@@ -75,8 +117,9 @@ class SavedPlace {
       'lat': lat,
       'lng': lng,
       'radius': radius,
-      'color_type': colorType,
+      'place_type': placeType.index,
       'notes': notes,
+      'created_at': createdAt,
       if (groupId != null) 'group_id': groupId,
     };
   }
@@ -87,9 +130,10 @@ class SavedPlace {
     double? lat,
     double? lng,
     double? radius,
-    int? colorType,
+    PlaceType? placeType,
     String? notes,
     int? groupId,
+    int? createdAt,
     bool clearGroupId = false,
   }) {
     return SavedPlace(
@@ -98,9 +142,10 @@ class SavedPlace {
       lat: lat ?? this.lat,
       lng: lng ?? this.lng,
       radius: radius ?? this.radius,
-      colorType: colorType ?? this.colorType,
+      placeType: placeType ?? this.placeType,
       notes: notes ?? this.notes,
       groupId: clearGroupId ? null : (groupId ?? this.groupId),
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }

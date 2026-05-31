@@ -14,6 +14,7 @@ class SettingsService {
   static const String _keyAutoPlaceGroup = 'auto_place_group_id';
   static const String _keyTrackingEnabled = 'tracking_enabled';
   static const String _keyActiveAktivitaetId = 'active_aktivitaet_id';
+  static const String _keyShowForbiddenPlaces = 'show_forbidden_places';
 
   SharedPreferences? _prefs;
 
@@ -61,6 +62,10 @@ class SettingsService {
   /// Whether the background tracking service is enabled (default: false).
   bool get trackingEnabled => _p.getBool(_keyTrackingEnabled) ?? false;
   set trackingEnabled(bool v) => _p.setBool(_keyTrackingEnabled, v);
+
+  /// Whether forbidden places are shown in the places list (default: false).
+  bool get showForbiddenPlaces => _p.getBool(_keyShowForbiddenPlaces) ?? false;
+  set showForbiddenPlaces(bool v) => _p.setBool(_keyShowForbiddenPlaces, v);
 
   // ── Aktivitaet binding ───────────────────────────────────────────────────
 

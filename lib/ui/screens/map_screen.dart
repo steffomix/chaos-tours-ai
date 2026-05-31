@@ -263,18 +263,24 @@ class _MapScreenState extends State<MapScreen> {
                       // Saved places layer
                       CircleLayer<SavedPlace>(
                         hitNotifier: _hitNotifier,
-                        circles: _places.map((place) {
-                          final colorType = place.placeColorType;
-                          return CircleMarker<SavedPlace>(
-                            hitValue: place,
-                            point: LatLng(place.lat, place.lng),
-                            radius: place.radius,
-                            useRadiusInMeter: true,
-                            color: colorType.color,
-                            borderColor: colorType.borderColor,
-                            borderStrokeWidth: 2,
-                          );
-                        }).toList(),
+                        circles: _places
+                            .where(
+                              (p) =>
+                                  p.placeType != PlaceType.forbidden ||
+                                  SettingsService.instance.showForbiddenPlaces,
+                            )
+                            .map((place) {
+                              return CircleMarker<SavedPlace>(
+                                hitValue: place,
+                                point: LatLng(place.lat, place.lng),
+                                radius: place.radius,
+                                useRadiusInMeter: true,
+                                color: place.placeType.fillColor,
+                                borderColor: place.placeType.dotColor,
+                                borderStrokeWidth: 2,
+                              );
+                            })
+                            .toList(),
                       ),
                       // Tracking-points layer: test-categorised in debug,
                       // live DB points in release.
