@@ -234,6 +234,17 @@ class DatabaseService {
     return rows.map(Stay.fromMap).toList();
   }
 
+  Future<List<Stay>> loadRecentCompletedStays({int limit = 20}) async {
+    final db = await database;
+    final rows = await db.query(
+      'stays',
+      where: "status = 'completed'",
+      orderBy: 'start_time DESC',
+      limit: limit,
+    );
+    return rows.map(Stay.fromMap).toList();
+  }
+
   Future<List<Stay>> loadCompletedStays() async {
     final db = await database;
     final rows = await db.query(

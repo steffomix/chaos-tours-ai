@@ -27,12 +27,17 @@ class _HomeScreenState extends State<HomeScreen> {
   SavedPlace? _activeStayPlace;
   String _trackingStatusText = 'Inaktiv';
 
+  // Recent visits
+  List<Stay> _recentStays = [];
+  Map<int, SavedPlace> _placesById = {};
+
   @override
   void initState() {
     super.initState();
     _trackingEnabled = SettingsService.instance.trackingEnabled;
     _loadActiveStay();
     _loadCurrentAktivitaet();
+    _loadRecentStays();
     ForegroundServiceManager.addDataListener(_onServiceData);
   }
 
@@ -64,8 +69,23 @@ class _HomeScreenState extends State<HomeScreen> {
           text = 'Tracking aktiv';
       }
       _loadActiveStay();
+      _loadRecentStays();
       if (mounted) setState(() => _trackingStatusText = text);
     }
+  }
+
+  Future<void> _loadRecentStays() async {
+    final stays = await DatabaseService.instance.loadRecentCompletedStays();
+    final allPlaces = await DatabaseService.instance.loadAllPlaces();
+    final byId = {
+      for (final p in allPlaces)
+        if (p.id != null) p.id!: p,
+    };
+    if (mounted)
+      setState(() {
+        _recentStays = stays;
+        _placesById = byId;
+      });
   }
 
   Future<void> _loadCurrentAktivitaet() async {
@@ -246,18 +266,31 @@ class _HomeScreenState extends State<HomeScreen> {
             value: _trackingEnabled,
             onChanged: _toggleTracking,
           ),
-          // Active auto-stay card
+          // ── Aktueller Aufenthalt ───────────────────────────────
           if (_activeStay != null && _trackingEnabled)
             Card(
               margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-              color: Theme.of(
-                context,
-              ).colorScheme.primaryContainer.withValues(alpha: 0.5),
+              elevation: 3,
+              color: Theme.of(context).colorScheme.primaryContainer,
               child: ListTile(
-                leading: Icon(
-                  Icons.location_on,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                leading: _activeStayPlace != null
+                    ? CircleAvatar(
+                        backgroundColor: _activeStayPlace!.placeType.dotColor
+                            .withValues(alpha: 0.2),
+                        child: Icon(
+                          _activeStayPlace!.placeType.icon,
+                          color: _activeStayPlace!.placeType.dotColor,
+                        ),
+                      )
+                    : CircleAvatar(
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.15),
+                        child: Icon(
+                          Icons.location_on,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
                 title: Text(
                   _activeStayPlace?.name ??
                       _activeStay!.address ??
@@ -289,6 +322,76 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           const Divider(height: 1),
+          // ── Letzte Besuche ─────────────────────────────────────
+          Expanded(
+            child: _recentStays.isEmpty
+                ? const Center(
+                    child: Text(
+                      'Noch keine Besuche aufgezeichnet.',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  )
+                : RefreshIndicator(
+                    onRefresh: _loadRecentStays,
+                    child: ListView.builder(
+                      itemCount: _recentStays.length + 1,
+                      itemBuilder: (ctx, i) {
+                        if (i == 0) {
+                          return Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                            child: Text(
+                              'Letzte Besuche',
+                              style: Theme.of(ctx).textTheme.titleSmall
+                                  ?.copyWith(color: Colors.grey),
+                            ),
+                          );
+                        }
+                        final stay = _recentStays[i - 1];
+                        final place = stay.placeId != null
+                            ? _placesById[stay.placeId]
+                            : null;
+                        final name =
+                            place?.name ?? stay.address ?? 'Unbekannter Ort';
+                        final dur = stay.duration;
+                        final h = dur.inHours;
+                        final m = dur.inMinutes % 60;
+                        final durText = h > 0 ? '${h}h ${m}min' : '${m}min';
+                        final start = DateTime.fromMillisecondsSinceEpoch(
+                          stay.startTime,
+                        );
+                        final dateText =
+                            '${start.day.toString().padLeft(2, '0')}.${start.month.toString().padLeft(2, '0')}.${start.year}  '
+                            '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}';
+                        return ListTile(
+                          dense: true,
+                          leading: place != null
+                              ? Icon(
+                                  place.placeType.icon,
+                                  color: place.placeType.dotColor,
+                                  size: 22,
+                                )
+                              : const Icon(
+                                  Icons.location_on,
+                                  size: 22,
+                                  color: Colors.grey,
+                                ),
+                          title: Text(name),
+                          subtitle: Text('$dateText · $durText'),
+                          onTap: () {
+                            showModalBottomSheet<void>(
+                              context: context,
+                              isScrollControlled: true,
+                              builder: (_) => StayDetailSheet(
+                                stay: stay,
+                                onUpdated: _loadRecentStays,
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+          ),
         ],
       ),
     );

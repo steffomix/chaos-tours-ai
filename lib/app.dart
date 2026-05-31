@@ -5,6 +5,7 @@ import 'ui/screens/home_screen.dart';
 import 'ui/screens/map_screen.dart';
 import 'ui/screens/persons_screen.dart';
 import 'ui/screens/place_groups_screen.dart';
+import 'ui/screens/places_screen.dart';
 import 'ui/screens/settings_screen.dart';
 import 'ui/screens/timeline_screen.dart';
 
@@ -18,7 +19,12 @@ class App extends StatefulWidget {
 class _AppState extends State<App> {
   int _currentIndex = 0;
 
-  static const _screens = [HomeScreen(), MapScreen(), TimelineScreen()];
+  static const _screens = [
+    HomeScreen(),
+    MapScreen(),
+    PlacesScreen(),
+    TimelineScreen(),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +46,7 @@ class _AppState extends State<App> {
           destinations: const [
             NavigationDestination(icon: Icon(Icons.home), label: 'Übersicht'),
             NavigationDestination(icon: Icon(Icons.map), label: 'Karte'),
+            NavigationDestination(icon: Icon(Icons.place), label: 'Orte'),
             NavigationDestination(
               icon: Icon(Icons.timeline),
               label: 'Zeitachse',
