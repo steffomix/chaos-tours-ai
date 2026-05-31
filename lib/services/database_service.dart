@@ -1,6 +1,7 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../models/aktivitaet.dart';
 import '../models/activity.dart';
 import '../models/location_point.dart';
 import '../models/person.dart';
@@ -28,26 +29,13 @@ class DatabaseService {
     final path = join(dbPath, 'chaos_tours.db');
     return openDatabase(
       path,
-      version: 2,
+      version: 1,
       onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
       onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
     );
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    await _createV1Tables(db);
-    await _createV2Tables(db);
-  }
-
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      await _createV2Tables(db);
-      await db.execute('ALTER TABLE saved_places ADD COLUMN group_id INTEGER');
-    }
-  }
-
-  Future<void> _createV1Tables(Database db) async {
     await db.execute('''
       CREATE TABLE saved_places (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -79,9 +67,6 @@ class DatabaseService {
         FOREIGN KEY (tour_id) REFERENCES tours(id) ON DELETE CASCADE
       )
     ''');
-  }
-
-  Future<void> _createV2Tables(Database db) async {
     await db.execute('''
       CREATE TABLE place_groups (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -150,6 +135,18 @@ class DatabaseService {
     await db.execute(
       'CREATE INDEX idx_tracking_points_ts ON tracking_points(timestamp)',
     );
+    await db.execute('''
+      CREATE TABLE aktivitaeten (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        gps_interval_seconds INTEGER NOT NULL DEFAULT 15,
+        stay_detection_seconds INTEGER NOT NULL DEFAULT 180,
+        auto_place_seconds INTEGER NOT NULL DEFAULT 900,
+        default_radius_meters REAL NOT NULL DEFAULT 50.0,
+        auto_create_places INTEGER NOT NULL DEFAULT 1,
+        auto_place_group_id INTEGER
+      )
+    ''');
   }
 
   // ── SavedPlaces ──────────────────────────────────────────────────────────
@@ -495,5 +492,69 @@ class DatabaseService {
   Future<void> deleteAllTrackingPoints() async {
     final db = await database;
     await db.delete('tracking_points');
+  }
+
+  // ── Aktivitaeten ─────────────────────────────────────────────────────────
+
+  Future<int> insertAktivitaet(Aktivitaet a) async {
+    final db = await database;
+    return db.insert('aktivitaeten', a.toMap());
+  }
+
+  Future<List<Aktivitaet>> loadAllAktivitaeten() async {
+    final db = await database;
+    final rows = await db.query('aktivitaeten', orderBy: 'id ASC');
+    return rows.map(Aktivitaet.fromMap).toList();
+  }
+
+  Future<Aktivitaet?> loadAktivitaet(int id) async {
+    final db = await database;
+    final rows = await db.query(
+      'aktivitaeten',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (rows.isEmpty) return null;
+    return Aktivitaet.fromMap(rows.first);
+  }
+
+  Future<void> updateAktivitaet(Aktivitaet a) async {
+    final db = await database;
+    await db.update(
+      'aktivitaeten',
+      a.toMap(),
+      where: 'id = ?',
+      whereArgs: [a.id],
+    );
+  }
+
+  Future<void> deleteAktivitaet(int id) async {
+    final db = await database;
+    await db.delete('aktivitaeten', where: 'id = ?', whereArgs: [id]);
+  }
+
+  /// Ensures at least one Aktivitaet exists. Creates a default one if the
+  /// table is empty and returns its id.
+  Future<int> ensureDefaultAktivitaet({
+    int gpsInterval = 15,
+    int stayDetection = 180,
+    int autoPlace = 900,
+    double radius = 50.0,
+    bool autoCreate = true,
+    int? autoPlaceGroupId,
+  }) async {
+    final all = await loadAllAktivitaeten();
+    if (all.isNotEmpty) return all.first.id!;
+    return insertAktivitaet(
+      Aktivitaet(
+        name: 'Standard',
+        gpsIntervalSeconds: gpsInterval,
+        stayDetectionSeconds: stayDetection,
+        autoPlaceSeconds: autoPlace,
+        defaultRadiusMeters: radius,
+        autoCreatePlaces: autoCreate,
+        autoPlaceGroupId: autoPlaceGroupId,
+      ),
+    );
   }
 }

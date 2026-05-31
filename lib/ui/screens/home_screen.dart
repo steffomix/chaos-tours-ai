@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
+import '../../models/aktivitaet.dart';
 import '../../models/saved_place.dart';
 import '../../models/stay.dart';
 import '../../models/tour.dart';
@@ -23,6 +24,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Tour? _activeTour;
   bool _isLoading = false;
 
+  // Active Aktivitaet
+  Aktivitaet? _currentAktivitaet;
+
   // Tracking state
   bool _trackingEnabled = false;
   Stay? _activeStay;
@@ -35,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _trackingEnabled = SettingsService.instance.trackingEnabled;
     _loadTours();
     _loadActiveStay();
+    _loadCurrentAktivitaet();
     ForegroundServiceManager.addDataListener(_onServiceData);
   }
 
@@ -79,6 +84,13 @@ class _HomeScreenState extends State<HomeScreen> {
         _activeTour = active;
       });
     }
+  }
+
+  Future<void> _loadCurrentAktivitaet() async {
+    final id = SettingsService.instance.activeAktivitaetId;
+    if (id == null) return;
+    final a = await DatabaseService.instance.loadAktivitaet(id);
+    if (mounted) setState(() => _currentAktivitaet = a);
   }
 
   Future<void> _loadActiveStay() async {
@@ -323,6 +335,51 @@ class _HomeScreenState extends State<HomeScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
+                // ── Active Aktivitaet banner ───────────────────────────
+                Material(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  child: InkWell(
+                    onTap: () async {
+                      await Navigator.pushNamed(context, '/settings');
+                      _loadCurrentAktivitaet();
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.bolt,
+                            size: 18,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onPrimaryContainer,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _currentAktivitaet?.name ?? 'Aktivität laden…',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onPrimaryContainer,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onPrimaryContainer,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
                 // Tracking switch
                 SwitchListTile(
                   secondary: Icon(

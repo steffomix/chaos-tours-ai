@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../models/aktivitaet.dart';
 import '../../models/place_group.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
@@ -21,6 +22,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int? _autoPlaceGroupId;
   List<PlaceGroup> _groups = [];
 
+  // Aktivitaet management
+  List<Aktivitaet> _aktivitaeten = [];
+  Aktivitaet? _activeAktivitaet;
+
   @override
   void initState() {
     super.initState();
@@ -32,11 +37,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _autoCreatePlaces = s.autoCreatePlaces;
     _autoPlaceGroupId = s.autoPlaceGroupId;
     _loadGroups();
+    _loadAktivitaeten();
   }
 
   Future<void> _loadGroups() async {
     final groups = await DatabaseService.instance.loadAllPlaceGroups();
     if (mounted) setState(() => _groups = groups);
+  }
+
+  Future<void> _loadAktivitaeten() async {
+    final list = await DatabaseService.instance.loadAllAktivitaeten();
+    final activeId = SettingsService.instance.activeAktivitaetId;
+    if (mounted) {
+      setState(() {
+        _aktivitaeten = list;
+        _activeAktivitaet =
+            list.where((a) => a.id == activeId).firstOrNull ?? list.firstOrNull;
+      });
+    }
   }
 
   Future<void> _saveAll() async {
@@ -47,6 +65,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     s.defaultRadiusMeters = _defaultRadius;
     s.autoCreatePlaces = _autoCreatePlaces;
     s.autoPlaceGroupId = _autoPlaceGroupId;
+
+    // Persist settings back into the active Aktivitaet.
+    final a = _activeAktivitaet;
+    if (a?.id != null) {
+      await DatabaseService.instance.updateAktivitaet(
+        s.snapshotAsAktivitaet(id: a!.id!, name: a.name),
+      );
+    }
   }
 
   @override
@@ -70,9 +96,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       body: ListView(
         children: [
-          // ── Tracking Settings ─────────────────────────────────────────
+          // ── Aktivität ─────────────────────────────────────────────────
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: Text(
+              'Aktivität',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.bolt),
+            title: Text(_activeAktivitaet?.name ?? 'Keine Aktivität'),
+            subtitle: Text(
+              '${_aktivitaeten.length} '
+              '${_aktivitaeten.length == 1 ? 'Aktivität' : 'Aktivitäten'} vorhanden',
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  tooltip: 'Umbenennen',
+                  onPressed: _activeAktivitaet == null
+                      ? null
+                      : () => _renameAktivitaet(_activeAktivitaet!),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.swap_horiz),
+                  tooltip: 'Wechseln / Neu erstellen',
+                  onPressed: _showAktivitaetenPicker,
+                ),
+              ],
+            ),
+          ),
+          const Divider(),
+          // ── Tracking Settings ─────────────────────────────────────────
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: Text(
               'Tracking',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -282,8 +342,250 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: Text('Chaos Tours'),
             subtitle: Text('Version 2.0.0'),
           ),
+          // ── Aktivität löschen ─────────────────────────────────────────
+          if (_aktivitaeten.length > 1 && _activeAktivitaet != null) ...[
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.delete_forever, color: Colors.red),
+              title: Text(
+                '„${_activeAktivitaet!.name}" löschen',
+                style: const TextStyle(color: Colors.red),
+              ),
+              subtitle: const Text('Aktuelle Aktivität dauerhaft entfernen'),
+              onTap: _deleteCurrentAktivitaet,
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  // ── Aktivitaet helpers ────────────────────────────────────────────────────
+
+  void _showAktivitaetenPicker() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx2, setSheetState) {
+            return SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Row(
+                      children: [
+                        Icon(Icons.bolt),
+                        SizedBox(width: 8),
+                        Text(
+                          'Aktivität wählen',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  ..._aktivitaeten.map((a) {
+                    final isActive = a.id == _activeAktivitaet?.id;
+                    return ListTile(
+                      leading: Icon(
+                        isActive
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_off,
+                        color: isActive
+                            ? Theme.of(context).colorScheme.primary
+                            : null,
+                      ),
+                      title: Text(
+                        a.name,
+                        style: isActive
+                            ? TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              )
+                            : null,
+                      ),
+                      onTap: () async {
+                        Navigator.pop(ctx2);
+                        await _switchAktivitaet(a);
+                      },
+                    );
+                  }),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.add_circle_outline),
+                    title: const Text('Neue Aktivität erstellen'),
+                    onTap: () async {
+                      Navigator.pop(ctx2);
+                      await _createNewAktivitaet();
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _switchAktivitaet(Aktivitaet a) async {
+    // Save current settings to the old active Aktivitaet first.
+    await _saveAll();
+    // Load new Aktivitaet and apply.
+    SettingsService.instance.applyAktivitaet(a);
+    if (mounted) {
+      setState(() {
+        _activeAktivitaet = a;
+        _gpsInterval = a.gpsIntervalSeconds;
+        _stayDetection = a.stayDetectionSeconds;
+        _autoPlaceTime = a.autoPlaceSeconds;
+        _defaultRadius = a.defaultRadiusMeters;
+        _autoCreatePlaces = a.autoCreatePlaces;
+        _autoPlaceGroupId = a.autoPlaceGroupId;
+      });
+    }
+  }
+
+  Future<void> _createNewAktivitaet() async {
+    final nameCtrl = TextEditingController(
+      text: 'Aktivität ${_aktivitaeten.length + 1}',
+    );
+    // Offer to copy from an existing one as template.
+    Aktivitaet template = _activeAktivitaet ?? const Aktivitaet(name: '');
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Neue Aktivität'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(labelText: 'Name'),
+              autofocus: true,
+            ),
+            if (_aktivitaeten.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              const Text(
+                'Einstellungen kopieren von:',
+                style: TextStyle(fontSize: 13),
+              ),
+              StatefulBuilder(
+                builder: (ctx2, setInner) => DropdownButton<Aktivitaet>(
+                  isExpanded: true,
+                  value: template,
+                  items: _aktivitaeten
+                      .map(
+                        (a) => DropdownMenuItem(value: a, child: Text(a.name)),
+                      )
+                      .toList(),
+                  onChanged: (v) {
+                    if (v != null) setInner(() => template = v);
+                  },
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Erstellen'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    final name = nameCtrl.text.trim();
+    if (name.isEmpty) return;
+
+    final newA = template.copyWith(id: null, name: name);
+    final id = await DatabaseService.instance.insertAktivitaet(newA);
+    final created = await DatabaseService.instance.loadAktivitaet(id);
+    if (created != null) await _switchAktivitaet(created);
+    await _loadAktivitaeten();
+  }
+
+  Future<void> _renameAktivitaet(Aktivitaet a) async {
+    final ctrl = TextEditingController(text: a.name);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Aktivität umbenennen'),
+        content: TextField(
+          controller: ctrl,
+          decoration: const InputDecoration(labelText: 'Name'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Speichern'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final name = ctrl.text.trim();
+    if (name.isEmpty || name == a.name) return;
+    final updated = a.copyWith(name: name);
+    await DatabaseService.instance.updateAktivitaet(updated);
+    await _loadAktivitaeten();
+  }
+
+  Future<void> _deleteCurrentAktivitaet() async {
+    final a = _activeAktivitaet;
+    if (a == null || _aktivitaeten.length <= 1) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Aktivität löschen?'),
+        content: Text(
+          '„${a.name}" wirklich löschen?\n\n'
+          'Die Einstellungen dieser Aktivität werden unwiderruflich entfernt.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Löschen', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    // Switch to another Aktivitaet before deleting.
+    final next = _aktivitaeten.firstWhere((x) => x.id != a.id);
+    await _switchAktivitaet(next);
+    await DatabaseService.instance.deleteAktivitaet(a.id!);
+    await _loadAktivitaeten();
+
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('„${a.name}" gelöscht')));
+    }
   }
 }

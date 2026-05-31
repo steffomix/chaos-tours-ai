@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/aktivitaet.dart';
+
 class SettingsService {
   SettingsService._();
   static final SettingsService instance = SettingsService._();
@@ -11,6 +13,7 @@ class SettingsService {
   static const String _keyAutoCreate = 'auto_create_places';
   static const String _keyAutoPlaceGroup = 'auto_place_group_id';
   static const String _keyTrackingEnabled = 'tracking_enabled';
+  static const String _keyActiveAktivitaetId = 'active_aktivitaet_id';
 
   SharedPreferences? _prefs;
 
@@ -58,4 +61,44 @@ class SettingsService {
   /// Whether the background tracking service is enabled (default: false).
   bool get trackingEnabled => _p.getBool(_keyTrackingEnabled) ?? false;
   set trackingEnabled(bool v) => _p.setBool(_keyTrackingEnabled, v);
+
+  // ── Aktivitaet binding ───────────────────────────────────────────────────
+
+  /// The ID of the currently selected [Aktivitaet].
+  int? get activeAktivitaetId => _p.getInt(_keyActiveAktivitaetId);
+  set activeAktivitaetId(int? v) {
+    if (v == null) {
+      _p.remove(_keyActiveAktivitaetId);
+    } else {
+      _p.setInt(_keyActiveAktivitaetId, v);
+    }
+  }
+
+  /// Copies all settings from [a] into SharedPreferences so that the rest of
+  /// the app picks them up synchronously, and remembers [a.id] as the active
+  /// Aktivitaet.
+  void applyAktivitaet(Aktivitaet a) {
+    gpsIntervalSeconds = a.gpsIntervalSeconds;
+    stayDetectionSeconds = a.stayDetectionSeconds;
+    autoPlaceSeconds = a.autoPlaceSeconds;
+    defaultRadiusMeters = a.defaultRadiusMeters;
+    autoCreatePlaces = a.autoCreatePlaces;
+    autoPlaceGroupId = a.autoPlaceGroupId;
+    activeAktivitaetId = a.id;
+  }
+
+  /// Builds an [Aktivitaet] snapshot of the current SharedPreferences values.
+  /// Useful when saving the settings screen back to DB.
+  Aktivitaet snapshotAsAktivitaet({required int id, required String name}) {
+    return Aktivitaet(
+      id: id,
+      name: name,
+      gpsIntervalSeconds: gpsIntervalSeconds,
+      stayDetectionSeconds: stayDetectionSeconds,
+      autoPlaceSeconds: autoPlaceSeconds,
+      defaultRadiusMeters: defaultRadiusMeters,
+      autoCreatePlaces: autoCreatePlaces,
+      autoPlaceGroupId: autoPlaceGroupId,
+    );
+  }
 }
