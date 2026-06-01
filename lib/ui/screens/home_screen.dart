@@ -82,11 +82,12 @@ class _HomeScreenState extends State<HomeScreen> {
       for (final p in allPlaces)
         if (p.id != null) p.id!: p,
     };
-    if (mounted)
+    if (mounted) {
       setState(() {
         _recentStays = stays;
         _placesById = byId;
       });
+    }
   }
 
   Future<void> _loadCurrentAktivitaet() async {

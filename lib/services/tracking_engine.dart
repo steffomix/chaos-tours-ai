@@ -86,8 +86,8 @@ class TrackingEngine {
     // The window is "full" once its oldest point is within one GPS-tick of the
     // window start. loadTrackingPointsSince() returns points with
     // timestamp >= shortWindowStart, so the oldest point can never be exactly
-    // at shortWindowStart — we allow 20 s margin (GPS fires every 15 s).
-    const gpsTickMs = 20000;
+    // at shortWindowStart — we add one GPS tick as margin  .
+    final gpsTickMs = settings.gpsIntervalSeconds * 1000;
     final shortWindowFull =
         shortWindow.first.timestamp <= shortWindowStart + gpsTickMs;
 

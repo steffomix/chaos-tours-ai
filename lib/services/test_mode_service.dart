@@ -249,7 +249,7 @@ class TestModeService {
   Future<void> stopTest() async {
     _isActive = false;
     await _engine.stopTracking();
-    _addLog('=== Test gestoppt (${_tickCount} Ticks) ===');
+    _addLog('=== Test gestoppt ($_tickCount Ticks) ===');
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
