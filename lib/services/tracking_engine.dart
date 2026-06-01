@@ -69,27 +69,24 @@ class TrackingEngine {
       TrackingPoint(lat: lat, lng: lng, timestamp: timestamp),
     );
 
-    // 2. Prune old points (keep autoPlaceSeconds + 2 min buffer)
-    final pruneBeforeMs = timestamp - (settings.autoPlaceSeconds + 120) * 1000;
+    // 2. Prune old points (keep autoPlaceSeconds + 5 interval points)
+    final pruneBeforeMs =
+        timestamp -
+        (settings.autoPlaceSeconds + (settings.gpsIntervalSeconds * 5)) * 1000;
     await DatabaseService.instance.deleteTrackingPointsOlderThan(pruneBeforeMs);
 
     // 3. Load short window (stayDetectionSeconds)
     final shortWindowStart = timestamp - settings.stayDetectionSeconds * 1000;
+    // Load with one point margin
     final shortWindow = await DatabaseService.instance.loadTrackingPointsSince(
-      shortWindowStart,
+      shortWindowStart - settings.gpsIntervalSeconds,
     );
 
     // Need enough points to cover the full window
     if (shortWindow.isEmpty) {
       return _result();
     }
-    // The window is "full" once its oldest point is within one GPS-tick of the
-    // window start. loadTrackingPointsSince() returns points with
-    // timestamp >= shortWindowStart, so the oldest point can never be exactly
-    // at shortWindowStart — we add one GPS tick as margin  .
-    final gpsTickMs = settings.gpsIntervalSeconds * 1000;
-    final shortWindowFull =
-        shortWindow.first.timestamp <= shortWindowStart + gpsTickMs;
+    final shortWindowFull = shortWindow.first.timestamp <= shortWindowStart;
 
     // 4. Check if short window is a cluster
     final pts = shortWindow.map((p) => (lat: p.lat, lng: p.lng)).toList();
@@ -149,8 +146,9 @@ class TrackingEngine {
 
     // No known place — check long window
     final longWindowStart = timestamp - settings.autoPlaceSeconds * 1000;
+    // load with one point margin
     final longWindow = await DatabaseService.instance.loadTrackingPointsSince(
-      longWindowStart,
+      longWindowStart - settings.gpsIntervalSeconds,
     );
 
     final longWindowDuration = longWindow.isNotEmpty
