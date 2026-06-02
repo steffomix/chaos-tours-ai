@@ -20,12 +20,28 @@ class App extends StatefulWidget {
 class _AppState extends State<App> {
   int _currentIndex = 0;
 
-  static const _screens = [
-    HomeScreen(),
-    MapScreen(),
-    PlacesScreen(),
-    TimelineScreen(),
+  final _placesRefresh = ValueNotifier<int>(0);
+  final _timelineRefresh = ValueNotifier<int>(0);
+
+  late final List<Widget> _screens = [
+    const HomeScreen(),
+    const MapScreen(),
+    PlacesScreen(refreshNotifier: _placesRefresh),
+    TimelineScreen(refreshNotifier: _timelineRefresh),
   ];
+
+  @override
+  void dispose() {
+    _placesRefresh.dispose();
+    _timelineRefresh.dispose();
+    super.dispose();
+  }
+
+  void _onTabSelected(int i) {
+    if (i == 2) _placesRefresh.value++;
+    if (i == 3) _timelineRefresh.value++;
+    setState(() => _currentIndex = i);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +60,7 @@ class _AppState extends State<App> {
         body: IndexedStack(index: _currentIndex, children: _screens),
         bottomNavigationBar: NavigationBar(
           selectedIndex: _currentIndex,
-          onDestinationSelected: (i) => setState(() => _currentIndex = i),
+          onDestinationSelected: _onTabSelected,
           destinations: const [
             NavigationDestination(icon: Icon(Icons.home), label: 'Übersicht'),
             NavigationDestination(icon: Icon(Icons.map), label: 'Karte'),

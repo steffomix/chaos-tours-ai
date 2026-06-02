@@ -11,7 +11,9 @@ import '../widgets/stay_card.dart';
 import '../widgets/stay_detail_sheet.dart';
 
 class TimelineScreen extends StatefulWidget {
-  const TimelineScreen({super.key});
+  const TimelineScreen({super.key, this.refreshNotifier});
+
+  final ValueNotifier<int>? refreshNotifier;
 
   @override
   State<TimelineScreen> createState() => _TimelineScreenState();
@@ -35,8 +37,15 @@ class _TimelineScreenState extends State<TimelineScreen> {
   @override
   void initState() {
     super.initState();
+    widget.refreshNotifier?.addListener(_load);
     _load();
     _loadLastPosition();
+  }
+
+  @override
+  void dispose() {
+    widget.refreshNotifier?.removeListener(_load);
+    super.dispose();
   }
 
   Future<void> _loadLastPosition() async {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
@@ -31,6 +33,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Stay> _recentStays = [];
   Map<int, SavedPlace> _placesById = {};
 
+  Timer? _refreshTimer;
+
   @override
   void initState() {
     super.initState();
@@ -40,10 +44,21 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadCurrentAktivitaet();
     _loadRecentStays();
     ForegroundServiceManager.addDataListener(_onServiceData);
+    _startRefreshTimer();
+  }
+
+  void _startRefreshTimer() {
+    _refreshTimer?.cancel();
+    final intervalSec = SettingsService.instance.gpsIntervalSeconds;
+    _refreshTimer = Timer.periodic(Duration(seconds: intervalSec), (_) {
+      _loadActiveStay();
+      _loadRecentStays();
+    });
   }
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
     ForegroundServiceManager.removeDataListener();
     super.dispose();
   }
