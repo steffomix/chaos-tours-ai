@@ -12,6 +12,7 @@ class SettingsService {
   static const String _keyDefaultRadius = 'default_radius_meters';
   static const String _keyAutoCreate = 'auto_create_places';
   static const String _keyAutoPlaceGroup = 'auto_place_group_id';
+  static const String _keyAutoPlacePlaceType = 'auto_place_place_type';
   static const String _keyTrackingEnabled = 'tracking_enabled';
   static const String _keyActiveAktivitaetId = 'active_aktivitaet_id';
   static const String _keyShowForbiddenPlaces = 'show_forbidden_places';
@@ -61,6 +62,10 @@ class SettingsService {
     }
   }
 
+  /// PlaceType index for automatically created places (default: 1 = private).
+  int get autoPlacePlaceTypeIndex => _p.getInt(_keyAutoPlacePlaceType) ?? 1;
+  set autoPlacePlaceTypeIndex(int v) => _p.setInt(_keyAutoPlacePlaceType, v);
+
   /// Whether the background tracking service is enabled (default: false).
   bool get trackingEnabled => _p.getBool(_keyTrackingEnabled) ?? false;
   set trackingEnabled(bool v) => _p.setBool(_keyTrackingEnabled, v);
@@ -101,6 +106,7 @@ class SettingsService {
     defaultRadiusMeters = a.defaultRadiusMeters;
     autoCreatePlaces = a.autoCreatePlaces;
     autoPlaceGroupId = a.autoPlaceGroupId;
+    autoPlacePlaceTypeIndex = a.autoPlacePlaceTypeIndex;
     activeAktivitaetId = a.id;
   }
 
@@ -116,6 +122,7 @@ class SettingsService {
       defaultRadiusMeters: defaultRadiusMeters,
       autoCreatePlaces: autoCreatePlaces,
       autoPlaceGroupId: autoPlaceGroupId,
+      autoPlacePlaceTypeIndex: autoPlacePlaceTypeIndex,
     );
   }
 }

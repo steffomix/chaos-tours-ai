@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/aktivitaet.dart';
 import '../../models/place_group.dart';
+import '../../models/saved_place.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/permission_helper.dart';
@@ -20,6 +21,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late double _defaultRadius;
   late bool _autoCreatePlaces;
   int? _autoPlaceGroupId;
+  late int _autoPlacePlaceTypeIndex;
   late bool _showTrackingPoints;
   late double _trackingPointRadius;
   List<PlaceGroup> _groups = [];
@@ -38,6 +40,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _defaultRadius = s.defaultRadiusMeters;
     _autoCreatePlaces = s.autoCreatePlaces;
     _autoPlaceGroupId = s.autoPlaceGroupId;
+    _autoPlacePlaceTypeIndex = s.autoPlacePlaceTypeIndex;
     _showTrackingPoints = s.showTrackingPoints;
     _trackingPointRadius = s.trackingPointRadius;
     _loadGroups();
@@ -69,6 +72,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     s.defaultRadiusMeters = _defaultRadius;
     s.autoCreatePlaces = _autoCreatePlaces;
     s.autoPlaceGroupId = _autoPlaceGroupId;
+    s.autoPlacePlaceTypeIndex = _autoPlacePlaceTypeIndex;
     s.showTrackingPoints = _showTrackingPoints;
     s.trackingPointRadius = _trackingPointRadius;
 
@@ -224,6 +228,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
                 onChanged: (v) => setState(() => _autoPlaceGroupId = v),
+              ),
+            ),
+          if (_autoCreatePlaces)
+            ListTile(
+              title: const Text('Typ für Auto-Orte'),
+              trailing: DropdownButton<int>(
+                value: _autoPlacePlaceTypeIndex,
+                items: PlaceType.values
+                    .where((t) => t.tracksStay)
+                    .map(
+                      (t) => DropdownMenuItem(
+                        value: t.index,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(t.icon, size: 18),
+                            const SizedBox(width: 6),
+                            Text(t.label),
+                          ],
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (v) => setState(() => _autoPlacePlaceTypeIndex = v!),
               ),
             ),
           const Divider(),
@@ -493,6 +521,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _defaultRadius = a.defaultRadiusMeters;
         _autoCreatePlaces = a.autoCreatePlaces;
         _autoPlaceGroupId = a.autoPlaceGroupId;
+        _autoPlacePlaceTypeIndex = a.autoPlacePlaceTypeIndex;
       });
     }
   }

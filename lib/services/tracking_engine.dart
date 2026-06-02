@@ -239,7 +239,7 @@ class TrackingEngine {
         lat: centroidLat,
         lng: centroidLng,
         radius: settings.defaultRadiusMeters,
-        placeType: PlaceType.private,
+        placeType: PlaceType.values[settings.autoPlacePlaceTypeIndex],
         groupId: settings.autoPlaceGroupId,
       );
       final placeId = await DatabaseService.instance.insertPlace(place);

@@ -11,6 +11,9 @@ class Aktivitaet {
   final bool autoCreatePlaces;
   final int? autoPlaceGroupId;
 
+  /// PlaceType index used for automatically created places (default: 1 = private).
+  final int autoPlacePlaceTypeIndex;
+
   const Aktivitaet({
     this.id,
     required this.name,
@@ -20,6 +23,7 @@ class Aktivitaet {
     this.defaultRadiusMeters = 50.0,
     this.autoCreatePlaces = true,
     this.autoPlaceGroupId,
+    this.autoPlacePlaceTypeIndex = 1,
   });
 
   factory Aktivitaet.fromMap(Map<String, dynamic> map) {
@@ -33,6 +37,7 @@ class Aktivitaet {
           (map['default_radius_meters'] as num?)?.toDouble() ?? 50.0,
       autoCreatePlaces: (map['auto_create_places'] as int? ?? 1) == 1,
       autoPlaceGroupId: map['auto_place_group_id'] as int?,
+      autoPlacePlaceTypeIndex: map['auto_place_place_type'] as int? ?? 1,
     );
   }
 
@@ -46,6 +51,7 @@ class Aktivitaet {
       'default_radius_meters': defaultRadiusMeters,
       'auto_create_places': autoCreatePlaces ? 1 : 0,
       if (autoPlaceGroupId != null) 'auto_place_group_id': autoPlaceGroupId,
+      'auto_place_place_type': autoPlacePlaceTypeIndex,
     };
   }
 
@@ -59,6 +65,7 @@ class Aktivitaet {
     bool? autoCreatePlaces,
     int? autoPlaceGroupId,
     bool clearAutoPlaceGroupId = false,
+    int? autoPlacePlaceTypeIndex,
   }) {
     return Aktivitaet(
       id: id ?? this.id,
@@ -71,6 +78,8 @@ class Aktivitaet {
       autoPlaceGroupId: clearAutoPlaceGroupId
           ? null
           : (autoPlaceGroupId ?? this.autoPlaceGroupId),
+      autoPlacePlaceTypeIndex:
+          autoPlacePlaceTypeIndex ?? this.autoPlacePlaceTypeIndex,
     );
   }
 }
