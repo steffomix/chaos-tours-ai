@@ -284,6 +284,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.pushNamed(context, '/activities'),
           ),
+          ListTile(
+            leading: const Icon(Icons.storage),
+            title: const Text('Datenbank-Dump'),
+            subtitle: const Text('Dump erstellen, laden & teilen'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.pushNamed(context, '/database-dump'),
+          ),
           const Divider(),
           // ── Berechtigungen ───────────────────────────────────────────
           const Padding(

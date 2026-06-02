@@ -6,6 +6,7 @@ import 'ui/screens/map_screen.dart';
 import 'ui/screens/persons_screen.dart';
 import 'ui/screens/place_groups_screen.dart';
 import 'ui/screens/places_screen.dart';
+import 'ui/screens/database_dump_screen.dart';
 import 'ui/screens/settings_screen.dart';
 import 'ui/screens/timeline_screen.dart';
 
@@ -37,6 +38,7 @@ class _AppState extends State<App> {
         '/place-groups': (_) => const PlaceGroupsScreen(),
         '/persons': (_) => const PersonsScreen(),
         '/activities': (_) => const ActivitiesScreen(),
+        '/database-dump': (_) => const DatabaseDumpScreen(),
       },
       home: Scaffold(
         body: IndexedStack(index: _currentIndex, children: _screens),

@@ -487,6 +487,91 @@ class DatabaseService {
     await db.delete('aktivitaeten', where: 'id = ?', whereArgs: [id]);
   }
 
+  // ── Dump / Import ─────────────────────────────────────────────────────────
+
+  /// Generates a complete SQL dump of the database with CREATE TABLE IF NOT
+  /// EXISTS and INSERT OR REPLACE statements for every table.
+  Future<String> generateDump() async {
+    final db = await database;
+    final buf = StringBuffer();
+    buf.writeln('-- Chaos Tours DB Dump');
+    buf.writeln('-- ${DateTime.now().toIso8601String()}');
+    buf.writeln();
+    buf.writeln('PRAGMA foreign_keys = OFF;');
+    buf.writeln();
+
+    final tables = await db.rawQuery(
+      "SELECT name, sql FROM sqlite_master "
+      "WHERE type='table' AND name NOT LIKE 'sqlite_%' "
+      "ORDER BY rowid",
+    );
+
+    for (final t in tables) {
+      final name = t['name'] as String;
+      final sql = (t['sql'] as String).replaceFirst(
+        'CREATE TABLE',
+        'CREATE TABLE IF NOT EXISTS',
+      );
+      buf.writeln('$sql;');
+      buf.writeln();
+
+      final rows = await db.query(name);
+      for (final row in rows) {
+        final cols = row.keys.join(', ');
+        final vals = row.values
+            .map((v) {
+              if (v == null) return 'NULL';
+              if (v is int || v is double) return v.toString();
+              return "'${(v as String).replaceAll("'", "''")}'";
+            })
+            .join(', ');
+        buf.writeln('INSERT OR REPLACE INTO $name ($cols) VALUES ($vals);');
+      }
+      buf.writeln();
+    }
+
+    final indices = await db.rawQuery(
+      "SELECT sql FROM sqlite_master WHERE type='index' AND sql IS NOT NULL",
+    );
+    for (final idx in indices) {
+      buf.writeln('${idx['sql']};');
+    }
+    buf.writeln();
+    buf.writeln('PRAGMA foreign_keys = ON;');
+    return buf.toString();
+  }
+
+  /// Executes [sql] dump statements inside a transaction.
+  /// If [clearFirst] is true, all table data is deleted before importing.
+  Future<void> importDump(String sql, {bool clearFirst = false}) async {
+    final db = await database;
+
+    // Parse statements (split on ";\n" to avoid splitting inside string values)
+    final statements = sql
+        .split(RegExp(r';\s*\n'))
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty && !s.startsWith('--'))
+        .toList();
+
+    await db.transaction((txn) async {
+      await txn.execute('PRAGMA foreign_keys = OFF');
+      if (clearFirst) {
+        final tables = await txn.rawQuery(
+          "SELECT name FROM sqlite_master WHERE type='table' "
+          "AND name NOT LIKE 'sqlite_%'",
+        );
+        for (final t in tables) {
+          await txn.execute('DELETE FROM ${t['name']}');
+        }
+      }
+      for (final stmt in statements) {
+        if (stmt.toUpperCase().startsWith('PRAGMA')) continue;
+        await txn.execute(stmt);
+      }
+      await txn.execute('PRAGMA foreign_keys = ON');
+    });
+  }
+
   /// Ensures at least one Aktivitaet exists. Creates a default one if the
   /// table is empty and returns its id.
   Future<int> ensureDefaultAktivitaet({
