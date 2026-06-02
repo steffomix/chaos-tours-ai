@@ -15,6 +15,8 @@ class SettingsService {
   static const String _keyTrackingEnabled = 'tracking_enabled';
   static const String _keyActiveAktivitaetId = 'active_aktivitaet_id';
   static const String _keyShowForbiddenPlaces = 'show_forbidden_places';
+  static const String _keyShowTrackingPoints = 'show_tracking_points';
+  static const String _keyTrackingPointRadius = 'tracking_point_radius';
 
   SharedPreferences? _prefs;
 
@@ -66,6 +68,16 @@ class SettingsService {
   /// Whether forbidden places are shown in the places list (default: false).
   bool get showForbiddenPlaces => _p.getBool(_keyShowForbiddenPlaces) ?? false;
   set showForbiddenPlaces(bool v) => _p.setBool(_keyShowForbiddenPlaces, v);
+
+  /// Whether tracking points are shown on the map (default: true).
+  bool get showTrackingPoints => _p.getBool(_keyShowTrackingPoints) ?? true;
+  set showTrackingPoints(bool v) => _p.setBool(_keyShowTrackingPoints, v);
+
+  /// Radius in meters for tracking point circles on the map (default: 2.0).
+  double get trackingPointRadius =>
+      _p.getDouble(_keyTrackingPointRadius) ?? 2.0;
+  set trackingPointRadius(double v) =>
+      _p.setDouble(_keyTrackingPointRadius, v.clamp(1.0, 20.0));
 
   // ── Aktivitaet binding ───────────────────────────────────────────────────
 

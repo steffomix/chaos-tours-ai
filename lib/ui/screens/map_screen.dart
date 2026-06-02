@@ -12,7 +12,23 @@ import '../../services/location_service.dart';
 import '../../services/settings_service.dart';
 import '../../services/test_mode_service.dart';
 import '../../services/tracking_engine.dart';
+import '../../utils/geo_utils.dart';
 import '../widgets/place_bottom_sheet.dart';
+
+/// Categorised live tracking state for the map layer.
+class _LiveTrackingState {
+  final TrackingStatus status;
+  final List<TrackingPoint> shortWindowPoints;
+  final List<TrackingPoint> longOnlyPoints;
+  final ({double lat, double lng})? clusterCentroid;
+
+  const _LiveTrackingState({
+    required this.status,
+    required this.shortWindowPoints,
+    required this.longOnlyPoints,
+    this.clusterCentroid,
+  });
+}
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -27,7 +43,7 @@ class _MapScreenState extends State<MapScreen> {
   final LayerHitNotifier<SavedPlace> _hitNotifier = ValueNotifier(null);
 
   // ── Live tracking points (always on) ───────────────────────────────────
-  List<TrackingPoint> _trackingPoints = [];
+  _LiveTrackingState? _liveState;
   Timer? _liveRefreshTimer;
 
   // ── Test Mode (debug only) ────────────────────────────────────────────────
@@ -67,14 +83,77 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _loadTrackingPoints() async {
     final settings = SettingsService.instance;
-    final since =
-        DateTime.now().millisecondsSinceEpoch -
-        (settings.autoPlaceSeconds + 120) * 1000;
-    final pts = await DatabaseService.instance.loadTrackingPointsSince(since);
-    if (mounted) setState(() => _trackingPoints = pts);
+    if (!settings.showTrackingPoints) {
+      if (mounted) setState(() => _liveState = null);
+      return;
+    }
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final shortStart = now - settings.stayDetectionSeconds * 1000;
+    final longStart = now - (settings.autoPlaceSeconds + 120) * 1000;
+
+    final allPts = await DatabaseService.instance.loadTrackingPointsSince(
+      longStart,
+    );
+    final shortPts = allPts.where((p) => p.timestamp >= shortStart).toList();
+    final longOnlyPts = allPts.where((p) => p.timestamp < shortStart).toList();
+
+    // Compute visual status from the short window.
+    final shortGeo = shortPts.map((p) => (lat: p.lat, lng: p.lng)).toList();
+    final shortIsCluster =
+        shortGeo.isNotEmpty &&
+        GeoUtils.isCluster(shortGeo, settings.defaultRadiusMeters);
+
+    ({double lat, double lng})? centroid;
+    TrackingStatus status;
+
+    if (shortPts.isEmpty) {
+      status = TrackingStatus.idle;
+    } else if (!shortIsCluster) {
+      status = TrackingStatus.moving;
+    } else {
+      centroid = GeoUtils.centroid(shortGeo);
+      // Distinguish haltAtKnown vs haltAtUnknown by checking known places.
+      bool nearKnown = false;
+      for (final place in _places) {
+        if (!place.placeType.tracksStay) continue;
+        final dist = GeoUtils.distanceMeters(
+          centroid.lat,
+          centroid.lng,
+          place.lat,
+          place.lng,
+        );
+        if (dist <= place.radius) {
+          nearKnown = true;
+          break;
+        }
+      }
+      // Use detectingHalt if the short window is not yet full.
+      final shortFull =
+          shortPts.isNotEmpty &&
+          shortPts.first.timestamp <=
+              shortStart + settings.gpsIntervalSeconds * 1000;
+      if (!shortFull) {
+        status = TrackingStatus.detectingHalt;
+      } else {
+        status = nearKnown
+            ? TrackingStatus.haltAtKnown
+            : TrackingStatus.haltAtUnknown;
+      }
+    }
+
+    if (mounted) {
+      setState(
+        () => _liveState = _LiveTrackingState(
+          status: status,
+          shortWindowPoints: shortPts,
+          longOnlyPoints: longOnlyPts,
+          clusterCentroid: centroid,
+        ),
+      );
+    }
   }
 
-  void _onCircleTap() {
+  void _onMapTap(TapPosition _, LatLng __) {
     final hit = _hitNotifier.value;
     if (hit == null || hit.hitValues.isEmpty) return;
     final place = hit.hitValues.first;
@@ -252,51 +331,49 @@ class _MapScreenState extends State<MapScreen> {
           Expanded(
             child: Stack(
               children: [
-                GestureDetector(
-                  onTapUp: (_) => _onCircleTap(),
-                  child: FlutterMap(
-                    mapController: _mapController,
-                    options: MapOptions(
-                      initialCenter: const LatLng(48.1351, 11.5820),
-                      initialZoom: 13,
-                      onLongPress: _onLongPress,
-                    ),
-                    children: [
-                      TileLayer(
-                        urlTemplate:
-                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        userAgentPackageName: 'de.chaostours.chaos_tours_ai',
-                      ),
-                      // Saved places layer
-                      CircleLayer<SavedPlace>(
-                        hitNotifier: _hitNotifier,
-                        circles: _places
-                            .where(
-                              (p) =>
-                                  p.placeType != PlaceType.forbidden ||
-                                  SettingsService.instance.showForbiddenPlaces,
-                            )
-                            .map((place) {
-                              return CircleMarker<SavedPlace>(
-                                hitValue: place,
-                                point: LatLng(place.lat, place.lng),
-                                radius: place.radius,
-                                useRadiusInMeter: true,
-                                color: place.placeType.fillColor,
-                                borderColor: place.placeType.dotColor,
-                                borderStrokeWidth: 2,
-                              );
-                            })
-                            .toList(),
-                      ),
-                      // Tracking-points layer: test-categorised in debug,
-                      // live DB points in release.
-                      if (testActive && _testState != null)
-                        _buildTestTrackingLayer(_testState!)
-                      else
-                        _buildLiveTrackingLayer(),
-                    ],
+                FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter: const LatLng(48.1351, 11.5820),
+                    initialZoom: 13,
+                    onTap: _onMapTap,
+                    onLongPress: _onLongPress,
                   ),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'de.chaostours.chaos_tours_ai',
+                    ),
+                    // Saved places layer
+                    CircleLayer<SavedPlace>(
+                      hitNotifier: _hitNotifier,
+                      circles: _places
+                          .where(
+                            (p) =>
+                                p.placeType != PlaceType.forbidden ||
+                                SettingsService.instance.showForbiddenPlaces,
+                          )
+                          .map((place) {
+                            return CircleMarker<SavedPlace>(
+                              hitValue: place,
+                              point: LatLng(place.lat, place.lng),
+                              radius: place.radius,
+                              useRadiusInMeter: true,
+                              color: place.placeType.fillColor,
+                              borderColor: place.placeType.dotColor,
+                              borderStrokeWidth: 2,
+                            );
+                          })
+                          .toList(),
+                    ),
+                    // Tracking-points layer: test-categorised in debug,
+                    // live DB points in release.
+                    if (testActive && _testState != null)
+                      _buildTestTrackingLayer(_testState!)
+                    else
+                      _buildLiveTrackingLayer(),
+                  ],
                 ),
                 // Status overlay (top-left corner)
                 if (testActive && _testState != null)
@@ -319,20 +396,58 @@ class _MapScreenState extends State<MapScreen> {
 
   /// Live tracking points layer (always visible, from the real DB).
   Widget _buildLiveTrackingLayer() {
-    return CircleLayer(
-      circles: _trackingPoints
-          .map(
-            (p) => CircleMarker(
-              point: LatLng(p.lat, p.lng),
-              radius: 2,
-              useRadiusInMeter: true,
-              color: Colors.black54,
-              borderColor: Colors.black87,
-              borderStrokeWidth: 1,
-            ),
-          )
-          .toList(),
-    );
+    final state = _liveState;
+    if (state == null) return const SizedBox.shrink();
+
+    final settings = SettingsService.instance;
+    final r = settings.trackingPointRadius;
+    final statusColor = _statusColor(state.status);
+    final circles = <CircleMarker>[];
+
+    // Long-only window → gray
+    for (final p in state.longOnlyPoints) {
+      circles.add(
+        CircleMarker(
+          point: LatLng(p.lat, p.lng),
+          radius: r,
+          useRadiusInMeter: true,
+          color: Colors.grey.shade400.withAlpha(180),
+          borderColor: Colors.grey.shade600,
+          borderStrokeWidth: 1,
+        ),
+      );
+    }
+
+    // Short window → status color
+    for (final p in state.shortWindowPoints) {
+      circles.add(
+        CircleMarker(
+          point: LatLng(p.lat, p.lng),
+          radius: r,
+          useRadiusInMeter: true,
+          color: statusColor.withAlpha(180),
+          borderColor: statusColor,
+          borderStrokeWidth: 1,
+        ),
+      );
+    }
+
+    // Cluster centroid → red
+    if (state.clusterCentroid != null) {
+      final c = state.clusterCentroid!;
+      circles.add(
+        CircleMarker(
+          point: LatLng(c.lat, c.lng),
+          radius: r,
+          useRadiusInMeter: true,
+          color: Colors.red.withAlpha(230),
+          borderColor: Colors.red.shade900,
+          borderStrokeWidth: 2,
+        ),
+      );
+    }
+
+    return CircleLayer(circles: circles);
   }
 
   /// Categorised tracking-points layer used in debug test mode.

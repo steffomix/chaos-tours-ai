@@ -77,9 +77,9 @@ class TrackingEngine {
 
     // 3. Load short window (stayDetectionSeconds)
     final shortWindowStart = timestamp - settings.stayDetectionSeconds * 1000;
-    // Load with one point margin
+    // Load with two points margin
     final shortWindow = await DatabaseService.instance.loadTrackingPointsSince(
-      shortWindowStart - settings.gpsIntervalSeconds,
+      shortWindowStart - settings.gpsIntervalSeconds * 2,
     );
 
     // Need enough points to cover the full window
@@ -146,9 +146,9 @@ class TrackingEngine {
 
     // No known place — check long window
     final longWindowStart = timestamp - settings.autoPlaceSeconds * 1000;
-    // load with one point margin
+    // load with two points margin
     final longWindow = await DatabaseService.instance.loadTrackingPointsSince(
-      longWindowStart - settings.gpsIntervalSeconds,
+      longWindowStart - settings.gpsIntervalSeconds * 2,
     );
 
     final longWindowDuration = longWindow.isNotEmpty

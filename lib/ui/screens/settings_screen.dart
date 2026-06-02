@@ -20,6 +20,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late double _defaultRadius;
   late bool _autoCreatePlaces;
   int? _autoPlaceGroupId;
+  late bool _showTrackingPoints;
+  late double _trackingPointRadius;
   List<PlaceGroup> _groups = [];
 
   // Aktivitaet management
@@ -36,6 +38,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _defaultRadius = s.defaultRadiusMeters;
     _autoCreatePlaces = s.autoCreatePlaces;
     _autoPlaceGroupId = s.autoPlaceGroupId;
+    _showTrackingPoints = s.showTrackingPoints;
+    _trackingPointRadius = s.trackingPointRadius;
     _loadGroups();
     _loadAktivitaeten();
   }
@@ -65,6 +69,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     s.defaultRadiusMeters = _defaultRadius;
     s.autoCreatePlaces = _autoCreatePlaces;
     s.autoPlaceGroupId = _autoPlaceGroupId;
+    s.showTrackingPoints = _showTrackingPoints;
+    s.trackingPointRadius = _trackingPointRadius;
 
     // Persist settings back into the active Aktivitaet.
     final a = _activeAktivitaet;
@@ -218,6 +224,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
                 onChanged: (v) => setState(() => _autoPlaceGroupId = v),
+              ),
+            ),
+          const Divider(),
+          // ── Kartendarstellung ─────────────────────────────────────────
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(
+              'Kartendarstellung',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          SwitchListTile(
+            title: const Text('GPS-Punkte anzeigen'),
+            subtitle: const Text(
+              'Tracking-Punkte farbig auf der Karte einblenden',
+            ),
+            value: _showTrackingPoints,
+            onChanged: (v) => setState(() => _showTrackingPoints = v),
+          ),
+          if (_showTrackingPoints)
+            ListTile(
+              title: Text(
+                'Punktgröße: ${_trackingPointRadius.toStringAsFixed(1)} m',
+              ),
+              subtitle: Slider(
+                value: _trackingPointRadius,
+                min: 1,
+                max: 20,
+                divisions: 19,
+                label: '${_trackingPointRadius.toStringAsFixed(1)} m',
+                onChanged: (v) => setState(() => _trackingPointRadius = v),
               ),
             ),
           const Divider(),
