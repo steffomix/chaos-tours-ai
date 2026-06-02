@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import '../models/saved_place.dart';
 import '../models/stay.dart';
+import '../models/tracking_log_entry.dart';
 import '../models/tracking_point.dart';
 import '../services/calendar_service.dart';
 import '../services/database_service.dart';
@@ -63,137 +66,200 @@ class TrackingEngine {
     int timestamp,
   ) async {
     final settings = SettingsService.instance;
+    final prevStatus = _status;
 
-    // 1. Persist the point
-    await DatabaseService.instance.insertTrackingPoint(
-      TrackingPoint(lat: lat, lng: lng, timestamp: timestamp),
-    );
+    // Log variables — updated as we move through the state machine.
+    int logShortPts = 0;
+    bool logShortFull = false;
+    bool logShortCluster = false;
+    int logLongPts = 0;
+    bool logLongFull = false;
+    bool logLongCluster = false;
+    int? logPlaceId;
+    String logAction = 'tick';
 
-    // 2. Prune old points (keep autoPlaceSeconds + 5 interval points)
-    final pruneBeforeMs =
-        timestamp -
-        (settings.autoPlaceSeconds + (settings.gpsIntervalSeconds * 5)) * 1000;
-    await DatabaseService.instance.deleteTrackingPointsOlderThan(pruneBeforeMs);
+    try {
+      // 1. Persist the point
+      await DatabaseService.instance.insertTrackingPoint(
+        TrackingPoint(lat: lat, lng: lng, timestamp: timestamp),
+      );
 
-    // 3. Load short window (stayDetectionSeconds)
-    final shortWindowStart = timestamp - settings.stayDetectionSeconds * 1000;
-    // Load with extra margin so the full-window check works even with gaps
-    final shortWindowRaw = await DatabaseService.instance
-        .loadTrackingPointsSince(
-          shortWindowStart - settings.gpsIntervalSeconds * 2,
-        );
+      // 2. Prune old points (keep autoPlaceSeconds + 5 interval points)
+      final pruneBeforeMs =
+          timestamp -
+          (settings.autoPlaceSeconds + (settings.gpsIntervalSeconds * 5)) *
+              1000;
+      await DatabaseService.instance.deleteTrackingPointsOlderThan(
+        pruneBeforeMs,
+      );
 
-    if (shortWindowRaw.isEmpty) {
-      return _result();
-    }
+      // 3. Load short window (stayDetectionSeconds)
+      final shortWindowStart = timestamp - settings.stayDetectionSeconds * 1000;
+      // Load with extra margin so the full-window check works even with gaps
+      final shortWindowRaw = await DatabaseService.instance
+          .loadTrackingPointsSince(
+            shortWindowStart - settings.gpsIntervalSeconds * 2000,
+          );
 
-    // Only points strictly inside (or on the boundary of) the window matter
-    // for cluster / centroid, so we strip the margin points here.
-    final shortWindow = shortWindowRaw
-        .where((p) => p.timestamp >= shortWindowStart)
-        .toList();
-
-    // Window is "full" when at least one point older than the window start
-    // exists in the raw list, meaning the window is continuously covered.
-    final shortWindowFull = shortWindowRaw.first.timestamp <= shortWindowStart;
-
-    // 4. Check if short window is a cluster
-    final pts = shortWindow.map((p) => (lat: p.lat, lng: p.lng)).toList();
-    final shortIsCluster =
-        pts.isNotEmpty && GeoUtils.isCluster(pts, settings.defaultRadiusMeters);
-
-    if (!shortWindowFull || !shortIsCluster) {
-      // Not yet confirmed as halt — but if we were halting, end the stay
-      if (_status == TrackingStatus.haltAtKnown ||
-          _status == TrackingStatus.haltAtUnknown) {
-        await _endCurrentStay(timestamp);
+      if (shortWindowRaw.isEmpty) {
+        logAction = 'no_data';
+        return _result();
       }
-      if (shortIsCluster && !shortWindowFull) {
-        // Points are clustered but window not complete yet
-        _status = TrackingStatus.detectingHalt;
+
+      // Only points strictly inside (or on the boundary of) the window matter
+      // for cluster / centroid, so we strip the margin points here.
+      final shortWindow = shortWindowRaw
+          .where((p) => p.timestamp >= shortWindowStart)
+          .toList();
+
+      // Window is "full" when at least one point older than the window start
+      // exists in the raw list, meaning the window is continuously covered.
+      final shortWindowFull =
+          shortWindowRaw.first.timestamp <= shortWindowStart;
+
+      // 4. Check if short window is a cluster
+      final pts = shortWindow.map((p) => (lat: p.lat, lng: p.lng)).toList();
+      final shortIsCluster =
+          pts.isNotEmpty &&
+          GeoUtils.isCluster(pts, settings.defaultRadiusMeters);
+
+      logShortPts = pts.length;
+      logShortFull = shortWindowFull;
+      logShortCluster = shortIsCluster;
+
+      if (!shortWindowFull || !shortIsCluster) {
+        // Not yet confirmed as halt — but if we were halting, end the stay
+        if (_status == TrackingStatus.haltAtKnown ||
+            _status == TrackingStatus.haltAtUnknown) {
+          await _endCurrentStay(timestamp);
+          logAction = 'stay_ended';
+        }
+        if (shortIsCluster && !shortWindowFull) {
+          // Points are clustered but window not complete yet
+          _status = TrackingStatus.detectingHalt;
+          if (logAction == 'tick') logAction = 'detecting';
+        } else {
+          _status = TrackingStatus.moving;
+          if (logAction == 'tick') logAction = 'moving';
+        }
+        return _result();
+      }
+
+      // Short window is a full cluster → confirmed halt
+      final c = GeoUtils.centroid(pts);
+
+      // 5. Check known places — only public/private places trigger stays
+      final places = await DatabaseService.instance.loadAllPlaces();
+      SavedPlace? nearestPlace;
+      for (final place in places) {
+        if (!place.placeType.tracksStay) continue; // secret/forbidden — skip
+        final dist = GeoUtils.distanceMeters(
+          c.lat,
+          c.lng,
+          place.lat,
+          place.lng,
+        );
+        if (dist <= place.radius) {
+          nearestPlace = place;
+          break;
+        }
+      }
+
+      if (nearestPlace != null) {
+        logPlaceId = nearestPlace.id;
+        // Halt at known place
+        if (_currentStay != null && _currentStay!.placeId != nearestPlace.id) {
+          // Switched to a different known place — close the previous stay.
+          await _endCurrentStay(timestamp);
+          logAction = 'stay_switched';
+        }
+        if (_currentStay == null) {
+          // Start a new stay anchored at the earliest point in the short window.
+          await _startStay(
+            placeId: nearestPlace.id,
+            startTime: shortWindow.first.timestamp,
+          );
+          if (logAction == 'tick') logAction = 'stay_started';
+        } else {
+          if (logAction == 'tick') logAction = 'halt_known';
+        }
+        _status = TrackingStatus.haltAtKnown;
+        _currentPlace = nearestPlace;
+        return _result();
+      }
+
+      // No known place — check long window
+      final longWindowStart = timestamp - settings.autoPlaceSeconds * 1000;
+      // Load with margin so full-window check is accurate
+      final longWindowRaw = await DatabaseService.instance
+          .loadTrackingPointsSince(
+            longWindowStart - settings.gpsIntervalSeconds * 2000,
+          );
+
+      // Strip margin points for actual cluster / centroid work
+      final longWindow = longWindowRaw
+          .where((p) => p.timestamp >= longWindowStart)
+          .toList();
+
+      final longWindowFull =
+          longWindowRaw.isNotEmpty &&
+          longWindowRaw.first.timestamp <= longWindowStart;
+      final longPts = longWindow.map((p) => (lat: p.lat, lng: p.lng)).toList();
+      final longIsCluster =
+          longPts.isNotEmpty &&
+          GeoUtils.isCluster(longPts, settings.defaultRadiusMeters);
+
+      logLongPts = longPts.length;
+      logLongFull = longWindowFull;
+      logLongCluster = longIsCluster;
+
+      if (longIsCluster && longWindowFull) {
+        // Halt at unknown place — only start a stay once
+        if (_currentStay == null) {
+          final longC = GeoUtils.centroid(longPts);
+          await _startUnknownStay(
+            startTime: longWindow.first.timestamp,
+            centroidLat: longC.lat,
+            centroidLng: longC.lng,
+          );
+          logAction = 'unknown_stay_started';
+        } else {
+          logAction = 'halt_unknown';
+        }
+        _status = TrackingStatus.haltAtUnknown;
+        _currentPlace = null;
       } else {
-        _status = TrackingStatus.moving;
+        // Short window clustered, no known place, long window not complete
+        if (_status == TrackingStatus.haltAtKnown ||
+            _status == TrackingStatus.haltAtUnknown) {
+          await _endCurrentStay(timestamp);
+          logAction = 'stay_ended';
+        }
+        _status = TrackingStatus.detectingHalt;
+        if (logAction == 'tick') logAction = 'detecting';
+        _currentPlace = null;
       }
+
       return _result();
+    } finally {
+      unawaited(
+        DatabaseService.instance.insertTrackingLog(
+          TrackingLogEntry(
+            ts: timestamp,
+            prevStatus: prevStatus.name,
+            newStatus: _status.name,
+            shortPts: logShortPts,
+            shortFull: logShortFull,
+            shortCluster: logShortCluster,
+            longPts: logLongPts,
+            longFull: logLongFull,
+            longCluster: logLongCluster,
+            placeId: logPlaceId,
+            action: logAction,
+          ),
+        ),
+      );
     }
-
-    // Short window is a full cluster → confirmed halt
-    final c = GeoUtils.centroid(pts);
-
-    // 5. Check known places — only public/private places trigger stays
-    final places = await DatabaseService.instance.loadAllPlaces();
-    SavedPlace? nearestPlace;
-    for (final place in places) {
-      if (!place.placeType.tracksStay) continue; // secret/forbidden — skip
-      final dist = GeoUtils.distanceMeters(c.lat, c.lng, place.lat, place.lng);
-      if (dist <= place.radius) {
-        nearestPlace = place;
-        break;
-      }
-    }
-
-    if (nearestPlace != null) {
-      // Halt at known place
-      if (_currentStay != null && _currentStay!.placeId != nearestPlace.id) {
-        // Switched to a different known place — close the previous stay.
-        await _endCurrentStay(timestamp);
-      }
-      if (_currentStay == null) {
-        // Start a new stay anchored at the earliest point in the short window.
-        await _startStay(
-          placeId: nearestPlace.id,
-          startTime: shortWindow.first.timestamp,
-        );
-      }
-      _status = TrackingStatus.haltAtKnown;
-      _currentPlace = nearestPlace;
-      return _result();
-    }
-
-    // No known place — check long window
-    final longWindowStart = timestamp - settings.autoPlaceSeconds * 1000;
-    // Load with margin so full-window check is accurate
-    final longWindowRaw = await DatabaseService.instance
-        .loadTrackingPointsSince(
-          longWindowStart - settings.gpsIntervalSeconds * 2,
-        );
-
-    // Strip margin points for actual cluster / centroid work
-    final longWindow = longWindowRaw
-        .where((p) => p.timestamp >= longWindowStart)
-        .toList();
-
-    final longWindowFull =
-        longWindowRaw.isNotEmpty &&
-        longWindowRaw.first.timestamp <= longWindowStart;
-    final longPts = longWindow.map((p) => (lat: p.lat, lng: p.lng)).toList();
-    final longIsCluster =
-        longPts.isNotEmpty &&
-        GeoUtils.isCluster(longPts, settings.defaultRadiusMeters);
-
-    if (longIsCluster && longWindowFull) {
-      // Halt at unknown place — only start a stay once
-      if (_currentStay == null) {
-        final longC = GeoUtils.centroid(longPts);
-        await _startUnknownStay(
-          startTime: longWindow.first.timestamp,
-          centroidLat: longC.lat,
-          centroidLng: longC.lng,
-        );
-      }
-      _status = TrackingStatus.haltAtUnknown;
-      _currentPlace = null;
-    } else {
-      // Short window clustered, no known place, long window not complete
-      if (_status == TrackingStatus.haltAtKnown ||
-          _status == TrackingStatus.haltAtUnknown) {
-        await _endCurrentStay(timestamp);
-      }
-      _status = TrackingStatus.detectingHalt;
-      _currentPlace = null;
-    }
-
-    return _result();
   }
 
   Future<void> _startStay({

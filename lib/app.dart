@@ -9,6 +9,7 @@ import 'ui/screens/places_screen.dart';
 import 'ui/screens/database_dump_screen.dart';
 import 'ui/screens/settings_screen.dart';
 import 'ui/screens/timeline_screen.dart';
+import 'ui/screens/tracking_log_screen.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -55,6 +56,7 @@ class _AppState extends State<App> {
         '/persons': (_) => const PersonsScreen(),
         '/activities': (_) => const ActivitiesScreen(),
         '/database-dump': (_) => const DatabaseDumpScreen(),
+        '/tracking-log': (_) => const TrackingLogScreen(),
       },
       home: Scaffold(
         body: IndexedStack(index: _currentIndex, children: _screens),

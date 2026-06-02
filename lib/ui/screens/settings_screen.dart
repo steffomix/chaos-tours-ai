@@ -319,6 +319,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.pushNamed(context, '/database-dump'),
           ),
+          ListTile(
+            leading: const Icon(Icons.analytics_outlined),
+            title: const Text('Tracking-Log'),
+            subtitle: const Text('Verlauf der Tracking Engine anzeigen'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.pushNamed(context, '/tracking-log'),
+          ),
           const Divider(),
           // ── Berechtigungen ───────────────────────────────────────────
           const Padding(
