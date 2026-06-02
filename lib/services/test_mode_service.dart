@@ -138,13 +138,18 @@ class TestModeService {
     final settings = SettingsService.instance;
     final shortStart = simulatedNow - settings.stayDetectionSeconds * 1000;
     final longStart = simulatedNow - settings.autoPlaceSeconds * 1000;
+    final marginMs = settings.gpsIntervalSeconds * 2 * 1000;
 
-    final shortPts = await DatabaseService.instance.loadTrackingPointsSince(
-      shortStart,
+    // Load with margin (same as engine) to get accurate full-window detection.
+    final shortRaw = await DatabaseService.instance.loadTrackingPointsSince(
+      shortStart - marginMs,
     );
-    final allLongPts = await DatabaseService.instance.loadTrackingPointsSince(
-      longStart,
+    final shortPts = shortRaw.where((p) => p.timestamp >= shortStart).toList();
+
+    final longRaw = await DatabaseService.instance.loadTrackingPointsSince(
+      longStart - marginMs,
     );
+    final allLongPts = longRaw.where((p) => p.timestamp >= longStart).toList();
 
     // Separate long-only points (not overlapping with short window).
     final shortIds = shortPts.map((p) => p.id).toSet();
@@ -158,14 +163,11 @@ class TestModeService {
         .map((p) => (lat: p.lat, lng: p.lng))
         .toList();
 
+    // "Full" means a margin point exists before the window start.
     final shortIsFull =
-        shortPts.isNotEmpty &&
-        (simulatedNow - shortPts.first.timestamp) >=
-            settings.stayDetectionSeconds * 1000;
+        shortRaw.isNotEmpty && shortRaw.first.timestamp <= shortStart;
     final longIsFull =
-        allLongPts.isNotEmpty &&
-        (simulatedNow - allLongPts.first.timestamp) >=
-            settings.autoPlaceSeconds * 1000;
+        longRaw.isNotEmpty && longRaw.first.timestamp <= longStart;
 
     final shortIsCluster =
         shortPts.length >= 2 &&
