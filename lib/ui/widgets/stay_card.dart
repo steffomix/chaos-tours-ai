@@ -42,7 +42,8 @@ class StayCard extends StatelessWidget {
   void _openSheet(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
-      isScrollControlled: true,
+isScrollControlled: true,
+      useSafeArea: true,
       builder: (_) => StayDetailSheet(stay: stay, onUpdated: onUpdated),
     );
   }

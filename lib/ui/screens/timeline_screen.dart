@@ -320,7 +320,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
         child: GestureDetector(
           onTap: () => showModalBottomSheet<void>(
             context: context,
-            isScrollControlled: true,
+isScrollControlled: true,
+            useSafeArea: true,
             builder: (_) => StayDetailSheet(stay: e.stay, onUpdated: _load),
           ),
           child: const Icon(Icons.location_pin, color: Colors.teal, size: 36),
@@ -370,6 +371,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
   void _showPlaceFilterSheet() {
     showModalBottomSheet<void>(
       context: context,
+      useSafeArea: true,
       builder: (ctx) => ListView(
         shrinkWrap: true,
         children: [

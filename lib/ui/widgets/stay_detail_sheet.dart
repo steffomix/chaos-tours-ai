@@ -119,13 +119,14 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
 
     showModalBottomSheet<void>(
       context: context,
-      isScrollControlled: true,
+isScrollControlled: true,
+      useSafeArea: true,
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
           left: 16,
           right: 16,
           top: 16,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom + 16,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -186,13 +187,14 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
 
     showModalBottomSheet<void>(
       context: context,
-      isScrollControlled: true,
+isScrollControlled: true,
+      useSafeArea: true,
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
           left: 16,
           right: 16,
           top: 16,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom + 16,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -249,7 +251,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
         left: 16,
         right: 16,
         top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom + 16,
       ),
       child: _loading
           ? const SizedBox(

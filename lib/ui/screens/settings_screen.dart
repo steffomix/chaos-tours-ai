@@ -473,7 +473,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showAktivitaetenPicker() {
     showModalBottomSheet<void>(
       context: context,
-      isScrollControlled: true,
+isScrollControlled: true,
+      useSafeArea: true,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx2, setSheetState) {

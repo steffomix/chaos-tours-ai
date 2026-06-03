@@ -357,7 +357,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () {
                   showModalBottomSheet<void>(
                     context: context,
-                    isScrollControlled: true,
+isScrollControlled: true,
+                    useSafeArea: true,
                     builder: (_) => StayDetailSheet(
                       stay: _activeStay!,
                       onUpdated: _loadActiveStay,
@@ -483,7 +484,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           onTap: () {
                             showModalBottomSheet<void>(
                               context: context,
-                              isScrollControlled: true,
+isScrollControlled: true,
+                              useSafeArea: true,
                               builder: (_) => StayDetailSheet(
                                 stay: stay,
                                 onUpdated: _loadRecentStays,

@@ -199,7 +199,8 @@ class _MapScreenState extends State<MapScreen> {
   void _showPlaceSheet(SavedPlace place) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
+isScrollControlled: true,
+      useSafeArea: true,
       builder: (_) => PlaceBottomSheet(
         place: place,
         onUpdated: _loadPlaces,

@@ -91,7 +91,8 @@ class _PlacesScreenState extends State<PlacesScreen> {
   void _openSheet(SavedPlace place) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
+isScrollControlled: true,
+      useSafeArea: true,
       builder: (_) => PlaceBottomSheet(
         place: place,
         onUpdated: _loadPlaces,
@@ -155,51 +156,113 @@ class _PlacesScreenState extends State<PlacesScreen> {
                   final place = filtered[i];
                   final count = _visitCounts[place.id] ?? 0;
                   final stay = place.id != null ? _lastStay[place.id] : null;
-                  return ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: place.placeType.dotColor.withValues(
-                        alpha: 0.15,
-                      ),
-                      child: Icon(
-                        place.placeType.icon,
-                        color: place.placeType.dotColor,
-                        size: 20,
-                      ),
-                    ),
-                    title: Text(place.name),
-                    subtitle: Text(
-                      count == 0
-                          ? 'Noch nicht besucht'
-                          : '$count Besuch${count == 1 ? '' : 'e'}',
-                    ),
-                    trailing: stay != null
-                        ? Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                _fmtDate(stay.startTime),
-                                style: Theme.of(ctx).textTheme.bodySmall,
-                              ),
-                              Text(
-                                '${_fmtTime(stay.startDateTime)}'
-                                '${stay.endDateTime != null ? ' – ${_fmtTime(stay.endDateTime!)}' : ''}'
-                                '${stay.endDateTime != null ? '  (${_fmtDuration(stay.duration)})' : ''}',
-                                style: Theme.of(ctx).textTheme.labelSmall
-                                    ?.copyWith(
-                                      color: Theme.of(
-                                        ctx,
-                                      ).colorScheme.onSurfaceVariant,
-                                    ),
-                              ),
-                            ],
-                          )
-                        : null,
+                  return _PlaceCard(
+                    place: place,
+                    count: count,
+                    lastStay: stay,
+                    fmtDate: _fmtDate,
+                    fmtTime: _fmtTime,
+                    fmtDuration: _fmtDuration,
                     onTap: () => _openSheet(place),
                   );
                 },
               ),
             ),
+    );
+  }
+}
+
+class _PlaceCard extends StatelessWidget {
+  final SavedPlace place;
+  final int count;
+  final Stay? lastStay;
+  final String Function(int ms) fmtDate;
+  final String Function(DateTime dt) fmtTime;
+  final String Function(Duration d) fmtDuration;
+  final VoidCallback onTap;
+
+  const _PlaceCard({
+    required this.place,
+    required this.count,
+    required this.lastStay,
+    required this.fmtDate,
+    required this.fmtTime,
+    required this.fmtDuration,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row: type icon + name + type chip
+              Row(
+                children: [
+                  Icon(
+                    place.placeType.icon,
+                    color: place.placeType.dotColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      place.name,
+                      style: textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              // Visit count row
+              Text(
+                count == 0
+                    ? 'Noch nicht besucht'
+                    : '$count Besuch${count == 1 ? '' : 'e'}',
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              // Last stay row
+              if (lastStay != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  'Zuletzt: ${fmtDate(lastStay!.startTime)}  '
+                  '${fmtTime(lastStay!.startDateTime)}'
+                  '${lastStay!.endDateTime != null ? ' – ${fmtTime(lastStay!.endDateTime!)}' : ''}'
+                  '${lastStay!.endDateTime != null ? '  (${fmtDuration(lastStay!.duration)})' : ''}',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+              // Notes preview
+              if (place.notes.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  place.notes,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.bodySmall,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
