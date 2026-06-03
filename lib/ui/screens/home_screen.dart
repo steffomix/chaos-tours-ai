@@ -38,13 +38,32 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _trackingEnabled = SettingsService.instance.trackingEnabled;
-    if (_trackingEnabled) _trackingStatusText = 'Tracking läuft…';
+    // Do NOT trust the persisted flag alone — the service may have been killed.
+    // Resolve the actual service state asynchronously and correct if needed.
+    _checkActualTrackingState();
     _loadActiveStay();
     _loadCurrentAktivitaet();
     _loadRecentStays();
     ForegroundServiceManager.addDataListener(_onServiceData);
     _startRefreshTimer();
+  }
+
+  Future<void> _checkActualTrackingState() async {
+    final serviceRunning = await FlutterForegroundTask.isRunningService;
+    final storedEnabled = SettingsService.instance.trackingEnabled;
+
+    // If the stored flag claims tracking is on but the service isn't running,
+    // reset the flag so the UI reflects reality.
+    if (storedEnabled && !serviceRunning) {
+      SettingsService.instance.trackingEnabled = false;
+    }
+
+    if (mounted) {
+      setState(() {
+        _trackingEnabled = serviceRunning;
+        _trackingStatusText = serviceRunning ? 'Tracking läuft…' : 'Inaktiv';
+      });
+    }
   }
 
   void _startRefreshTimer() {
