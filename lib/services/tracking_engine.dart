@@ -363,6 +363,7 @@ class TrackingEngine {
     // Calendar sync for public places
     final place = _currentPlace;
     if (place != null &&
+        SettingsService.instance.calendarEnabled &&
         place.placeType.syncsCalendar &&
         place.groupId != null) {
       final group = await DatabaseService.instance.loadPlaceGroup(

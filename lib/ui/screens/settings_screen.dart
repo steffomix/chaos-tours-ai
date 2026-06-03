@@ -425,25 +425,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
               }
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.calendar_today),
-            title: const Text('Kalender'),
-            subtitle: const Text('Kalenderberechtigung anfordern'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () async {
-              final granted = await PermissionHelper.instance
-                  .requestCalendarPermission();
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      granted ? 'Kalender gewährt' : 'Kalender verweigert',
-                    ),
-                  ),
-                );
-              }
-            },
+          SwitchListTile(
+            secondary: const Icon(Icons.calendar_today),
+            title: const Text('Kalender-Sync'),
+            subtitle: const Text(
+              'Aufenthalte automatisch im Gerätekalender eintragen',
+            ),
+            value: SettingsService.instance.calendarEnabled,
+            onChanged: (v) =>
+                setState(() => SettingsService.instance.calendarEnabled = v),
           ),
+          if (SettingsService.instance.calendarEnabled)
+            ListTile(
+              leading: const Icon(Icons.lock_open_outlined),
+              title: const Text('Kalenderberechtigung anfordern'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                final granted = await PermissionHelper.instance
+                    .requestCalendarPermission();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        granted ? 'Kalender gewährt' : 'Kalender verweigert',
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
           const Divider(),
           const ListTile(
             leading: Icon(Icons.info_outline),
@@ -473,7 +483,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showAktivitaetenPicker() {
     showModalBottomSheet<void>(
       context: context,
-isScrollControlled: true,
+      isScrollControlled: true,
       useSafeArea: true,
       builder: (ctx) {
         return StatefulBuilder(

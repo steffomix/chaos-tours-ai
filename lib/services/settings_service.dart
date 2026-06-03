@@ -19,6 +19,7 @@ class SettingsService {
   static const String _keyShowTrackingPoints = 'show_tracking_points';
   static const String _keyTrackingPointRadius = 'tracking_point_radius';
   static const String _keyGpsSmoothingPoints = 'gps_smoothing_points';
+  static const String _keyCalendarEnabled = 'calendar_enabled';
 
   SharedPreferences? _prefs;
 
@@ -89,6 +90,10 @@ class SettingsService {
   int get gpsSmoothingPoints => _p.getInt(_keyGpsSmoothingPoints) ?? 3;
   set gpsSmoothingPoints(int v) =>
       _p.setInt(_keyGpsSmoothingPoints, v.clamp(1, 10));
+
+  /// Whether calendar sync is globally enabled (default: true).
+  bool get calendarEnabled => _p.getBool(_keyCalendarEnabled) ?? true;
+  set calendarEnabled(bool v) => _p.setBool(_keyCalendarEnabled, v);
 
   // ── Aktivitaet binding ───────────────────────────────────────────────────
 

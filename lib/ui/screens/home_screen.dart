@@ -27,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _trackingEnabled = false;
   Stay? _activeStay;
   SavedPlace? _activeStayPlace;
-  String _trackingStatusText = 'Inaktiv';
+  String _trackingStatusText = 'Tracking deaktiviert';
 
   // Recent visits
   List<Stay> _recentStays = [];
@@ -61,7 +61,9 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) {
       setState(() {
         _trackingEnabled = serviceRunning;
-        _trackingStatusText = serviceRunning ? 'Tracking läuft…' : 'Inaktiv';
+        _trackingStatusText = serviceRunning
+            ? 'Tracking läuft…'
+            : 'Tracking deaktiviert';
       });
     }
   }
@@ -300,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.bolt,
+                      Icons.settings,
                       size: 18,
                       color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
@@ -325,6 +327,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+
+          const SizedBox(height: 7, width: 6),
           // Tracking status row
           if (_trackingEnabled)
             Padding(
@@ -357,7 +361,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () {
                   showModalBottomSheet<void>(
                     context: context,
-isScrollControlled: true,
+                    isScrollControlled: true,
                     useSafeArea: true,
                     builder: (_) => StayDetailSheet(
                       stay: _activeStay!,
@@ -484,7 +488,7 @@ isScrollControlled: true,
                           onTap: () {
                             showModalBottomSheet<void>(
                               context: context,
-isScrollControlled: true,
+                              isScrollControlled: true,
                               useSafeArea: true,
                               builder: (_) => StayDetailSheet(
                                 stay: stay,
