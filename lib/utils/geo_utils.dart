@@ -56,4 +56,34 @@ class GeoUtils {
         points.map((p) => p.lng).reduce((a, b) => a + b) / points.length;
     return (lat: lat, lng: lng);
   }
+
+  /// Returns a smoothed position from [rawPoints] using a moving-average with
+  /// outlier rejection.
+  ///
+  /// Steps:
+  /// 1. Compute the initial centroid of all points.
+  /// 2. Discard points further than [outlierThresholdMeters] from that centroid.
+  /// 3. Return the centroid of the remaining points.
+  ///
+  /// If all points are classified as outliers (pathological case) the most
+  /// recent point ([rawPoints.last]) is returned unchanged.
+  static ({double lat, double lng}) smoothedPosition(
+    List<({double lat, double lng})> rawPoints, {
+    double outlierThresholdMeters = 150.0,
+  }) {
+    assert(rawPoints.isNotEmpty);
+    if (rawPoints.length == 1) return rawPoints.first;
+
+    final c = centroid(rawPoints);
+    final filtered = rawPoints
+        .where(
+          (p) =>
+              distanceMeters(p.lat, p.lng, c.lat, c.lng) <=
+              outlierThresholdMeters,
+        )
+        .toList();
+
+    if (filtered.isEmpty) return rawPoints.last;
+    return centroid(filtered);
+  }
 }

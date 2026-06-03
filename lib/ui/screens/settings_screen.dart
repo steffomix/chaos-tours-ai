@@ -22,6 +22,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late bool _autoCreatePlaces;
   int? _autoPlaceGroupId;
   late int _autoPlacePlaceTypeIndex;
+  late int _gpsSmoothingPoints;
   late bool _showTrackingPoints;
   late double _trackingPointRadius;
   List<PlaceGroup> _groups = [];
@@ -41,6 +42,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _autoCreatePlaces = s.autoCreatePlaces;
     _autoPlaceGroupId = s.autoPlaceGroupId;
     _autoPlacePlaceTypeIndex = s.autoPlacePlaceTypeIndex;
+    _gpsSmoothingPoints = s.gpsSmoothingPoints;
     _showTrackingPoints = s.showTrackingPoints;
     _trackingPointRadius = s.trackingPointRadius;
     _loadGroups();
@@ -73,6 +75,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     s.autoCreatePlaces = _autoCreatePlaces;
     s.autoPlaceGroupId = _autoPlaceGroupId;
     s.autoPlacePlaceTypeIndex = _autoPlacePlaceTypeIndex;
+    s.gpsSmoothingPoints = _gpsSmoothingPoints;
     s.showTrackingPoints = _showTrackingPoints;
     s.trackingPointRadius = _trackingPointRadius;
 
@@ -163,6 +166,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const Text(
                   'Hinweis: Änderungen werden erst nach Neustart des Trackings wirksam.',
+                  style: TextStyle(fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+            title: Text(
+              'GPS-Glättung: '
+              '${_gpsSmoothingPoints == 1 ? 'deaktiviert' : '$_gpsSmoothingPoints Punkte'}',
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Slider(
+                  value: _gpsSmoothingPoints.toDouble(),
+                  min: 1,
+                  max: 10,
+                  divisions: 9,
+                  label: _gpsSmoothingPoints == 1
+                      ? 'aus'
+                      : '$_gpsSmoothingPoints',
+                  onChanged: (v) =>
+                      setState(() => _gpsSmoothingPoints = v.round()),
+                ),
+                const Text(
+                  'Mittelt die letzten N GPS-Punkte. Ausreißer (>150 m) werden ignoriert.',
                   style: TextStyle(fontSize: 11),
                 ),
               ],

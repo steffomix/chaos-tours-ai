@@ -18,6 +18,7 @@ class SettingsService {
   static const String _keyShowForbiddenPlaces = 'show_forbidden_places';
   static const String _keyShowTrackingPoints = 'show_tracking_points';
   static const String _keyTrackingPointRadius = 'tracking_point_radius';
+  static const String _keyGpsSmoothingPoints = 'gps_smoothing_points';
 
   SharedPreferences? _prefs;
 
@@ -83,6 +84,11 @@ class SettingsService {
       _p.getDouble(_keyTrackingPointRadius) ?? 2.0;
   set trackingPointRadius(double v) =>
       _p.setDouble(_keyTrackingPointRadius, v.clamp(1.0, 20.0));
+
+  /// Number of GPS points to average for smoothing (1 = disabled, default: 3).
+  int get gpsSmoothingPoints => _p.getInt(_keyGpsSmoothingPoints) ?? 3;
+  set gpsSmoothingPoints(int v) =>
+      _p.setInt(_keyGpsSmoothingPoints, v.clamp(1, 10));
 
   // ── Aktivitaet binding ───────────────────────────────────────────────────
 

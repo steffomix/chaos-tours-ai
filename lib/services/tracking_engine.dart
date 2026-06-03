@@ -79,9 +79,32 @@ class TrackingEngine {
     String logAction = 'tick';
 
     try {
-      // 1. Persist the point
+      // 1. Compute smoothed position and persist it.
+      //    Load the last (gpsSmoothingPoints - 1) already-stored points and
+      //    average them with the current raw reading. Only the smoothed
+      //    coordinate is stored, so all downstream window logic (short/long
+      //    cluster checks) automatically operates on cleaner data.
+      final smoothingCount = settings.gpsSmoothingPoints;
+      double smoothLat = lat;
+      double smoothLng = lng;
+      if (smoothingCount > 1) {
+        final lookbackMs =
+            smoothingCount * settings.gpsIntervalSeconds * 1000 * 2;
+        final recentRaw = await DatabaseService.instance
+            .loadTrackingPointsSince(timestamp - lookbackMs);
+        final prev = recentRaw.where((p) => p.timestamp < timestamp).toList()
+          ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        final windowPts = [
+          (lat: lat, lng: lng),
+          ...prev.take(smoothingCount - 1).map((p) => (lat: p.lat, lng: p.lng)),
+        ];
+        final smoothed = GeoUtils.smoothedPosition(windowPts);
+        smoothLat = smoothed.lat;
+        smoothLng = smoothed.lng;
+      }
+
       await DatabaseService.instance.insertTrackingPoint(
-        TrackingPoint(lat: lat, lng: lng, timestamp: timestamp),
+        TrackingPoint(lat: smoothLat, lng: smoothLng, timestamp: timestamp),
       );
 
       // 2. Prune old points (keep autoPlaceSeconds + 5 interval points)
