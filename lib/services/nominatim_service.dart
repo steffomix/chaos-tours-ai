@@ -39,10 +39,11 @@ class NominatimService {
       return data['display_name'] as String?;
     }
 
-    // Build a concise address: road + house number + city
+    // Build a concise address: road + house number + postcode + city
     final parts = <String>[];
     final road = address['road'] as String?;
     final houseNumber = address['house_number'] as String?;
+    final postcode = address['postcode'] as String?;
     final city =
         (address['city'] ??
                 address['town'] ??
@@ -53,7 +54,10 @@ class NominatimService {
     if (road != null) {
       parts.add(houseNumber != null ? '$road $houseNumber' : road);
     }
-    if (city != null) parts.add(city);
+    final cityPart = postcode != null && city != null
+        ? '$postcode $city'
+        : (city ?? postcode);
+    if (cityPart != null) parts.add(cityPart);
 
     if (parts.isEmpty) {
       return data['display_name'] as String?;

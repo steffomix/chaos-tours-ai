@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 
 import '../../models/place_group.dart';
 import '../../models/saved_place.dart';
+import '../../models/stay.dart';
 import '../../services/database_service.dart';
+import '../screens/place_visits_screen.dart';
 
 class PlaceBottomSheet extends StatefulWidget {
   final SavedPlace place;
@@ -32,6 +34,11 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
   int _visitCount = 0;
   int? _lastVisitedAt;
 
+  // Statistics
+  List<Stay> _completedStays = [];
+  List<String> _distinctPersonNames = [];
+  bool _statsLoaded = false;
+
   @override
   void initState() {
     super.initState();
@@ -58,6 +65,26 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
       setState(() {
         _visitCount = count;
         _lastVisitedAt = last;
+      });
+    }
+  }
+
+  Future<void> _loadStatistics() async {
+    final id = widget.place.id;
+    if (id == null) return;
+    final stays = await DatabaseService.instance.loadStaysForPlace(id);
+    final completed =
+        stays
+            .where((s) => s.status == StayStatus.completed && s.endTime != null)
+            .toList()
+          ..sort((a, b) => a.startTime.compareTo(b.startTime));
+    final persons = await DatabaseService.instance
+        .loadDistinctPersonNamesForPlace(id);
+    if (mounted) {
+      setState(() {
+        _completedStays = completed;
+        _distinctPersonNames = persons;
+        _statsLoaded = true;
       });
     }
   }
@@ -114,14 +141,112 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
         '  ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
   }
 
+  String _fmtDuration(Duration d) {
+    if (d.inHours >= 1) return '${d.inHours}h ${d.inMinutes % 60}min';
+    return '${d.inMinutes}min';
+  }
+
+  Duration _medianDuration(List<Duration> durations) {
+    final sorted = [...durations]..sort((a, b) => a.compareTo(b));
+    final n = sorted.length;
+    if (n == 0) return Duration.zero;
+    if (n.isOdd) return sorted[n ~/ 2];
+    final mid = (sorted[n ~/ 2 - 1].inSeconds + sorted[n ~/ 2].inSeconds) ~/ 2;
+    return Duration(seconds: mid);
+  }
+
   void _copyGps() {
     final text =
         '${widget.place.lat.toStringAsFixed(6)}, ${widget.place.lng.toStringAsFixed(6)}';
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('GPS-Koordinaten kopiert')),
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('GPS-Koordinaten kopiert')));
+  }
+
+  Widget _buildStats() {
+    if (!_statsLoaded) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_completedStays.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.only(bottom: 8),
+        child: Text('Noch keine Besuche aufgezeichnet.'),
+      );
+    }
+
+    final durations = _completedStays.map((s) => s.duration).toList();
+    final totalSec = durations.fold<int>(0, (sum, d) => sum + d.inSeconds);
+    final avgDuration = Duration(seconds: totalSec ~/ durations.length);
+    final median = _medianDuration(durations);
+
+    final first = _completedStays.first;
+    final last = _completedStays.last;
+    final shortest = durations.reduce((a, b) => a < b ? a : b);
+    final longest = durations.reduce((a, b) => a > b ? a : b);
+
+    String fmtDt(int ms) {
+      final d = DateTime.fromMillisecondsSinceEpoch(ms);
+      return '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}  '
+          '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _statRow('Erster Besuch', fmtDt(first.startTime)),
+          _statRow('Letzter Besuch', fmtDt(last.startTime)),
+          _statRow('Kürzester Besuch', _fmtDuration(shortest)),
+          _statRow('Längster Besuch', _fmtDuration(longest)),
+          _statRow('Durchschnitt', _fmtDuration(avgDuration)),
+          _statRow('Median', _fmtDuration(median)),
+          if (_distinctPersonNames.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            const Text(
+              'Personen:',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: _distinctPersonNames
+                  .map(
+                    (name) => Chip(
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      padding: EdgeInsets.zero,
+                      avatar: const Icon(Icons.person, size: 14),
+                      label: Text(name, style: const TextStyle(fontSize: 12)),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+        ],
+      ),
     );
   }
+
+  Widget _statRow(String label, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 2),
+    child: Row(
+      children: [
+        SizedBox(
+          width: 160,
+          child: Text(
+            label,
+            style: const TextStyle(color: Colors.grey, fontSize: 13),
+          ),
+        ),
+        Expanded(child: Text(value, style: const TextStyle(fontSize: 13))),
+      ],
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -181,8 +306,11 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
             ),
             Row(
               children: [
-                const Icon(Icons.add_circle_outline,
-                    size: 16, color: Colors.grey),
+                const Icon(
+                  Icons.add_circle_outline,
+                  size: 16,
+                  color: Colors.grey,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   'Erstellt: ${_formatDate(widget.place.createdAt)}',
@@ -252,7 +380,10 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                 border: OutlineInputBorder(),
               ),
               items: [
-                const DropdownMenuItem(value: null, child: Text('Keine Gruppe')),
+                const DropdownMenuItem(
+                  value: null,
+                  child: Text('Keine Gruppe'),
+                ),
                 ..._groups.map(
                   (g) => DropdownMenuItem(value: g.id, child: Text(g.name)),
                 ),
@@ -265,25 +396,29 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               onTap: _copyGps,
               borderRadius: BorderRadius.circular(8),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.location_on,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.primary),
+                    Icon(
+                      Icons.location_on,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         '${widget.place.lat.toStringAsFixed(6)}, '
                         '${widget.place.lng.toStringAsFixed(6)}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontFamily: 'monospace',
-                            ),
+                          fontFamily: 'monospace',
+                        ),
                       ),
                     ),
                     const Icon(Icons.copy, size: 14, color: Colors.grey),
@@ -291,7 +426,36 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            // ── Besuche ────────────────────────────────────────────────
+            OutlinedButton.icon(
+              onPressed: widget.place.id == null
+                  ? null
+                  : () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PlaceVisitsScreen(place: widget.place),
+                      ),
+                    ),
+              icon: const Icon(Icons.history),
+              label: Text(
+                _visitCount == 0
+                    ? 'Besuche anzeigen'
+                    : 'Besuche anzeigen ($_visitCount)',
+              ),
+            ),
+            const SizedBox(height: 4),
+            // ── Statistik ──────────────────────────────────────────────
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              leading: const Icon(Icons.bar_chart),
+              title: const Text('Statistik'),
+              onExpansionChanged: (expanded) {
+                if (expanded && !_statsLoaded) _loadStatistics();
+              },
+              children: [_buildStats()],
+            ),
+            const SizedBox(height: 8),
             // ── Aktionen ───────────────────────────────────────────────
             Row(
               children: [
@@ -299,8 +463,10 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                   child: OutlinedButton.icon(
                     onPressed: _delete,
                     icon: const Icon(Icons.delete, color: Colors.red),
-                    label: const Text('Löschen',
-                        style: TextStyle(color: Colors.red)),
+                    label: const Text(
+                      'Löschen',
+                      style: TextStyle(color: Colors.red),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),

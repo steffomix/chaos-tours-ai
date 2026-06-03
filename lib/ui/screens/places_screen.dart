@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/saved_place.dart';
+import '../../models/stay.dart';
 import '../../services/database_service.dart';
 import '../widgets/place_bottom_sheet.dart';
 
@@ -16,8 +17,13 @@ class PlacesScreen extends StatefulWidget {
 class _PlacesScreenState extends State<PlacesScreen> {
   List<SavedPlace> _places = [];
   Map<int, int> _visitCounts = {};
-  Map<int, int?> _lastVisited = {};
+  Map<int, Stay?> _lastStay = {};
   bool _loading = true;
+
+  // Search
+  bool _searchActive = false;
+  String _searchQuery = '';
+  final TextEditingController _searchCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -29,6 +35,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
   @override
   void dispose() {
     widget.refreshNotifier?.removeListener(_loadPlaces);
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -36,13 +43,13 @@ class _PlacesScreenState extends State<PlacesScreen> {
     setState(() => _loading = true);
     final places = await DatabaseService.instance.loadAllPlaces();
     final counts = <int, int>{};
-    final last = <int, int?>{};
+    final stays = <int, Stay?>{};
     for (final p in places) {
       if (p.id != null) {
         counts[p.id!] = await DatabaseService.instance.visitCountForPlace(
           p.id!,
         );
-        last[p.id!] = await DatabaseService.instance.lastVisitedAtForPlace(
+        stays[p.id!] = await DatabaseService.instance.lastCompletedStayForPlace(
           p.id!,
         );
       }
@@ -51,15 +58,34 @@ class _PlacesScreenState extends State<PlacesScreen> {
       setState(() {
         _places = places;
         _visitCounts = counts;
-        _lastVisited = last;
+        _lastStay = stays;
         _loading = false;
       });
     }
   }
 
-  String _formatDate(int ms) {
+  List<SavedPlace> get _filtered {
+    if (_searchQuery.isEmpty) return _places;
+    final q = _searchQuery.toLowerCase();
+    return _places.where((p) {
+      if (p.name.toLowerCase().contains(q)) return true;
+      if (p.notes.toLowerCase().contains(q)) return true;
+      if (p.placeType.label.toLowerCase().contains(q)) return true;
+      return false;
+    }).toList();
+  }
+
+  String _fmtDate(int ms) {
     final d = DateTime.fromMillisecondsSinceEpoch(ms);
     return '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
+  }
+
+  String _fmtTime(DateTime dt) =>
+      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+
+  String _fmtDuration(Duration d) {
+    if (d.inHours >= 1) return '${d.inHours}h ${d.inMinutes % 60}min';
+    return '${d.inMinutes}min';
   }
 
   void _openSheet(SavedPlace place) {
@@ -76,25 +102,59 @@ class _PlacesScreenState extends State<PlacesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final filtered = _filtered;
     return Scaffold(
-      appBar: AppBar(title: const Text('Orte')),
+      appBar: AppBar(
+        title: _searchActive
+            ? TextField(
+                controller: _searchCtrl,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Orte durchsuchen…',
+                  border: InputBorder.none,
+                ),
+                onChanged: (v) => setState(() => _searchQuery = v),
+              )
+            : const Text('Orte'),
+        actions: [
+          if (_searchActive)
+            IconButton(
+              icon: const Icon(Icons.close),
+              tooltip: 'Suche schließen',
+              onPressed: () => setState(() {
+                _searchActive = false;
+                _searchQuery = '';
+                _searchCtrl.clear();
+              }),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.search),
+              tooltip: 'Suchen',
+              onPressed: () => setState(() => _searchActive = true),
+            ),
+        ],
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : _places.isEmpty
-          ? const Center(
+          : filtered.isEmpty
+          ? Center(
               child: Text(
-                'Keine Orte gespeichert.\nOrte auf der Karte per Langer Druck hinzufügen.',
+                _searchQuery.isNotEmpty
+                    ? 'Keine Orte gefunden.'
+                    : 'Keine Orte gespeichert.\n'
+                          'Orte auf der Karte per Langer Druck hinzufügen.',
                 textAlign: TextAlign.center,
               ),
             )
           : RefreshIndicator(
               onRefresh: _loadPlaces,
               child: ListView.builder(
-                itemCount: _places.length,
+                itemCount: filtered.length,
                 itemBuilder: (ctx, i) {
-                  final place = _places[i];
+                  final place = filtered[i];
                   final count = _visitCounts[place.id] ?? 0;
-                  final last = place.id != null ? _lastVisited[place.id] : null;
+                  final stay = place.id != null ? _lastStay[place.id] : null;
                   return ListTile(
                     leading: CircleAvatar(
                       backgroundColor: place.placeType.dotColor.withValues(
@@ -112,27 +172,29 @@ class _PlacesScreenState extends State<PlacesScreen> {
                           ? 'Noch nicht besucht'
                           : '$count Besuch${count == 1 ? '' : 'e'}',
                     ),
-                    trailing: last != null
+                    trailing: stay != null
                         ? Column(
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                _formatDate(last),
-                                style: Theme.of(context).textTheme.bodySmall,
+                                _fmtDate(stay.startTime),
+                                style: Theme.of(ctx).textTheme.bodySmall,
                               ),
                               Text(
-                                place.placeType.label,
-                                style: Theme.of(context).textTheme.labelSmall
-                                    ?.copyWith(color: place.placeType.dotColor),
+                                '${_fmtTime(stay.startDateTime)}'
+                                '${stay.endDateTime != null ? ' – ${_fmtTime(stay.endDateTime!)}' : ''}'
+                                '${stay.endDateTime != null ? '  (${_fmtDuration(stay.duration)})' : ''}',
+                                style: Theme.of(ctx).textTheme.labelSmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        ctx,
+                                      ).colorScheme.onSurfaceVariant,
+                                    ),
                               ),
                             ],
                           )
-                        : Text(
-                            place.placeType.label,
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(color: place.placeType.dotColor),
-                          ),
+                        : null,
                     onTap: () => _openSheet(place),
                   );
                 },

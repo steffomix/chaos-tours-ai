@@ -30,6 +30,11 @@ class _TimelineScreenState extends State<TimelineScreen> {
   DateTimeRange? _filterRange;
   int? _filterPlaceId;
 
+  // Search state
+  bool _searchActive = false;
+  String _searchQuery = '';
+  final TextEditingController _searchCtrl = TextEditingController();
+
   // Map
   final MapController _mapController = MapController();
   LatLng? _lastKnownPosition;
@@ -45,6 +50,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
   @override
   void dispose() {
     widget.refreshNotifier?.removeListener(_load);
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -102,6 +108,26 @@ class _TimelineScreenState extends State<TimelineScreen> {
       if (_filterPlaceId != null && s.placeId != _filterPlaceId) {
         return false;
       }
+      if (_searchQuery.isNotEmpty) {
+        final q = _searchQuery.toLowerCase();
+        final place = _placeForStay(s);
+        final placeName = place?.name.toLowerCase() ?? '';
+        final address = s.address?.toLowerCase() ?? '';
+        final notes = s.notes.toLowerCase();
+        final persons = (_personsByStay[s.id] ?? [])
+            .map((p) => p.name.toLowerCase())
+            .join(' ');
+        final activities = (_activitiesByStay[s.id] ?? [])
+            .map((a) => a.description.toLowerCase())
+            .join(' ');
+        if (!placeName.contains(q) &&
+            !address.contains(q) &&
+            !notes.contains(q) &&
+            !persons.contains(q) &&
+            !activities.contains(q)) {
+          return false;
+        }
+      }
       return true;
     }).toList();
   }
@@ -127,37 +153,64 @@ class _TimelineScreenState extends State<TimelineScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Zeitachse'),
+        title: _searchActive
+            ? TextField(
+                controller: _searchCtrl,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Aufenthalte durchsuchen…',
+                  border: InputBorder.none,
+                ),
+                onChanged: (v) => setState(() => _searchQuery = v),
+              )
+            : const Text('Zeitachse'),
         actions: [
-          // Filter by date
-          IconButton(
-            icon: Badge(
-              isLabelVisible: _filterRange != null,
-              child: const Icon(Icons.date_range),
-            ),
-            onPressed: _pickDateRange,
-            tooltip: 'Datumsbereich filtern',
-          ),
-          // Filter by place
-          IconButton(
-            icon: Badge(
-              isLabelVisible: _filterPlaceId != null,
-              child: const Icon(Icons.filter_list),
-            ),
-            onPressed: _showPlaceFilterSheet,
-            tooltip: 'Nach Ort filtern',
-          ),
-          // Clear filters
-          if (_filterRange != null || _filterPlaceId != null)
+          if (_searchActive)
             IconButton(
-              icon: const Icon(Icons.clear),
+              icon: const Icon(Icons.close),
+              tooltip: 'Suche schließen',
               onPressed: () => setState(() {
-                _filterRange = null;
-                _filterPlaceId = null;
+                _searchActive = false;
+                _searchQuery = '';
+                _searchCtrl.clear();
               }),
-              tooltip: 'Filter zurücksetzen',
+            )
+          else ...[
+            // Filter by date
+            IconButton(
+              icon: Badge(
+                isLabelVisible: _filterRange != null,
+                child: const Icon(Icons.date_range),
+              ),
+              onPressed: _pickDateRange,
+              tooltip: 'Datumsbereich filtern',
             ),
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
+            // Filter by place
+            IconButton(
+              icon: Badge(
+                isLabelVisible: _filterPlaceId != null,
+                child: const Icon(Icons.filter_list),
+              ),
+              onPressed: _showPlaceFilterSheet,
+              tooltip: 'Nach Ort filtern',
+            ),
+            // Clear filters
+            if (_filterRange != null || _filterPlaceId != null)
+              IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: () => setState(() {
+                  _filterRange = null;
+                  _filterPlaceId = null;
+                }),
+                tooltip: 'Filter zurücksetzen',
+              ),
+            IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
+            IconButton(
+              icon: const Icon(Icons.search),
+              tooltip: 'Suchen',
+              onPressed: () => setState(() => _searchActive = true),
+            ),
+          ],
         ],
       ),
       body: _loading

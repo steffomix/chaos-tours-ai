@@ -227,6 +227,36 @@ class DatabaseService {
     return rows.first['start_time'] as int?;
   }
 
+  /// Returns the most recent completed [Stay] at [placeId], or null.
+  Future<Stay?> lastCompletedStayForPlace(int placeId) async {
+    final db = await database;
+    final rows = await db.query(
+      'stays',
+      where: "place_id = ? AND status = 'completed'",
+      whereArgs: [placeId],
+      orderBy: 'start_time DESC',
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return Stay.fromMap(rows.first);
+  }
+
+  /// Returns distinct person names that appeared in completed stays at [placeId].
+  Future<List<String>> loadDistinctPersonNamesForPlace(int placeId) async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      '''
+      SELECT DISTINCT sp.name
+      FROM stay_persons sp
+      JOIN stays s ON s.id = sp.stay_id
+      WHERE s.place_id = ? AND s.status = 'completed'
+      ORDER BY sp.name ASC
+      ''',
+      [placeId],
+    );
+    return rows.map((r) => r['name'] as String).toList();
+  }
+
   // ── PlaceGroups ──────────────────────────────────────────────────────────
 
   Future<int> insertPlaceGroup(PlaceGroup group) async {
