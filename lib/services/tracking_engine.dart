@@ -296,6 +296,19 @@ class TrackingEngine {
     );
     final id = await DatabaseService.instance.insertStay(stay);
     _currentStay = stay.copyWith(id: id);
+
+    // Create arrival calendar event
+    if (placeId != null) {
+      final places = await DatabaseService.instance.loadAllPlaces();
+      final place = places.where((p) => p.id == placeId).firstOrNull;
+      if (place != null) {
+        await _createArrivalCalendarEvent(
+          _currentStay!,
+          place.name,
+          place.groupId,
+        );
+      }
+    }
   }
 
   Future<void> _startUnknownStay({
@@ -341,6 +354,13 @@ class TrackingEngine {
       );
       final id = await DatabaseService.instance.insertStay(stay);
       _currentStay = stay.copyWith(id: id);
+
+      // Create arrival calendar event for auto-created place
+      await _createArrivalCalendarEvent(
+        _currentStay!,
+        autoPlaceName,
+        settings.autoPlaceGroupId,
+      );
       return;
     }
 
@@ -354,13 +374,38 @@ class TrackingEngine {
     _currentStay = stay.copyWith(id: id);
   }
 
+  /// Creates a preliminary "arrival" calendar event for [stay] and persists
+  /// the returned event ID back to the database.
+  Future<void> _createArrivalCalendarEvent(
+    Stay stay,
+    String? placeName,
+    int? groupId,
+  ) async {
+    if (!SettingsService.instance.calendarEnabled) return;
+    if (groupId == null) return;
+    final group = await DatabaseService.instance.loadPlaceGroup(groupId);
+    if (group == null || group.calendarId == null) return;
+
+    final eventId = await CalendarService.instance.createArrivalEvent(
+      stay,
+      group,
+      placeName,
+    );
+    if (eventId != null && stay.id != null) {
+      final updated = stay.copyWith(calendarEventId: eventId);
+      await DatabaseService.instance.updateStay(updated);
+      _currentStay = updated;
+    }
+  }
+
   Future<void> _endCurrentStay(int endTime) async {
     final stay = _currentStay;
     if (stay == null) return;
     final ended = stay.copyWith(endTime: endTime, status: StayStatus.completed);
     await DatabaseService.instance.updateStay(ended);
 
-    // Calendar sync for public places
+    // Calendar sync: update the existing arrival event, or create a new one
+    // if it was never created or has been deleted in the meantime.
     final place = _currentPlace;
     if (place != null &&
         SettingsService.instance.calendarEnabled &&
@@ -370,15 +415,39 @@ class TrackingEngine {
         place.groupId!,
       );
       if (group != null) {
-        final eventId = await CalendarService.instance.createStayEvent(
-          ended,
-          group,
-          place.name,
-        );
-        if (eventId != null) {
-          await DatabaseService.instance.updateStay(
-            ended.copyWith(calendarEventId: eventId),
+        // Load persons & activities for the full description
+        final persons = ended.id != null
+            ? await DatabaseService.instance.loadPersonsForStay(ended.id!)
+            : <dynamic>[];
+        final activities = ended.id != null
+            ? await DatabaseService.instance.loadActivitiesForStay(ended.id!)
+            : <dynamic>[];
+
+        bool updated = false;
+        if (ended.calendarEventId != null) {
+          // Try to update the existing arrival event
+          updated = await CalendarService.instance.updateStayEvent(
+            ended,
+            group,
+            place.name,
+            persons: persons.cast(),
+            activities: activities.cast(),
           );
+        }
+        if (!updated) {
+          // Arrival event missing or deleted — create a fresh completed event
+          final eventId = await CalendarService.instance.createStayEvent(
+            ended,
+            group,
+            place.name,
+            persons: persons.cast(),
+            activities: activities.cast(),
+          );
+          if (eventId != null) {
+            await DatabaseService.instance.updateStay(
+              ended.copyWith(calendarEventId: eventId),
+            );
+          }
         }
       }
     }

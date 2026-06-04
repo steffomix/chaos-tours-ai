@@ -39,6 +39,44 @@ class CalendarService {
 
   // ── Stay Events ──────────────────────────────────────────────────────────
 
+  /// Create a preliminary calendar event when a stay **starts** (arrival).
+  /// Uses a 1-hour placeholder as end time; call [updateStayEvent] later to
+  /// fill in the real end time and all details.
+  /// Returns the event ID or null.
+  Future<String?> createArrivalEvent(
+    Stay stay,
+    PlaceGroup group,
+    String? placeName,
+  ) async {
+    final calId = group.calendarId;
+    if (calId == null) return null;
+    _initTz();
+
+    final location = tz.local;
+    final start = tz.TZDateTime.from(stay.startDateTime, location);
+    // Placeholder end: start + 1 hour (will be corrected on departure)
+    final end = tz.TZDateTime.from(
+      stay.startDateTime.add(const Duration(hours: 1)),
+      location,
+    );
+
+    final title = placeName ?? stay.address ?? 'Aufenthalt';
+
+    final event = Event(
+      calId,
+      title: title,
+      start: start,
+      end: end,
+      description: 'Ankunft',
+    );
+
+    final result = await _plugin.createOrUpdateEvent(event);
+    if (result != null && result.isSuccess) {
+      return result.data;
+    }
+    return null;
+  }
+
   /// Create a calendar event for a completed stay.
   /// Returns the event ID or null.
   Future<String?> createStayEvent(
@@ -81,16 +119,18 @@ class CalendarService {
   }
 
   /// Update a stay event (e.g. after notes/persons/activities change).
-  Future<void> updateStayEvent(
+  /// Returns true if the update succeeded, false if the event no longer exists
+  /// or the group has no calendar configured.
+  Future<bool> updateStayEvent(
     Stay stay,
     PlaceGroup group,
     String? placeName, {
     List<StayPerson> persons = const [],
     List<StayActivity> activities = const [],
   }) async {
-    if (stay.calendarEventId == null) return;
+    if (stay.calendarEventId == null) return false;
     final calId = group.calendarId;
-    if (calId == null) return;
+    if (calId == null) return false;
     _initTz();
 
     final location = tz.local;
@@ -117,7 +157,8 @@ class CalendarService {
       description: description,
     );
 
-    await _plugin.createOrUpdateEvent(event);
+    final result = await _plugin.createOrUpdateEvent(event);
+    return result != null && result.isSuccess;
   }
 
   String _buildStayDescription({
