@@ -191,7 +191,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       setState(() => _gpsSmoothingPoints = v.round()),
                 ),
                 const Text(
-                  'Mittelt die letzten N GPS-Punkte. Ausreißer (>150 m) werden ignoriert.',
+                  'Mittelt die letzten N GPS-Punkte.',
                   style: TextStyle(fontSize: 11),
                 ),
               ],

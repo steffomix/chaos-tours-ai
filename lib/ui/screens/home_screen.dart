@@ -209,7 +209,12 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!batteryOk) return;
     }
 
-    setState(() => _trackingEnabled = value);
+    setState(() {
+      _trackingEnabled = value;
+      _trackingStatusText = value
+          ? 'Tracking wird gestartet…'
+          : 'Tracking deaktiviert';
+    });
     SettingsService.instance.trackingEnabled = value;
 
     if (value) {
@@ -330,26 +335,29 @@ class _HomeScreenState extends State<HomeScreen> {
 
           const SizedBox(height: 7, width: 6),
           // Tracking status row
-          if (_trackingEnabled)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.sensors,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.primary,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.sensors,
+                  size: 16,
+                  color: _trackingEnabled
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.outline,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  _trackingStatusText,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: _trackingEnabled
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.outline,
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    _trackingStatusText,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
           // ── Aktueller Aufenthalt ───────────────────────────────
           if (_activeStay != null)
             Card(
