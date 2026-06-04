@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/place_group.dart';
 import '../../models/saved_place.dart';
@@ -153,6 +154,22 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     if (n.isOdd) return sorted[n ~/ 2];
     final mid = (sorted[n ~/ 2 - 1].inSeconds + sorted[n ~/ 2].inSeconds) ~/ 2;
     return Duration(seconds: mid);
+  }
+
+  Future<void> _openInMaps() async {
+    final lat = widget.place.lat;
+    final lng = widget.place.lng;
+    final name = Uri.encodeComponent(widget.place.name);
+    // geo URI opens Google Maps on Android; fallback to https for other platforms
+    final geoUri = Uri.parse('geo:$lat,$lng?q=$lat,$lng($name)');
+    final webUri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+    );
+    if (await canLaunchUrl(geoUri)) {
+      await launchUrl(geoUri);
+    } else {
+      await launchUrl(webUri, mode: LaunchMode.externalApplication);
+    }
   }
 
   void _copyGps() {
@@ -406,6 +423,11 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                     'Ort bearbeiten',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.map_outlined),
+                  tooltip: 'In Google Maps öffnen',
+                  onPressed: _openInMaps,
                 ),
                 IconButton(
                   icon: const Icon(Icons.copy_all),
