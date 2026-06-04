@@ -164,6 +164,137 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     ).showSnackBar(const SnackBar(content: Text('GPS-Koordinaten kopiert')));
   }
 
+  Future<void> _copyReport() async {
+    final place = widget.place;
+    final db = DatabaseService.instance;
+    final id = place.id;
+
+    // Load all completed stays with persons and activities
+    final allStays = id != null ? await db.loadStaysForPlace(id) : <Stay>[];
+    final completed =
+        allStays
+            .where((s) => s.status == StayStatus.completed && s.endTime != null)
+            .toList()
+          ..sort((a, b) => a.startTime.compareTo(b.startTime));
+
+    final group = _groupId != null
+        ? _groups.where((g) => g.id == _groupId).firstOrNull
+        : null;
+
+    String fmtDt(int ms) {
+      final d = DateTime.fromMillisecondsSinceEpoch(ms);
+      return '${d.day.toString().padLeft(2, '0')}.'
+          '${d.month.toString().padLeft(2, '0')}.'
+          '${d.year}  '
+          '${d.hour.toString().padLeft(2, '0')}:'
+          '${d.minute.toString().padLeft(2, '0')}';
+    }
+
+    final buf = StringBuffer();
+
+    // ── Header ──────────────────────────────────────────────────────────
+    buf.writeln('# ${place.name}');
+    buf.writeln();
+    buf.writeln('| Feld | Wert |');
+    buf.writeln('|------|------|');
+    buf.writeln('| Typ | ${place.placeType.label} |');
+    buf.writeln(
+      '| Koordinaten | ${place.lat.toStringAsFixed(6)}, ${place.lng.toStringAsFixed(6)} |',
+    );
+    buf.writeln('| Radius | ${place.radius.toStringAsFixed(0)} m |');
+    if (group != null) buf.writeln('| Gruppe | ${group.name} |');
+    buf.writeln('| Erstellt | ${fmtDt(place.createdAt)} |');
+    buf.writeln('| Besuche gesamt | ${completed.length} |');
+    if (place.notes.isNotEmpty) {
+      buf.writeln();
+      buf.writeln('**Notiz:** ${place.notes}');
+    }
+    buf.writeln();
+
+    // ── Statistics ──────────────────────────────────────────────────────
+    if (completed.isNotEmpty) {
+      final durations = completed.map((s) => s.duration).toList();
+      final totalSec = durations.fold<int>(0, (sum, d) => sum + d.inSeconds);
+      final avgDuration = Duration(seconds: totalSec ~/ durations.length);
+      final median = _medianDuration(durations);
+      final shortest = durations.reduce((a, b) => a < b ? a : b);
+      final longest = durations.reduce((a, b) => a > b ? a : b);
+
+      buf.writeln('## Statistik');
+      buf.writeln();
+      buf.writeln('| | |');
+      buf.writeln('|---|---|');
+      buf.writeln('| Erster Besuch | ${fmtDt(completed.first.startTime)} |');
+      buf.writeln('| Letzter Besuch | ${fmtDt(completed.last.startTime)} |');
+      buf.writeln('| Kürzester Besuch | ${_fmtDuration(shortest)} |');
+      buf.writeln('| Längster Besuch | ${_fmtDuration(longest)} |');
+      buf.writeln('| Durchschnitt | ${_fmtDuration(avgDuration)} |');
+      buf.writeln('| Median | ${_fmtDuration(median)} |');
+
+      if (_distinctPersonNames.isNotEmpty) {
+        buf.writeln('| Personen | ${_distinctPersonNames.join(', ')} |');
+      } else {
+        // load if not already loaded
+        final persons = id != null
+            ? await db.loadDistinctPersonNamesForPlace(id)
+            : <String>[];
+        if (persons.isNotEmpty) {
+          buf.writeln('| Personen | ${persons.join(', ')} |');
+        }
+      }
+      buf.writeln();
+    }
+
+    // ── Visits ──────────────────────────────────────────────────────────
+    if (completed.isNotEmpty) {
+      buf.writeln('## Besuche');
+      buf.writeln();
+      for (final stay in completed) {
+        buf.writeln('### ${fmtDt(stay.startTime)}');
+        buf.writeln();
+        buf.writeln('| | |');
+        buf.writeln('|---|---|');
+        buf.writeln('| Start | ${fmtDt(stay.startTime)} |');
+        buf.writeln('| Ende | ${fmtDt(stay.endTime!)} |');
+        buf.writeln('| Dauer | ${_fmtDuration(stay.duration)} |');
+        if (stay.address != null && stay.address!.isNotEmpty) {
+          buf.writeln('| Adresse | ${stay.address} |');
+        }
+        buf.writeln();
+
+        if (stay.id != null) {
+          final persons = await db.loadPersonsForStay(stay.id!);
+          if (persons.isNotEmpty) {
+            buf.writeln(
+              '**Personen:** ${persons.map((p) => p.name).join(', ')}  ',
+            );
+            buf.writeln();
+          }
+          final activities = await db.loadActivitiesForStay(stay.id!);
+          if (activities.isNotEmpty) {
+            buf.writeln('**Aktivitäten:**  ');
+            for (final a in activities) {
+              buf.writeln('- ${a.description}');
+            }
+            buf.writeln();
+          }
+        }
+
+        if (stay.notes.isNotEmpty) {
+          buf.writeln('**Notiz:** ${stay.notes}  ');
+          buf.writeln();
+        }
+      }
+    }
+
+    await Clipboard.setData(ClipboardData(text: buf.toString()));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bericht in Zwischenablage kopiert')),
+      );
+    }
+  }
+
   Widget _buildStats() {
     if (!_statsLoaded) {
       return const Padding(
@@ -255,7 +386,10 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
         left: 16,
         right: 16,
         top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom + 16,
+        bottom:
+            MediaQuery.of(context).viewInsets.bottom +
+            MediaQuery.of(context).padding.bottom +
+            16,
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -275,8 +409,8 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.copy_all),
-                  tooltip: 'GPS-Koordinaten kopieren',
-                  onPressed: _copyGps,
+                  tooltip: 'Bericht kopieren',
+                  onPressed: _copyReport,
                 ),
               ],
             ),
