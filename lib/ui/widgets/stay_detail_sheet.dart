@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../models/activity.dart';
 import '../../models/person.dart';
+import '../../models/saved_place.dart';
 import '../../models/stay.dart';
 import '../../models/stay_activity.dart';
 import '../../models/stay_person.dart';
 import '../../services/database_service.dart';
+import 'place_bottom_sheet.dart';
 
 class StayDetailSheet extends StatefulWidget {
   final Stay stay;
@@ -23,12 +25,18 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
   List<StayActivity> _stayActivities = [];
   List<Person> _allPersons = [];
   List<Activity> _allActivities = [];
+  SavedPlace? _place;
   bool _loading = true;
+
+  late DateTime _startDt;
+  late DateTime? _endDt;
 
   @override
   void initState() {
     super.initState();
     _notesCtrl = TextEditingController(text: widget.stay.notes);
+    _startDt = widget.stay.startDateTime;
+    _endDt = widget.stay.endDateTime;
     _load();
   }
 
@@ -46,21 +54,87 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
       DatabaseService.instance.loadAllPersons(),
       DatabaseService.instance.loadAllActivities(),
     ]);
+    SavedPlace? place;
+    if (widget.stay.placeId != null) {
+      final places = await DatabaseService.instance.loadAllPlaces();
+      place = places.where((p) => p.id == widget.stay.placeId).firstOrNull;
+    }
     if (mounted) {
       setState(() {
         _stayPersons = results[0] as List<StayPerson>;
         _stayActivities = results[1] as List<StayActivity>;
         _allPersons = results[2] as List<Person>;
         _allActivities = results[3] as List<Activity>;
+        _place = place;
         _loading = false;
       });
     }
   }
 
-  Future<void> _saveNotes() async {
-    final updated = widget.stay.copyWith(notes: _notesCtrl.text.trim());
+  Future<void> _save() async {
+    final updated = widget.stay.copyWith(
+      notes: _notesCtrl.text.trim(),
+      startTime: _startDt.millisecondsSinceEpoch,
+      endTime: _endDt?.millisecondsSinceEpoch,
+    );
     await DatabaseService.instance.updateStay(updated);
     widget.onUpdated?.call();
+  }
+
+  Future<void> _pickDateTime({required bool isStart}) async {
+    final initial = isStart ? _startDt : (_endDt ?? _startDt);
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
+    );
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initial),
+    );
+    if (time == null || !mounted) return;
+    final picked = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+    setState(() {
+      if (isStart) {
+        _startDt = picked;
+      } else {
+        _endDt = picked;
+      }
+    });
+  }
+
+  void _openPlaceSheet() {
+    final place = _place;
+    if (place == null) return;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => PlaceBottomSheet(
+        place: place,
+        onUpdated: _load,
+        onDeleted: () {
+          Navigator.pop(context);
+          widget.onUpdated?.call();
+        },
+      ),
+    );
+  }
+
+  String _fmtDt(DateTime dt) {
+    final d =
+        '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}';
+    final t =
+        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    return '$d  $t';
   }
 
   Future<void> _addPersonFromList(Person person) async {
@@ -119,14 +193,17 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
 
     showModalBottomSheet<void>(
       context: context,
-isScrollControlled: true,
+      isScrollControlled: true,
       useSafeArea: true,
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
           left: 16,
           right: 16,
           top: 16,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom + 16,
+          bottom:
+              MediaQuery.of(ctx).viewInsets.bottom +
+              MediaQuery.of(ctx).padding.bottom +
+              16,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -187,14 +264,17 @@ isScrollControlled: true,
 
     showModalBottomSheet<void>(
       context: context,
-isScrollControlled: true,
+      isScrollControlled: true,
       useSafeArea: true,
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
           left: 16,
           right: 16,
           top: 16,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom + 16,
+          bottom:
+              MediaQuery.of(ctx).viewInsets.bottom +
+              MediaQuery.of(ctx).padding.bottom +
+              16,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -251,7 +331,10 @@ isScrollControlled: true,
         left: 16,
         right: 16,
         top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom + 16,
+        bottom:
+            MediaQuery.of(context).viewInsets.bottom +
+            MediaQuery.of(context).padding.bottom +
+            16,
       ),
       child: _loading
           ? const SizedBox(
@@ -263,12 +346,49 @@ isScrollControlled: true,
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    'Aufenthalt bearbeiten',
-                    style: Theme.of(context).textTheme.titleLarge,
+                  // ── Header ───────────────────────────────────────────
+                  Row(
+                    children: [
+                      Text(
+                        'Aufenthalt bearbeiten',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const Spacer(),
+                      if (_place != null)
+                        Flexible(
+                          child: TextButton.icon(
+                            onPressed: _openPlaceSheet,
+                            icon: const Icon(Icons.edit_location_alt, size: 16),
+                            label: Text(
+                              _place!.name,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 12),
-                  // Notes
+                  // ── Start-Zeit ────────────────────────────────────────
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.play_circle_outline),
+                    title: const Text('Beginn'),
+                    subtitle: Text(_fmtDt(_startDt)),
+                    trailing: const Icon(Icons.edit, size: 18),
+                    onTap: () => _pickDateTime(isStart: true),
+                  ),
+                  // ── End-Zeit ──────────────────────────────────────────
+                  if (_endDt != null)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.stop_circle_outlined),
+                      title: const Text('Ende'),
+                      subtitle: Text(_fmtDt(_endDt!)),
+                      trailing: const Icon(Icons.edit, size: 18),
+                      onTap: () => _pickDateTime(isStart: false),
+                    ),
+                  const SizedBox(height: 4),
+                  // ── Notes ─────────────────────────────────────────────
                   TextField(
                     controller: _notesCtrl,
                     decoration: const InputDecoration(
@@ -276,7 +396,6 @@ isScrollControlled: true,
                       border: OutlineInputBorder(),
                     ),
                     maxLines: 3,
-                    onEditingComplete: _saveNotes,
                   ),
                   const SizedBox(height: 16),
                   // Persons
@@ -337,7 +456,7 @@ isScrollControlled: true,
                   const SizedBox(height: 16),
                   FilledButton.icon(
                     onPressed: () async {
-                      await _saveNotes();
+                      await _save();
                       if (mounted) Navigator.pop(context);
                     },
                     icon: const Icon(Icons.save),
