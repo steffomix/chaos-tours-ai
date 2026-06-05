@@ -6,6 +6,7 @@ import '../../models/place_group.dart';
 import '../../models/saved_place.dart';
 import '../../models/stay.dart';
 import '../../services/database_service.dart';
+import '../screens/place_reposition_screen.dart';
 import '../screens/place_visits_screen.dart';
 
 class PlaceBottomSheet extends StatefulWidget {
@@ -179,6 +180,20 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('GPS-Koordinaten kopiert')));
+  }
+
+  Future<void> _repositionPlace() async {
+    if (!mounted) return;
+    Navigator.pop(context); // close the bottom sheet first
+    final updated = await Navigator.push<SavedPlace>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PlaceRepositionScreen(targetPlace: widget.place),
+      ),
+    );
+    if (updated != null) {
+      widget.onUpdated();
+    }
   }
 
   Future<void> _copyReport() async {
@@ -437,6 +452,34 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               ],
             ),
             const SizedBox(height: 4),
+            // ── Name ───────────────────────────────────────────────────
+            TextField(
+              controller: _nameCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // ── Notiz ──────────────────────────────────────────────────
+            TextField(
+              controller: _notesCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Notiz',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
+            ),
+            const SizedBox(height: 12),
+            // ── HR Statistik ─────────────────────────────────────────────────
+            Row(
+              children: <Widget>[
+                Expanded(child: Divider()),
+                Text("Statistik", style: TextStyle(color: Colors.grey)),
+                Expanded(child: Divider()),
+              ],
+            ),
+            const SizedBox(height: 4),
             // ── Besuchsstatistik ───────────────────────────────────────
             Row(
               children: [
@@ -474,79 +517,45 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            // ── Name ───────────────────────────────────────────────────
-            TextField(
-              controller: _nameCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                border: OutlineInputBorder(),
+            const SizedBox(height: 4),
+            // ── Statistik ───────────────────────────────────────────────
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              leading: const Icon(Icons.bar_chart),
+              title: const Text('Statistik'),
+              onExpansionChanged: (expanded) {
+                if (expanded && !_statsLoaded) _loadStatistics();
+              },
+              children: [_buildStats()],
+            ),
+            const SizedBox(height: 4),
+            // ── Besuche ────────────────────────────────────────────────
+            OutlinedButton.icon(
+              onPressed: widget.place.id == null
+                  ? null
+                  : () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PlaceVisitsScreen(place: widget.place),
+                      ),
+                    ),
+              icon: const Icon(Icons.history),
+              label: Text(
+                _visitCount == 0
+                    ? 'Besuche anzeigen'
+                    : 'Besuche anzeigen ($_visitCount)',
               ),
             ),
             const SizedBox(height: 12),
-            // ── Notiz ──────────────────────────────────────────────────
-            TextField(
-              controller: _notesCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Notiz',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 12),
-            // ── Typ ────────────────────────────────────────────────────
-            const Text('Typ:'),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: PlaceType.values.map((t) {
-                final selected = _placeType == t;
-                return ChoiceChip(
-                  avatar: Icon(
-                    t.icon,
-                    size: 16,
-                    color: selected ? Colors.white : t.dotColor,
-                  ),
-                  label: Text(t.label),
-                  selected: selected,
-                  selectedColor: t.dotColor,
-                  labelStyle: TextStyle(color: selected ? Colors.white : null),
-                  onSelected: (_) => setState(() => _placeType = t),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 12),
-            // ── Radius ─────────────────────────────────────────────────
-            Text('Radius: ${_radius.toStringAsFixed(0)} m'),
-            Slider(
-              value: _radius,
-              min: 10,
-              max: 500,
-              divisions: 49,
-              label: '${_radius.toStringAsFixed(0)} m',
-              onChanged: (v) => setState(() => _radius = v),
-            ),
-            const SizedBox(height: 8),
-            // ── Gruppe ─────────────────────────────────────────────────
-            DropdownButtonFormField<int?>(
-              initialValue: _groupId,
-              decoration: const InputDecoration(
-                labelText: 'Gruppe',
-                border: OutlineInputBorder(),
-              ),
-              items: [
-                const DropdownMenuItem(
-                  value: null,
-                  child: Text('Keine Gruppe'),
-                ),
-                ..._groups.map(
-                  (g) => DropdownMenuItem(value: g.id, child: Text(g.name)),
-                ),
+            // ── HR Ortseinstellungen ─────────────────────────────────────────────────
+            Row(
+              children: <Widget>[
+                Expanded(child: Divider()),
+                Text("Ortseinstellungen", style: TextStyle(color: Colors.grey)),
+                Expanded(child: Divider()),
               ],
-              onChanged: (v) => setState(() => _groupId = v),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 4),
             // ── GPS-Koordinaten ────────────────────────────────────────
             InkWell(
               onTap: _copyGps,
@@ -582,36 +591,66 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-            // ── Besuche ────────────────────────────────────────────────
+            const SizedBox(height: 8),
+            // ── Position ändern ────────────────────────────────────────
             OutlinedButton.icon(
-              onPressed: widget.place.id == null
-                  ? null
-                  : () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => PlaceVisitsScreen(place: widget.place),
-                      ),
-                    ),
-              icon: const Icon(Icons.history),
-              label: Text(
-                _visitCount == 0
-                    ? 'Besuche anzeigen'
-                    : 'Besuche anzeigen ($_visitCount)',
-              ),
+              onPressed: _repositionPlace,
+              icon: const Icon(Icons.edit_location_alt),
+              label: const Text('Position auf Karte ändern'),
             ),
-            const SizedBox(height: 4),
-            // ── Statistik ──────────────────────────────────────────────
-            ExpansionTile(
-              tilePadding: EdgeInsets.zero,
-              leading: const Icon(Icons.bar_chart),
-              title: const Text('Statistik'),
-              onExpansionChanged: (expanded) {
-                if (expanded && !_statsLoaded) _loadStatistics();
-              },
-              children: [_buildStats()],
+            const SizedBox(height: 12),
+            Text('Radius: ${_radius.toStringAsFixed(0)} m'),
+            Slider(
+              value: _radius,
+              min: 10,
+              max: 500,
+              divisions: 49,
+              label: '${_radius.toStringAsFixed(0)} m',
+              onChanged: (v) => setState(() => _radius = v),
             ),
             const SizedBox(height: 8),
+            // ── Typ ────────────────────────────────────────────────────
+            const Text('Typ:'),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: PlaceType.values.map((t) {
+                final selected = _placeType == t;
+                return ChoiceChip(
+                  avatar: Icon(
+                    t.icon,
+                    size: 16,
+                    color: selected ? Colors.white : t.dotColor,
+                  ),
+                  label: Text(t.label),
+                  selected: selected,
+                  selectedColor: t.dotColor,
+                  labelStyle: TextStyle(color: selected ? Colors.white : null),
+                  onSelected: (_) => setState(() => _placeType = t),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 12),
+            // ── Gruppe ─────────────────────────────────────────────────
+            DropdownButtonFormField<int?>(
+              initialValue: _groupId,
+              decoration: const InputDecoration(
+                labelText: 'Gruppe',
+                border: OutlineInputBorder(),
+              ),
+              items: [
+                const DropdownMenuItem(
+                  value: null,
+                  child: Text('Keine Gruppe'),
+                ),
+                ..._groups.map(
+                  (g) => DropdownMenuItem(value: g.id, child: Text(g.name)),
+                ),
+              ],
+              onChanged: (v) => setState(() => _groupId = v),
+            ),
+            const SizedBox(height: 12),
             // ── Aktionen ───────────────────────────────────────────────
             Row(
               children: [
