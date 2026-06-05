@@ -634,7 +634,9 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
             const SizedBox(height: 12),
             // ── Gruppe ─────────────────────────────────────────────────
             DropdownButtonFormField<int?>(
-              initialValue: _groupId,
+              value: _groupId == null
+                  ? null
+                  : (_groups.any((g) => g.id == _groupId) ? _groupId : null),
               decoration: const InputDecoration(
                 labelText: 'Gruppe',
                 border: OutlineInputBorder(),
