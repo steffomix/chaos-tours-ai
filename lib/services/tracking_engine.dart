@@ -35,6 +35,7 @@ class TrackingEngine {
   TrackingStatus _status = TrackingStatus.idle;
   Stay? _currentStay;
   SavedPlace? _currentPlace;
+
   /// Effective privacy type at the current halt — may be higher than
   /// [_currentPlace]'s own type when a more private place overlaps.
   PlaceType? _effectivePlaceType;
