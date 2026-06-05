@@ -248,7 +248,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ListTile(
               title: const Text('Gruppe für Auto-Orte'),
               trailing: DropdownButton<int?>(
-                value: _autoPlaceGroupId,
+                value: _autoPlaceGroupId == null
+                    ? null
+                    : (_groups.any((g) => g.id == _autoPlaceGroupId)
+                          ? _autoPlaceGroupId
+                          : null),
+                //value: _autoPlaceGroupId,
                 hint: const Text('Keine'),
                 items: [
                   const DropdownMenuItem(value: null, child: Text('Keine')),
