@@ -35,6 +35,9 @@ class TrackingEngine {
   TrackingStatus _status = TrackingStatus.idle;
   Stay? _currentStay;
   SavedPlace? _currentPlace;
+  /// Effective privacy type at the current halt — may be higher than
+  /// [_currentPlace]'s own type when a more private place overlaps.
+  PlaceType? _effectivePlaceType;
 
   /// Load persisted state on service start.
   Future<void> initialize() async {
@@ -189,22 +192,45 @@ class TrackingEngine {
       }
 
       if (nearestPlace != null) {
+        // Compute effective privacy level across ALL overlapping places.
+        // A secret or forbidden overlay suppresses stay tracking & calendar;
+        // a private overlay on a public place suppresses only calendar.
+        PlaceType effectivePlaceType = nearestPlace.placeType;
+        for (final place in places) {
+          final dist = GeoUtils.distanceMeters(
+            c.lat,
+            c.lng,
+            place.lat,
+            place.lng,
+          );
+          if (dist <= place.radius &&
+              place.placeType.index > effectivePlaceType.index) {
+            effectivePlaceType = place.placeType;
+          }
+        }
+        _effectivePlaceType = effectivePlaceType;
+
         logPlaceId = nearestPlace.id;
-        // Halt at known place
-        if (_currentStay != null && _currentStay!.placeId != nearestPlace.id) {
-          // Switched to a different known place — close the previous stay.
+        final stayAllowed = effectivePlaceType.tracksStay;
+
+        // End stay if: switched to different place, OR privacy now suppresses stay.
+        if (_currentStay != null &&
+            (_currentStay!.placeId != nearestPlace.id || !stayAllowed)) {
           await _endCurrentStay(timestamp);
           logAction = 'stay_switched';
         }
-        if (_currentStay == null) {
+        if (_currentStay == null && stayAllowed) {
           // Start a new stay anchored at the earliest point in the short window.
           await _startStay(
             placeId: nearestPlace.id,
             startTime: shortWindow.first.timestamp,
+            effectivePlaceType: effectivePlaceType,
           );
           if (logAction == 'tick') logAction = 'stay_started';
         } else {
-          if (logAction == 'tick') logAction = 'halt_known';
+          if (logAction == 'tick') {
+            logAction = stayAllowed ? 'halt_known' : 'halt_known_no_stay';
+          }
         }
         _status = TrackingStatus.haltAtKnown;
         _currentPlace = nearestPlace;
@@ -288,6 +314,7 @@ class TrackingEngine {
   Future<void> _startStay({
     required int? placeId,
     required int startTime,
+    PlaceType effectivePlaceType = PlaceType.public,
   }) async {
     final stay = Stay(
       placeId: placeId,
@@ -297,8 +324,8 @@ class TrackingEngine {
     final id = await DatabaseService.instance.insertStay(stay);
     _currentStay = stay.copyWith(id: id);
 
-    // Create arrival calendar event
-    if (placeId != null) {
+    // Create arrival calendar event — only if effective privacy allows it.
+    if (placeId != null && effectivePlaceType.syncsCalendar) {
       final places = await DatabaseService.instance.loadAllPlaces();
       final place = places.where((p) => p.id == placeId).firstOrNull;
       if (place != null) {
@@ -407,9 +434,12 @@ class TrackingEngine {
     // Calendar sync: update the existing arrival event, or create a new one
     // if it was never created or has been deleted in the meantime.
     final place = _currentPlace;
+    // Use effective privacy level for calendar decisions — a more private
+    // overlapping place may have suppressed calendar sync.
+    final calendarType = _effectivePlaceType ?? place?.placeType;
     if (place != null &&
         SettingsService.instance.calendarEnabled &&
-        place.placeType.syncsCalendar &&
+        (calendarType?.syncsCalendar ?? false) &&
         place.groupId != null) {
       final group = await DatabaseService.instance.loadPlaceGroup(
         place.groupId!,
@@ -454,6 +484,7 @@ class TrackingEngine {
 
     _currentStay = null;
     _currentPlace = null;
+    _effectivePlaceType = null;
   }
 
   /// Call when tracking is disabled to cleanly end any active stay.
