@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -652,6 +654,41 @@ class DatabaseService {
       for (final stmt in statements) {
         if (stmt.toUpperCase().startsWith('PRAGMA')) continue;
         await txn.execute(stmt);
+      }
+      await txn.execute('PRAGMA foreign_keys = ON');
+    });
+  }
+
+  // ── File-level DB operations ─────────────────────────────────────────────
+
+  /// Returns the absolute path to the SQLite database file.
+  Future<String> getDatabaseFilePath() async {
+    final dbPath = await getDatabasesPath();
+    return join(dbPath, 'chaos_tours.db');
+  }
+
+  /// Closes the current DB connection, replaces the file with [sourcePath],
+  /// and reopens the database.
+  Future<void> importDatabaseFile(String sourcePath) async {
+    if (_db != null) {
+      await _db!.close();
+      _db = null;
+    }
+    final targetPath = await getDatabaseFilePath();
+    await File(sourcePath).copy(targetPath);
+    _db = await _openDatabase();
+  }
+
+  /// Deletes all rows from every user table without dropping the schema.
+  Future<void> resetAllData() async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.execute('PRAGMA foreign_keys = OFF');
+      final tables = await txn.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+      );
+      for (final t in tables) {
+        await txn.execute('DELETE FROM ${t['name']}');
       }
       await txn.execute('PRAGMA foreign_keys = ON');
     });

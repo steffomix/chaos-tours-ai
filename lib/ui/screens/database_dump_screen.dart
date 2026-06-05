@@ -1,8 +1,5 @@
-import 'dart:io';
-
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus, XFile;
 
 import '../../services/database_service.dart';
@@ -18,87 +15,57 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabCtrl;
 
-  // Dump tab
-  String? _dumpText;
-  bool _dumpLoading = false;
-
-  // Import tab
-  final _importCtrl = TextEditingController();
-  bool _clearFirst = true;
+  bool _exporting = false;
   bool _importing = false;
+  bool _resetting = false;
 
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this);
+    _tabCtrl = TabController(length: 3, vsync: this);
   }
 
   @override
   void dispose() {
     _tabCtrl.dispose();
-    _importCtrl.dispose();
     super.dispose();
   }
 
   // ── Dump ──────────────────────────────────────────────────────────────────
 
-  Future<void> _generateDump() async {
-    setState(() => _dumpLoading = true);
+  // ── Export ────────────────────────────────────────────────────────────────
+
+  Future<void> _exportDatabase() async {
+    setState(() => _exporting = true);
     try {
-      final dump = await DatabaseService.instance.generateDump();
-      setState(() => _dumpText = dump);
-    } catch (e) {
-      _showError('Dump fehlgeschlagen: $e');
-    } finally {
-      setState(() => _dumpLoading = false);
-    }
-  }
-
-  Future<void> _copyToClipboard() async {
-    if (_dumpText == null) return;
-    await Clipboard.setData(ClipboardData(text: _dumpText!));
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Dump in Zwischenablage kopiert')),
+      final path = await DatabaseService.instance.getDatabaseFilePath();
+      await SharePlus.instance.share(
+        ShareParams(files: [XFile(path)], title: 'Chaos Tours Datenbank'),
       );
+    } catch (e) {
+      _showError('Export fehlgeschlagen: $e');
+    } finally {
+      setState(() => _exporting = false);
     }
-  }
-
-  Future<void> _shareDump() async {
-    if (_dumpText == null) return;
-    final dir = await getTemporaryDirectory();
-    final ts = DateTime.now().millisecondsSinceEpoch;
-    final file = File('${dir.path}/chaos_tours_dump_$ts.sql');
-    await file.writeAsString(_dumpText!);
-    await SharePlus.instance.share(
-      ShareParams(files: [XFile(file.path)], title: 'Chaos Tours DB Dump'),
-    );
   }
 
   // ── Import ────────────────────────────────────────────────────────────────
 
-  Future<void> _pasteFromClipboard() async {
-    final data = await Clipboard.getData(Clipboard.kTextPlain);
-    if (data?.text != null) {
-      _importCtrl.text = data!.text!;
-    }
-  }
+  Future<void> _importDatabase() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.any,
+      allowMultiple: false,
+    );
+    if (result == null || result.files.single.path == null) return;
+    final path = result.files.single.path!;
 
-  Future<void> _importDump() async {
-    final sql = _importCtrl.text.trim();
-    if (sql.isEmpty) {
-      _showError('Kein SQL-Text zum Importieren vorhanden.');
-      return;
-    }
-
+    if (!mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Dump importieren?'),
-        content: Text(
-          _clearFirst
-              ? 'Alle vorhandenen Daten werden gelöscht und durch den Dump ersetzt.\n\nFortfahren?'
-              : 'Vorhandene Zeilen werden überschrieben (INSERT OR REPLACE).\nNicht im Dump enthaltene Zeilen bleiben erhalten.\n\nFortfahren?',
+        title: const Text('Datenbank ersetzen?'),
+        content: const Text(
+          'Die aktuelle Datenbank wird vollständig durch die gewählte Datei ersetzt.\n\nAlle vorhandenen Daten gehen verloren.\n\nFortfahren?',
         ),
         actions: [
           TextButton(
@@ -108,7 +75,7 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text(
-              'Importieren',
+              'Ersetzen',
               style: TextStyle(color: Colors.orange),
             ),
           ),
@@ -119,17 +86,58 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
 
     setState(() => _importing = true);
     try {
-      await DatabaseService.instance.importDump(sql, clearFirst: _clearFirst);
+      await DatabaseService.instance.importDatabaseFile(path);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Dump erfolgreich importiert')),
+          const SnackBar(content: Text('Datenbank erfolgreich importiert')),
         );
-        _importCtrl.clear();
       }
     } catch (e) {
       _showError('Import fehlgeschlagen: $e');
     } finally {
       setState(() => _importing = false);
+    }
+  }
+
+  // ── Reset ─────────────────────────────────────────────────────────────────
+
+  Future<void> _resetDatabase() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Datenbank zurücksetzen?'),
+        content: const Text(
+          'Alle Daten werden unwiderruflich gelöscht. Die Datenbankstruktur bleibt erhalten.\n\nFortfahren?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'Zurücksetzen',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() => _resetting = true);
+    try {
+      await DatabaseService.instance.resetAllData();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Datenbank zurückgesetzt')),
+        );
+      }
+    } catch (e) {
+      _showError('Zurücksetzen fehlgeschlagen: $e');
+    } finally {
+      setState(() => _resetting = false);
     }
   }
 
@@ -146,166 +154,186 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Datenbank-Dump'),
+        title: const Text('Datenbank'),
         bottom: TabBar(
           controller: _tabCtrl,
           tabs: const [
-            Tab(icon: Icon(Icons.download), text: 'Dump erstellen'),
-            Tab(icon: Icon(Icons.upload), text: 'Importieren'),
+            Tab(icon: Icon(Icons.upload_file), text: 'Exportieren'),
+            Tab(icon: Icon(Icons.download_for_offline), text: 'Importieren'),
+            Tab(icon: Icon(Icons.delete_forever), text: 'Zurücksetzen'),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabCtrl,
-        children: [_buildDumpTab(), _buildImportTab()],
+        children: [_buildExportTab(), _buildImportTab(), _buildResetTab()],
       ),
     );
   }
 
-  Widget _buildDumpTab() {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: _dumpLoading ? null : _generateDump,
-                  icon: _dumpLoading
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.refresh),
-                  label: const Text('Dump generieren'),
-                ),
-              ),
-              if (_dumpText != null) ...[
-                const SizedBox(width: 8),
-                IconButton.outlined(
-                  onPressed: _copyToClipboard,
-                  tooltip: 'In Zwischenablage kopieren',
-                  icon: const Icon(Icons.copy),
-                ),
-                const SizedBox(width: 4),
-                IconButton.outlined(
-                  onPressed: _shareDump,
-                  tooltip: 'Teilen',
-                  icon: const Icon(Icons.share),
-                ),
-              ],
-            ],
+  Widget _buildExportTab() {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Spacer(),
+          const Icon(Icons.storage, size: 64, color: Colors.blue),
+          const SizedBox(height: 16),
+          const Text(
+            'Datenbank exportieren',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
           ),
-        ),
-        if (_dumpText != null)
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Theme.of(context).dividerColor),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(10),
-                  child: SelectableText(
-                    _dumpText!,
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 11,
+          const SizedBox(height: 12),
+          const Text(
+            'Die SQLite-Datenbankdatei wird direkt geteilt. Sie kann als Backup gespeichert oder auf ein anderes Gerät übertragen werden.',
+            textAlign: TextAlign.center,
+          ),
+          const Spacer(),
+          FilledButton.icon(
+            onPressed: _exporting ? null : _exportDatabase,
+            icon: _exporting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
                     ),
-                  ),
-                ),
-              ),
-            ),
-          )
-        else
-          Expanded(
-            child: Center(
-              child: Text(
-                'Dump noch nicht generiert.',
-                style: TextStyle(color: Theme.of(context).hintColor),
-              ),
-            ),
+                  )
+                : const Icon(Icons.share),
+            label: const Text('Datenbank teilen'),
           ),
-      ],
+          const SizedBox(height: 16),
+        ],
+      ),
     );
   }
 
   Widget _buildImportTab() {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _pasteFromClipboard,
-                  icon: const Icon(Icons.paste),
-                  label: const Text('Aus Zwischenablage einfügen'),
-                ),
-              ),
-            ],
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Spacer(),
+          const Icon(Icons.folder_open, size: 64, color: Colors.orange),
+          const SizedBox(height: 16),
+          const Text(
+            'Datenbank importieren',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
           ),
-        ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
-            child: TextField(
-              controller: _importCtrl,
-              maxLines: null,
-              expands: true,
-              textAlignVertical: TextAlignVertical.top,
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
-              decoration: InputDecoration(
-                hintText: 'SQL-Dump hier einfügen …',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+          const SizedBox(height: 12),
+          const Text(
+            'Eine zuvor exportierte SQLite-Datenbankdatei auswählen. Die aktuelle Datenbank wird vollständig ersetzt.',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.orange.withAlpha(25),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.orange.shade300),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.warning_amber, color: Colors.orange),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Alle vorhandenen Daten werden überschrieben.',
+                    style: TextStyle(color: Colors.orange),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Vorhandene Daten vorher löschen'),
-                subtitle: const Text(
-                  'Alle Tabellen werden geleert, bevor der Dump eingespielt wird.',
-                  style: TextStyle(fontSize: 12),
-                ),
-                value: _clearFirst,
-                onChanged: (v) => setState(() => _clearFirst = v),
-              ),
-              const SizedBox(height: 4),
-              FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.orange.shade700,
-                ),
-                onPressed: _importing ? null : _importDump,
-                icon: _importing
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.upload),
-                label: const Text('Dump laden'),
-              ),
-            ],
+          const Spacer(),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.orange.shade700,
+            ),
+            onPressed: _importing ? null : _importDatabase,
+            icon: _importing
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.folder_open),
+            label: const Text('Datei auswählen & importieren'),
           ),
-        ),
-      ],
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResetTab() {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Spacer(),
+          const Icon(Icons.delete_forever, size: 64, color: Colors.red),
+          const SizedBox(height: 16),
+          const Text(
+            'Datenbank zurücksetzen',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Alle Daten werden unwiderruflich gelöscht. Die Datenbankstruktur bleibt erhalten.',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.withAlpha(25),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.red.shade300),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.warning, color: Colors.red),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Diese Aktion kann nicht rückgängig gemacht werden.',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: _resetting ? null : _resetDatabase,
+            icon: _resetting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.delete_forever),
+            label: const Text('Alle Daten löschen'),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
     );
   }
 }
