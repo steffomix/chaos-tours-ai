@@ -1,5 +1,7 @@
-import 'package:file_picker/file_picker.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus, XFile;
 
 import '../../services/database_service.dart';
@@ -14,20 +16,46 @@ class DatabaseDumpScreen extends StatefulWidget {
 class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabCtrl;
+  StreamSubscription? _sharingSubscription;
 
   bool _exporting = false;
   bool _importing = false;
   bool _resetting = false;
 
+  // Last received shared file path
+  String? _pendingImportPath;
+
   @override
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 3, vsync: this);
+    _initSharingListeners();
+  }
+
+  void _initSharingListeners() {
+    // File shared while app is running
+    _sharingSubscription = ReceiveSharingIntent.instance
+        .getMediaStream()
+        .listen((files) {
+          if (files.isNotEmpty) {
+            setState(() => _pendingImportPath = files.first.path);
+            _tabCtrl.animateTo(1);
+          }
+        });
+
+    // File that launched the app
+    ReceiveSharingIntent.instance.getInitialMedia().then((files) {
+      if (files.isNotEmpty && mounted) {
+        setState(() => _pendingImportPath = files.first.path);
+        _tabCtrl.animateTo(1);
+      }
+    });
   }
 
   @override
   void dispose() {
     _tabCtrl.dispose();
+    _sharingSubscription?.cancel();
     super.dispose();
   }
 
@@ -52,12 +80,8 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
   // ── Import ────────────────────────────────────────────────────────────────
 
   Future<void> _importDatabase() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.any,
-      allowMultiple: false,
-    );
-    if (result == null || result.files.single.path == null) return;
-    final path = result.files.single.path!;
+    final path = _pendingImportPath;
+    if (path == null) return;
 
     if (!mounted) return;
     final confirmed = await showDialog<bool>(
@@ -65,7 +89,7 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
       builder: (ctx) => AlertDialog(
         title: const Text('Datenbank ersetzen?'),
         content: const Text(
-          'Die aktuelle Datenbank wird vollständig durch die gewählte Datei ersetzt.\n\nAlle vorhandenen Daten gehen verloren.\n\nFortfahren?',
+          'Die aktuelle Datenbank wird vollständig durch die geteilte Datei ersetzt.\n\nAlle vorhandenen Daten gehen verloren.\n\nFortfahren?',
         ),
         actions: [
           TextButton(
@@ -88,6 +112,7 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
     try {
       await DatabaseService.instance.importDatabaseFile(path);
       if (mounted) {
+        setState(() => _pendingImportPath = null);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Datenbank erfolgreich importiert')),
         );
@@ -212,13 +237,18 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
   }
 
   Widget _buildImportTab() {
+    final hasFile = _pendingImportPath != null;
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Spacer(),
-          const Icon(Icons.folder_open, size: 64, color: Colors.orange),
+          Icon(
+            hasFile ? Icons.check_circle_outline : Icons.folder_open,
+            size: 64,
+            color: hasFile ? Colors.green : Colors.orange,
+          ),
           const SizedBox(height: 16),
           const Text(
             'Datenbank importieren',
@@ -226,49 +256,103 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Eine zuvor exportierte SQLite-Datenbankdatei auswählen. Die aktuelle Datenbank wird vollständig ersetzt.',
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.orange.withAlpha(25),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.orange.shade300),
+          if (!hasFile) ...[
+            const Text(
+              'So importierst du eine Datenbank:\n\n'
+              '1. Öffne die Dateien-App\n'
+              '2. Halte die .db-Datei gedrückt\n'
+              '3. Tippe auf „Teilen"\n'
+              '4. Wähle „Chaos Tours" aus der Liste',
+              textAlign: TextAlign.center,
             ),
-            child: const Row(
-              children: [
-                Icon(Icons.warning_amber, color: Colors.orange),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Alle vorhandenen Daten werden überschrieben.',
-                    style: TextStyle(color: Colors.orange),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Spacer(),
-          FilledButton.icon(
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.orange.shade700,
-            ),
-            onPressed: _importing ? null : _importDatabase,
-            icon: _importing
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.withAlpha(20),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade300),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Diese App öffnet sich automatisch, wenn du eine Datei hierher teilst.',
+                      style: TextStyle(color: Colors.blue),
                     ),
-                  )
-                : const Icon(Icons.folder_open),
-            label: const Text('Datei auswählen & importieren'),
-          ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            Text(
+              'Datei empfangen:',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Theme.of(context).hintColor),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.green.withAlpha(20),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green.shade300),
+              ),
+              child: Text(
+                _pendingImportPath!.split('/').last,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withAlpha(25),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange.shade300),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.warning_amber, color: Colors.orange),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Alle vorhandenen Daten werden überschrieben.',
+                      style: TextStyle(color: Colors.orange),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const Spacer(),
+          if (hasFile)
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.orange.shade700,
+              ),
+              onPressed: _importing ? null : _importDatabase,
+              icon: _importing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.download_for_offline),
+              label: const Text('Jetzt importieren'),
+            )
+          else
+            OutlinedButton.icon(
+              onPressed: null,
+              icon: const Icon(Icons.hourglass_empty),
+              label: const Text('Warte auf geteilte Datei …'),
+            ),
           const SizedBox(height: 16),
         ],
       ),
