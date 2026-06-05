@@ -28,7 +28,7 @@ class DatabaseService {
     final path = join(dbPath, 'chaos_tours.db');
     return openDatabase(
       path,
-      version: 3,
+      version: 1,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
@@ -148,31 +148,7 @@ class DatabaseService {
     ''');
   }
 
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      await db.execute(
-        'ALTER TABLE aktivitaeten ADD COLUMN auto_place_place_type INTEGER NOT NULL DEFAULT 1',
-      );
-    }
-    if (oldVersion < 3) {
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS tracking_log (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          ts INTEGER NOT NULL,
-          prev_status TEXT NOT NULL,
-          new_status TEXT NOT NULL,
-          short_pts INTEGER NOT NULL DEFAULT 0,
-          short_full INTEGER NOT NULL DEFAULT 0,
-          short_cluster INTEGER NOT NULL DEFAULT 0,
-          long_pts INTEGER NOT NULL DEFAULT 0,
-          long_full INTEGER NOT NULL DEFAULT 0,
-          long_cluster INTEGER NOT NULL DEFAULT 0,
-          place_id INTEGER,
-          action TEXT NOT NULL DEFAULT ''
-        )
-      ''');
-    }
-  }
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {}
 
   // ── SavedPlaces ──────────────────────────────────────────────────────────
 

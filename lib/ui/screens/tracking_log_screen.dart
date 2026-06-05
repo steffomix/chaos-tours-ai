@@ -25,11 +25,12 @@ class _TrackingLogScreenState extends State<TrackingLogScreen> {
     final entries = await DatabaseService.instance.loadRecentTrackingLog(
       limit: 500,
     );
-    if (mounted)
+    if (mounted) {
       setState(() {
         _entries = entries;
         _loading = false;
       });
+    }
   }
 
   Future<void> _clear() async {
