@@ -430,6 +430,16 @@ class TrackingEngine {
     _status = TrackingStatus.idle;
   }
 
+  /// Immediately ends the current stay (as if the user left) but keeps the
+  /// engine running so the next GPS tick can start a new stay right away.
+  /// After this call the status is reset to [TrackingStatus.moving] so that
+  /// the state machine re-evaluates on the next point.
+  Future<void> forceEndCurrentStay() async {
+    if (_currentStay == null) return;
+    await _endCurrentStay(DateTime.now().millisecondsSinceEpoch);
+    _status = TrackingStatus.moving;
+  }
+
   TrackingResult _result() {
     String notifText;
     switch (_status) {

@@ -9,6 +9,7 @@ import '../services/tracking_engine.dart';
 /// Keys used when communicating via SendPort.
 class FgTaskKeys {
   static const String setTracking = 'set_tracking';
+  static const String endStay = 'end_stay';
   static const String position = 'position';
   static const String enabled = 'enabled';
   static const String trackingStatus = 'tracking_status';
@@ -84,6 +85,8 @@ class GpsForegroundTaskHandler extends TaskHandler {
         case FgTaskKeys.setTracking:
           final enabled = data[FgTaskKeys.enabled] as bool? ?? false;
           _setTracking(enabled);
+        case FgTaskKeys.endStay:
+          _engine.forceEndCurrentStay();
       }
     }
   }
@@ -149,6 +152,10 @@ class ForegroundServiceManager {
       'cmd': FgTaskKeys.setTracking,
       FgTaskKeys.enabled: enabled,
     });
+  }
+
+  static void sendForceEndStay() {
+    FlutterForegroundTask.sendDataToTask({'cmd': FgTaskKeys.endStay});
   }
 
   // ── Listeners ────────────────────────────────────────────────────────────

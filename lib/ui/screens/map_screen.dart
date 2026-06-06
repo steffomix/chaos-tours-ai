@@ -143,8 +143,38 @@ class _MapScreenState extends State<MapScreen> {
   void _onMapTap(TapPosition _, LatLng __) {
     final hit = _hitNotifier.value;
     if (hit == null || hit.hitValues.isEmpty) return;
-    final place = hit.hitValues.first;
-    _showPlaceSheet(place);
+    if (hit.hitValues.length == 1) {
+      _showPlaceSheet(hit.hitValues.first);
+      return;
+    }
+    // Multiple overlapping circles — let the user pick one.
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      builder: (ctx) => ListView(
+        shrinkWrap: true,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: Text(
+              'Welchen Ort öffnen?',
+              style: Theme.of(ctx).textTheme.titleMedium,
+            ),
+          ),
+          ...hit.hitValues.map(
+            (p) => ListTile(
+              leading: Icon(p.placeType.icon, color: p.placeType.dotColor),
+              title: Text(p.name),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showPlaceSheet(p);
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
   }
 
   Future<void> _onLongPress(TapPosition _, LatLng latlng) async {

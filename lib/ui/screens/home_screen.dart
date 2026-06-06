@@ -359,9 +359,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           // ── Aktueller Aufenthalt ───────────────────────────────
-          if (_activeStay != null)
+          if (_activeStay != null) ...[
             Card(
-              margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              margin: const EdgeInsets.fromLTRB(12, 0, 12, 4),
               elevation: 3,
               color: Theme.of(context).colorScheme.primaryContainer,
               child: InkWell(
@@ -437,6 +437,45 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(40),
+                ),
+                icon: const Icon(Icons.call_split, size: 18),
+                label: const Text('Aufenthalt jetzt beenden & teilen'),
+                onPressed: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Aufenthalt beenden?'),
+                      content: const Text(
+                        'Der aktuelle Aufenthalt wird jetzt abgeschlossen. '
+                        'Das Tracking läuft weiter und startet bei gleichem Ort '
+                        'sofort einen neuen Aufenthalt.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('Abbrechen'),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text('Beenden'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirmed != true) return;
+                  ForegroundServiceManager.sendForceEndStay();
+                  await Future<void>.delayed(const Duration(milliseconds: 300));
+                  _loadActiveStay();
+                  _loadRecentStays();
+                },
+              ),
+            ),
+          ],
           const Divider(height: 1),
           // ── Letzte Besuche ─────────────────────────────────────
           Expanded(
