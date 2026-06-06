@@ -11,7 +11,6 @@ import '../models/saved_place.dart';
 import '../models/stay.dart';
 import '../models/stay_activity.dart';
 import '../models/stay_person.dart';
-import '../models/tracking_log_entry.dart';
 import '../models/tracking_point.dart';
 
 class DatabaseService {
@@ -130,22 +129,6 @@ class DatabaseService {
         auto_create_places INTEGER NOT NULL DEFAULT 1,
         auto_place_group_id INTEGER,
         auto_place_place_type INTEGER NOT NULL DEFAULT 1
-      )
-    ''');
-    await db.execute('''
-      CREATE TABLE tracking_log (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        ts INTEGER NOT NULL,
-        prev_status TEXT NOT NULL,
-        new_status TEXT NOT NULL,
-        short_pts INTEGER NOT NULL DEFAULT 0,
-        short_full INTEGER NOT NULL DEFAULT 0,
-        short_cluster INTEGER NOT NULL DEFAULT 0,
-        long_pts INTEGER NOT NULL DEFAULT 0,
-        long_full INTEGER NOT NULL DEFAULT 0,
-        long_cluster INTEGER NOT NULL DEFAULT 0,
-        place_id INTEGER,
-        action TEXT NOT NULL DEFAULT ''
       )
     ''');
   }
@@ -538,40 +521,6 @@ class DatabaseService {
   Future<void> deleteAktivitaet(int id) async {
     final db = await database;
     await db.delete('aktivitaeten', where: 'id = ?', whereArgs: [id]);
-  }
-
-  // ── Tracking Log ─────────────────────────────────────────────────────────
-
-  Future<void> insertTrackingLog(TrackingLogEntry entry) async {
-    final db = await database;
-    await db.insert('tracking_log', entry.toMap());
-  }
-
-  /// Returns the most recent [limit] log entries (newest first).
-  Future<List<TrackingLogEntry>> loadRecentTrackingLog({
-    int limit = 500,
-  }) async {
-    final db = await database;
-    final rows = await db.query(
-      'tracking_log',
-      orderBy: 'ts DESC',
-      limit: limit,
-    );
-    return rows.map(TrackingLogEntry.fromMap).toList();
-  }
-
-  /// Deletes log entries older than [hours] hours.
-  Future<void> pruneTrackingLog({int hours = 24}) async {
-    final db = await database;
-    final cutoff = DateTime.now()
-        .subtract(Duration(hours: hours))
-        .millisecondsSinceEpoch;
-    await db.delete('tracking_log', where: 'ts < ?', whereArgs: [cutoff]);
-  }
-
-  Future<void> clearTrackingLog() async {
-    final db = await database;
-    await db.delete('tracking_log');
   }
 
   // ── Dump / Import ─────────────────────────────────────────────────────────
