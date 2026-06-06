@@ -11,8 +11,17 @@ void main() async {
   await SettingsService.instance.init();
   await DatabaseService.instance.cleanupOldTrackingPoints();
 
-  // Ensure at least one Aktivitaet exists, then apply its settings.
+  // Ensure default place groups exist on first install.
   final s = SettingsService.instance;
+  final newGroups = await DatabaseService.instance.ensureDefaultGroups();
+  if (newGroups != null) {
+    if (s.autoPlaceGroupId == null) s.autoPlaceGroupId = newGroups.autoGroupId;
+    if (s.defaultPlaceGroupId == null) {
+      s.defaultPlaceGroupId = newGroups.defaultGroupId;
+    }
+  }
+
+  // Ensure at least one Aktivitaet exists, then apply its settings.
   final defaultId = await DatabaseService.instance.ensureDefaultAktivitaet(
     gpsInterval: s.gpsIntervalSeconds,
     stayDetection: s.stayDetectionSeconds,
@@ -20,6 +29,7 @@ void main() async {
     radius: s.defaultRadiusMeters,
     autoCreate: s.autoCreatePlaces,
     autoPlaceGroupId: s.autoPlaceGroupId,
+    defaultPlaceGroupId: s.defaultPlaceGroupId,
   );
   final activeId = s.activeAktivitaetId ?? defaultId;
   final aktiv = await DatabaseService.instance.loadAktivitaet(activeId);
@@ -31,5 +41,6 @@ void main() async {
   }
 
   ForegroundServiceManager.init();
+  FlutterForegroundTask.initCommunicationPort();
   runApp(WithForegroundTask(child: const App()));
 }

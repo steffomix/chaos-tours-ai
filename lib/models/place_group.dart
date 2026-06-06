@@ -1,3 +1,5 @@
+import 'saved_place.dart';
+
 class PlaceGroup {
   final int? id;
   final String name;
@@ -6,6 +8,7 @@ class PlaceGroup {
   final bool includePersons;
   final bool includeActivities;
   final bool isAutoGroup;
+  final PlaceType placeType;
 
   PlaceGroup({
     this.id,
@@ -15,9 +18,11 @@ class PlaceGroup {
     this.includePersons = true,
     this.includeActivities = true,
     this.isAutoGroup = false,
+    this.placeType = PlaceType.public,
   });
 
   factory PlaceGroup.fromMap(Map<String, dynamic> map) {
+    final typeIndex = (map['place_type'] as int?) ?? 0;
     return PlaceGroup(
       id: map['id'] as int?,
       name: map['name'] as String,
@@ -26,6 +31,8 @@ class PlaceGroup {
       includePersons: (map['include_persons'] as int? ?? 1) == 1,
       includeActivities: (map['include_activities'] as int? ?? 1) == 1,
       isAutoGroup: (map['is_auto_group'] as int? ?? 0) == 1,
+      placeType:
+          PlaceType.values[typeIndex.clamp(0, PlaceType.values.length - 1)],
     );
   }
 
@@ -38,6 +45,7 @@ class PlaceGroup {
       'include_persons': includePersons ? 1 : 0,
       'include_activities': includeActivities ? 1 : 0,
       'is_auto_group': isAutoGroup ? 1 : 0,
+      'place_type': placeType.index,
     };
   }
 
@@ -49,6 +57,7 @@ class PlaceGroup {
     bool? includePersons,
     bool? includeActivities,
     bool? isAutoGroup,
+    PlaceType? placeType,
     bool clearCalendarId = false,
   }) {
     return PlaceGroup(
@@ -59,6 +68,7 @@ class PlaceGroup {
       includePersons: includePersons ?? this.includePersons,
       includeActivities: includeActivities ?? this.includeActivities,
       isAutoGroup: isAutoGroup ?? this.isAutoGroup,
+      placeType: placeType ?? this.placeType,
     );
   }
 }

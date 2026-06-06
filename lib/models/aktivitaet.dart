@@ -11,8 +11,8 @@ class Aktivitaet {
   final bool autoCreatePlaces;
   final int? autoPlaceGroupId;
 
-  /// PlaceType index used for automatically created places (default: 1 = private).
-  final int autoPlacePlaceTypeIndex;
+  /// Group ID pre-selected when the user creates a place manually.
+  final int? defaultPlaceGroupId;
 
   /// How many days of stay history are shown on the timeline map (default: 7).
   final int timelineHistoryDays;
@@ -26,7 +26,7 @@ class Aktivitaet {
     this.defaultRadiusMeters = 50.0,
     this.autoCreatePlaces = true,
     this.autoPlaceGroupId,
-    this.autoPlacePlaceTypeIndex = 1,
+    this.defaultPlaceGroupId,
     this.timelineHistoryDays = 7,
   });
 
@@ -41,7 +41,7 @@ class Aktivitaet {
           (map['default_radius_meters'] as num?)?.toDouble() ?? 50.0,
       autoCreatePlaces: (map['auto_create_places'] as int? ?? 1) == 1,
       autoPlaceGroupId: map['auto_place_group_id'] as int?,
-      autoPlacePlaceTypeIndex: map['auto_place_place_type'] as int? ?? 1,
+      defaultPlaceGroupId: map['default_place_group_id'] as int?,
       timelineHistoryDays: map['timeline_history_days'] as int? ?? 7,
     );
   }
@@ -56,7 +56,8 @@ class Aktivitaet {
       'default_radius_meters': defaultRadiusMeters,
       'auto_create_places': autoCreatePlaces ? 1 : 0,
       if (autoPlaceGroupId != null) 'auto_place_group_id': autoPlaceGroupId,
-      'auto_place_place_type': autoPlacePlaceTypeIndex,
+      if (defaultPlaceGroupId != null)
+        'default_place_group_id': defaultPlaceGroupId,
       'timeline_history_days': timelineHistoryDays,
     };
   }
@@ -71,7 +72,8 @@ class Aktivitaet {
     bool? autoCreatePlaces,
     int? autoPlaceGroupId,
     bool clearAutoPlaceGroupId = false,
-    int? autoPlacePlaceTypeIndex,
+    int? defaultPlaceGroupId,
+    bool clearDefaultPlaceGroupId = false,
     int? timelineHistoryDays,
   }) {
     return Aktivitaet(
@@ -85,8 +87,9 @@ class Aktivitaet {
       autoPlaceGroupId: clearAutoPlaceGroupId
           ? null
           : (autoPlaceGroupId ?? this.autoPlaceGroupId),
-      autoPlacePlaceTypeIndex:
-          autoPlacePlaceTypeIndex ?? this.autoPlacePlaceTypeIndex,
+      defaultPlaceGroupId: clearDefaultPlaceGroupId
+          ? null
+          : (defaultPlaceGroupId ?? this.defaultPlaceGroupId),
       timelineHistoryDays: timelineHistoryDays ?? this.timelineHistoryDays,
     );
   }

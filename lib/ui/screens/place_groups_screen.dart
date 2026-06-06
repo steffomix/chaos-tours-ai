@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/place_group.dart';
+import '../../models/saved_place.dart';
 import '../../services/calendar_service.dart';
 import '../../services/database_service.dart';
 
@@ -72,6 +73,7 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
     bool includePersons = existing?.includePersons ?? true;
     bool includeActivities = existing?.includeActivities ?? true;
     bool isAutoGroup = existing?.isAutoGroup ?? false;
+    PlaceType placeType = existing?.placeType ?? PlaceType.public;
 
     return showDialog<PlaceGroup>(
       context: context,
@@ -143,6 +145,30 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
                   value: isAutoGroup,
                   onChanged: (v) => setS(() => isAutoGroup = v ?? false),
                 ),
+                const SizedBox(height: 8),
+                const Text('Typ:'),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: PlaceType.values.map((t) {
+                    final selected = placeType == t;
+                    return ChoiceChip(
+                      avatar: Icon(
+                        t.icon,
+                        size: 16,
+                        color: selected ? Colors.white : t.dotColor,
+                      ),
+                      label: Text(t.label),
+                      selected: selected,
+                      selectedColor: t.dotColor,
+                      labelStyle: TextStyle(
+                        color: selected ? Colors.white : null,
+                      ),
+                      onSelected: (_) => setS(() => placeType = t),
+                    );
+                  }).toList(),
+                ),
               ],
             ),
           ),
@@ -163,6 +189,7 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
                   includePersons: includePersons,
                   includeActivities: includeActivities,
                   isAutoGroup: isAutoGroup,
+                  placeType: placeType,
                 );
                 Navigator.pop(ctx, group);
               },
@@ -218,11 +245,24 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
                 return ListTile(
                   leading: Icon(
                     g.isAutoGroup ? Icons.auto_awesome : Icons.folder,
+                    color: g.placeType.dotColor,
                   ),
                   title: Text(g.name),
-                  subtitle: g.calendarId != null
-                      ? const Text('Mit Kalender verknüpft')
-                      : null,
+                  subtitle: Row(
+                    children: [
+                      Icon(
+                        g.placeType.icon,
+                        size: 14,
+                        color: g.placeType.dotColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(g.placeType.label),
+                      if (g.calendarId != null) ...const [
+                        SizedBox(width: 8),
+                        Icon(Icons.calendar_today, size: 14),
+                      ],
+                    ],
+                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

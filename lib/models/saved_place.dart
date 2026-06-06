@@ -117,7 +117,6 @@ class SavedPlace {
       'lat': lat,
       'lng': lng,
       'radius': radius,
-      'place_type': placeType.index,
       'notes': notes,
       'created_at': createdAt,
       if (groupId != null) 'group_id': groupId,

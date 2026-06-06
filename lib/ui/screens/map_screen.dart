@@ -208,6 +208,7 @@ class _MapScreenState extends State<MapScreen> {
       name: name,
       lat: latlng.latitude,
       lng: latlng.longitude,
+      groupId: SettingsService.instance.defaultPlaceGroupId,
     );
     await DatabaseService.instance.insertPlace(newPlace);
     await _loadPlaces();

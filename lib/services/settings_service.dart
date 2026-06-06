@@ -12,7 +12,7 @@ class SettingsService {
   static const String _keyDefaultRadius = 'default_radius_meters';
   static const String _keyAutoCreate = 'auto_create_places';
   static const String _keyAutoPlaceGroup = 'auto_place_group_id';
-  static const String _keyAutoPlacePlaceType = 'auto_place_place_type';
+  static const String _keyDefaultPlaceGroup = 'default_place_group_id';
   static const String _keyTrackingEnabled = 'tracking_enabled';
   static const String _keyActiveAktivitaetId = 'active_aktivitaet_id';
   static const String _keyShowForbiddenPlaces = 'show_forbidden_places';
@@ -21,6 +21,7 @@ class SettingsService {
   static const String _keyGpsSmoothingPoints = 'gps_smoothing_points';
   static const String _keyCalendarEnabled = 'calendar_enabled';
   static const String _keyTimelineHistoryDays = 'timeline_history_days';
+  static const String _keyForceEndStayPending = 'force_end_stay_pending';
 
   SharedPreferences? _prefs;
 
@@ -65,9 +66,15 @@ class SettingsService {
     }
   }
 
-  /// PlaceType index for automatically created places (default: 1 = private).
-  int get autoPlacePlaceTypeIndex => _p.getInt(_keyAutoPlacePlaceType) ?? 1;
-  set autoPlacePlaceTypeIndex(int v) => _p.setInt(_keyAutoPlacePlaceType, v);
+  /// Group ID pre-selected when the user creates a place manually (nullable).
+  int? get defaultPlaceGroupId => _p.getInt(_keyDefaultPlaceGroup);
+  set defaultPlaceGroupId(int? v) {
+    if (v == null) {
+      _p.remove(_keyDefaultPlaceGroup);
+    } else {
+      _p.setInt(_keyDefaultPlaceGroup, v);
+    }
+  }
 
   /// Whether the background tracking service is enabled (default: false).
   bool get trackingEnabled => _p.getBool(_keyTrackingEnabled) ?? false;
@@ -101,6 +108,11 @@ class SettingsService {
   set timelineHistoryDays(int v) =>
       _p.setInt(_keyTimelineHistoryDays, v.clamp(1, 30));
 
+  /// Set by the UI to request a force-end of the current stay.
+  /// The task isolate reads and clears this flag at the start of each tick.
+  bool get forceEndStayPending => _p.getBool(_keyForceEndStayPending) ?? false;
+  set forceEndStayPending(bool v) => _p.setBool(_keyForceEndStayPending, v);
+
   // ── Aktivitaet binding ───────────────────────────────────────────────────
 
   /// The ID of the currently selected [Aktivitaet].
@@ -123,7 +135,7 @@ class SettingsService {
     defaultRadiusMeters = a.defaultRadiusMeters;
     autoCreatePlaces = a.autoCreatePlaces;
     autoPlaceGroupId = a.autoPlaceGroupId;
-    autoPlacePlaceTypeIndex = a.autoPlacePlaceTypeIndex;
+    defaultPlaceGroupId = a.defaultPlaceGroupId;
     timelineHistoryDays = a.timelineHistoryDays;
     activeAktivitaetId = a.id;
   }
@@ -140,7 +152,7 @@ class SettingsService {
       defaultRadiusMeters: defaultRadiusMeters,
       autoCreatePlaces: autoCreatePlaces,
       autoPlaceGroupId: autoPlaceGroupId,
-      autoPlacePlaceTypeIndex: autoPlacePlaceTypeIndex,
+      defaultPlaceGroupId: defaultPlaceGroupId,
       timelineHistoryDays: timelineHistoryDays,
     );
   }

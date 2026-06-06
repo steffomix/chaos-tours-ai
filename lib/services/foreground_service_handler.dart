@@ -27,6 +27,8 @@ class GpsForegroundTaskHandler extends TaskHandler {
     FlutterForegroundTask.initCommunicationPort();
     FlutterForegroundTask.addTaskDataCallback(_onDataFromMain);
     await SettingsService.instance.init();
+    // Clear any stale force-end flag left from a previous session.
+    SettingsService.instance.forceEndStayPending = false;
     _trackingEnabled = SettingsService.instance.trackingEnabled;
     if (_trackingEnabled) {
       await _engine.initialize();
@@ -35,6 +37,18 @@ class GpsForegroundTaskHandler extends TaskHandler {
 
   @override
   Future<void> onRepeatEvent(DateTime timestamp) async {
+    // Sync tracking-enabled state from SharedPreferences (SendPort is unreliable).
+    final wantTracking = SettingsService.instance.trackingEnabled;
+    if (wantTracking != _trackingEnabled) {
+      await _setTracking(wantTracking);
+    }
+
+    // Check for a force-end request posted via SharedPreferences.
+    if (SettingsService.instance.forceEndStayPending) {
+      SettingsService.instance.forceEndStayPending = false;
+      await _engine.forceEndCurrentStay();
+    }
+
     if (!_trackingEnabled) return;
     try {
       final position = await Geolocator.getCurrentPosition(
@@ -86,7 +100,8 @@ class GpsForegroundTaskHandler extends TaskHandler {
           final enabled = data[FgTaskKeys.enabled] as bool? ?? false;
           _setTracking(enabled);
         case FgTaskKeys.endStay:
-          _engine.forceEndCurrentStay();
+          // Legacy path kept for completeness; primary path is SharedPreferences.
+          SettingsService.instance.forceEndStayPending = true;
       }
     }
   }
@@ -155,6 +170,10 @@ class ForegroundServiceManager {
   }
 
   static void sendForceEndStay() {
+    // Write the flag via SharedPreferences — the task isolate reads it on the
+    // next onRepeatEvent tick. The SendPort message is sent as a fallback for
+    // cases where the message mechanism happens to work.
+    SettingsService.instance.forceEndStayPending = true;
     FlutterForegroundTask.sendDataToTask({'cmd': FgTaskKeys.endStay});
   }
 

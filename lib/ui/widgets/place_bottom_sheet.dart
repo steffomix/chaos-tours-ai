@@ -29,7 +29,6 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
   late TextEditingController _nameCtrl;
   late TextEditingController _notesCtrl;
   late double _radius;
-  late PlaceType _placeType;
   int? _groupId;
   List<PlaceGroup> _groups = [];
 
@@ -47,7 +46,6 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     _nameCtrl = TextEditingController(text: widget.place.name);
     _notesCtrl = TextEditingController(text: widget.place.notes);
     _radius = widget.place.radius;
-    _placeType = widget.place.placeType;
     _groupId = widget.place.groupId;
     _loadGroups();
     _loadVisitStats();
@@ -104,7 +102,6 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
       name: _nameCtrl.text.trim(),
       notes: _notesCtrl.text.trim(),
       radius: _radius,
-      placeType: _placeType,
       groupId: groupId,
       clearGroupId: groupId == null,
     );
@@ -431,7 +428,10 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
             // ── Titelzeile ─────────────────────────────────────────────
             Row(
               children: [
-                Icon(_placeType.icon, color: _placeType.dotColor),
+                Icon(
+                  widget.place.placeType.icon,
+                  color: widget.place.placeType.dotColor,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -609,29 +609,6 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               onChanged: (v) => setState(() => _radius = v),
             ),
             const SizedBox(height: 8),
-            // ── Typ ────────────────────────────────────────────────────
-            const Text('Typ:'),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: PlaceType.values.map((t) {
-                final selected = _placeType == t;
-                return ChoiceChip(
-                  avatar: Icon(
-                    t.icon,
-                    size: 16,
-                    color: selected ? Colors.white : t.dotColor,
-                  ),
-                  label: Text(t.label),
-                  selected: selected,
-                  selectedColor: t.dotColor,
-                  labelStyle: TextStyle(color: selected ? Colors.white : null),
-                  onSelected: (_) => setState(() => _placeType = t),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 12),
             // ── Gruppe ─────────────────────────────────────────────────
             DropdownButtonFormField<int?>(
               initialValue: _groupId == null
@@ -647,7 +624,20 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                   child: Text('Keine Gruppe'),
                 ),
                 ..._groups.map(
-                  (g) => DropdownMenuItem(value: g.id, child: Text(g.name)),
+                  (g) => DropdownMenuItem(
+                    value: g.id,
+                    child: Row(
+                      children: [
+                        Icon(
+                          g.placeType.icon,
+                          size: 16,
+                          color: g.placeType.dotColor,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(g.name),
+                      ],
+                    ),
+                  ),
                 ),
               ],
               onChanged: (v) => setState(() => _groupId = v),

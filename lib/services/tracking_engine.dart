@@ -41,6 +41,7 @@ class TrackingEngine {
 
   /// Load persisted state on service start.
   Future<void> initialize() async {
+    print('### Initializing TrackingEngine state from database...');
     final active = await DatabaseService.instance.loadActiveStay();
     if (active != null) {
       _currentStay = active;
@@ -303,7 +304,6 @@ class TrackingEngine {
         lat: centroidLat,
         lng: centroidLng,
         radius: settings.defaultRadiusMeters,
-        placeType: PlaceType.values[settings.autoPlacePlaceTypeIndex],
         groupId: settings.autoPlaceGroupId,
       );
       final placeId = await DatabaseService.instance.insertPlace(place);
@@ -318,11 +318,20 @@ class TrackingEngine {
       _currentStay = stay.copyWith(id: id);
 
       // Create arrival calendar event for auto-created place
-      await _createArrivalCalendarEvent(
-        _currentStay!,
-        autoPlaceName,
-        settings.autoPlaceGroupId,
-      );
+      // (only if the group's placeType allows calendar sync)
+      final autoGroupId = settings.autoPlaceGroupId;
+      if (autoGroupId != null) {
+        final autoGroup = await DatabaseService.instance.loadPlaceGroup(
+          autoGroupId,
+        );
+        if (autoGroup != null && autoGroup.placeType.syncsCalendar) {
+          await _createArrivalCalendarEvent(
+            _currentStay!,
+            autoPlaceName,
+            autoGroupId,
+          );
+        }
+      }
       return;
     }
 

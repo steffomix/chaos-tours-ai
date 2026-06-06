@@ -44,7 +44,6 @@ class DatabaseService {
         lat REAL NOT NULL,
         lng REAL NOT NULL,
         radius REAL NOT NULL DEFAULT 50.0,
-        place_type INTEGER NOT NULL DEFAULT 1,
         notes TEXT NOT NULL DEFAULT '',
         group_id INTEGER,
         created_at INTEGER NOT NULL DEFAULT 0
@@ -58,7 +57,8 @@ class DatabaseService {
         include_notes INTEGER NOT NULL DEFAULT 1,
         include_persons INTEGER NOT NULL DEFAULT 1,
         include_activities INTEGER NOT NULL DEFAULT 1,
-        is_auto_group INTEGER NOT NULL DEFAULT 0
+        is_auto_group INTEGER NOT NULL DEFAULT 0,
+        place_type INTEGER NOT NULL DEFAULT 0
       )
     ''');
     await db.execute('''
@@ -128,7 +128,7 @@ class DatabaseService {
         default_radius_meters REAL NOT NULL DEFAULT 50.0,
         auto_create_places INTEGER NOT NULL DEFAULT 1,
         auto_place_group_id INTEGER,
-        auto_place_place_type INTEGER NOT NULL DEFAULT 1,
+        default_place_group_id INTEGER,
         timeline_history_days INTEGER NOT NULL DEFAULT 7
       )
     ''');
@@ -145,7 +145,12 @@ class DatabaseService {
 
   Future<List<SavedPlace>> loadAllPlaces() async {
     final db = await database;
-    final rows = await db.query('saved_places');
+    final rows = await db.rawQuery('''
+      SELECT sp.*,
+             COALESCE(pg.place_type, 0) AS place_type
+      FROM saved_places sp
+      LEFT JOIN place_groups pg ON sp.group_id = pg.id
+    ''');
     return rows.map(SavedPlace.fromMap).toList();
   }
 
@@ -653,6 +658,7 @@ class DatabaseService {
     double radius = 50.0,
     bool autoCreate = true,
     int? autoPlaceGroupId,
+    int? defaultPlaceGroupId,
   }) async {
     final all = await loadAllAktivitaeten();
     if (all.isNotEmpty) return all.first.id!;
@@ -665,7 +671,29 @@ class DatabaseService {
         defaultRadiusMeters: radius,
         autoCreatePlaces: autoCreate,
         autoPlaceGroupId: autoPlaceGroupId,
+        defaultPlaceGroupId: defaultPlaceGroupId,
       ),
     );
+  }
+
+  /// Creates default place groups on first install (when no groups exist yet).
+  /// Returns the IDs of the "Automatisch" group and the "Standard" group,
+  /// or null if groups already existed.
+  Future<({int autoGroupId, int defaultGroupId})?> ensureDefaultGroups() async {
+    final existing = await loadAllPlaceGroups();
+    if (existing.isNotEmpty) return null;
+
+    // Import PlaceType through the model layer.
+    final autoId = await insertPlaceGroup(
+      PlaceGroup(
+        name: 'Automatisch',
+        placeType: PlaceType.private,
+        isAutoGroup: true,
+      ),
+    );
+    final defId = await insertPlaceGroup(
+      PlaceGroup(name: 'Standard', placeType: PlaceType.public),
+    );
+    return (autoGroupId: autoId, defaultGroupId: defId);
   }
 }
