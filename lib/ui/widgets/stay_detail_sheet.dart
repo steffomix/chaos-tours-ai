@@ -71,6 +71,37 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
     }
   }
 
+  Future<void> _deleteStay() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Aufenthalt löschen'),
+        content: const Text(
+          'Soll dieser Aufenthalt wirklich gelöscht werden? Diese Aktion kann nicht rückgängig gemacht werden.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await DatabaseService.instance.deleteStay(widget.stay.id!);
+    if (mounted) {
+      Navigator.pop(context);
+      widget.onUpdated?.call();
+    }
+  }
+
   Future<void> _save() async {
     final updated = widget.stay.copyWith(
       notes: _notesCtrl.text.trim(),
@@ -461,6 +492,18 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                     },
                     icon: const Icon(Icons.save),
                     label: const Text('Speichern'),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: _deleteStay,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Theme.of(context).colorScheme.error,
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Aufenthalt löschen'),
                   ),
                 ],
               ),
