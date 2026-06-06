@@ -25,6 +25,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _gpsSmoothingPoints;
   late bool _showTrackingPoints;
   late double _trackingPointRadius;
+  late int _timelineHistoryDays;
   List<PlaceGroup> _groups = [];
 
   // Aktivitaet management
@@ -45,6 +46,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _gpsSmoothingPoints = s.gpsSmoothingPoints;
     _showTrackingPoints = s.showTrackingPoints;
     _trackingPointRadius = s.trackingPointRadius;
+    _timelineHistoryDays = s.timelineHistoryDays;
     _loadGroups();
     _loadAktivitaeten();
   }
@@ -78,6 +80,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     s.gpsSmoothingPoints = _gpsSmoothingPoints;
     s.showTrackingPoints = _showTrackingPoints;
     s.trackingPointRadius = _trackingPointRadius;
+    s.timelineHistoryDays = _timelineHistoryDays;
 
     // Persist settings back into the active Aktivitaet.
     final a = _activeAktivitaet;
@@ -319,6 +322,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onChanged: (v) => setState(() => _trackingPointRadius = v),
               ),
             ),
+          ListTile(
+            title: Text(
+              'Zeitachsen-Verlauf: $_timelineHistoryDays '
+              '${_timelineHistoryDays == 1 ? 'Tag' : 'Tage'}',
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Slider(
+                  value: _timelineHistoryDays.toDouble(),
+                  min: 1,
+                  max: 30,
+                  divisions: 29,
+                  label: '$_timelineHistoryDays',
+                  onChanged: (v) =>
+                      setState(() => _timelineHistoryDays = v.round()),
+                ),
+                const Text(
+                  'Wie viele Tage der Reiseverlauf auf der Zeitachsen-Karte angezeigt wird.',
+                  style: TextStyle(fontSize: 11),
+                ),
+              ],
+            ),
+          ),
           const Divider(),
           // ── Verwaltung ───────────────────────────────────────────────
           const Padding(
@@ -352,13 +379,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: const Text('Dump erstellen, laden & teilen'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.pushNamed(context, '/database-dump'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.analytics_outlined),
-            title: const Text('Tracking-Log'),
-            subtitle: const Text('Verlauf der Tracking Engine anzeigen'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, '/tracking-log'),
           ),
           const Divider(),
           // ── Berechtigungen ───────────────────────────────────────────

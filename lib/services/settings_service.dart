@@ -20,6 +20,7 @@ class SettingsService {
   static const String _keyTrackingPointRadius = 'tracking_point_radius';
   static const String _keyGpsSmoothingPoints = 'gps_smoothing_points';
   static const String _keyCalendarEnabled = 'calendar_enabled';
+  static const String _keyTimelineHistoryDays = 'timeline_history_days';
 
   SharedPreferences? _prefs;
 
@@ -95,6 +96,11 @@ class SettingsService {
   bool get calendarEnabled => _p.getBool(_keyCalendarEnabled) ?? true;
   set calendarEnabled(bool v) => _p.setBool(_keyCalendarEnabled, v);
 
+  /// How many days of stay history are shown on the timeline map (1–30, default: 7).
+  int get timelineHistoryDays => _p.getInt(_keyTimelineHistoryDays) ?? 7;
+  set timelineHistoryDays(int v) =>
+      _p.setInt(_keyTimelineHistoryDays, v.clamp(1, 30));
+
   // ── Aktivitaet binding ───────────────────────────────────────────────────
 
   /// The ID of the currently selected [Aktivitaet].
@@ -118,6 +124,7 @@ class SettingsService {
     autoCreatePlaces = a.autoCreatePlaces;
     autoPlaceGroupId = a.autoPlaceGroupId;
     autoPlacePlaceTypeIndex = a.autoPlacePlaceTypeIndex;
+    timelineHistoryDays = a.timelineHistoryDays;
     activeAktivitaetId = a.id;
   }
 
@@ -134,6 +141,7 @@ class SettingsService {
       autoCreatePlaces: autoCreatePlaces,
       autoPlaceGroupId: autoPlaceGroupId,
       autoPlacePlaceTypeIndex: autoPlacePlaceTypeIndex,
+      timelineHistoryDays: timelineHistoryDays,
     );
   }
 }

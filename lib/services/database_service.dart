@@ -128,7 +128,8 @@ class DatabaseService {
         default_radius_meters REAL NOT NULL DEFAULT 50.0,
         auto_create_places INTEGER NOT NULL DEFAULT 1,
         auto_place_group_id INTEGER,
-        auto_place_place_type INTEGER NOT NULL DEFAULT 1
+        auto_place_place_type INTEGER NOT NULL DEFAULT 1,
+        timeline_history_days INTEGER NOT NULL DEFAULT 7
       )
     ''');
   }

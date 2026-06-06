@@ -14,6 +14,9 @@ class Aktivitaet {
   /// PlaceType index used for automatically created places (default: 1 = private).
   final int autoPlacePlaceTypeIndex;
 
+  /// How many days of stay history are shown on the timeline map (default: 7).
+  final int timelineHistoryDays;
+
   const Aktivitaet({
     this.id,
     required this.name,
@@ -24,6 +27,7 @@ class Aktivitaet {
     this.autoCreatePlaces = true,
     this.autoPlaceGroupId,
     this.autoPlacePlaceTypeIndex = 1,
+    this.timelineHistoryDays = 7,
   });
 
   factory Aktivitaet.fromMap(Map<String, dynamic> map) {
@@ -38,6 +42,7 @@ class Aktivitaet {
       autoCreatePlaces: (map['auto_create_places'] as int? ?? 1) == 1,
       autoPlaceGroupId: map['auto_place_group_id'] as int?,
       autoPlacePlaceTypeIndex: map['auto_place_place_type'] as int? ?? 1,
+      timelineHistoryDays: map['timeline_history_days'] as int? ?? 7,
     );
   }
 
@@ -52,6 +57,7 @@ class Aktivitaet {
       'auto_create_places': autoCreatePlaces ? 1 : 0,
       if (autoPlaceGroupId != null) 'auto_place_group_id': autoPlaceGroupId,
       'auto_place_place_type': autoPlacePlaceTypeIndex,
+      'timeline_history_days': timelineHistoryDays,
     };
   }
 
@@ -66,6 +72,7 @@ class Aktivitaet {
     int? autoPlaceGroupId,
     bool clearAutoPlaceGroupId = false,
     int? autoPlacePlaceTypeIndex,
+    int? timelineHistoryDays,
   }) {
     return Aktivitaet(
       id: id ?? this.id,
@@ -80,6 +87,7 @@ class Aktivitaet {
           : (autoPlaceGroupId ?? this.autoPlaceGroupId),
       autoPlacePlaceTypeIndex:
           autoPlacePlaceTypeIndex ?? this.autoPlacePlaceTypeIndex,
+      timelineHistoryDays: timelineHistoryDays ?? this.timelineHistoryDays,
     );
   }
 }

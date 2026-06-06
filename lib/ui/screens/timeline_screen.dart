@@ -7,6 +7,7 @@ import '../../models/stay.dart';
 import '../../models/stay_activity.dart';
 import '../../models/stay_person.dart';
 import '../../services/database_service.dart';
+import '../../services/settings_service.dart';
 import '../widgets/stay_card.dart';
 import '../widgets/stay_detail_sheet.dart';
 
@@ -304,7 +305,13 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   Widget _buildMap() {
-    final filtered = _filteredStays;
+    final historyDays = SettingsService.instance.timelineHistoryDays;
+    final cutoff = DateTime.now().subtract(Duration(days: historyDays));
+
+    final filtered = _filteredStays
+        .where((s) => s.startDateTime.isAfter(cutoff))
+        .toList();
+
     final staysWithCoords = filtered
         .map((s) => (stay: s, place: _placeForStay(s)))
         .where((e) => e.place != null || e.stay.address != null)
@@ -320,7 +327,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
         child: GestureDetector(
           onTap: () => showModalBottomSheet<void>(
             context: context,
-isScrollControlled: true,
+            isScrollControlled: true,
             useSafeArea: true,
             builder: (_) => StayDetailSheet(stay: e.stay, onUpdated: _load),
           ),
@@ -328,6 +335,24 @@ isScrollControlled: true,
         ),
       );
     }).toList();
+
+    // Build journey polyline: stays with coordinates sorted oldest → newest
+    final pathEntries = staysWithCoords.where((e) => e.place != null).toList()
+      ..sort((a, b) => a.stay.startTime.compareTo(b.stay.startTime));
+
+    final pathPoints = pathEntries
+        .map((e) => LatLng(e.place!.lat, e.place!.lng))
+        .toList();
+
+    // Gradient: transparent (oldest/past) → opaque teal (newest/present)
+    List<Color>? gradientColors;
+    if (pathPoints.length >= 2) {
+      final n = pathPoints.length;
+      gradientColors = List.generate(n, (i) {
+        final opacity = i / (n - 1); // 0.0 … 1.0
+        return Colors.teal.withValues(alpha: opacity * 0.9);
+      });
+    }
 
     final center =
         _lastKnownPosition ??
@@ -348,6 +373,17 @@ isScrollControlled: true,
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'de.chaostours.chaos_tours_ai',
             ),
+            if (pathPoints.length >= 2)
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: pathPoints,
+                    strokeWidth: 3.0,
+                    color: Colors.teal.withValues(alpha: 0.6),
+                    gradientColors: gradientColors,
+                  ),
+                ],
+              ),
             MarkerLayer(markers: markers),
           ],
         ),
