@@ -37,6 +37,9 @@ class GpsForegroundTaskHandler extends TaskHandler {
 
   @override
   Future<void> onRepeatEvent(DateTime timestamp) async {
+    // Reload SharedPreferences from disk so we see writes from the main isolate.
+    await SettingsService.instance.reload();
+
     // Sync tracking-enabled state from SharedPreferences (SendPort is unreliable).
     final wantTracking = SettingsService.instance.trackingEnabled;
     if (wantTracking != _trackingEnabled) {

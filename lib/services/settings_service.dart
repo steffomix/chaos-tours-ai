@@ -29,6 +29,12 @@ class SettingsService {
     _prefs ??= await SharedPreferences.getInstance();
   }
 
+  /// Reload values from disk — call this in the service isolate before reading
+  /// values that may have been written by the main isolate.
+  Future<void> reload() async {
+    await _prefs?.reload();
+  }
+
   SharedPreferences get _p {
     assert(_prefs != null, 'SettingsService.init() must be called before use');
     return _prefs!;

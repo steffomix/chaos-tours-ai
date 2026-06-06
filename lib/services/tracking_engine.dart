@@ -41,7 +41,6 @@ class TrackingEngine {
 
   /// Load persisted state on service start.
   Future<void> initialize() async {
-    print('### Initializing TrackingEngine state from database...');
     final active = await DatabaseService.instance.loadActiveStay();
     if (active != null) {
       _currentStay = active;

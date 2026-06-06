@@ -212,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _trackingEnabled = value;
       _trackingStatusText = value
-          ? 'Tracking wird gestartet…'
+          ? 'Tracking sammelt GPS Daten…'
           : 'Tracking deaktiviert';
     });
     SettingsService.instance.trackingEnabled = value;

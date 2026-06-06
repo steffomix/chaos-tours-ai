@@ -15,10 +15,8 @@ void main() async {
   final s = SettingsService.instance;
   final newGroups = await DatabaseService.instance.ensureDefaultGroups();
   if (newGroups != null) {
-    if (s.autoPlaceGroupId == null) s.autoPlaceGroupId = newGroups.autoGroupId;
-    if (s.defaultPlaceGroupId == null) {
-      s.defaultPlaceGroupId = newGroups.defaultGroupId;
-    }
+    s.autoPlaceGroupId ??= newGroups.autoGroupId;
+    s.defaultPlaceGroupId ??= newGroups.defaultGroupId;
   }
 
   // Ensure at least one Aktivitaet exists, then apply its settings.

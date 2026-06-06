@@ -240,7 +240,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
     if (filtered.isEmpty) {
       return const Center(
         child: Text(
-          'Keine Aufenthalte gefunden.\nTracking einschalten um Aufenthalte aufzuzeichnen.',
+          'Keine abgeschlossenen Aufenthalte gefunden.\nTracking einschalten um Aufenthalte aufzuzeichnen.',
           textAlign: TextAlign.center,
         ),
       );
