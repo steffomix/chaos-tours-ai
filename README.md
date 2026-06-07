@@ -1,8 +1,8 @@
-# Chaos Tours AI
+# Chaos Tours
 
 **Automatische Aufenthaltserkennung und persönliches Bewegungsprotokoll**
 
-Chaos Tours AI ist eine Android-App, die im Hintergrund deinen Aufenthaltsort verfolgt, automatisch erkennt wo du dich aufhältst, und daraus ein detailliertes, durchsuchbares Bewegungsprotokoll erstellt – mit Orten, Personen, Aktivitäten und optionaler Kalenderintegration.
+Chaos Tours ist eine Android-App, die im Hintergrund deinen Aufenthaltsort verfolgt, automatisch erkennt wo du dich aufhältst, und daraus ein detailliertes, durchsuchbares Bewegungsprotokoll erstellt – mit Orten, Personen, Aktivitäten und optionaler Kalenderintegration.
 
 ---
 
@@ -81,8 +81,8 @@ Jedem Aufenthalt können zugeordnet werden:
 
 ### 💾 Datenverwaltung
 - SQLite-Datenbank (lokal, kein Cloud-Zwang)
-- Export/Import als JSON
-- Datenbankrücksetzung mit Bestätigung
+- Export/Import der SQLite Datenbank via Sharing
+- Datenbankrücksetzung
 
 ---
 

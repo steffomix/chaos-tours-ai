@@ -1,7 +1,7 @@
 # Google Play Store – Beschreibung
 
 ## App-Name
-**Chaos Tours AI**
+**Chaos Tours**
 
 ## Kurzbeschreibung (max. 80 Zeichen)
 ```
@@ -13,7 +13,7 @@ Automatisches Bewegungsprotokoll – Orte, Personen & Aktivitäten
 ## Vollständige Beschreibung (max. 4000 Zeichen)
 
 ```
-Chaos Tours AI führt automatisch Protokoll darüber, wo du deine Zeit verbringst – ohne manuelles Eintragen.
+Chaos Tours führt automatisch Protokoll darüber, wo du deine Zeit verbringst – ohne manuelles Eintragen.
 
 Die App erkennt im Hintergrund, wann du dich bewegst und wann du anhältst. Sobald du längere Zeit an einem Ort bist, wird automatisch ein Aufenthalt gespeichert. Bekannte Orte werden wiedererkannt, neue Orte automatisch angelegt und per OpenStreetMap-Adresse benannt.
 
@@ -63,7 +63,7 @@ Optional: Aufenthalte werden automatisch als Einträge in deinen Gerätekalender
 ──────────────────────────────────────
 🔒 DEINE DATEN GEHÖREN DIR
 ──────────────────────────────────────
-Alle Daten bleiben auf deinem Gerät. Kein Account, kein Cloud-Upload, kein Tracking durch Dritte. Du kannst deine Daten jederzeit als JSON exportieren, importieren oder löschen.
+Alle Daten bleiben auf deinem Gerät. Kein Account, kein Cloud-Upload, kein Tracking durch Dritte. Du kannst deine Daten jederzeit als SQLite Datebank (database.db) exportieren, importieren oder löschen.
 
 ──────────────────────────────────────
 ⚙️ FLEXIBEL KONFIGURIERBAR
@@ -73,12 +73,12 @@ Passe die Erkennung an dein Verhalten an: GPS-Intervall, Erkennungsschwelle, Min
 ──────────────────────────────────────
 IDEAL FÜR:
 ──────────────────────────────────────
-• Selbstständige und Freiberufler (Nachweise für Arbeitsorte)
+• Selbstständige und Freiberufler (Übersicht über Arbeitsorte)
 • Vielreisende (automatisches Reisetagebuch)
 • Menschen, die ihr Leben dokumentieren möchten
 • Alle, die wissen wollen, wo sie ihre Zeit verbringen
 
-Chaos Tours AI – weil dein Leben mehr verdient als ein leeres Kalenderblatt.
+Chaos Tours – weil dein Leben mehr verdient als ein leeres Kalenderblatt.
 ```
 
 ---

@@ -17,7 +17,6 @@ class _PlacesScreenState extends State<PlacesScreen> {
   List<SavedPlace> _places = [];
   Map<int, int> _visitCounts = {};
   Map<int, Stay?> _lastStay = {};
-  bool _loading = true;
 
   // Search
   bool _searchActive = false;
@@ -46,7 +45,6 @@ class _PlacesScreenState extends State<PlacesScreen> {
   }
 
   Future<void> _loadPlaces() async {
-    setState(() => _loading = true);
     final places = await DatabaseService.instance.loadAllPlaces();
     final counts = <int, int>{};
     final stays = <int, Stay?>{};
@@ -65,7 +63,6 @@ class _PlacesScreenState extends State<PlacesScreen> {
         _places = places;
         _visitCounts = counts;
         _lastStay = stays;
-        _loading = false;
       });
     }
   }
@@ -157,9 +154,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
           ],
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : filtered.isEmpty
+      body: filtered.isEmpty
           ? Center(
               child: Text(
                 _searchQuery.isNotEmpty

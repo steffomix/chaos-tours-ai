@@ -30,7 +30,6 @@ class _TimelineScreenState extends State<TimelineScreen> {
   Map<int, List<StayPerson>> _personsByStay = {};
   Map<int, List<StayActivity>> _activitiesByStay = {};
   Map<int, int?> _lastVisitByPlace = {}; // placeId -> lastVisit ms
-  bool _loading = true;
 
   // Filter state
   DateTimeRange? _filterRange;
@@ -75,8 +74,6 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   Future<void> _load() async {
-    if (mounted) setState(() => _loading = true);
-
     final results = await Future.wait([
       DatabaseService.instance.loadCompletedStays(),
       DatabaseService.instance.loadAllPlaces(),
@@ -118,7 +115,6 @@ class _TimelineScreenState extends State<TimelineScreen> {
           for (var i = 0; i < stays.length; i++) stays[i].id!: activityLists[i],
         };
         _lastVisitByPlace = lastVisits;
-        _loading = false;
       });
     }
   }
@@ -238,27 +234,25 @@ class _TimelineScreenState extends State<TimelineScreen> {
           ],
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : DefaultTabController(
-              length: 3,
-              child: Column(
-                children: [
-                  const TabBar(
-                    tabs: [
-                      Tab(icon: Icon(Icons.list), text: 'Liste'),
-                      Tab(icon: Icon(Icons.map), text: 'Karte'),
-                      Tab(icon: Icon(Icons.schedule), text: 'Planer'),
-                    ],
-                  ),
-                  Expanded(
-                    child: TabBarView(
-                      children: [_buildList(), _buildMap(), _buildScheduler()],
-                    ),
-                  ),
-                ],
+      body: DefaultTabController(
+        length: 3,
+        child: Column(
+          children: [
+            const TabBar(
+              tabs: [
+                Tab(icon: Icon(Icons.list), text: 'Liste'),
+                Tab(icon: Icon(Icons.map), text: 'Karte'),
+                Tab(icon: Icon(Icons.schedule), text: 'Planer'),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
+                children: [_buildList(), _buildMap(), _buildScheduler()],
               ),
             ),
+          ],
+        ),
+      ),
     );
   }
 
