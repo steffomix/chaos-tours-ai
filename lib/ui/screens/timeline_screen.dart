@@ -10,15 +10,14 @@ import '../../models/stay.dart';
 import '../../models/stay_activity.dart';
 import '../../models/stay_person.dart';
 import '../../services/database_service.dart';
+import '../../services/foreground_service_handler.dart';
 import '../../services/settings_service.dart';
 import '../widgets/place_bottom_sheet.dart';
 import '../widgets/stay_card.dart';
 import '../widgets/stay_detail_sheet.dart';
 
 class TimelineScreen extends StatefulWidget {
-  const TimelineScreen({super.key, this.refreshNotifier});
-
-  final ValueNotifier<int>? refreshNotifier;
+  const TimelineScreen({super.key});
 
   @override
   State<TimelineScreen> createState() => _TimelineScreenState();
@@ -49,14 +48,19 @@ class _TimelineScreenState extends State<TimelineScreen> {
   @override
   void initState() {
     super.initState();
-    widget.refreshNotifier?.addListener(_load);
+    _load();
+    _loadLastPosition();
+    ForegroundServiceManager.addDataListener(_onServiceData);
+  }
+
+  void _onServiceData(Object data) {
     _load();
     _loadLastPosition();
   }
 
   @override
   void dispose() {
-    widget.refreshNotifier?.removeListener(_load);
+    ForegroundServiceManager.removeDataListener(_onServiceData);
     _searchCtrl.dispose();
     super.dispose();
   }
@@ -226,7 +230,6 @@ class _TimelineScreenState extends State<TimelineScreen> {
                 }),
                 tooltip: 'Filter zurücksetzen',
               ),
-            IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
             IconButton(
               icon: const Icon(Icons.search),
               tooltip: 'Suchen',

@@ -76,6 +76,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _onServiceData(Object data) {
+    _loadPlaces();
     _loadTrackingPoints();
   }
 
@@ -272,11 +273,6 @@ class _MapScreenState extends State<MapScreen> {
             icon: const Icon(Icons.my_location),
             onPressed: _goToCurrentLocation,
             tooltip: 'Aktuellen Standort anzeigen',
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadPlaces,
-            tooltip: 'Orte neu laden',
           ),
         ],
       ),

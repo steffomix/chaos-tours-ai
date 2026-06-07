@@ -20,26 +20,19 @@ class App extends StatefulWidget {
 class _AppState extends State<App> {
   int _currentIndex = 0;
 
-  final _placesRefresh = ValueNotifier<int>(0);
-  final _timelineRefresh = ValueNotifier<int>(0);
-
   late final List<Widget> _screens = [
     const HomeScreen(),
     const MapScreen(),
-    PlacesScreen(refreshNotifier: _placesRefresh),
-    TimelineScreen(refreshNotifier: _timelineRefresh),
+    const PlacesScreen(),
+    const TimelineScreen(),
   ];
 
   @override
   void dispose() {
-    _placesRefresh.dispose();
-    _timelineRefresh.dispose();
     super.dispose();
   }
 
   void _onTabSelected(int i) {
-    if (i == 2) _placesRefresh.value++;
-    if (i == 3) _timelineRefresh.value++;
     setState(() => _currentIndex = i);
   }
 

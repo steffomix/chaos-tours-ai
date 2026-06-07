@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import '../../models/saved_place.dart';
 import '../../models/stay.dart';
 import '../../services/database_service.dart';
+import '../../services/foreground_service_handler.dart';
 import '../widgets/place_bottom_sheet.dart';
 
 class PlacesScreen extends StatefulWidget {
-  const PlacesScreen({super.key, this.refreshNotifier});
-
-  final ValueNotifier<int>? refreshNotifier;
+  const PlacesScreen({super.key});
 
   @override
   State<PlacesScreen> createState() => _PlacesScreenState();
@@ -31,15 +30,19 @@ class _PlacesScreenState extends State<PlacesScreen> {
   @override
   void initState() {
     super.initState();
-    widget.refreshNotifier?.addListener(_loadPlaces);
+    ForegroundServiceManager.addDataListener(_onServiceData);
     _loadPlaces();
   }
 
   @override
   void dispose() {
-    widget.refreshNotifier?.removeListener(_loadPlaces);
+    ForegroundServiceManager.removeDataListener(_onServiceData);
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  void _onServiceData(Object data) {
+    _loadPlaces();
   }
 
   Future<void> _loadPlaces() async {

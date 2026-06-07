@@ -36,7 +36,7 @@ Du bestimmst, wie viel du über jeden Ort preisgibst:
 Für regelmäßig besuchte Orte lässt sich ein Besuchs-Intervall in Tagen festlegen. Die App erinnert dich automatisch, wenn es wieder Zeit wird.
 
 ──────────────────────────────────────
-�️ PLANER – ORTE ZUR RECHTEN ZEIT
+⏰ PLANER – ORTE ZUR RECHTEN ZEIT
 ──────────────────────────────────────
 Stelle für jeden Ort ein Besuchs-Intervall in Tagen ein. Der Planer-Tab zeigt alle fälligen Orte sortiert nach Dringlichkeit – mit farbigem Symbol: Grün für noch viel Zeit, Gelb für heute, Rot für überfällig. So vergisst du keinen wichtigen Ort mehr.
 
