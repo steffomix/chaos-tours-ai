@@ -82,9 +82,9 @@ class _HomeScreenState extends State<HomeScreen> {
       String text;
       switch (statusName) {
         case 'haltAtKnown':
-          text = 'Halten bei ${placeName ?? 'bekanntem Ort'}';
+          text = 'Halten bei ${_cutText(placeName) ?? 'bekanntem Ort'}';
         case 'haltAtUnknown':
-          text = address != null ? 'Halten: $address' : 'Halten';
+          text = address != null ? 'Halten: ${_cutText(address)}' : 'Halten';
         case 'detectingHalt':
           text = 'Aufenthalt wird erkannt…';
         case 'moving':
@@ -96,6 +96,12 @@ class _HomeScreenState extends State<HomeScreen> {
       _loadRecentStays();
       if (mounted) setState(() => _trackingStatusText = text);
     }
+  }
+
+  String? _cutText(String? text, {int maxLength = 20}) {
+    if (text == null) return null;
+    if (text.length <= maxLength) return text;
+    return '${text.substring(0, maxLength)}…';
   }
 
   Future<void> _loadRecentStays() async {
