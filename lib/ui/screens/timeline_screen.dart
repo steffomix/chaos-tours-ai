@@ -14,7 +14,6 @@ import '../../services/foreground_service_handler.dart';
 import '../../services/settings_service.dart';
 import '../widgets/place_bottom_sheet.dart';
 import '../widgets/stay_card.dart';
-import '../widgets/stay_detail_sheet.dart';
 
 class TimelineScreen extends StatefulWidget {
   const TimelineScreen({super.key});
@@ -330,18 +329,30 @@ class _TimelineScreenState extends State<TimelineScreen> {
     final colorRange = SettingsService.instance.schedulerColorRange;
     final cutoff = DateTime.now().subtract(Duration(days: historyDays));
 
-    final filtered = _filteredStays
-        .where((s) => s.startDateTime.isAfter(cutoff))
+    // Polyline: stays with known place coords, sorted oldest → newest
+    final stayEntries =
+        _filteredStays
+            .where((s) => s.startDateTime.isAfter(cutoff))
+            .map((s) => (stay: s, place: _placeForStay(s)))
+            .where((e) => e.place != null)
+            .toList()
+          ..sort((a, b) => a.stay.startTime.compareTo(b.stay.startTime));
+
+    final stayPoints = stayEntries
+        .map((e) => LatLng(e.place!.lat, e.place!.lng))
         .toList();
 
-    final staysWithCoords = filtered
-        .map((s) => (stay: s, place: _placeForStay(s)))
-        .where((e) => e.place != null || e.stay.address != null)
-        .toList();
+    List<Color>? gradientColors;
+    if (stayPoints.length >= 2) {
+      final n = stayPoints.length;
+      gradientColors = List.generate(n, (i) {
+        final opacity = i / (n - 1);
+        return Colors.teal.withValues(alpha: max(opacity, 0.5));
+      });
+    }
 
-    // Build markers for stays that have a known place
-    final markers = staysWithCoords.where((e) => e.place != null).map((e) {
-      final p = e.place!;
+    // Build markers for all places with their urgency colors
+    final markers = _places.map((p) {
       Color markerColor;
       if (!p.intervalEnabled) {
         markerColor = Colors.grey;
@@ -367,38 +378,18 @@ class _TimelineScreenState extends State<TimelineScreen> {
             context: context,
             isScrollControlled: true,
             useSafeArea: true,
-            builder: (_) => StayDetailSheet(stay: e.stay, onUpdated: _load),
+            builder: (_) =>
+                PlaceBottomSheet(place: p, onUpdated: _load, onDeleted: _load),
           ),
           child: Icon(Icons.location_pin, color: markerColor, size: 36),
         ),
       );
     }).toList();
 
-    // Build journey polyline: stays with coordinates sorted oldest → newest
-    final stayEntries = staysWithCoords.where((e) => e.place != null).toList()
-      ..sort((a, b) => a.stay.startTime.compareTo(b.stay.startTime));
-
-    final stayPoints = stayEntries
-        .map((e) => LatLng(e.place!.lat, e.place!.lng))
-        .toList();
-
-    // Gradient: transparent (oldest/past) → opaque teal (newest/present)
-    List<Color>? gradientColors;
-    if (stayPoints.length >= 2) {
-      final n = stayPoints.length;
-      gradientColors = List.generate(n, (i) {
-        final opacity = i / (n - 1); // 0.0 … 1.0
-        return Colors.teal.withValues(alpha: max(opacity, 0.5));
-      }).reversed.toList(); // Newest = most opaque at the end of the list
-    }
-
     final center =
         _lastKnownPosition ??
-        (markers.isNotEmpty
-            ? LatLng(
-                staysWithCoords.first.place!.lat,
-                staysWithCoords.first.place!.lng,
-              )
+        (_places.isNotEmpty
+            ? LatLng(_places.first.lat, _places.first.lng)
             : const LatLng(48.1351, 11.5820));
 
     return Stack(

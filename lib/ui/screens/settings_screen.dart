@@ -345,9 +345,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Slider(
                   value: _timelineHistoryDays.toDouble(),
-                  min: 1,
-                  max: 30,
-                  divisions: 29,
+                  min: 7,
+                  max: 90,
+                  //divisions: 29,
                   label: '$_timelineHistoryDays',
                   onChanged: (v) =>
                       setState(() => _timelineHistoryDays = v.round()),

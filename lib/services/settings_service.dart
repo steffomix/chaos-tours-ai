@@ -112,10 +112,10 @@ class SettingsService {
   bool get calendarEnabled => _p.getBool(_keyCalendarEnabled) ?? true;
   set calendarEnabled(bool v) => _p.setBool(_keyCalendarEnabled, v);
 
-  /// How many days of stay history are shown on the timeline map (1–30, default: 7).
-  int get timelineHistoryDays => _p.getInt(_keyTimelineHistoryDays) ?? 7;
+  /// How many days of stay history are shown on the timeline map (7-90, default: 30).
+  int get timelineHistoryDays => _p.getInt(_keyTimelineHistoryDays) ?? 30;
   set timelineHistoryDays(int v) =>
-      _p.setInt(_keyTimelineHistoryDays, v.clamp(1, 30));
+      _p.setInt(_keyTimelineHistoryDays, v.clamp(7, 90));
 
   /// Set by the UI to request a force-end of the current stay.
   /// The task isolate reads and clears this flag at the start of each tick.
