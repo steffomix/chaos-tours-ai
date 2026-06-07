@@ -104,6 +104,118 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     super.dispose();
   }
 
+  Future<void> _createManualVisit() async {
+    final now = DateTime.now();
+    final defaultEnd = now.add(const Duration(hours: 1));
+    DateTime startDt = now;
+    DateTime endDt = defaultEnd;
+
+    String fmtDt(DateTime dt) {
+      final d =
+          '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}';
+      final t =
+          '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      return '$d  $t';
+    }
+
+    Future<DateTime?> pickDt(BuildContext ctx, DateTime initial) async {
+      final date = await showDatePicker(
+        context: ctx,
+        initialDate: initial,
+        firstDate: DateTime(2020),
+        lastDate: DateTime.now().add(const Duration(days: 1)),
+      );
+      if (date == null) return null;
+      if (!ctx.mounted) return null;
+      final time = await showTimePicker(
+        context: ctx,
+        initialTime: TimeOfDay.fromDateTime(initial),
+      );
+      if (time == null) return null;
+      return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom:
+                    MediaQuery.of(ctx).viewInsets.bottom +
+                    MediaQuery.of(ctx).padding.bottom +
+                    16,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Besuch erstellen',
+                    style: Theme.of(ctx).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.place.name,
+                    style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(ctx).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.play_circle_outline),
+                    title: const Text('Beginn'),
+                    subtitle: Text(fmtDt(startDt)),
+                    trailing: const Icon(Icons.edit, size: 18),
+                    onTap: () async {
+                      final picked = await pickDt(ctx, startDt);
+                      if (picked != null) setModalState(() => startDt = picked);
+                    },
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.stop_circle_outlined),
+                    title: const Text('Ende'),
+                    subtitle: Text(fmtDt(endDt)),
+                    trailing: const Icon(Icons.edit, size: 18),
+                    onTap: () async {
+                      final picked = await pickDt(ctx, endDt);
+                      if (picked != null) setModalState(() => endDt = picked);
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    icon: const Icon(Icons.check),
+                    label: const Text('Besuch speichern'),
+                    onPressed: () async {
+                      final stay = Stay(
+                        placeId: widget.place.id,
+                        startTime: startDt.millisecondsSinceEpoch,
+                        endTime: endDt.millisecondsSinceEpoch,
+                        status: StayStatus.completed,
+                      );
+                      await DatabaseService.instance.insertStay(stay);
+                      if (ctx.mounted) Navigator.pop(ctx);
+                      await _loadVisitStats();
+                      widget.onUpdated();
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _save() async {
     final groupId = _groupId;
     final intervalDaysText = _intervalDaysCtrl.text.trim();
@@ -558,6 +670,13 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                     ? 'Besuche anzeigen'
                     : 'Besuche anzeigen ($_visitCount)',
               ),
+            ),
+            const SizedBox(height: 8),
+            // ── Jetzt besuchen ─────────────────────────────────────────
+            OutlinedButton.icon(
+              onPressed: widget.place.id == null ? null : _createManualVisit,
+              icon: const Icon(Icons.add_location_alt),
+              label: const Text('Jetzt besuchen'),
             ),
             const SizedBox(height: 12),
             // ── HR Ortseinstellungen ─────────────────────────────────────────────────

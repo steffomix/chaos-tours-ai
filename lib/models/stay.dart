@@ -10,6 +10,10 @@ class Stay {
   final String? address;
   final StayStatus status;
 
+  /// Whether this stay counts toward the interval scheduler.
+  /// When false the visit is recorded normally but does not reset the interval.
+  final bool isInterval;
+
   Stay({
     this.id,
     this.placeId,
@@ -19,6 +23,7 @@ class Stay {
     this.calendarEventId,
     this.address,
     this.status = StayStatus.detecting,
+    this.isInterval = true,
   });
 
   bool get isActive => status != StayStatus.completed;
@@ -45,6 +50,7 @@ class Stay {
         (s) => s.name == (map['status'] as String? ?? 'detecting'),
         orElse: () => StayStatus.detecting,
       ),
+      isInterval: (map['is_interval'] as int? ?? 1) == 1,
     );
   }
 
@@ -58,6 +64,7 @@ class Stay {
       if (calendarEventId != null) 'calendar_event_id': calendarEventId,
       if (address != null) 'address': address,
       'status': status.name,
+      'is_interval': isInterval ? 1 : 0,
     };
   }
 
@@ -70,6 +77,7 @@ class Stay {
     String? calendarEventId,
     String? address,
     StayStatus? status,
+    bool? isInterval,
     bool clearEndTime = false,
     bool clearPlaceId = false,
     bool clearCalendarEventId = false,
@@ -85,6 +93,7 @@ class Stay {
           : (calendarEventId ?? this.calendarEventId),
       address: address ?? this.address,
       status: status ?? this.status,
+      isInterval: isInterval ?? this.isInterval,
     );
   }
 }

@@ -327,6 +327,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
   Widget _buildMap() {
     final historyDays = SettingsService.instance.timelineHistoryDays;
+    final colorRange = SettingsService.instance.schedulerColorRange;
     final cutoff = DateTime.now().subtract(Duration(days: historyDays));
 
     final filtered = _filteredStays
@@ -341,6 +342,22 @@ class _TimelineScreenState extends State<TimelineScreen> {
     // Build markers for stays that have a known place
     final markers = staysWithCoords.where((e) => e.place != null).map((e) {
       final p = e.place!;
+      Color markerColor;
+      if (!p.intervalEnabled) {
+        markerColor = Colors.grey;
+      } else {
+        final lastMs = _lastVisitByPlace[p.id];
+        int daysRemaining;
+        if (lastMs == null) {
+          daysRemaining = 0;
+        } else {
+          final daysSince = DateTime.now()
+              .difference(DateTime.fromMillisecondsSinceEpoch(lastMs))
+              .inDays;
+          daysRemaining = (p.intervalDays ?? 0) - daysSince;
+        }
+        markerColor = _urgencyColor(daysRemaining, colorRange);
+      }
       return Marker(
         point: LatLng(p.lat, p.lng),
         width: 36,
@@ -352,7 +369,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
             useSafeArea: true,
             builder: (_) => StayDetailSheet(stay: e.stay, onUpdated: _load),
           ),
-          child: const Icon(Icons.location_pin, color: Colors.teal, size: 36),
+          child: Icon(Icons.location_pin, color: markerColor, size: 36),
         ),
       );
     }).toList();

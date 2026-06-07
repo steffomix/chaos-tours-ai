@@ -32,7 +32,19 @@ class DatabaseService {
       version: 1,
       onCreate: _onCreate,
       onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
+      onOpen: _onOpen,
     );
+  }
+
+  Future<void> _onOpen(Database db) async {
+    // Add columns that were introduced without a version bump.
+    try {
+      await db.execute(
+        'ALTER TABLE stays ADD COLUMN is_interval INTEGER NOT NULL DEFAULT 1',
+      );
+    } catch (_) {
+      // Column already exists — ignore.
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -181,13 +193,14 @@ class DatabaseService {
     return (result.first['cnt'] as int?) ?? 0;
   }
 
-  /// Returns the start_time of the most recent completed stay at [placeId], or null.
+  /// Returns the start_time of the most recent completed stay at [placeId]
+  /// that counts toward the interval (is_interval = 1), or null.
   Future<int?> lastVisitedAtForPlace(int placeId) async {
     final db = await database;
     final rows = await db.query(
       'stays',
       columns: ['start_time'],
-      where: "place_id = ? AND status = 'completed'",
+      where: "place_id = ? AND status = 'completed' AND is_interval = 1",
       whereArgs: [placeId],
       orderBy: 'start_time DESC',
       limit: 1,

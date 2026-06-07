@@ -30,6 +30,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
 
   late DateTime _startDt;
   late DateTime? _endDt;
+  late bool _isInterval;
 
   @override
   void initState() {
@@ -37,6 +38,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
     _notesCtrl = TextEditingController(text: widget.stay.notes);
     _startDt = widget.stay.startDateTime;
     _endDt = widget.stay.endDateTime;
+    _isInterval = widget.stay.isInterval;
     _load();
   }
 
@@ -107,6 +109,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
       notes: _notesCtrl.text.trim(),
       startTime: _startDt.millisecondsSinceEpoch,
       endTime: _endDt?.millisecondsSinceEpoch,
+      isInterval: _isInterval,
     );
     await DatabaseService.instance.updateStay(updated);
     widget.onUpdated?.call();
@@ -428,6 +431,19 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                     ),
                     maxLines: 3,
                   ),
+                  // ── Intervall-Besuch ──────────────────────────────────
+                  if (_place?.intervalEnabled == true) ...[
+                    const SizedBox(height: 8),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Intervall-Besuch'),
+                      subtitle: const Text(
+                        'Besuch zählt zur Intervall-Berechnung',
+                      ),
+                      value: _isInterval,
+                      onChanged: (v) => setState(() => _isInterval = v),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   // Persons
                   Row(
