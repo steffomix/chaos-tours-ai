@@ -25,6 +25,9 @@ class _PlacesScreenState extends State<PlacesScreen> {
   String _searchQuery = '';
   final TextEditingController _searchCtrl = TextEditingController();
 
+  // Filter
+  bool _intervalOnly = false;
+
   @override
   void initState() {
     super.initState();
@@ -65,9 +68,13 @@ class _PlacesScreenState extends State<PlacesScreen> {
   }
 
   List<SavedPlace> get _filtered {
-    if (_searchQuery.isEmpty) return _places;
+    var list = _places;
+    if (_intervalOnly) {
+      list = list.where((p) => p.intervalEnabled).toList();
+    }
+    if (_searchQuery.isEmpty) return list;
     final q = _searchQuery.toLowerCase();
-    return _places.where((p) {
+    return list.where((p) {
       if (p.name.toLowerCase().contains(q)) return true;
       if (p.notes.toLowerCase().contains(q)) return true;
       if (p.placeType.label.toLowerCase().contains(q)) return true;
@@ -91,7 +98,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
   void _openSheet(SavedPlace place) {
     showModalBottomSheet(
       context: context,
-isScrollControlled: true,
+      isScrollControlled: true,
       useSafeArea: true,
       builder: (_) => PlaceBottomSheet(
         place: place,
@@ -128,12 +135,23 @@ isScrollControlled: true,
                 _searchCtrl.clear();
               }),
             )
-          else
+          else ...[
+            IconButton(
+              icon: Badge(
+                isLabelVisible: _intervalOnly,
+                child: const Icon(Icons.schedule),
+              ),
+              tooltip: _intervalOnly
+                  ? 'Alle Orte anzeigen'
+                  : 'Nur Intervall-Orte',
+              onPressed: () => setState(() => _intervalOnly = !_intervalOnly),
+            ),
             IconButton(
               icon: const Icon(Icons.search),
               tooltip: 'Suchen',
               onPressed: () => setState(() => _searchActive = true),
             ),
+          ],
         ],
       ),
       body: _loading

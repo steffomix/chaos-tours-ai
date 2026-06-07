@@ -81,6 +81,12 @@ class SavedPlace {
   /// Creation timestamp (milliseconds since epoch).
   final int createdAt;
 
+  /// Whether the visit interval scheduler is enabled for this place.
+  final bool intervalEnabled;
+
+  /// Target interval in days between visits (null = not configured).
+  final int? intervalDays;
+
   SavedPlace({
     this.id,
     required this.name,
@@ -91,6 +97,8 @@ class SavedPlace {
     this.notes = '',
     this.groupId,
     int? createdAt,
+    this.intervalEnabled = false,
+    this.intervalDays,
   }) : createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch;
 
   factory SavedPlace.fromMap(Map<String, dynamic> map) {
@@ -107,6 +115,8 @@ class SavedPlace {
       groupId: map['group_id'] as int?,
       createdAt:
           (map['created_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
+      intervalEnabled: (map['interval_enabled'] as int? ?? 0) == 1,
+      intervalDays: map['interval_days'] as int?,
     );
   }
 
@@ -120,6 +130,8 @@ class SavedPlace {
       'notes': notes,
       'created_at': createdAt,
       if (groupId != null) 'group_id': groupId,
+      'interval_enabled': intervalEnabled ? 1 : 0,
+      if (intervalDays != null) 'interval_days': intervalDays,
     };
   }
 
@@ -134,6 +146,9 @@ class SavedPlace {
     int? groupId,
     int? createdAt,
     bool clearGroupId = false,
+    bool? intervalEnabled,
+    int? intervalDays,
+    bool clearIntervalDays = false,
   }) {
     return SavedPlace(
       id: id ?? this.id,
@@ -145,6 +160,10 @@ class SavedPlace {
       notes: notes ?? this.notes,
       groupId: clearGroupId ? null : (groupId ?? this.groupId),
       createdAt: createdAt ?? this.createdAt,
+      intervalEnabled: intervalEnabled ?? this.intervalEnabled,
+      intervalDays: clearIntervalDays
+          ? null
+          : (intervalDays ?? this.intervalDays),
     );
   }
 }

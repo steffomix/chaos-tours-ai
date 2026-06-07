@@ -23,6 +23,8 @@ class SettingsService {
   static const String _keyTimelineHistoryDays = 'timeline_history_days';
   static const String _keyForceEndStayPending = 'force_end_stay_pending';
   static const String _keySearchCountry = 'search_country';
+  static const String _keySchedulerColorRange = 'scheduler_color_range';
+  static const String _keySchedulerGroupIds = 'scheduler_group_ids';
 
   SharedPreferences? _prefs;
 
@@ -124,6 +126,26 @@ class SettingsService {
   String get searchCountry => _p.getString(_keySearchCountry) ?? '';
   set searchCountry(String v) => _p.setString(_keySearchCountry, v);
 
+  /// Color range in days for the scheduler urgency indicator (default: 14).
+  int get schedulerColorRange => _p.getInt(_keySchedulerColorRange) ?? 14;
+  set schedulerColorRange(int v) =>
+      _p.setInt(_keySchedulerColorRange, v.clamp(1, 365));
+
+  /// Comma-separated group IDs to display in map and scheduler (empty = all).
+  String get schedulerGroupIds => _p.getString(_keySchedulerGroupIds) ?? '';
+  set schedulerGroupIds(String v) => _p.setString(_keySchedulerGroupIds, v);
+
+  /// Parses [schedulerGroupIds] into a list of integers (empty = all groups).
+  List<int> get schedulerGroupIdList {
+    final raw = schedulerGroupIds;
+    if (raw.isEmpty) return [];
+    return raw
+        .split(',')
+        .map((s) => int.tryParse(s.trim()))
+        .whereType<int>()
+        .toList();
+  }
+
   // ── Aktivitaet binding ───────────────────────────────────────────────────
 
   /// The ID of the currently selected [Aktivitaet].
@@ -149,6 +171,8 @@ class SettingsService {
     defaultPlaceGroupId = a.defaultPlaceGroupId;
     timelineHistoryDays = a.timelineHistoryDays;
     searchCountry = a.searchCountry;
+    schedulerColorRange = a.schedulerColorRange;
+    schedulerGroupIds = a.schedulerGroupIds;
     activeAktivitaetId = a.id;
   }
 
@@ -167,6 +191,8 @@ class SettingsService {
       defaultPlaceGroupId: defaultPlaceGroupId,
       timelineHistoryDays: timelineHistoryDays,
       searchCountry: searchCountry,
+      schedulerColorRange: schedulerColorRange,
+      schedulerGroupIds: schedulerGroupIds,
     );
   }
 }

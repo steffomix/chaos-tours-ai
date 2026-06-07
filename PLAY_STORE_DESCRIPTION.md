@@ -33,10 +33,17 @@ Du bestimmst, wie viel du über jeden Ort preisgibst:
 • Geheim – nur auf der Karte sichtbar, kein Protokoll
 • Verboten – vollständig ausgeblendet
 
+Für regelmäßig besuchte Orte lässt sich ein Besuchs-Intervall in Tagen festlegen. Die App erinnert dich automatisch, wenn es wieder Zeit wird.
+
+──────────────────────────────────────
+�️ PLANER – ORTE ZUR RECHTEN ZEIT
+──────────────────────────────────────
+Stelle für jeden Ort ein Besuchs-Intervall in Tagen ein. Der Planer-Tab zeigt alle fälligen Orte sortiert nach Dringlichkeit – mit farbigem Symbol: Grün für noch viel Zeit, Gelb für heute, Rot für überfällig. So vergisst du keinen wichtigen Ort mehr.
+
 ──────────────────────────────────────
 🗺️ INTERAKTIVE KARTE
 ──────────────────────────────────────
-Alle deine Orte auf einen Blick – auf einer OpenStreetMap-basierten Karte. Du siehst deinen aktuellen Standort, deine gespeicherten Orte und die Live-Spur deiner letzten Bewegungen.
+Alle deine Orte auf einen Blick – auf einer OpenStreetMap-basierten Karte. Du siehst deinen aktuellen Standort, deine gespeicherten Orte und die Live-Spur deiner letzten Bewegungen. Per Gruppenfilter blendet die Karte gezielt nur ausgewählte Ortsgruppen ein.
 
 ──────────────────────────────────────
 📅 ZEITACHSE & AUFENTHALTSVERLAUF
@@ -61,7 +68,7 @@ Alle Daten bleiben auf deinem Gerät. Kein Account, kein Cloud-Upload, kein Trac
 ──────────────────────────────────────
 ⚙️ FLEXIBEL KONFIGURIERBAR
 ──────────────────────────────────────
-Passe die Erkennung an dein Verhalten an: GPS-Intervall, Erkennungsschwelle, Mindestaufenthaltsdauer und GPS-Glättung sind frei einstellbar. Mehrere Profile (z. B. „Reise", „Alltag") lassen sich schnell umschalten.
+Passe die Erkennung an dein Verhalten an: GPS-Intervall, Erkennungsschwelle, Mindestaufenthaltsdauer und GPS-Glättung sind frei einstellbar. Mehrere Profile (z. B. „Reise“, „Alltag“) lassen sich schnell umschalten. Der Farbbereich für den Planer und der Gruppenfilter für Karte und Planer sind ebenfalls pro Profil speicherbar.
 
 ──────────────────────────────────────
 IDEAL FÜR:
@@ -79,7 +86,7 @@ Chaos Tours AI – weil dein Leben mehr verdient als ein leeres Kalenderblatt.
 ## Schlagwörter / Tags (für ASO)
 
 ```
-GPS Tracker, Standortverlauf, Bewegungsprotokoll, Aufenthalte, Zeitprotokoll, Orte speichern, Kalenderintegration, Hintergrund GPS, Standorttagebuch, Reiseprotokoll
+GPS Tracker, Standortverlauf, Bewegungsprotokoll, Aufenthalte, Zeitprotokoll, Orte speichern, Kalenderintegration, Hintergrund GPS, Standorttagebuch, Reiseprotokoll, Besuchsplaner, Intervall, Erinnerung Orte
 ```
 
 ---

@@ -45,7 +45,9 @@ class DatabaseService {
         radius REAL NOT NULL DEFAULT 50.0,
         notes TEXT NOT NULL DEFAULT '',
         group_id INTEGER,
-        created_at INTEGER NOT NULL DEFAULT 0
+        created_at INTEGER NOT NULL DEFAULT 0,
+        interval_enabled INTEGER NOT NULL DEFAULT 0,
+        interval_days INTEGER
       )
     ''');
     await db.execute('''
@@ -129,7 +131,9 @@ class DatabaseService {
         auto_place_group_id INTEGER,
         default_place_group_id INTEGER,
         timeline_history_days INTEGER NOT NULL DEFAULT 7,
-        search_country TEXT NOT NULL DEFAULT ''
+        search_country TEXT NOT NULL DEFAULT '',
+        scheduler_color_range INTEGER NOT NULL DEFAULT 14,
+        scheduler_group_ids TEXT NOT NULL DEFAULT ''
       )
     ''');
   }

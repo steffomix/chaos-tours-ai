@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/aktivitaet.dart';
 import '../../models/place_group.dart';
+import '../../models/saved_place.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/permission_helper.dart';
@@ -27,6 +28,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _timelineHistoryDays;
   late String _searchCountry;
   final TextEditingController _searchCountryCtrl = TextEditingController();
+  late int _schedulerColorRange;
+  Set<int> _schedulerGroupIds = {};
   List<PlaceGroup> _groups = [];
 
   // Aktivitaet management
@@ -56,6 +59,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _timelineHistoryDays = s.timelineHistoryDays;
     _searchCountry = s.searchCountry;
     _searchCountryCtrl.text = _searchCountry;
+    _schedulerColorRange = s.schedulerColorRange;
+    _schedulerGroupIds = Set<int>.from(s.schedulerGroupIdList);
     _loadGroups();
     _loadAktivitaeten();
   }
@@ -91,6 +96,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     s.trackingPointRadius = _trackingPointRadius;
     s.timelineHistoryDays = _timelineHistoryDays;
     s.searchCountry = _searchCountry;
+    s.schedulerColorRange = _schedulerColorRange;
+    s.schedulerGroupIds = _schedulerGroupIds.join(',');
 
     // Persist settings back into the active Aktivitaet.
     final a = _activeAktivitaet;
@@ -351,6 +358,76 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
+          ),
+          const Divider(),
+          // ── Planer ──────────────────────────────────────────────────
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(
+              'Planer',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          ListTile(
+            title: Text(
+              'Farbskala-Bereich: $_schedulerColorRange '
+              '${_schedulerColorRange == 1 ? 'Tag' : 'Tage'}',
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Slider(
+                  value: _schedulerColorRange.toDouble(),
+                  min: 1,
+                  max: 90,
+                  divisions: 89,
+                  label: '$_schedulerColorRange',
+                  onChanged: (v) =>
+                      setState(() => _schedulerColorRange = v.round()),
+                ),
+                Text(
+                  '$_schedulerColorRange Tage = grün  •  0 = gelb  •  -$_schedulerColorRange = rot',
+                  style: const TextStyle(fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+            title: const Text('Angezeigte Gruppen (Karte & Planer)'),
+            subtitle: _groups.isEmpty
+                ? const Text('Keine Gruppen vorhanden')
+                : Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      FilterChip(
+                        label: const Text('Alle'),
+                        selected: _schedulerGroupIds.isEmpty,
+                        onSelected: (_) =>
+                            setState(() => _schedulerGroupIds.clear()),
+                      ),
+                      ..._groups.map(
+                        (g) => FilterChip(
+                          avatar: Icon(
+                            g.placeType.icon,
+                            size: 14,
+                            color: g.placeType.dotColor,
+                          ),
+                          label: Text(g.name),
+                          selected: _schedulerGroupIds.contains(g.id),
+                          onSelected: (selected) {
+                            setState(() {
+                              if (selected) {
+                                _schedulerGroupIds.add(g.id!);
+                              } else {
+                                _schedulerGroupIds.remove(g.id);
+                              }
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
           ),
           const Divider(),
           // ── Adresssuche ───────────────────────────────────────────────

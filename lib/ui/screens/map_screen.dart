@@ -63,7 +63,15 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _loadPlaces() async {
-    final places = await DatabaseService.instance.loadAllPlaces();
+    final allPlaces = await DatabaseService.instance.loadAllPlaces();
+    final groupFilter = SettingsService.instance.schedulerGroupIdList;
+    final places = groupFilter.isEmpty
+        ? allPlaces
+        : allPlaces
+              .where(
+                (p) => p.groupId != null && groupFilter.contains(p.groupId),
+              )
+              .toList();
     if (mounted) setState(() => _places = places);
   }
 

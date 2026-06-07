@@ -35,12 +35,25 @@ Chaos Tours AI ist eine Android-App, die im Hintergrund deinen Aufenthaltsort ve
   - 🔴 **Geheim** – nur Kartendarstellung, kein Tracking, keine Notizen
   - ⚫ **Verboten** – standardmäßig ausgeblendet, kein Tracking
 - **Ortsgruppen** mit geteiltem Kalender und Privatsphäreeinstellungen
+- **Besuchs-Intervall** pro Ort: konfigurierbares Wiederbesuchs-Intervall in Tagen
+  mit Ein-/Ausschalter direkt in den Ortseinstellungen
+- Intervall-Filter in der Ortsliste zeigt nur Orte mit aktivem Intervall
 
 ### 📅 Zeitachse & Aufenthaltsverlauf
 - Chronologische Auflistung aller Aufenthalte
 - Filter nach Datum und Ort
 - Suche in Notizen und Ortsbezeichnungen
 - Visualisierung auf der Karte
+
+### 🗓️ Planer (Scheduler)
+- Eigener Tab in der Zeitachse mit allen Orten, für die ein Besuchs-Intervall aktiv ist
+- Sortierung nach Dringlichkeit: überfällige Orte zuerst
+- Farbige Dringlichkeitsanzeige (Kreis mit verbleibenden Tagen):
+  - 🟢 Grün – noch viel Zeit (≥ Farbskala-Bereich)
+  - 🟡 Gelb – heute fällig (0 Tage)
+  - 🔴 Rot – überfällig (≤ –Farbskala-Bereich)
+- Noch nie besuchte Orte gelten als heute fällig
+- Gruppenfilter: nur bestimmte Ortsgruppen im Planer und auf der Karte anzeigen
 
 ### 👤 Aufenthaltsannotationen
 Jedem Aufenthalt können zugeordnet werden:
@@ -63,6 +76,8 @@ Jedem Aufenthalt können zugeordnet werden:
   - Standard-Ortsradius
   - GPS-Glättungsfenster
   - Zeitachsentiefe (Tage)
+  - **Farbskala-Bereich** für den Planer (Standard: 14 Tage)
+  - **Gruppenfilter** für Karte und Planer (einzelne Gruppen oder alle)
 
 ### 💾 Datenverwaltung
 - SQLite-Datenbank (lokal, kein Cloud-Zwang)

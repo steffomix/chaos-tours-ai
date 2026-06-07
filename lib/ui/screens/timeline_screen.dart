@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../models/place_group.dart';
 import '../../models/saved_place.dart';
 import '../../models/stay.dart';
 import '../../models/stay_activity.dart';
 import '../../models/stay_person.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
+import '../widgets/place_bottom_sheet.dart';
 import '../widgets/stay_card.dart';
 import '../widgets/stay_detail_sheet.dart';
 
@@ -25,8 +27,10 @@ class TimelineScreen extends StatefulWidget {
 class _TimelineScreenState extends State<TimelineScreen> {
   List<Stay> _stays = [];
   List<SavedPlace> _places = [];
+  List<PlaceGroup> _groups = [];
   Map<int, List<StayPerson>> _personsByStay = {};
   Map<int, List<StayActivity>> _activitiesByStay = {};
+  Map<int, int?> _lastVisitByPlace = {}; // placeId -> lastVisit ms
   bool _loading = true;
 
   // Filter state
@@ -72,10 +76,12 @@ class _TimelineScreenState extends State<TimelineScreen> {
     final results = await Future.wait([
       DatabaseService.instance.loadCompletedStays(),
       DatabaseService.instance.loadAllPlaces(),
+      DatabaseService.instance.loadAllPlaceGroups(),
     ]);
 
     final stays = results[0] as List<Stay>;
     final places = results[1] as List<SavedPlace>;
+    final groups = results[2] as List<PlaceGroup>;
 
     // Load relations for all stays
     final personLists = await Future.wait(
@@ -85,16 +91,29 @@ class _TimelineScreenState extends State<TimelineScreen> {
       stays.map((s) => DatabaseService.instance.loadActivitiesForStay(s.id!)),
     );
 
+    // Load last-visit timestamps for interval-enabled places
+    final intervalPlaces = places.where(
+      (p) => p.intervalEnabled && p.id != null,
+    );
+    final lastVisits = <int, int?>{};
+    for (final p in intervalPlaces) {
+      lastVisits[p.id!] = await DatabaseService.instance.lastVisitedAtForPlace(
+        p.id!,
+      );
+    }
+
     if (mounted) {
       setState(() {
         _stays = stays;
         _places = places;
+        _groups = groups;
         _personsByStay = {
           for (var i = 0; i < stays.length; i++) stays[i].id!: personLists[i],
         };
         _activitiesByStay = {
           for (var i = 0; i < stays.length; i++) stays[i].id!: activityLists[i],
         };
+        _lastVisitByPlace = lastVisits;
         _loading = false;
       });
     }
@@ -219,17 +238,20 @@ class _TimelineScreenState extends State<TimelineScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : DefaultTabController(
-              length: 2,
+              length: 3,
               child: Column(
                 children: [
                   const TabBar(
                     tabs: [
                       Tab(icon: Icon(Icons.list), text: 'Liste'),
                       Tab(icon: Icon(Icons.map), text: 'Karte'),
+                      Tab(icon: Icon(Icons.schedule), text: 'Planer'),
                     ],
                   ),
                   Expanded(
-                    child: TabBarView(children: [_buildList(), _buildMap()]),
+                    child: TabBarView(
+                      children: [_buildList(), _buildMap(), _buildScheduler()],
+                    ),
                   ),
                 ],
               ),
@@ -402,6 +424,190 @@ class _TimelineScreenState extends State<TimelineScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Returns a color on the green-yellow-red gradient based on [daysRemaining]
+  /// and [colorRange]. colorRange days = green, 0 = yellow, -colorRange = red.
+  Color _urgencyColor(int daysRemaining, int colorRange) {
+    if (colorRange <= 0) return Colors.yellow;
+    if (daysRemaining >= colorRange) return Colors.green;
+    if (daysRemaining <= -colorRange) return Colors.red;
+    if (daysRemaining >= 0) {
+      // green → yellow
+      final t = 1.0 - daysRemaining / colorRange;
+      return Color.lerp(Colors.green, Colors.yellow, t)!;
+    } else {
+      // yellow → red
+      final t = (-daysRemaining) / colorRange;
+      return Color.lerp(Colors.yellow, Colors.red, t)!;
+    }
+  }
+
+  Widget _buildScheduler() {
+    final settings = SettingsService.instance;
+    final colorRange = settings.schedulerColorRange;
+    final groupFilter = settings.schedulerGroupIdList;
+
+    // Filter to interval-enabled places
+    var schedulerPlaces = _places.where((p) => p.intervalEnabled).toList();
+
+    // Apply group filter
+    if (groupFilter.isNotEmpty) {
+      schedulerPlaces = schedulerPlaces
+          .where((p) => p.groupId != null && groupFilter.contains(p.groupId))
+          .toList();
+    }
+
+    if (schedulerPlaces.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'Keine Planer-Orte vorhanden.\n\n'
+            'Aktiviere das Besuchs-Intervall für Orte in den Ortseinstellungen.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    // Calculate days-remaining for each place
+    final now = DateTime.now();
+    final entries = schedulerPlaces.map((p) {
+      final lastMs = _lastVisitByPlace[p.id];
+      int daysRemaining;
+      if (lastMs == null) {
+        // Never visited → due today
+        daysRemaining = 0;
+      } else {
+        final daysSince = now
+            .difference(DateTime.fromMillisecondsSinceEpoch(lastMs))
+            .inDays;
+        final interval = p.intervalDays ?? 0;
+        daysRemaining = interval - daysSince;
+      }
+      return (place: p, daysRemaining: daysRemaining);
+    }).toList()..sort((a, b) => a.daysRemaining.compareTo(b.daysRemaining));
+
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView.builder(
+        itemCount: entries.length,
+        itemBuilder: (ctx, i) {
+          final entry = entries[i];
+          final place = entry.place;
+          final days = entry.daysRemaining;
+          final color = _urgencyColor(days, colorRange);
+          final group = place.groupId != null
+              ? _groups.where((g) => g.id == place.groupId).firstOrNull
+              : null;
+
+          String daysLabel;
+          if (days == 0) {
+            daysLabel = 'Heute';
+          } else if (days > 0) {
+            daysLabel = 'in $days ${days == 1 ? 'Tag' : 'Tagen'}';
+          } else {
+            daysLabel = '${-days} ${(-days) == 1 ? 'Tag' : 'Tage'} überfällig';
+          }
+
+          return Card(
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                useSafeArea: true,
+                builder: (_) => PlaceBottomSheet(
+                  place: place,
+                  onUpdated: _load,
+                  onDeleted: _load,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    // Urgency indicator
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            days.abs().toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              shadows: [
+                                Shadow(color: Colors.black26, blurRadius: 2),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            place.name,
+                            style: Theme.of(ctx).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            daysLabel,
+                            style: TextStyle(
+                              color: color.computeLuminance() > 0.5
+                                  ? Colors.black87
+                                  : color,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 12,
+                            ),
+                          ),
+                          if (group != null)
+                            Text(
+                              group.name,
+                              style: Theme.of(ctx).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      ctx,
+                                    ).colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                          if (place.intervalDays != null)
+                            Text(
+                              'Intervall: ${place.intervalDays} Tage',
+                              style: Theme.of(ctx).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      ctx,
+                                    ).colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Icon(place.placeType.icon, color: place.placeType.dotColor),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 

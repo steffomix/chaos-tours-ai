@@ -32,6 +32,9 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
   int? _groupId;
   List<PlaceGroup> _groups = [];
 
+  bool _intervalEnabled = false;
+  late TextEditingController _intervalDaysCtrl;
+
   int _visitCount = 0;
   int? _lastVisitedAt;
 
@@ -47,6 +50,10 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     _notesCtrl = TextEditingController(text: widget.place.notes);
     _radius = widget.place.radius;
     _groupId = widget.place.groupId;
+    _intervalEnabled = widget.place.intervalEnabled;
+    _intervalDaysCtrl = TextEditingController(
+      text: widget.place.intervalDays?.toString() ?? '',
+    );
     _loadGroups();
     _loadVisitStats();
   }
@@ -93,17 +100,23 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
   void dispose() {
     _nameCtrl.dispose();
     _notesCtrl.dispose();
+    _intervalDaysCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
     final groupId = _groupId;
+    final intervalDaysText = _intervalDaysCtrl.text.trim();
+    final parsedIntervalDays = int.tryParse(intervalDaysText);
     final updated = widget.place.copyWith(
       name: _nameCtrl.text.trim(),
       notes: _notesCtrl.text.trim(),
       radius: _radius,
       groupId: groupId,
       clearGroupId: groupId == null,
+      intervalEnabled: _intervalEnabled,
+      intervalDays: parsedIntervalDays,
+      clearIntervalDays: intervalDaysText.isEmpty,
     );
     await DatabaseService.instance.updatePlace(updated);
     widget.onUpdated();
@@ -642,6 +655,31 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               ],
               onChanged: (v) => setState(() => _groupId = v),
             ),
+            const SizedBox(height: 12),
+            // ── Besuchs-Intervall ──────────────────────────────────────
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Besuchs-Intervall'),
+              subtitle: const Text(
+                'Regelmäßige Erinnerung, diesen Ort zu besuchen',
+              ),
+              value: _intervalEnabled,
+              onChanged: (v) => setState(() => _intervalEnabled = v),
+            ),
+            if (_intervalEnabled) ...[
+              const SizedBox(height: 4),
+              TextFormField(
+                controller: _intervalDaysCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Intervall (Tage)',
+                  hintText: 'z. B. 14',
+                  border: OutlineInputBorder(),
+                  suffixText: 'Tage',
+                ),
+                onChanged: (v) {},
+              ),
+            ],
             const SizedBox(height: 12),
             // ── Aktionen ───────────────────────────────────────────────
             Row(

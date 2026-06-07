@@ -20,6 +20,14 @@ class Aktivitaet {
   /// Default country pre-filled in the map address search (e.g. 'Deutschland').
   final String searchCountry;
 
+  /// Color-range in days for the scheduler urgency indicator (default: 14).
+  /// >= colorRange = green, 0 = yellow, <= -colorRange = red.
+  final int schedulerColorRange;
+
+  /// Comma-separated group IDs to show in the map and scheduler.
+  /// Empty string means "all groups".
+  final String schedulerGroupIds;
+
   const Aktivitaet({
     this.id,
     required this.name,
@@ -32,6 +40,8 @@ class Aktivitaet {
     this.defaultPlaceGroupId,
     this.timelineHistoryDays = 7,
     this.searchCountry = '',
+    this.schedulerColorRange = 14,
+    this.schedulerGroupIds = '',
   });
 
   factory Aktivitaet.fromMap(Map<String, dynamic> map) {
@@ -48,6 +58,8 @@ class Aktivitaet {
       defaultPlaceGroupId: map['default_place_group_id'] as int?,
       timelineHistoryDays: map['timeline_history_days'] as int? ?? 7,
       searchCountry: map['search_country'] as String? ?? '',
+      schedulerColorRange: map['scheduler_color_range'] as int? ?? 14,
+      schedulerGroupIds: map['scheduler_group_ids'] as String? ?? '',
     );
   }
 
@@ -65,6 +77,8 @@ class Aktivitaet {
         'default_place_group_id': defaultPlaceGroupId,
       'timeline_history_days': timelineHistoryDays,
       'search_country': searchCountry,
+      'scheduler_color_range': schedulerColorRange,
+      'scheduler_group_ids': schedulerGroupIds,
     };
   }
 
@@ -82,6 +96,8 @@ class Aktivitaet {
     bool clearDefaultPlaceGroupId = false,
     int? timelineHistoryDays,
     String? searchCountry,
+    int? schedulerColorRange,
+    String? schedulerGroupIds,
   }) {
     return Aktivitaet(
       id: id ?? this.id,
@@ -99,6 +115,8 @@ class Aktivitaet {
           : (defaultPlaceGroupId ?? this.defaultPlaceGroupId),
       timelineHistoryDays: timelineHistoryDays ?? this.timelineHistoryDays,
       searchCountry: searchCountry ?? this.searchCountry,
+      schedulerColorRange: schedulerColorRange ?? this.schedulerColorRange,
+      schedulerGroupIds: schedulerGroupIds ?? this.schedulerGroupIds,
     );
   }
 }
