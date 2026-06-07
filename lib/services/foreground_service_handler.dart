@@ -24,8 +24,6 @@ class GpsForegroundTaskHandler extends TaskHandler {
 
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
-    FlutterForegroundTask.initCommunicationPort();
-    FlutterForegroundTask.addTaskDataCallback(_onDataFromMain);
     await SettingsService.instance.init();
     // Clear any stale force-end flag left from a previous session.
     SettingsService.instance.forceEndStayPending = false;
@@ -92,10 +90,10 @@ class GpsForegroundTaskHandler extends TaskHandler {
   @override
   Future<void> onDestroy(DateTime timestamp, bool isTimeout) async {
     await _positionSub?.cancel();
-    FlutterForegroundTask.removeTaskDataCallback(_onDataFromMain);
   }
 
-  void _onDataFromMain(Object data) {
+  @override
+  void onReceiveData(Object data) {
     if (data is Map) {
       final cmd = data['cmd'] as String?;
       switch (cmd) {
@@ -182,19 +180,25 @@ class ForegroundServiceManager {
 
   // ── Listeners ────────────────────────────────────────────────────────────
 
-  static void Function(Object)? _dataCallbackWrapper;
+  static final Map<void Function(Map), void Function(Object)>
+  _dataCallbackWrappers = {};
 
   static void addDataListener(void Function(Map<dynamic, dynamic>) callback) {
-    _dataCallbackWrapper = (Object data) {
+    // Guard against duplicate registration for the same callback.
+    if (_dataCallbackWrappers.containsKey(callback)) return;
+    final wrapper = (Object data) {
       if (data is Map) callback(data);
     };
-    FlutterForegroundTask.addTaskDataCallback(_dataCallbackWrapper!);
+    _dataCallbackWrappers[callback] = wrapper;
+    FlutterForegroundTask.addTaskDataCallback(wrapper);
   }
 
-  static void removeDataListener() {
-    if (_dataCallbackWrapper != null) {
-      FlutterForegroundTask.removeTaskDataCallback(_dataCallbackWrapper!);
-      _dataCallbackWrapper = null;
+  static void removeDataListener(
+    void Function(Map<dynamic, dynamic>) callback,
+  ) {
+    final wrapper = _dataCallbackWrappers.remove(callback);
+    if (wrapper != null) {
+      FlutterForegroundTask.removeTaskDataCallback(wrapper);
     }
   }
 }

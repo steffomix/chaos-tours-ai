@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import '../../models/saved_place.dart';
 import '../../models/tracking_point.dart';
 import '../../services/database_service.dart';
+import '../../services/foreground_service_handler.dart';
 import '../../services/location_service.dart';
 import '../../services/settings_service.dart';
 import '../../services/tracking_engine.dart';
@@ -42,7 +43,6 @@ class _MapScreenState extends State<MapScreen> {
 
   // ── Live tracking points (always on) ───────────────────────────────────
   _LiveTrackingState? _liveState;
-  Timer? _liveRefreshTimer;
 
   @override
   void initState() {
@@ -51,21 +51,22 @@ class _MapScreenState extends State<MapScreen> {
     _loadTrackingPoints();
     // Move map to current location once the map controller is ready.
     WidgetsBinding.instance.addPostFrameCallback((_) => _goToCurrentLocation());
-    // Refresh live tracking points every 15 s (matches GPS interval default).
-    _liveRefreshTimer = Timer.periodic(const Duration(seconds: 15), (_) {
-      _loadTrackingPoints();
-    });
+    ForegroundServiceManager.addDataListener(_onServiceData);
   }
 
   @override
   void dispose() {
-    _liveRefreshTimer?.cancel();
+    ForegroundServiceManager.removeDataListener(_onServiceData);
     super.dispose();
   }
 
   Future<void> _loadPlaces() async {
     final places = await DatabaseService.instance.loadAllPlaces();
     if (mounted) setState(() => _places = places);
+  }
+
+  void _onServiceData(Object data) {
+    _loadTrackingPoints();
   }
 
   Future<void> _loadTrackingPoints() async {
