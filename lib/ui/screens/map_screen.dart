@@ -269,11 +269,6 @@ class _MapScreenState extends State<MapScreen> {
             onPressed: _showAddressSearch,
             tooltip: 'Adresse suchen',
           ),
-          IconButton(
-            icon: const Icon(Icons.my_location),
-            onPressed: _goToCurrentLocation,
-            tooltip: 'Aktuellen Standort anzeigen',
-          ),
         ],
       ),
       body: Column(
