@@ -32,19 +32,7 @@ class DatabaseService {
       version: 1,
       onCreate: _onCreate,
       onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
-      onOpen: _onOpen,
     );
-  }
-
-  Future<void> _onOpen(Database db) async {
-    // Add columns that were introduced without a version bump.
-    try {
-      await db.execute(
-        'ALTER TABLE stays ADD COLUMN is_interval INTEGER NOT NULL DEFAULT 1',
-      );
-    } catch (_) {
-      // Column already exists — ignore.
-    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -84,6 +72,7 @@ class DatabaseService {
         calendar_event_id TEXT,
         address TEXT,
         status TEXT NOT NULL DEFAULT 'detecting',
+        is_interval INTEGER NOT NULL DEFAULT 1,
         FOREIGN KEY (place_id) REFERENCES saved_places(id) ON DELETE SET NULL
       )
     ''');
