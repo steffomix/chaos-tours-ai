@@ -25,11 +25,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late bool _showTrackingPoints;
   late double _trackingPointRadius;
   late int _timelineHistoryDays;
+  late String _searchCountry;
+  final TextEditingController _searchCountryCtrl = TextEditingController();
   List<PlaceGroup> _groups = [];
 
   // Aktivitaet management
   List<Aktivitaet> _aktivitaeten = [];
   Aktivitaet? _activeAktivitaet;
+
+  @override
+  void dispose() {
+    _searchCountryCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -46,6 +54,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _showTrackingPoints = s.showTrackingPoints;
     _trackingPointRadius = s.trackingPointRadius;
     _timelineHistoryDays = s.timelineHistoryDays;
+    _searchCountry = s.searchCountry;
+    _searchCountryCtrl.text = _searchCountry;
     _loadGroups();
     _loadAktivitaeten();
   }
@@ -80,6 +90,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     s.showTrackingPoints = _showTrackingPoints;
     s.trackingPointRadius = _trackingPointRadius;
     s.timelineHistoryDays = _timelineHistoryDays;
+    s.searchCountry = _searchCountry;
 
     // Persist settings back into the active Aktivitaet.
     final a = _activeAktivitaet;
@@ -336,6 +347,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const Text(
                   'Wie viele Tage der Reiseverlauf auf der Zeitachsen-Karte angezeigt wird.',
+                  style: TextStyle(fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          const Divider(),
+          // ── Adresssuche ───────────────────────────────────────────────
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(
+              'Adresssuche',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.flag_outlined),
+            title: const Text('Standard-Land für Adresssuche'),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: _searchCountryCtrl,
+                  decoration: const InputDecoration(
+                    hintText: 'z. B. Deutschland',
+                    isDense: true,
+                  ),
+                  onChanged: (v) => _searchCountry = v,
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Wird in der Karten-Adresssuche als Standardland vorausgefüllt.',
                   style: TextStyle(fontSize: 11),
                 ),
               ],

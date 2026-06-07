@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/saved_place.dart';
 import '../../models/tracking_point.dart';
 import '../../services/database_service.dart';
 import '../../services/foreground_service_handler.dart';
 import '../../services/location_service.dart';
+import '../../services/nominatim_service.dart';
 import '../../services/settings_service.dart';
 import '../../services/tracking_engine.dart';
 import '../../utils/geo_utils.dart';
@@ -254,6 +256,11 @@ class _MapScreenState extends State<MapScreen> {
         title: const Text('Chaos Tours – Karte'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: _showAddressSearch,
+            tooltip: 'Adresse suchen',
+          ),
+          IconButton(
             icon: const Icon(Icons.my_location),
             onPressed: _goToCurrentLocation,
             tooltip: 'Aktuellen Standort anzeigen',
@@ -322,6 +329,82 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  /// Address search sheet using Nominatim structured geocoding.
+  void _showAddressSearch() {
+    final countryCtrl = TextEditingController(
+      text: SettingsService.instance.searchCountry,
+    );
+    final cityCtrl = TextEditingController();
+    final streetCtrl = TextEditingController();
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (ctx) {
+        return _AddressSearchSheet(
+          countryCtrl: countryCtrl,
+          cityCtrl: cityCtrl,
+          streetCtrl: streetCtrl,
+          onResultSelected: (result) {
+            Navigator.pop(ctx);
+            final pos = LatLng(result.lat, result.lng);
+            _mapController.move(pos, 16);
+            _showLocationActionSheet(pos, result.displayName);
+          },
+        );
+      },
+    );
+  }
+
+  /// Shown after the user taps a geocoding result — offers "create place" and
+  /// "navigate with Google Maps".
+  void _showLocationActionSheet(LatLng pos, String label) {
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                label,
+                style: Theme.of(ctx).textTheme.bodyMedium,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.add_location_alt_outlined),
+              title: const Text('Ort hier erstellen'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _onLongPress(const TapPosition(Offset.zero, Offset.zero), pos);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.directions),
+              title: const Text('Route in Google Maps'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final uri = Uri.parse(
+                  'https://www.google.com/maps/dir/?api=1'
+                  '&destination=${pos.latitude},${pos.longitude}',
+                );
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// Live tracking points layer (always visible, from the real DB).
   Widget _buildLiveTrackingLayer() {
     final state = _liveState;
@@ -360,6 +443,24 @@ class _MapScreenState extends State<MapScreen> {
       );
     }
 
+    final shortWindowPolyPoints = state.shortWindowPoints
+        .map((p) => LatLng(p.lat, p.lng))
+        .toList();
+
+    final longOnlyPolyPoints = state.longOnlyPoints
+        .map((p) => LatLng(p.lat, p.lng))
+        .toList();
+
+    // add last short window point before long-only points to connect the ploylibnes, if both are present
+    if (state.shortWindowPoints.isNotEmpty && state.longOnlyPoints.isNotEmpty) {
+      longOnlyPolyPoints.add(
+        LatLng(
+          state.shortWindowPoints.last.lat,
+          state.shortWindowPoints.last.lng,
+        ),
+      );
+    }
+
     // Cluster centroid → red
     if (state.clusterCentroid != null) {
       final c = state.clusterCentroid!;
@@ -375,6 +476,198 @@ class _MapScreenState extends State<MapScreen> {
       );
     }
 
-    return CircleLayer(circles: circles);
+    return Stack(
+      children: [
+        CircleLayer(circles: circles),
+        PolylineLayer(
+          polylines: [
+            Polyline(
+              points: longOnlyPolyPoints,
+              strokeWidth: 2.0,
+              color: Colors.grey.shade400.withAlpha(180),
+            ),
+          ],
+        ),
+        PolylineLayer(
+          polylines: [
+            Polyline(
+              points: shortWindowPolyPoints,
+              strokeWidth: 2.0,
+              color: statusColor.withAlpha(180),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+// ── Address search bottom sheet ───────────────────────────────────────────────
+
+class _AddressSearchSheet extends StatefulWidget {
+  const _AddressSearchSheet({
+    required this.countryCtrl,
+    required this.cityCtrl,
+    required this.streetCtrl,
+    required this.onResultSelected,
+  });
+
+  final TextEditingController countryCtrl;
+  final TextEditingController cityCtrl;
+  final TextEditingController streetCtrl;
+  final ValueChanged<NominatimResult> onResultSelected;
+
+  @override
+  State<_AddressSearchSheet> createState() => _AddressSearchSheetState();
+}
+
+class _AddressSearchSheetState extends State<_AddressSearchSheet> {
+  List<NominatimResult> _results = [];
+  bool _searching = false;
+  String? _error;
+
+  Future<void> _search() async {
+    final country = widget.countryCtrl.text.trim();
+    final city = widget.cityCtrl.text.trim();
+    final street = widget.streetCtrl.text.trim();
+
+    if (country.isEmpty && city.isEmpty && street.isEmpty) return;
+
+    setState(() {
+      _searching = true;
+      _error = null;
+      _results = [];
+    });
+
+    final results = await NominatimService.instance.searchAddress(
+      country: country,
+      city: city,
+      street: street,
+    );
+
+    if (mounted) {
+      setState(() {
+        _searching = false;
+        _results = results;
+        if (results.isEmpty) _error = 'Keine Ergebnisse gefunden.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                const Icon(Icons.search),
+                const SizedBox(width: 8),
+                Text(
+                  'Adresse suchen',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Column(
+              children: [
+                TextField(
+                  controller: widget.countryCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Land',
+                    hintText: 'z. B. Deutschland',
+                    prefixIcon: Icon(Icons.flag_outlined),
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  textInputAction: TextInputAction.next,
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: widget.cityCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Stadt / Ort',
+                    hintText: 'z. B. München',
+                    prefixIcon: Icon(Icons.location_city),
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  textInputAction: TextInputAction.next,
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: widget.streetCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Straße (optional)',
+                    hintText: 'z. B. Marienplatz 1',
+                    prefixIcon: Icon(Icons.signpost_outlined),
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (_) => _search(),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _searching ? null : _search,
+                    icon: _searching
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.search),
+                    label: const Text('Suchen'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+          if (_results.isNotEmpty)
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 260),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: _results.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (ctx, i) {
+                  final r = _results[i];
+                  return ListTile(
+                    leading: const Icon(Icons.place_outlined),
+                    title: Text(
+                      r.displayName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    dense: true,
+                    onTap: () => widget.onResultSelected(r),
+                  );
+                },
+              ),
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
   }
 }

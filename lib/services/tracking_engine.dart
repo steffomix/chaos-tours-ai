@@ -219,7 +219,7 @@ class TrackingEngine {
     final longPts = longWindow.map((p) => (lat: p.lat, lng: p.lng)).toList();
     final longIsCluster =
         longPts.isNotEmpty &&
-        GeoUtils.isCluster(longPts, settings.defaultRadiusMeters);
+        GeoUtils.isCluster(longPts, settings.defaultRadiusMeters * 2);
 
     if (longIsCluster && longWindowFull) {
       // Halt at unknown place — only start a stay once

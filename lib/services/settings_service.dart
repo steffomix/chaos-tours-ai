@@ -22,6 +22,7 @@ class SettingsService {
   static const String _keyCalendarEnabled = 'calendar_enabled';
   static const String _keyTimelineHistoryDays = 'timeline_history_days';
   static const String _keyForceEndStayPending = 'force_end_stay_pending';
+  static const String _keySearchCountry = 'search_country';
 
   SharedPreferences? _prefs;
 
@@ -119,6 +120,10 @@ class SettingsService {
   bool get forceEndStayPending => _p.getBool(_keyForceEndStayPending) ?? false;
   set forceEndStayPending(bool v) => _p.setBool(_keyForceEndStayPending, v);
 
+  /// Default country pre-filled in the map address search (e.g. 'Deutschland').
+  String get searchCountry => _p.getString(_keySearchCountry) ?? '';
+  set searchCountry(String v) => _p.setString(_keySearchCountry, v);
+
   // ── Aktivitaet binding ───────────────────────────────────────────────────
 
   /// The ID of the currently selected [Aktivitaet].
@@ -143,6 +148,7 @@ class SettingsService {
     autoPlaceGroupId = a.autoPlaceGroupId;
     defaultPlaceGroupId = a.defaultPlaceGroupId;
     timelineHistoryDays = a.timelineHistoryDays;
+    searchCountry = a.searchCountry;
     activeAktivitaetId = a.id;
   }
 
@@ -160,6 +166,7 @@ class SettingsService {
       autoPlaceGroupId: autoPlaceGroupId,
       defaultPlaceGroupId: defaultPlaceGroupId,
       timelineHistoryDays: timelineHistoryDays,
+      searchCountry: searchCountry,
     );
   }
 }

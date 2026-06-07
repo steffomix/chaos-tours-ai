@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -337,21 +339,21 @@ class _TimelineScreenState extends State<TimelineScreen> {
     }).toList();
 
     // Build journey polyline: stays with coordinates sorted oldest → newest
-    final pathEntries = staysWithCoords.where((e) => e.place != null).toList()
+    final stayEntries = staysWithCoords.where((e) => e.place != null).toList()
       ..sort((a, b) => a.stay.startTime.compareTo(b.stay.startTime));
 
-    final pathPoints = pathEntries
+    final stayPoints = stayEntries
         .map((e) => LatLng(e.place!.lat, e.place!.lng))
         .toList();
 
     // Gradient: transparent (oldest/past) → opaque teal (newest/present)
     List<Color>? gradientColors;
-    if (pathPoints.length >= 2) {
-      final n = pathPoints.length;
+    if (stayPoints.length >= 2) {
+      final n = stayPoints.length;
       gradientColors = List.generate(n, (i) {
         final opacity = i / (n - 1); // 0.0 … 1.0
-        return Colors.teal.withValues(alpha: opacity * 0.9);
-      });
+        return Colors.teal.withValues(alpha: max(opacity, 0.5));
+      }).reversed.toList(); // Newest = most opaque at the end of the list
     }
 
     final center =
@@ -373,13 +375,12 @@ class _TimelineScreenState extends State<TimelineScreen> {
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'de.chaostours.chaos_tours_ai',
             ),
-            if (pathPoints.length >= 2)
+            if (stayPoints.length >= 2)
               PolylineLayer(
                 polylines: [
                   Polyline(
-                    points: pathPoints,
+                    points: stayPoints,
                     strokeWidth: 3.0,
-                    color: Colors.teal.withValues(alpha: 0.6),
                     gradientColors: gradientColors,
                   ),
                 ],

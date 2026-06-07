@@ -29,7 +29,7 @@ class DatabaseService {
     final path = join(dbPath, 'chaos_tours.db');
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
@@ -129,12 +129,19 @@ class DatabaseService {
         auto_create_places INTEGER NOT NULL DEFAULT 1,
         auto_place_group_id INTEGER,
         default_place_group_id INTEGER,
-        timeline_history_days INTEGER NOT NULL DEFAULT 7
+        timeline_history_days INTEGER NOT NULL DEFAULT 7,
+        search_country TEXT NOT NULL DEFAULT ''
       )
     ''');
   }
 
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {}
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute(
+        "ALTER TABLE aktivitaeten ADD COLUMN search_country TEXT NOT NULL DEFAULT ''",
+      );
+    }
+  }
 
   // ── SavedPlaces ──────────────────────────────────────────────────────────
 

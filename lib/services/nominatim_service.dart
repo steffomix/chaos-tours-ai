@@ -2,6 +2,19 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+/// A single result from a Nominatim forward-geocoding search.
+class NominatimResult {
+  final String displayName;
+  final double lat;
+  final double lng;
+
+  const NominatimResult({
+    required this.displayName,
+    required this.lat,
+    required this.lng,
+  });
+}
+
 class NominatimService {
   NominatimService._();
   static final NominatimService instance = NominatimService._();
@@ -63,5 +76,44 @@ class NominatimService {
       return data['display_name'] as String?;
     }
     return parts.join(', ');
+  }
+
+  /// Forward geocode using structured fields (country, city, street).
+  /// Returns up to 10 matches sorted by Nominatim relevance.
+  Future<List<NominatimResult>> searchAddress({
+    String country = '',
+    String city = '',
+    String street = '',
+  }) async {
+    final params = <String, String>{
+      'format': 'json',
+      'addressdetails': '1',
+      'limit': '10',
+      if (country.isNotEmpty) 'country': country,
+      if (city.isNotEmpty) 'city': city,
+      if (street.isNotEmpty) 'street': street,
+    };
+
+    final uri = Uri.https('nominatim.openstreetmap.org', '/search', params);
+
+    try {
+      final response = await http
+          .get(uri, headers: {'User-Agent': _userAgent})
+          .timeout(_timeout);
+
+      if (response.statusCode != 200) return [];
+
+      final list = json.decode(response.body) as List<dynamic>;
+      return list.map((item) {
+        final m = item as Map<String, dynamic>;
+        return NominatimResult(
+          displayName: m['display_name'] as String? ?? '',
+          lat: double.tryParse(m['lat'] as String? ?? '') ?? 0.0,
+          lng: double.tryParse(m['lon'] as String? ?? '') ?? 0.0,
+        );
+      }).toList();
+    } catch (_) {
+      return [];
+    }
   }
 }

@@ -17,6 +17,9 @@ class Aktivitaet {
   /// How many days of stay history are shown on the timeline map (default: 7).
   final int timelineHistoryDays;
 
+  /// Default country pre-filled in the map address search (e.g. 'Deutschland').
+  final String searchCountry;
+
   const Aktivitaet({
     this.id,
     required this.name,
@@ -28,6 +31,7 @@ class Aktivitaet {
     this.autoPlaceGroupId,
     this.defaultPlaceGroupId,
     this.timelineHistoryDays = 7,
+    this.searchCountry = '',
   });
 
   factory Aktivitaet.fromMap(Map<String, dynamic> map) {
@@ -43,6 +47,7 @@ class Aktivitaet {
       autoPlaceGroupId: map['auto_place_group_id'] as int?,
       defaultPlaceGroupId: map['default_place_group_id'] as int?,
       timelineHistoryDays: map['timeline_history_days'] as int? ?? 7,
+      searchCountry: map['search_country'] as String? ?? '',
     );
   }
 
@@ -59,6 +64,7 @@ class Aktivitaet {
       if (defaultPlaceGroupId != null)
         'default_place_group_id': defaultPlaceGroupId,
       'timeline_history_days': timelineHistoryDays,
+      'search_country': searchCountry,
     };
   }
 
@@ -75,6 +81,7 @@ class Aktivitaet {
     int? defaultPlaceGroupId,
     bool clearDefaultPlaceGroupId = false,
     int? timelineHistoryDays,
+    String? searchCountry,
   }) {
     return Aktivitaet(
       id: id ?? this.id,
@@ -91,6 +98,7 @@ class Aktivitaet {
           ? null
           : (defaultPlaceGroupId ?? this.defaultPlaceGroupId),
       timelineHistoryDays: timelineHistoryDays ?? this.timelineHistoryDays,
+      searchCountry: searchCountry ?? this.searchCountry,
     );
   }
 }
