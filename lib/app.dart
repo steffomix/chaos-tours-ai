@@ -41,7 +41,10 @@ class _AppState extends State<App> {
     return MaterialApp(
       title: 'Chaos Tours',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(colorSchemeSeed: Colors.teal, useMaterial3: true),
+      theme: ThemeData(
+        colorSchemeSeed: const Color(0xFFd6b050),
+        useMaterial3: true,
+      ),
       routes: {
         '/settings': (_) => const SettingsScreen(),
         '/place-groups': (_) => const PlaceGroupsScreen(),
