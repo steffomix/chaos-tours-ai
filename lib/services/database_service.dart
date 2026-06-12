@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/aktivitaet.dart';
 import '../models/activity.dart';
+import '../models/web_source_experience.dart';
 import '../models/person.dart';
 import '../models/place_group.dart';
 import '../models/saved_place.dart';
@@ -14,6 +15,7 @@ import '../models/stay_activity.dart';
 import '../models/stay_person.dart';
 import '../models/tracking_point.dart';
 import '../models/web_source.dart';
+import 'sync_service.dart' show SyncOptions;
 
 class DatabaseService {
   DatabaseService._();
@@ -33,7 +35,7 @@ class DatabaseService {
     final path = join(dbPath, 'chaos_tours.db');
     return openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
@@ -105,6 +107,21 @@ class DatabaseService {
           notes TEXT NOT NULL DEFAULT '',
           experience TEXT NOT NULL DEFAULT '',
           api_key TEXT NOT NULL DEFAULT '',
+          uuid TEXT NOT NULL DEFAULT '',
+          updated_at INTEGER NOT NULL DEFAULT 0,
+          deleted_at INTEGER,
+          device_id TEXT NOT NULL DEFAULT ''
+        )
+      ''');
+    }
+    if (oldVersion < 3) {
+      // Create web_source_experiences table.
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS web_source_experiences (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          web_source_uuid TEXT NOT NULL,
+          text TEXT NOT NULL,
+          created_at INTEGER NOT NULL DEFAULT 0,
           uuid TEXT NOT NULL DEFAULT '',
           updated_at INTEGER NOT NULL DEFAULT 0,
           deleted_at INTEGER,
@@ -258,6 +275,18 @@ class DatabaseService {
         notes TEXT NOT NULL DEFAULT '',
         experience TEXT NOT NULL DEFAULT '',
         api_key TEXT NOT NULL DEFAULT '',
+        uuid TEXT NOT NULL DEFAULT '',
+        updated_at INTEGER NOT NULL DEFAULT 0,
+        deleted_at INTEGER,
+        device_id TEXT NOT NULL DEFAULT ''
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE web_source_experiences (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        web_source_uuid TEXT NOT NULL,
+        text TEXT NOT NULL,
+        created_at INTEGER NOT NULL DEFAULT 0,
         uuid TEXT NOT NULL DEFAULT '',
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
@@ -835,6 +864,62 @@ class DatabaseService {
     await db.delete('web_sources', where: 'id = ?', whereArgs: [id]);
   }
 
+  // ── WebSourceExperiences ─────────────────────────────────────────────────
+
+  Future<int> insertWebSourceExperience(
+    WebSourceExperience exp, {
+    String deviceId = '',
+  }) async {
+    final db = await database;
+    return db.insert(
+      'web_source_experiences',
+      _withSyncFields(exp.toMap(), deviceId),
+    );
+  }
+
+  Future<List<WebSourceExperience>> loadExperiencesForWebSource(
+    String webSourceUuid,
+  ) async {
+    final db = await database;
+    final rows = await db.query(
+      'web_source_experiences',
+      where: 'web_source_uuid = ? AND deleted_at IS NULL',
+      whereArgs: [webSourceUuid],
+      orderBy: 'created_at DESC',
+    );
+    return rows.map(WebSourceExperience.fromMap).toList();
+  }
+
+  Future<void> updateWebSourceExperience(
+    WebSourceExperience exp, {
+    String deviceId = '',
+  }) async {
+    final db = await database;
+    await db.update(
+      'web_source_experiences',
+      _withSyncFields(exp.toMap(), deviceId),
+      where: 'id = ?',
+      whereArgs: [exp.id],
+    );
+  }
+
+  Future<void> softDeleteWebSourceExperience(
+    int id, {
+    String deviceId = '',
+  }) async {
+    final db = await database;
+    await db.update(
+      'web_source_experiences',
+      {
+        'deleted_at': DateTime.now().millisecondsSinceEpoch,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+        if (deviceId.isNotEmpty) 'device_id': deviceId,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   /// Soft-deletes a web_source by setting deleted_at.
   Future<void> softDeleteWebSource(int id, {String deviceId = ''}) async {
     final db = await database;
@@ -862,9 +947,12 @@ class DatabaseService {
   }
 
   /// Upserts a row by its uuid (used during pull from server).
-  /// If [row] has a newer updated_at than the existing local row it wins;
-  /// otherwise the local version is kept (last-write-wins per updated_at).
-  Future<void> upsertByUuid(String table, Map<String, dynamic> row) async {
+  /// [options] controls whether inserts, edits, and deletes are allowed.
+  Future<void> upsertByUuid(
+    String table,
+    Map<String, dynamic> row, {
+    SyncOptions options = SyncOptions.all,
+  }) async {
     final db = await database;
     final uuid = row['uuid'] as String?;
     if (uuid == null || uuid.isEmpty) return;
@@ -877,6 +965,7 @@ class DatabaseService {
     );
 
     if (existing.isEmpty) {
+      if (!options.allowInsert) return;
       // Insert without the incoming integer id to avoid conflicts.
       final toInsert = Map<String, dynamic>.from(row)..remove('id');
       await db.insert(table, toInsert);
@@ -884,6 +973,11 @@ class DatabaseService {
       final localUpdatedAt = (existing.first['updated_at'] as int?) ?? 0;
       final remoteUpdatedAt = (row['updated_at'] as int?) ?? 0;
       if (remoteUpdatedAt > localUpdatedAt) {
+        // Check if this is a deletion (deleted_at being set).
+        final isDelete =
+            row['deleted_at'] != null && existing.first['deleted_at'] == null;
+        if (isDelete && !options.allowDelete) return;
+        if (!isDelete && !options.allowEdit) return;
         final toUpdate = Map<String, dynamic>.from(row)..remove('id');
         await db.update(table, toUpdate, where: 'uuid = ?', whereArgs: [uuid]);
       }

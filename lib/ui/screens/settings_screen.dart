@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import '../../models/aktivitaet.dart';
 import '../../models/place_group.dart';
@@ -39,6 +42,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _syncPeerUrlCtrl = TextEditingController();
   bool _syncing = false;
   String? _syncStatus;
+  bool _syncApiKeyVisible = false;
+  String? _localIp;
+  String? _internetIp;
 
   // Aktivitaet management
   List<Aktivitaet> _aktivitaeten = [];
@@ -75,6 +81,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadGroups();
     _loadAktivitaeten();
     _loadSyncSettings();
+    _loadNetworkInfo();
+  }
+
+  Future<void> _loadNetworkInfo() async {
+    // Local IP from network interfaces.
+    try {
+      final interfaces = await NetworkInterface.list(
+        type: InternetAddressType.IPv4,
+      );
+      for (final iface in interfaces) {
+        // Skip loopback.
+        final addr = iface.addresses
+            .where((a) => !a.isLoopback)
+            .map((a) => a.address)
+            .firstOrNull;
+        if (addr != null) {
+          if (mounted) setState(() => _localIp = addr);
+          break;
+        }
+      }
+    } catch (_) {}
+    // Internet IP via public API.
+    try {
+      final resp = await http
+          .get(Uri.parse('https://api.ipify.org'))
+          .timeout(const Duration(seconds: 5));
+      if (resp.statusCode == 200 && mounted) {
+        setState(() => _internetIp = resp.body.trim());
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadSyncSettings() async {
@@ -91,11 +127,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _syncNow() async {
+    // Ask user which operations are allowed.
+    final opts = await _showSyncOptionsDialog();
+    if (opts == null) return;
     setState(() {
       _syncing = true;
       _syncStatus = null;
     });
-    final result = await SyncService.instance.syncWithServer();
+    final result = await SyncService.instance.syncWithServer(options: opts);
     if (mounted) {
       setState(() {
         _syncing = false;
@@ -147,6 +186,76 @@ class _SettingsScreenState extends State<SettingsScreen> {
         s.snapshotAsAktivitaet(id: a!.id!, name: a.name),
       );
     }
+  }
+
+  Future<SyncOptions?> _showSyncOptionsDialog() async {
+    bool allowInsert = true;
+    bool allowEdit = true;
+    bool allowDelete = true;
+    return showDialog<SyncOptions>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) => AlertDialog(
+          title: const Text('Synchronisieren'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Welche Änderungen vom Server sollen auf diesem Gerät angewendet werden?',
+                style: TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              CheckboxListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Einfügen'),
+                subtitle: const Text('Neue Einträge vom Server hinzufügen'),
+                value: allowInsert,
+                onChanged: (v) =>
+                    setDlgState(() => allowInsert = v ?? allowInsert),
+              ),
+              CheckboxListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Bearbeiten'),
+                subtitle: const Text('Vorhandene Einträge aktualisieren'),
+                value: allowEdit,
+                onChanged: (v) => setDlgState(() => allowEdit = v ?? allowEdit),
+              ),
+              CheckboxListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Löschen'),
+                subtitle: const Text(
+                  'Gelöschte Einträge vom Server übernehmen',
+                ),
+                value: allowDelete,
+                onChanged: (v) =>
+                    setDlgState(() => allowDelete = v ?? allowDelete),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Abbrechen'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(
+                ctx,
+                SyncOptions(
+                  allowInsert: allowInsert,
+                  allowEdit: allowEdit,
+                  allowDelete: allowDelete,
+                ),
+              ),
+              child: const Text('Synchronisieren'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -569,11 +678,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text('API-Key'),
             subtitle: TextField(
               controller: _syncApiKeyCtrl,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Leer = kein Schlüssel',
                 isDense: true,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _syncApiKeyVisible
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                  ),
+                  onPressed: () =>
+                      setState(() => _syncApiKeyVisible = !_syncApiKeyVisible),
+                ),
               ),
-              obscureText: true,
+              obscureText: !_syncApiKeyVisible,
               onChanged: (v) => SyncService.instance.setApiKey(v.trim()),
             ),
           ),
@@ -595,6 +713,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (_localIp != null || _internetIp != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline, size: 14),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            [
+                              if (_localIp != null) 'WLAN: $_localIp',
+                              if (_internetIp != null) 'Internet: $_internetIp',
+                            ].join('   '),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 if (_syncStatus != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),

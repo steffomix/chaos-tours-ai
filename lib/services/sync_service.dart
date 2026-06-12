@@ -7,6 +7,26 @@ import '../models/saved_place.dart';
 import '../models/web_source.dart';
 import 'database_service.dart';
 
+/// Options controlling which pull operations are applied to local data.
+class SyncOptions {
+  /// Allow inserting records that exist on the server but not locally.
+  final bool allowInsert;
+
+  /// Allow updating records where the server version is newer.
+  final bool allowEdit;
+
+  /// Allow soft-deleting local records that the server has marked deleted.
+  final bool allowDelete;
+
+  const SyncOptions({
+    this.allowInsert = true,
+    this.allowEdit = true,
+    this.allowDelete = true,
+  });
+
+  static const all = SyncOptions();
+}
+
 /// Result of a sync operation.
 class SyncResult {
   final bool success;
@@ -47,6 +67,7 @@ class SyncService {
     'stay_activities',
     'aktivitaeten',
     'web_sources',
+    'web_source_experiences',
   ];
 
   SharedPreferences? _prefs;
@@ -63,7 +84,8 @@ class SyncService {
   Future<void> setServerUrl(String v) async =>
       (await _p).setString(_keySyncServerUrl, v);
 
-  Future<String> get apiKey async => (await _p).getString(_keySyncApiKey) ?? '';
+  Future<String> get apiKey async =>
+      (await _p).getString(_keySyncApiKey) ?? 'chaos-tours-2-promised-land';
   Future<void> setApiKey(String v) async =>
       (await _p).setString(_keySyncApiKey, v);
 
@@ -90,7 +112,9 @@ class SyncService {
   // ── Main sync entry points ─────────────────────────────────────────────────
 
   /// Full delta-sync with the configured server URL.
-  Future<SyncResult> syncWithServer() async {
+  Future<SyncResult> syncWithServer({
+    SyncOptions options = SyncOptions.all,
+  }) async {
     final url = await serverUrl;
     final key = await apiKey;
     if (url.isEmpty) {
@@ -99,11 +123,13 @@ class SyncService {
         errorMessage: 'Keine Server-URL konfiguriert',
       );
     }
-    return _sync(url, key);
+    return _sync(url, key, options: options);
   }
 
   /// Delta-sync with a peer device URL (same API contract).
-  Future<SyncResult> syncWithPeer() async {
+  Future<SyncResult> syncWithPeer({
+    SyncOptions options = SyncOptions.all,
+  }) async {
     final url = await peerUrl;
     final key = await apiKey;
     if (url.isEmpty) {
@@ -112,7 +138,7 @@ class SyncService {
         errorMessage: 'Keine Peer-URL konfiguriert',
       );
     }
-    return _sync(url, key);
+    return _sync(url, key, options: options);
   }
 
   /// Imports only [SavedPlace] records from a [WebSource].
@@ -158,7 +184,11 @@ class SyncService {
 
   // ── Internal sync logic ───────────────────────────────────────────────────
 
-  Future<SyncResult> _sync(String baseUrl, String key) async {
+  Future<SyncResult> _sync(
+    String baseUrl,
+    String key, {
+    SyncOptions options = SyncOptions.all,
+  }) async {
     try {
       final devId = await deviceId;
       final since = await lastSyncMs;
@@ -187,6 +217,7 @@ class SyncService {
           await DatabaseService.instance.upsertByUuid(
             table,
             Map<String, dynamic>.from(row as Map),
+            options: options,
           );
           pulled++;
         }

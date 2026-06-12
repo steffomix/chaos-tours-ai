@@ -189,9 +189,12 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabCtrl,
-        children: [_buildExportTab(), _buildImportTab(), _buildResetTab()],
+      body: SafeArea(
+        top: false,
+        child: TabBarView(
+          controller: _tabCtrl,
+          children: [_buildExportTab(), _buildImportTab(), _buildResetTab()],
+        ),
       ),
     );
   }

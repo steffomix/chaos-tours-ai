@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/web_source.dart';
+import '../../models/web_source_experience.dart';
 import '../../services/database_service.dart';
 import '../../services/sync_service.dart';
 
@@ -100,92 +101,89 @@ class _WebSourcesScreenState extends State<WebSourcesScreen> {
     final urlCtrl = TextEditingController(text: existing?.url ?? '');
     final apiKeyCtrl = TextEditingController(text: existing?.apiKey ?? '');
     final notesCtrl = TextEditingController(text: existing?.notes ?? '');
-    final experienceCtrl = TextEditingController(
-      text: existing?.experience ?? '',
-    );
     final formKey = GlobalKey<FormState>();
+    bool apiKeyVisible = false;
 
     final result = await showDialog<WebSource>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(existing == null ? 'Neue Quelle' : 'Quelle bearbeiten'),
-        content: SingleChildScrollView(
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty ? 'Pflichtfeld' : null,
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: urlCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'URL',
-                    hintText: 'http://192.168.1.10:8000',
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) => AlertDialog(
+          title: Text(existing == null ? 'Neue Quelle' : 'Quelle bearbeiten'),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                    validator: (v) =>
+                        v == null || v.trim().isEmpty ? 'Pflichtfeld' : null,
                   ),
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty ? 'Pflichtfeld' : null,
-                  keyboardType: TextInputType.url,
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: apiKeyCtrl,
-                  decoration: const InputDecoration(labelText: 'API-Key'),
-                  obscureText: true,
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: notesCtrl,
-                  decoration: const InputDecoration(labelText: 'Notizen'),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: experienceCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Erfahrungsberichte',
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: urlCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'URL',
+                      hintText: 'http://192.168.1.10:8000',
+                    ),
+                    validator: (v) =>
+                        v == null || v.trim().isEmpty ? 'Pflichtfeld' : null,
+                    keyboardType: TextInputType.url,
                   ),
-                  maxLines: 3,
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: apiKeyCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'API-Key',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          apiKeyVisible
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () =>
+                            setDlgState(() => apiKeyVisible = !apiKeyVisible),
+                      ),
+                    ),
+                    obscureText: !apiKeyVisible,
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: notesCtrl,
+                    decoration: const InputDecoration(labelText: 'Notizen'),
+                    maxLines: 3,
+                  ),
+                ],
+              ),
             ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Abbrechen'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (formKey.currentState?.validate() != true) return;
+                Navigator.pop(
+                  ctx,
+                  WebSource(
+                    name: nameCtrl.text.trim(),
+                    url: urlCtrl.text.trim(),
+                    apiKey: apiKeyCtrl.text.trim(),
+                    notes: notesCtrl.text.trim(),
+                  ),
+                );
+              },
+              child: const Text('Speichern'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Abbrechen'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (formKey.currentState?.validate() != true) return;
-              Navigator.pop(
-                ctx,
-                WebSource(
-                  name: nameCtrl.text.trim(),
-                  url: urlCtrl.text.trim(),
-                  apiKey: apiKeyCtrl.text.trim(),
-                  notes: notesCtrl.text.trim(),
-                  experience: experienceCtrl.text.trim(),
-                ),
-              );
-            },
-            child: const Text('Speichern'),
-          ),
-        ],
       ),
     );
 
-    nameCtrl.dispose();
-    urlCtrl.dispose();
-    apiKeyCtrl.dispose();
-    notesCtrl.dispose();
-    experienceCtrl.dispose();
     return result;
   }
 
@@ -298,11 +296,95 @@ class _WebSourcesScreenState extends State<WebSourcesScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => Padding(
+      builder: (_) => _WebSourceDetailsSheet(source: src),
+    );
+  }
+}
+
+enum _SourceAction { edit, import, delete }
+
+// ── Details sheet with experiences ───────────────────────────────────────────
+
+class _WebSourceDetailsSheet extends StatefulWidget {
+  final WebSource source;
+  const _WebSourceDetailsSheet({required this.source});
+
+  @override
+  State<_WebSourceDetailsSheet> createState() => _WebSourceDetailsSheetState();
+}
+
+class _WebSourceDetailsSheetState extends State<_WebSourceDetailsSheet> {
+  List<WebSourceExperience> _experiences = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExperiences();
+  }
+
+  Future<void> _loadExperiences() async {
+    if (widget.source.uuid.isEmpty) return;
+    final list = await DatabaseService.instance.loadExperiencesForWebSource(
+      widget.source.uuid,
+    );
+    if (mounted) setState(() => _experiences = list);
+  }
+
+  Future<void> _addExperience() async {
+    final ctrl = TextEditingController();
+    final text = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Erfahrungsbericht hinzufügen'),
+        content: TextField(
+          controller: ctrl,
+          decoration: const InputDecoration(
+            hintText: 'Deine Erfahrung mit dieser Quelle ...',
+          ),
+          maxLines: 5,
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            child: const Text('Speichern'),
+          ),
+        ],
+      ),
+    );
+    if (text == null || text.isEmpty) return;
+    final devId = await SyncService.instance.deviceId;
+    await DatabaseService.instance.insertWebSourceExperience(
+      WebSourceExperience(webSourceUuid: widget.source.uuid, text: text),
+      deviceId: devId,
+    );
+    await _loadExperiences();
+  }
+
+  Future<void> _deleteExperience(WebSourceExperience exp) async {
+    final devId = await SyncService.instance.deviceId;
+    await DatabaseService.instance.softDeleteWebSourceExperience(
+      exp.id!,
+      deviceId: devId,
+    );
+    await _loadExperiences();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final src = widget.source;
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.6,
+      maxChildSize: 0.95,
+      builder: (_, scrollCtrl) => Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
+          controller: scrollCtrl,
           children: [
             Text(src.name, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 4),
@@ -315,28 +397,52 @@ class _WebSourcesScreenState extends State<WebSourcesScreen> {
               ),
               Text(src.notes),
             ],
-            if (src.experience.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              const Text(
-                'Erfahrungsbericht',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text(src.experience),
-            ],
             const SizedBox(height: 16),
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _importPlaces(src);
-                    },
-                    icon: const Icon(Icons.download),
-                    label: const Text('Orte importieren'),
-                  ),
+                const Text(
+                  'Erfahrungsberichte',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                TextButton.icon(
+                  onPressed: src.uuid.isNotEmpty ? _addExperience : null,
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('Hinzufügen'),
                 ),
               ],
+            ),
+            if (_experiences.isEmpty)
+              const Text(
+                'Noch keine Erfahrungsberichte vorhanden.',
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              )
+            else
+              ..._experiences.map(
+                (exp) => Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    title: Text(exp.text),
+                    subtitle: Text(
+                      DateTime.fromMillisecondsSinceEpoch(
+                        exp.createdAt,
+                      ).toLocal().toString().substring(0, 16),
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      onPressed: () => _deleteExperience(exp),
+                    ),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              icon: const Icon(Icons.close),
+              label: const Text('Schließen'),
             ),
             const SizedBox(height: 8),
           ],
@@ -345,5 +451,3 @@ class _WebSourcesScreenState extends State<WebSourcesScreen> {
     );
   }
 }
-
-enum _SourceAction { edit, import, delete }
