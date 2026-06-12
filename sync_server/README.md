@@ -7,6 +7,34 @@ Lightweight FastAPI service that bridges Android SQLite devices with a shared Po
 - Python 3.11+
 - PostgreSQL 14+ (lokal oder via Docker)
 
+## Postgres Datenbank und -benutzer erstellen
+
+
+Erstellt einen Benutzer und Datenbank passend für die Standardkonfiguration dieser App. Andere Namen und Passwörter müssen in .env entsprechend angepasst werden.
+
+```
+
+# Benutzer wechseln
+sudo -i -u postgres
+
+# Erstelle Postgres Benutzer 'chaos'
+# Beantworte alle y/n Fragen mit n
+createuser --interactive
+
+# Erstelle Datenbank für -O Eigentümer Datenbankname
+createdb -O chaos chaos
+
+# Starte Postgres Client
+psql
+
+# Setze Passwort für Benutzer
+ALTER USER chaos WITH PASSWORD 'chaos';
+
+# exit postgres and user
+\q
+exit
+```
+
 ## Schnellstart
 
 ```bash

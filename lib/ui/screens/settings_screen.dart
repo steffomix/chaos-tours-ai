@@ -725,7 +725,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             [
                               if (_localIp != null) 'WLAN: $_localIp',
                               if (_internetIp != null) 'Internet: $_internetIp',
-                            ].join('   '),
+                            ].join(
+                              _localIp != null && _internetIp != null
+                                  ? '\n'
+                                  : '',
+                            ),
                             style: const TextStyle(fontSize: 12),
                           ),
                         ),

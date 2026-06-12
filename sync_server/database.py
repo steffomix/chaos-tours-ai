@@ -37,12 +37,13 @@ metadata = MetaData()
 # ---------------------------------------------------------------------------
 # Sync columns shared across all tables
 # ---------------------------------------------------------------------------
-_sync_cols = [
-    Column("uuid", String, nullable=False, default=""),
-    Column("updated_at", BigInteger, nullable=False, default=0),
-    Column("deleted_at", BigInteger, nullable=True),
-    Column("device_id", String, nullable=False, default=""),
-]
+def _sync_cols():
+    return [
+        Column("uuid", String, nullable=False, default=""),
+        Column("updated_at", BigInteger, nullable=False, default=0),
+        Column("deleted_at", BigInteger, nullable=True),
+        Column("device_id", String, nullable=False, default=""),
+    ]
 
 saved_places = Table(
     "saved_places",
@@ -59,7 +60,7 @@ saved_places = Table(
     Column("interval_days", Integer, nullable=True),
     Column("origin_type", Integer, nullable=False, default=0),
     Column("origin_source_uuid", String, nullable=True),
-    *_sync_cols,
+    *_sync_cols(),
 )
 
 place_groups = Table(
@@ -73,7 +74,7 @@ place_groups = Table(
     Column("include_activities", Integer, nullable=False, default=1),
     Column("is_auto_group", Integer, nullable=False, default=0),
     Column("place_type", Integer, nullable=False, default=0),
-    *_sync_cols,
+    *_sync_cols(),
 )
 
 stays = Table(
@@ -88,7 +89,7 @@ stays = Table(
     Column("address", Text, nullable=True),
     Column("status", String, nullable=False, default="detecting"),
     Column("is_interval", Integer, nullable=False, default=1),
-    *_sync_cols,
+    *_sync_cols(),
 )
 
 persons = Table(
@@ -97,7 +98,7 @@ persons = Table(
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("name", String, nullable=False),
     Column("role", String, nullable=False, default=""),
-    *_sync_cols,
+    *_sync_cols(),
 )
 
 activities = Table(
@@ -105,7 +106,7 @@ activities = Table(
     metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("name", String, nullable=False),
-    *_sync_cols,
+    *_sync_cols(),
 )
 
 stay_persons = Table(
@@ -115,7 +116,7 @@ stay_persons = Table(
     Column("stay_id", Integer, nullable=False),
     Column("person_id", Integer, nullable=True),
     Column("name", String, nullable=False),
-    *_sync_cols,
+    *_sync_cols(),
 )
 
 stay_activities = Table(
@@ -125,7 +126,7 @@ stay_activities = Table(
     Column("stay_id", Integer, nullable=False),
     Column("activity_id", Integer, nullable=True),
     Column("description", Text, nullable=False),
-    *_sync_cols,
+    *_sync_cols(),
 )
 
 aktivitaeten = Table(
@@ -144,7 +145,7 @@ aktivitaeten = Table(
     Column("search_country", String, nullable=False, default=""),
     Column("scheduler_color_range", Integer, nullable=False, default=14),
     Column("scheduler_group_ids", String, nullable=False, default=""),
-    *_sync_cols,
+    *_sync_cols(),
 )
 
 web_sources = Table(
@@ -156,7 +157,7 @@ web_sources = Table(
     Column("notes", Text, nullable=False, default=""),
     Column("experience", Text, nullable=False, default=""),
     Column("api_key", String, nullable=False, default=""),
-    *_sync_cols,
+    *_sync_cols(),
 )
 
 # Ordered by foreign-key dependency (parents before children).
