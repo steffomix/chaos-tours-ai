@@ -28,6 +28,12 @@ class Aktivitaet {
   /// Empty string means "all groups".
   final String schedulerGroupIds;
 
+  // ── Sync fields ──────────────────────────────────────────────────────────
+  final String uuid;
+  final int updatedAt;
+  final int? deletedAt;
+  final String deviceId;
+
   const Aktivitaet({
     this.id,
     required this.name,
@@ -42,7 +48,11 @@ class Aktivitaet {
     this.searchCountry = '',
     this.schedulerColorRange = 14,
     this.schedulerGroupIds = '',
-  });
+    this.uuid = '',
+    int? updatedAt,
+    this.deletedAt,
+    this.deviceId = '',
+  }) : updatedAt = updatedAt ?? 0;
 
   factory Aktivitaet.fromMap(Map<String, dynamic> map) {
     return Aktivitaet(
@@ -60,6 +70,11 @@ class Aktivitaet {
       searchCountry: map['search_country'] as String? ?? '',
       schedulerColorRange: map['scheduler_color_range'] as int? ?? 14,
       schedulerGroupIds: map['scheduler_group_ids'] as String? ?? '',
+      uuid: (map['uuid'] as String?) ?? '',
+      updatedAt:
+          (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
+      deletedAt: map['deleted_at'] as int?,
+      deviceId: (map['device_id'] as String?) ?? '',
     );
   }
 
@@ -79,6 +94,10 @@ class Aktivitaet {
       'search_country': searchCountry,
       'scheduler_color_range': schedulerColorRange,
       'scheduler_group_ids': schedulerGroupIds,
+      'uuid': uuid,
+      'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      'device_id': deviceId,
     };
   }
 
@@ -98,6 +117,11 @@ class Aktivitaet {
     String? searchCountry,
     int? schedulerColorRange,
     String? schedulerGroupIds,
+    String? uuid,
+    int? updatedAt,
+    int? deletedAt,
+    bool clearDeletedAt = false,
+    String? deviceId,
   }) {
     return Aktivitaet(
       id: id ?? this.id,
@@ -117,6 +141,10 @@ class Aktivitaet {
       searchCountry: searchCountry ?? this.searchCountry,
       schedulerColorRange: schedulerColorRange ?? this.schedulerColorRange,
       schedulerGroupIds: schedulerGroupIds ?? this.schedulerGroupIds,
+      uuid: uuid ?? this.uuid,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
+      deviceId: deviceId ?? this.deviceId,
     );
   }
 }

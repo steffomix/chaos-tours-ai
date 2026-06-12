@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:uuid/uuid.dart';
 
 import '../models/aktivitaet.dart';
 import '../models/activity.dart';
@@ -12,10 +13,13 @@ import '../models/stay.dart';
 import '../models/stay_activity.dart';
 import '../models/stay_person.dart';
 import '../models/tracking_point.dart';
+import '../models/web_source.dart';
 
 class DatabaseService {
   DatabaseService._();
   static final DatabaseService instance = DatabaseService._();
+
+  static const _uuid = Uuid();
 
   Database? _db;
 
@@ -29,10 +33,85 @@ class DatabaseService {
     final path = join(dbPath, 'chaos_tours.db');
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
       onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
     );
+  }
+
+  // ── Schema helpers ───────────────────────────────────────────────────────
+
+  /// Adds the four sync columns to [table] if they are not yet present.
+  Future<void> _addSyncColumns(DatabaseExecutor db, String table) async {
+    final cols = await db.rawQuery('PRAGMA table_info($table)');
+    final existing = cols.map((c) => c['name'] as String).toSet();
+    if (!existing.contains('uuid')) {
+      await db.execute(
+        "ALTER TABLE $table ADD COLUMN uuid TEXT NOT NULL DEFAULT ''",
+      );
+    }
+    if (!existing.contains('updated_at')) {
+      await db.execute(
+        'ALTER TABLE $table ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+    if (!existing.contains('deleted_at')) {
+      await db.execute('ALTER TABLE $table ADD COLUMN deleted_at INTEGER');
+    }
+    if (!existing.contains('device_id')) {
+      await db.execute(
+        "ALTER TABLE $table ADD COLUMN device_id TEXT NOT NULL DEFAULT ''",
+      );
+    }
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Add sync columns to all existing tables.
+      for (final table in [
+        'saved_places',
+        'place_groups',
+        'stays',
+        'persons',
+        'activities',
+        'stay_persons',
+        'stay_activities',
+        'aktivitaeten',
+      ]) {
+        await _addSyncColumns(db, table);
+      }
+
+      // Add origin columns to saved_places.
+      final cols = await db.rawQuery('PRAGMA table_info(saved_places)');
+      final existing = cols.map((c) => c['name'] as String).toSet();
+      if (!existing.contains('origin_type')) {
+        await db.execute(
+          'ALTER TABLE saved_places ADD COLUMN origin_type INTEGER NOT NULL DEFAULT 0',
+        );
+      }
+      if (!existing.contains('origin_source_uuid')) {
+        await db.execute(
+          'ALTER TABLE saved_places ADD COLUMN origin_source_uuid TEXT',
+        );
+      }
+
+      // Create new web_sources table.
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS web_sources (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          url TEXT NOT NULL,
+          notes TEXT NOT NULL DEFAULT '',
+          experience TEXT NOT NULL DEFAULT '',
+          api_key TEXT NOT NULL DEFAULT '',
+          uuid TEXT NOT NULL DEFAULT '',
+          updated_at INTEGER NOT NULL DEFAULT 0,
+          deleted_at INTEGER,
+          device_id TEXT NOT NULL DEFAULT ''
+        )
+      ''');
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -47,7 +126,13 @@ class DatabaseService {
         group_id INTEGER,
         created_at INTEGER NOT NULL DEFAULT 0,
         interval_enabled INTEGER NOT NULL DEFAULT 0,
-        interval_days INTEGER
+        interval_days INTEGER,
+        uuid TEXT NOT NULL DEFAULT '',
+        updated_at INTEGER NOT NULL DEFAULT 0,
+        deleted_at INTEGER,
+        device_id TEXT NOT NULL DEFAULT '',
+        origin_type INTEGER NOT NULL DEFAULT 0,
+        origin_source_uuid TEXT
       )
     ''');
     await db.execute('''
@@ -59,7 +144,11 @@ class DatabaseService {
         include_persons INTEGER NOT NULL DEFAULT 1,
         include_activities INTEGER NOT NULL DEFAULT 1,
         is_auto_group INTEGER NOT NULL DEFAULT 0,
-        place_type INTEGER NOT NULL DEFAULT 0
+        place_type INTEGER NOT NULL DEFAULT 0,
+        uuid TEXT NOT NULL DEFAULT '',
+        updated_at INTEGER NOT NULL DEFAULT 0,
+        deleted_at INTEGER,
+        device_id TEXT NOT NULL DEFAULT ''
       )
     ''');
     await db.execute('''
@@ -73,6 +162,10 @@ class DatabaseService {
         address TEXT,
         status TEXT NOT NULL DEFAULT 'detecting',
         is_interval INTEGER NOT NULL DEFAULT 1,
+        uuid TEXT NOT NULL DEFAULT '',
+        updated_at INTEGER NOT NULL DEFAULT 0,
+        deleted_at INTEGER,
+        device_id TEXT NOT NULL DEFAULT '',
         FOREIGN KEY (place_id) REFERENCES saved_places(id) ON DELETE SET NULL
       )
     ''');
@@ -80,13 +173,21 @@ class DatabaseService {
       CREATE TABLE persons (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        role TEXT NOT NULL DEFAULT ''
+        role TEXT NOT NULL DEFAULT '',
+        uuid TEXT NOT NULL DEFAULT '',
+        updated_at INTEGER NOT NULL DEFAULT 0,
+        deleted_at INTEGER,
+        device_id TEXT NOT NULL DEFAULT ''
       )
     ''');
     await db.execute('''
       CREATE TABLE activities (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL
+        name TEXT NOT NULL,
+        uuid TEXT NOT NULL DEFAULT '',
+        updated_at INTEGER NOT NULL DEFAULT 0,
+        deleted_at INTEGER,
+        device_id TEXT NOT NULL DEFAULT ''
       )
     ''');
     await db.execute('''
@@ -95,6 +196,10 @@ class DatabaseService {
         stay_id INTEGER NOT NULL,
         person_id INTEGER,
         name TEXT NOT NULL,
+        uuid TEXT NOT NULL DEFAULT '',
+        updated_at INTEGER NOT NULL DEFAULT 0,
+        deleted_at INTEGER,
+        device_id TEXT NOT NULL DEFAULT '',
         FOREIGN KEY (stay_id) REFERENCES stays(id) ON DELETE CASCADE,
         FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE SET NULL
       )
@@ -105,6 +210,10 @@ class DatabaseService {
         stay_id INTEGER NOT NULL,
         activity_id INTEGER,
         description TEXT NOT NULL,
+        uuid TEXT NOT NULL DEFAULT '',
+        updated_at INTEGER NOT NULL DEFAULT 0,
+        deleted_at INTEGER,
+        device_id TEXT NOT NULL DEFAULT '',
         FOREIGN KEY (stay_id) REFERENCES stays(id) ON DELETE CASCADE,
         FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE SET NULL
       )
@@ -134,16 +243,56 @@ class DatabaseService {
         timeline_history_days INTEGER NOT NULL DEFAULT 7,
         search_country TEXT NOT NULL DEFAULT '',
         scheduler_color_range INTEGER NOT NULL DEFAULT 14,
-        scheduler_group_ids TEXT NOT NULL DEFAULT ''
+        scheduler_group_ids TEXT NOT NULL DEFAULT '',
+        uuid TEXT NOT NULL DEFAULT '',
+        updated_at INTEGER NOT NULL DEFAULT 0,
+        deleted_at INTEGER,
+        device_id TEXT NOT NULL DEFAULT ''
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE web_sources (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        url TEXT NOT NULL,
+        notes TEXT NOT NULL DEFAULT '',
+        experience TEXT NOT NULL DEFAULT '',
+        api_key TEXT NOT NULL DEFAULT '',
+        uuid TEXT NOT NULL DEFAULT '',
+        updated_at INTEGER NOT NULL DEFAULT 0,
+        deleted_at INTEGER,
+        device_id TEXT NOT NULL DEFAULT ''
       )
     ''');
   }
 
+  // ── Sync helpers ─────────────────────────────────────────────────────────
+
+  /// Generates a new UUID v4 string.
+  static String generateUuid() => _uuid.v4();
+
+  /// Returns a map enriched with [uuid] (if blank), [updated_at], and
+  /// [device_id] (if provided).
+  Map<String, dynamic> _withSyncFields(
+    Map<String, dynamic> map,
+    String deviceId,
+  ) {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    return {
+      ...map,
+      'uuid': (map['uuid'] as String?)?.isNotEmpty == true
+          ? map['uuid']
+          : generateUuid(),
+      'updated_at': now,
+      'device_id': deviceId,
+    };
+  }
+
   // ── SavedPlaces ──────────────────────────────────────────────────────────
 
-  Future<int> insertPlace(SavedPlace place) async {
+  Future<int> insertPlace(SavedPlace place, {String deviceId = ''}) async {
     final db = await database;
-    return db.insert('saved_places', place.toMap());
+    return db.insert('saved_places', _withSyncFields(place.toMap(), deviceId));
   }
 
   Future<List<SavedPlace>> loadAllPlaces() async {
@@ -153,15 +302,16 @@ class DatabaseService {
              COALESCE(pg.place_type, 0) AS place_type
       FROM saved_places sp
       LEFT JOIN place_groups pg ON sp.group_id = pg.id
+      WHERE sp.deleted_at IS NULL
     ''');
     return rows.map(SavedPlace.fromMap).toList();
   }
 
-  Future<void> updatePlace(SavedPlace place) async {
+  Future<void> updatePlace(SavedPlace place, {String deviceId = ''}) async {
     final db = await database;
     await db.update(
       'saved_places',
-      place.toMap(),
+      _withSyncFields(place.toMap(), deviceId),
       where: 'id = ?',
       whereArgs: [place.id],
     );
@@ -652,6 +802,95 @@ class DatabaseService {
       await txn.execute('PRAGMA foreign_keys = ON');
     });
   }
+
+  // ── WebSources ────────────────────────────────────────────────────────────
+
+  Future<int> insertWebSource(WebSource source, {String deviceId = ''}) async {
+    final db = await database;
+    return db.insert('web_sources', _withSyncFields(source.toMap(), deviceId));
+  }
+
+  Future<List<WebSource>> loadAllWebSources() async {
+    final db = await database;
+    final rows = await db.query(
+      'web_sources',
+      where: 'deleted_at IS NULL',
+      orderBy: 'name ASC',
+    );
+    return rows.map(WebSource.fromMap).toList();
+  }
+
+  Future<void> updateWebSource(WebSource source, {String deviceId = ''}) async {
+    final db = await database;
+    await db.update(
+      'web_sources',
+      _withSyncFields(source.toMap(), deviceId),
+      where: 'id = ?',
+      whereArgs: [source.id],
+    );
+  }
+
+  Future<void> deleteWebSource(int id) async {
+    final db = await database;
+    await db.delete('web_sources', where: 'id = ?', whereArgs: [id]);
+  }
+
+  /// Soft-deletes a web_source by setting deleted_at.
+  Future<void> softDeleteWebSource(int id, {String deviceId = ''}) async {
+    final db = await database;
+    await db.update(
+      'web_sources',
+      {
+        'deleted_at': DateTime.now().millisecondsSinceEpoch,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+        if (deviceId.isNotEmpty) 'device_id': deviceId,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  // ── Sync queries ──────────────────────────────────────────────────────────
+
+  /// Returns all rows from [table] with updated_at > [since] (for push/pull).
+  Future<List<Map<String, dynamic>>> loadChangedRows(
+    String table,
+    int since,
+  ) async {
+    final db = await database;
+    return db.query(table, where: 'updated_at > ?', whereArgs: [since]);
+  }
+
+  /// Upserts a row by its uuid (used during pull from server).
+  /// If [row] has a newer updated_at than the existing local row it wins;
+  /// otherwise the local version is kept (last-write-wins per updated_at).
+  Future<void> upsertByUuid(String table, Map<String, dynamic> row) async {
+    final db = await database;
+    final uuid = row['uuid'] as String?;
+    if (uuid == null || uuid.isEmpty) return;
+
+    final existing = await db.query(
+      table,
+      where: 'uuid = ?',
+      whereArgs: [uuid],
+      limit: 1,
+    );
+
+    if (existing.isEmpty) {
+      // Insert without the incoming integer id to avoid conflicts.
+      final toInsert = Map<String, dynamic>.from(row)..remove('id');
+      await db.insert(table, toInsert);
+    } else {
+      final localUpdatedAt = (existing.first['updated_at'] as int?) ?? 0;
+      final remoteUpdatedAt = (row['updated_at'] as int?) ?? 0;
+      if (remoteUpdatedAt > localUpdatedAt) {
+        final toUpdate = Map<String, dynamic>.from(row)..remove('id');
+        await db.update(table, toUpdate, where: 'uuid = ?', whereArgs: [uuid]);
+      }
+    }
+  }
+
+  // ── ensureDefaultAktivitaet / ensureDefaultGroups ─────────────────────────
 
   /// Ensures at least one Aktivitaet exists. Creates a default one if the
   /// table is empty and returns its id.

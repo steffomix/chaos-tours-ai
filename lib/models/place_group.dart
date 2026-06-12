@@ -10,6 +10,12 @@ class PlaceGroup {
   final bool isAutoGroup;
   final PlaceType placeType;
 
+  // ── Sync fields ──────────────────────────────────────────────────────────
+  final String uuid;
+  final int updatedAt;
+  final int? deletedAt;
+  final String deviceId;
+
   PlaceGroup({
     this.id,
     required this.name,
@@ -19,7 +25,12 @@ class PlaceGroup {
     this.includeActivities = true,
     this.isAutoGroup = false,
     this.placeType = PlaceType.public,
-  });
+    String? uuid,
+    int? updatedAt,
+    this.deletedAt,
+    this.deviceId = '',
+  }) : uuid = uuid ?? '',
+       updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch;
 
   factory PlaceGroup.fromMap(Map<String, dynamic> map) {
     final typeIndex = (map['place_type'] as int?) ?? 0;
@@ -33,6 +44,11 @@ class PlaceGroup {
       isAutoGroup: (map['is_auto_group'] as int? ?? 0) == 1,
       placeType:
           PlaceType.values[typeIndex.clamp(0, PlaceType.values.length - 1)],
+      uuid: (map['uuid'] as String?) ?? '',
+      updatedAt:
+          (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
+      deletedAt: map['deleted_at'] as int?,
+      deviceId: (map['device_id'] as String?) ?? '',
     );
   }
 
@@ -46,6 +62,10 @@ class PlaceGroup {
       'include_activities': includeActivities ? 1 : 0,
       'is_auto_group': isAutoGroup ? 1 : 0,
       'place_type': placeType.index,
+      'uuid': uuid,
+      'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      'device_id': deviceId,
     };
   }
 
@@ -59,6 +79,11 @@ class PlaceGroup {
     bool? isAutoGroup,
     PlaceType? placeType,
     bool clearCalendarId = false,
+    String? uuid,
+    int? updatedAt,
+    int? deletedAt,
+    bool clearDeletedAt = false,
+    String? deviceId,
   }) {
     return PlaceGroup(
       id: id ?? this.id,
@@ -69,6 +94,10 @@ class PlaceGroup {
       includeActivities: includeActivities ?? this.includeActivities,
       isAutoGroup: isAutoGroup ?? this.isAutoGroup,
       placeType: placeType ?? this.placeType,
+      uuid: uuid ?? this.uuid,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
+      deviceId: deviceId ?? this.deviceId,
     );
   }
 }

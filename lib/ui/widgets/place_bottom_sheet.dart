@@ -577,6 +577,29 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               ],
             ),
             const SizedBox(height: 4),
+            // ── Origin badge ────────────────────────────────────────────
+            if (widget.place.originType != PlaceOriginType.self)
+              Row(
+                children: [
+                  Chip(
+                    avatar: Icon(
+                      widget.place.originType == PlaceOriginType.auto
+                          ? Icons.autorenew
+                          : Icons.download,
+                      size: 14,
+                    ),
+                    label: Text(
+                      widget.place.originType == PlaceOriginType.auto
+                          ? 'Automatisch erstellt'
+                          : 'Importiert',
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              ),
+            const SizedBox(height: 4),
             // ── Name ───────────────────────────────────────────────────
             TextField(
               controller: _nameCtrl,

@@ -14,6 +14,12 @@ class Stay {
   /// When false the visit is recorded normally but does not reset the interval.
   final bool isInterval;
 
+  // ── Sync fields ──────────────────────────────────────────────────────────
+  final String uuid;
+  final int updatedAt;
+  final int? deletedAt;
+  final String deviceId;
+
   Stay({
     this.id,
     this.placeId,
@@ -24,7 +30,12 @@ class Stay {
     this.address,
     this.status = StayStatus.detecting,
     this.isInterval = true,
-  });
+    String? uuid,
+    int? updatedAt,
+    this.deletedAt,
+    this.deviceId = '',
+  }) : uuid = uuid ?? '',
+       updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch;
 
   bool get isActive => status != StayStatus.completed;
 
@@ -51,6 +62,11 @@ class Stay {
         orElse: () => StayStatus.detecting,
       ),
       isInterval: (map['is_interval'] as int? ?? 1) == 1,
+      uuid: (map['uuid'] as String?) ?? '',
+      updatedAt:
+          (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
+      deletedAt: map['deleted_at'] as int?,
+      deviceId: (map['device_id'] as String?) ?? '',
     );
   }
 
@@ -65,6 +81,10 @@ class Stay {
       if (address != null) 'address': address,
       'status': status.name,
       'is_interval': isInterval ? 1 : 0,
+      'uuid': uuid,
+      'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      'device_id': deviceId,
     };
   }
 
@@ -81,6 +101,11 @@ class Stay {
     bool clearEndTime = false,
     bool clearPlaceId = false,
     bool clearCalendarEventId = false,
+    String? uuid,
+    int? updatedAt,
+    int? deletedAt,
+    bool clearDeletedAt = false,
+    String? deviceId,
   }) {
     return Stay(
       id: id ?? this.id,
@@ -94,6 +119,10 @@ class Stay {
       address: address ?? this.address,
       status: status ?? this.status,
       isInterval: isInterval ?? this.isInterval,
+      uuid: uuid ?? this.uuid,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
+      deviceId: deviceId ?? this.deviceId,
     );
   }
 }

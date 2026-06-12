@@ -5,6 +5,7 @@ import '../../models/place_group.dart';
 import '../../models/saved_place.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
+import '../../services/sync_service.dart';
 import '../../utils/permission_helper.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -32,6 +33,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Set<int> _schedulerGroupIds = {};
   List<PlaceGroup> _groups = [];
 
+  // Sync settings
+  final TextEditingController _syncServerUrlCtrl = TextEditingController();
+  final TextEditingController _syncApiKeyCtrl = TextEditingController();
+  final TextEditingController _syncPeerUrlCtrl = TextEditingController();
+  bool _syncing = false;
+  String? _syncStatus;
+
   // Aktivitaet management
   List<Aktivitaet> _aktivitaeten = [];
   Aktivitaet? _activeAktivitaet;
@@ -39,6 +47,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
     _searchCountryCtrl.dispose();
+    _syncServerUrlCtrl.dispose();
+    _syncApiKeyCtrl.dispose();
+    _syncPeerUrlCtrl.dispose();
     super.dispose();
   }
 
@@ -63,6 +74,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _schedulerGroupIds = Set<int>.from(s.schedulerGroupIdList);
     _loadGroups();
     _loadAktivitaeten();
+    _loadSyncSettings();
+  }
+
+  Future<void> _loadSyncSettings() async {
+    final url = await SyncService.instance.serverUrl;
+    final key = await SyncService.instance.apiKey;
+    final peer = await SyncService.instance.peerUrl;
+    if (mounted) {
+      setState(() {
+        _syncServerUrlCtrl.text = url;
+        _syncApiKeyCtrl.text = key;
+        _syncPeerUrlCtrl.text = peer;
+      });
+    }
+  }
+
+  Future<void> _syncNow() async {
+    setState(() {
+      _syncing = true;
+      _syncStatus = null;
+    });
+    final result = await SyncService.instance.syncWithServer();
+    if (mounted) {
+      setState(() {
+        _syncing = false;
+        _syncStatus = result.success
+            ? '${result.pulled} empfangen, ${result.pushed} gesendet'
+            : 'Fehler: ${result.errorMessage}';
+      });
+    }
   }
 
   Future<void> _loadGroups() async {
@@ -493,6 +534,96 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: const Text('Dump erstellen, laden & teilen'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.pushNamed(context, '/database-dump'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.public),
+            title: const Text('Web-Quellen'),
+            subtitle: const Text('Orte von externen Quellen importieren'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.pushNamed(context, '/web-sources'),
+          ),
+          const Divider(),
+          // ── Synchronisation ──────────────────────────────────────────
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(
+              'Synchronisation',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.dns_outlined),
+            title: const Text('Server-URL'),
+            subtitle: TextField(
+              controller: _syncServerUrlCtrl,
+              decoration: const InputDecoration(
+                hintText: 'http://192.168.1.10:8000',
+                isDense: true,
+              ),
+              keyboardType: TextInputType.url,
+              onChanged: (v) => SyncService.instance.setServerUrl(v.trim()),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.vpn_key_outlined),
+            title: const Text('API-Key'),
+            subtitle: TextField(
+              controller: _syncApiKeyCtrl,
+              decoration: const InputDecoration(
+                hintText: 'Leer = kein Schlüssel',
+                isDense: true,
+              ),
+              obscureText: true,
+              onChanged: (v) => SyncService.instance.setApiKey(v.trim()),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.devices_outlined),
+            title: const Text('Peer-URL (Gerät-zu-Gerät)'),
+            subtitle: TextField(
+              controller: _syncPeerUrlCtrl,
+              decoration: const InputDecoration(
+                hintText: 'http://192.168.1.20:8000',
+                isDense: true,
+              ),
+              keyboardType: TextInputType.url,
+              onChanged: (v) => SyncService.instance.setPeerUrl(v.trim()),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_syncStatus != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      _syncStatus!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: _syncStatus!.startsWith('Fehler')
+                            ? Colors.red
+                            : Colors.green,
+                      ),
+                    ),
+                  ),
+                FilledButton.icon(
+                  onPressed: _syncing ? null : _syncNow,
+                  icon: _syncing
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.sync),
+                  label: const Text('Jetzt synchronisieren'),
+                ),
+              ],
+            ),
           ),
           const Divider(),
           // ── Berechtigungen ───────────────────────────────────────────

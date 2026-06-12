@@ -68,6 +68,18 @@ extension PlaceTypeExtension on PlaceType {
   bool get syncsCalendar => this == PlaceType.public;
 }
 
+/// How a SavedPlace was created / obtained.
+enum PlaceOriginType {
+  /// 0 — created by the user on this device.
+  self,
+
+  /// 1 — automatically detected by the tracking engine.
+  auto,
+
+  /// 2 — imported from an external source (web_sources entry).
+  imported,
+}
+
 class SavedPlace {
   final int? id;
   final String name;
@@ -87,6 +99,28 @@ class SavedPlace {
   /// Target interval in days between visits (null = not configured).
   final int? intervalDays;
 
+  // ── Sync fields ──────────────────────────────────────────────────────────
+
+  /// Globally unique identifier (UUID v4). Set once on creation.
+  final String uuid;
+
+  /// Last modification timestamp in ms since epoch.
+  final int updatedAt;
+
+  /// Soft-delete timestamp (null = record is active).
+  final int? deletedAt;
+
+  /// ID of the device that created this record.
+  final String deviceId;
+
+  // ── Origin fields ────────────────────────────────────────────────────────
+
+  /// How this place was created.
+  final PlaceOriginType originType;
+
+  /// UUID of the [WebSource] this place was imported from, or null.
+  final String? originSourceUuid;
+
   SavedPlace({
     this.id,
     required this.name,
@@ -99,10 +133,19 @@ class SavedPlace {
     int? createdAt,
     this.intervalEnabled = false,
     this.intervalDays,
-  }) : createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch;
+    String? uuid,
+    int? updatedAt,
+    this.deletedAt,
+    this.deviceId = '',
+    this.originType = PlaceOriginType.self,
+    this.originSourceUuid,
+  }) : createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch,
+       uuid = uuid ?? '',
+       updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch;
 
   factory SavedPlace.fromMap(Map<String, dynamic> map) {
     final typeIndex = (map['place_type'] as int?) ?? 0;
+    final originIndex = (map['origin_type'] as int?) ?? 0;
     return SavedPlace(
       id: map['id'] as int?,
       name: map['name'] as String,
@@ -117,6 +160,14 @@ class SavedPlace {
           (map['created_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       intervalEnabled: (map['interval_enabled'] as int? ?? 0) == 1,
       intervalDays: map['interval_days'] as int?,
+      uuid: (map['uuid'] as String?) ?? '',
+      updatedAt:
+          (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
+      deletedAt: map['deleted_at'] as int?,
+      deviceId: (map['device_id'] as String?) ?? '',
+      originType: PlaceOriginType
+          .values[originIndex.clamp(0, PlaceOriginType.values.length - 1)],
+      originSourceUuid: map['origin_source_uuid'] as String?,
     );
   }
 
@@ -132,6 +183,12 @@ class SavedPlace {
       if (groupId != null) 'group_id': groupId,
       'interval_enabled': intervalEnabled ? 1 : 0,
       if (intervalDays != null) 'interval_days': intervalDays,
+      'uuid': uuid,
+      'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      'device_id': deviceId,
+      'origin_type': originType.index,
+      if (originSourceUuid != null) 'origin_source_uuid': originSourceUuid,
     };
   }
 
@@ -149,6 +206,14 @@ class SavedPlace {
     bool? intervalEnabled,
     int? intervalDays,
     bool clearIntervalDays = false,
+    String? uuid,
+    int? updatedAt,
+    int? deletedAt,
+    bool clearDeletedAt = false,
+    String? deviceId,
+    PlaceOriginType? originType,
+    String? originSourceUuid,
+    bool clearOriginSourceUuid = false,
   }) {
     return SavedPlace(
       id: id ?? this.id,
@@ -164,6 +229,14 @@ class SavedPlace {
       intervalDays: clearIntervalDays
           ? null
           : (intervalDays ?? this.intervalDays),
+      uuid: uuid ?? this.uuid,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
+      deviceId: deviceId ?? this.deviceId,
+      originType: originType ?? this.originType,
+      originSourceUuid: clearOriginSourceUuid
+          ? null
+          : (originSourceUuid ?? this.originSourceUuid),
     );
   }
 }
