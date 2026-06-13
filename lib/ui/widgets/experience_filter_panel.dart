@@ -107,7 +107,7 @@ class ExperienceFilterPanel extends StatelessWidget {
                 TextButton(
                   onPressed: () => onChanged(
                     filter.copyWith(
-                      minAvgRating: -9.0,
+                      minAvgRating: 0.0,
                       requireExperiences: false,
                     ),
                   ),
@@ -123,7 +123,7 @@ class ExperienceFilterPanel extends StatelessWidget {
                     filter.copyWith(requireExperiences: v ?? false),
                   ),
                 ),
-                const Text('Nur Orte mit Erfahrungsberichten'),
+                const Text('Erfahrungsfilter aktivieren'),
               ],
             ),
             Row(
@@ -131,6 +131,10 @@ class ExperienceFilterPanel extends StatelessWidget {
                 const SizedBox(width: 8),
                 const Text('Min. ⌀ Bewertung:'),
                 const SizedBox(width: 8),
+              ],
+            ),
+            Row(
+              children: [
                 Expanded(
                   child: Slider(
                     value: filter.minAvgRating.clamp(-9.0, 9.0),

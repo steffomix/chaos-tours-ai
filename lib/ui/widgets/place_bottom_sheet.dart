@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart'
+    as shared_preferences;
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../models/place_experience.dart';
 import '../../models/place_group.dart';
 import '../../models/saved_place.dart';
 import '../../models/stay.dart';
@@ -43,6 +46,10 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
   List<String> _distinctPersonNames = [];
   bool _statsLoaded = false;
 
+  // Experiences
+  List<PlaceExperience> _experiences = [];
+  bool _experiencesLoaded = false;
+
   @override
   void initState() {
     super.initState();
@@ -61,6 +68,331 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
   Future<void> _loadGroups() async {
     final groups = await DatabaseService.instance.loadAllPlaceGroups();
     if (mounted) setState(() => _groups = groups);
+  }
+
+  Future<void> _loadExperiences() async {
+    final uuid = widget.place.uuid;
+    if (uuid.isEmpty) {
+      if (mounted) setState(() => _experiencesLoaded = true);
+      return;
+    }
+    final list = await DatabaseService.instance.loadExperiencesForPlace(uuid);
+    if (mounted) {
+      setState(() {
+        _experiences = list;
+        _experiencesLoaded = true;
+      });
+    }
+  }
+
+  Future<String> _getDeviceId() async {
+    final prefs = await shared_preferences.SharedPreferences.getInstance();
+    var id = prefs.getString('sync_device_id') ?? '';
+    if (id.isEmpty) {
+      id = DatabaseService.generateUuid();
+      await prefs.setString('sync_device_id', id);
+    }
+    return id;
+  }
+
+  Future<void> _addOrEditExperience([PlaceExperience? existing]) async {
+    final textCtrl = TextEditingController(text: existing?.text ?? '');
+    var rDangerFriendly = existing?.ratingDangerousFriendly ?? 0;
+    var rFraudReliable = existing?.ratingFraudReliable ?? 0;
+    var rDismissiveAccommodation = existing?.ratingDismissiveAccommodation ?? 0;
+    var rFood = existing?.ratingFood ?? 0;
+    var rEquipment = existing?.ratingEquipment ?? 0;
+    var rTransport = existing?.ratingTransport ?? 0;
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlg) {
+          Widget ratingRow(
+            String label,
+            int value,
+            void Function(int) onChanged,
+          ) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(label, style: const TextStyle(fontSize: 12)),
+                    ),
+                    SizedBox(
+                      width: 32,
+                      child: Text(
+                        value.toString(),
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: value > 0
+                              ? Colors.green
+                              : value < 0
+                              ? Colors.red
+                              : null,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Slider(
+                  value: value.toDouble(),
+                  min: -9,
+                  max: 9,
+                  divisions: 18,
+                  label: value.toString(),
+                  onChanged: (v) => setDlg(() => onChanged(v.round())),
+                ),
+              ],
+            );
+          }
+
+          return AlertDialog(
+            title: Text(
+              existing == null
+                  ? 'Erfahrung hinzufügen'
+                  : 'Erfahrung bearbeiten',
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: textCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Bericht (optional)',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 4,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Bewertungen (−9 bis +9):',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  ratingRow(
+                    'Gefährlich ↔ Freundlich',
+                    rDangerFriendly,
+                    (v) => rDangerFriendly = v,
+                  ),
+                  ratingRow(
+                    'Betrügerisch ↔ Zuverlässig',
+                    rFraudReliable,
+                    (v) => rFraudReliable = v,
+                  ),
+                  ratingRow(
+                    'Abweisend ↔ Bietet Unterkunft',
+                    rDismissiveAccommodation,
+                    (v) => rDismissiveAccommodation = v,
+                  ),
+                  ratingRow(
+                    'Fordert ↔ Bietet Verpflegung',
+                    rFood,
+                    (v) => rFood = v,
+                  ),
+                  ratingRow(
+                    'Fordert ↔ Bietet Equipment',
+                    rEquipment,
+                    (v) => rEquipment = v,
+                  ),
+                  ratingRow(
+                    'Fordert ↔ Bietet Transport',
+                    rTransport,
+                    (v) => rTransport = v,
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Abbrechen'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Speichern'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (saved != true) return;
+    final devId = await _getDeviceId();
+    if (existing == null) {
+      await DatabaseService.instance.insertPlaceExperience(
+        PlaceExperience(
+          savedPlaceUuid: widget.place.uuid,
+          text: textCtrl.text.trim(),
+          ratingDangerousFriendly: rDangerFriendly,
+          ratingFraudReliable: rFraudReliable,
+          ratingDismissiveAccommodation: rDismissiveAccommodation,
+          ratingFood: rFood,
+          ratingEquipment: rEquipment,
+          ratingTransport: rTransport,
+        ),
+        deviceId: devId,
+      );
+    } else {
+      await DatabaseService.instance.updatePlaceExperience(
+        existing.copyWith(
+          text: textCtrl.text.trim(),
+          ratingDangerousFriendly: rDangerFriendly,
+          ratingFraudReliable: rFraudReliable,
+          ratingDismissiveAccommodation: rDismissiveAccommodation,
+          ratingFood: rFood,
+          ratingEquipment: rEquipment,
+          ratingTransport: rTransport,
+          updatedAt: DateTime.now().millisecondsSinceEpoch,
+        ),
+        deviceId: devId,
+      );
+    }
+    await _loadExperiences();
+  }
+
+  Future<void> _deleteExperience(PlaceExperience exp) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Erfahrung löschen?'),
+        content: const Text('Dieser Eintrag wird unwiderruflich gelöscht.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final devId = await _getDeviceId();
+    await DatabaseService.instance.softDeletePlaceExperience(
+      exp.id!,
+      deviceId: devId,
+    );
+    await _loadExperiences();
+  }
+
+  Widget _buildExperiencesSection() {
+    if (!_experiencesLoaded) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_experiences.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              'Noch keine Erfahrungsberichte vorhanden.',
+              style: TextStyle(fontSize: 13),
+            ),
+          ),
+        ..._experiences.map((exp) {
+          final avg = exp.averageRating;
+          return Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Ø ${avg.toStringAsFixed(1)}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: avg > 0
+                                ? Colors.green
+                                : avg < 0
+                                ? Colors.red
+                                : null,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.edit, size: 18),
+                        tooltip: 'Bearbeiten',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () => _addOrEditExperience(exp),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          size: 18,
+                          color: Colors.red,
+                        ),
+                        tooltip: 'Löschen',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () => _deleteExperience(exp),
+                      ),
+                    ],
+                  ),
+                  if (exp.text.isNotEmpty) ...[
+                    Text(exp.text, style: const TextStyle(fontSize: 13)),
+                    const SizedBox(height: 6),
+                  ],
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      _ratingChip('Gef/Fr', exp.ratingDangerousFriendly),
+                      _ratingChip('Btr/Zuv', exp.ratingFraudReliable),
+                      _ratingChip('Abw/Unt', exp.ratingDismissiveAccommodation),
+                      _ratingChip('Verpfl', exp.ratingFood),
+                      _ratingChip('Equip', exp.ratingEquipment),
+                      _ratingChip('Trans', exp.ratingTransport),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+        const SizedBox(height: 4),
+        OutlinedButton.icon(
+          onPressed: widget.place.uuid.isEmpty
+              ? null
+              : () => _addOrEditExperience(),
+          icon: const Icon(Icons.add),
+          label: const Text('Erfahrung hinzufügen'),
+        ),
+      ],
+    );
+  }
+
+  Widget _ratingChip(String label, int value) {
+    final color = value > 0
+        ? Colors.green
+        : value < 0
+        ? Colors.red
+        : Colors.grey;
+    return Chip(
+      label: Text(
+        '$label: $value',
+        style: TextStyle(fontSize: 11, color: color),
+      ),
+      padding: EdgeInsets.zero,
+      visualDensity: VisualDensity.compact,
+      side: BorderSide(color: color.withAlpha(120)),
+      backgroundColor: color.withAlpha(20),
+    );
   }
 
   Future<void> _loadVisitStats() async {
@@ -675,6 +1007,17 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                 if (expanded && !_statsLoaded) _loadStatistics();
               },
               children: [_buildStats()],
+            ),
+            const SizedBox(height: 4),
+            // ── Erfahrungsberichte ─────────────────────────────────────
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              leading: const Icon(Icons.rate_review_outlined),
+              title: const Text('Erfahrungsberichte'),
+              onExpansionChanged: (expanded) {
+                if (expanded && !_experiencesLoaded) _loadExperiences();
+              },
+              children: [_buildExperiencesSection()],
             ),
             const SizedBox(height: 4),
             // ── Besuche ────────────────────────────────────────────────
