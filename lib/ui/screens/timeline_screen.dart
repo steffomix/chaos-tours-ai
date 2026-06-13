@@ -172,8 +172,18 @@ class _TimelineScreenState extends State<TimelineScreen> {
   @override
   Widget build(BuildContext context) {
     return FocusDetector(
-      onFocusGained: () =>
-          ForegroundServiceManager.addDataListener(_onServiceData),
+      onFocusGained: () {
+        ForegroundServiceManager.addDataListener(_onServiceData);
+        _load().then((_) {
+          // After loading, also refresh the last known position in case it changed.
+          if (mounted) {
+            setState(() {
+              _loadLastPosition();
+            });
+          }
+        });
+        setState(() {}); // Refresh to show tracking points if enabled.
+      },
       onFocusLost: () =>
           ForegroundServiceManager.removeDataListener(_onServiceData),
       child: Scaffold(

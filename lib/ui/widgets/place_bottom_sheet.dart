@@ -773,6 +773,46 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
       }
     }
 
+    // ── Experiences ─────────────────────────────────────────────────
+    final uuid = place.uuid;
+    if (uuid.isNotEmpty) {
+      final experiences = await db.loadExperiencesForPlace(uuid);
+      if (experiences.isNotEmpty) {
+        buf.writeln('## Survival-Erfahrungen');
+        buf.writeln();
+        for (final exp in experiences) {
+          buf.writeln(
+            '**Ø ${exp.averageRating.toStringAsFixed(1)}**'
+            '  _(${fmtDt(exp.createdAt)})_',
+          );
+          buf.writeln();
+          buf.writeln('| Kategorie | Bewertung |');
+          buf.writeln('|-----------|-----------|');
+          buf.writeln(
+            '| Gefährlich ↔ Freundlich | ${exp.ratingDangerousFriendly} |',
+          );
+          buf.writeln(
+            '| Betrügerisch ↔ Zuverlässig | ${exp.ratingFraudReliable} |',
+          );
+          buf.writeln(
+            '| Abweisend ↔ Bietet Unterkunft | ${exp.ratingDismissiveAccommodation} |',
+          );
+          buf.writeln('| Fordert ↔ Bietet Verpflegung | ${exp.ratingFood} |');
+          buf.writeln(
+            '| Fordert ↔ Bietet Equipment | ${exp.ratingEquipment} |',
+          );
+          buf.writeln(
+            '| Fordert ↔ Bietet Transport | ${exp.ratingTransport} |',
+          );
+          if (exp.text.isNotEmpty) {
+            buf.writeln();
+            buf.writeln('> ${exp.text}');
+          }
+          buf.writeln();
+        }
+      }
+    }
+
     await Clipboard.setData(ClipboardData(text: buf.toString()));
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -901,11 +941,6 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                   tooltip: 'In Google Maps öffnen',
                   onPressed: _openInMaps,
                 ),
-                IconButton(
-                  icon: const Icon(Icons.copy_all),
-                  tooltip: 'Bericht kopieren',
-                  onPressed: _copyReport,
-                ),
               ],
             ),
             const SizedBox(height: 4),
@@ -950,12 +985,26 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               ),
               maxLines: 3,
             ),
+            const SizedBox(height: 8),
+            // ── Survival-Erfahrungen ─────────────────────────────────────
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              leading: const Icon(Icons.night_shelter),
+              title: const Text('Survival-Erfahrungen'),
+              onExpansionChanged: (expanded) {
+                if (expanded && !_experiencesLoaded) _loadExperiences();
+              },
+              children: [_buildExperiencesSection()],
+            ),
             const SizedBox(height: 12),
             // ── HR Statistik ─────────────────────────────────────────────────
             Row(
               children: <Widget>[
                 Expanded(child: Divider()),
-                Text("Statistik", style: TextStyle(color: Colors.grey)),
+                Text(
+                  "Besuche, Intervall & Statistik",
+                  style: TextStyle(color: Colors.grey),
+                ),
                 Expanded(child: Divider()),
               ],
             ),
@@ -1008,18 +1057,6 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               },
               children: [_buildStats()],
             ),
-            const SizedBox(height: 4),
-            // ── Erfahrungsberichte ─────────────────────────────────────
-            ExpansionTile(
-              tilePadding: EdgeInsets.zero,
-              leading: const Icon(Icons.rate_review_outlined),
-              title: const Text('Erfahrungsberichte'),
-              onExpansionChanged: (expanded) {
-                if (expanded && !_experiencesLoaded) _loadExperiences();
-              },
-              children: [_buildExperiencesSection()],
-            ),
-            const SizedBox(height: 4),
             // ── Besuche ────────────────────────────────────────────────
             OutlinedButton.icon(
               onPressed: widget.place.id == null
@@ -1044,12 +1081,51 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               icon: const Icon(Icons.add_location_alt),
               label: const Text('Jetzt besuchen'),
             ),
+            const SizedBox(height: 8),
+            // ── Bericht kopieren ───────────────────────────────────────
+            OutlinedButton.icon(
+              onPressed: _copyReport,
+              icon: const Icon(Icons.copy_all),
+              label: const Text('Vollständigen Bericht kopieren'),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                'Kopiert einen vollständigen Bericht des Ortes einschließlich aller Besuche und Survival-Erfahrungen im Markdown Format in die Zwischenablage.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ),
+            const SizedBox(height: 4),
+            // ── Besuchs-Intervall ──────────────────────────────────────
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Besuchs-Intervall'),
+              subtitle: const Text(
+                'Regelmäßige Erinnerung, diesen Ort zu besuchen',
+              ),
+              value: _intervalEnabled,
+              onChanged: (v) => setState(() => _intervalEnabled = v),
+            ),
+            if (_intervalEnabled) ...[
+              const SizedBox(height: 4),
+              TextFormField(
+                controller: _intervalDaysCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Intervall (Tage)',
+                  hintText: 'z. B. 14',
+                  border: OutlineInputBorder(),
+                  suffixText: 'Tage',
+                ),
+                onChanged: (v) {},
+              ),
+            ],
             const SizedBox(height: 12),
-            // ── HR Ortseinstellungen ─────────────────────────────────────────────────
+            // ── HR GPS Einstellungen ─────────────────────────────────────────────────
             Row(
               children: <Widget>[
                 Expanded(child: Divider()),
-                Text("Ortseinstellungen", style: TextStyle(color: Colors.grey)),
+                Text("GPS Einstellungen", style: TextStyle(color: Colors.grey)),
                 Expanded(child: Divider()),
               ],
             ),
@@ -1097,6 +1173,18 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               label: const Text('Position auf Karte ändern'),
             ),
             const SizedBox(height: 12),
+            // ── HR System ─────────────────────────────────────────────────
+            Row(
+              children: <Widget>[
+                Expanded(child: Divider()),
+                Text(
+                  "Systemeinstellungen",
+                  style: TextStyle(color: Colors.grey),
+                ),
+                Expanded(child: Divider()),
+              ],
+            ),
+            const SizedBox(height: 12),
             Text('Radius: ${_radius.toStringAsFixed(0)} m'),
             Slider(
               value: _radius,
@@ -1140,31 +1228,6 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               ],
               onChanged: (v) => setState(() => _groupId = v),
             ),
-            const SizedBox(height: 12),
-            // ── Besuchs-Intervall ──────────────────────────────────────
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Besuchs-Intervall'),
-              subtitle: const Text(
-                'Regelmäßige Erinnerung, diesen Ort zu besuchen',
-              ),
-              value: _intervalEnabled,
-              onChanged: (v) => setState(() => _intervalEnabled = v),
-            ),
-            if (_intervalEnabled) ...[
-              const SizedBox(height: 4),
-              TextFormField(
-                controller: _intervalDaysCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Intervall (Tage)',
-                  hintText: 'z. B. 14',
-                  border: OutlineInputBorder(),
-                  suffixText: 'Tage',
-                ),
-                onChanged: (v) {},
-              ),
-            ],
             const SizedBox(height: 12),
             // ── Aktionen ───────────────────────────────────────────────
             Row(

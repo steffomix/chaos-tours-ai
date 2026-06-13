@@ -65,7 +65,8 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _loadPlaces() async {
     final allPlaces = await DatabaseService.instance.loadAllPlaces();
-    final avgRatings = await DatabaseService.instance.loadAverageRatingsForAllPlaces();
+    final avgRatings = await DatabaseService.instance
+        .loadAverageRatingsForAllPlaces();
     final groupFilter = SettingsService.instance.schedulerGroupIdList;
     final places = groupFilter.isEmpty
         ? allPlaces
@@ -83,10 +84,12 @@ class _MapScreenState extends State<MapScreen> {
       }
     } catch (_) {}
 
-    if (mounted) setState(() {
-      _places = _applyFilter(places);
-      _avgRatings = avgRatings;
-    });
+    if (mounted) {
+      setState(() {
+        _places = _applyFilter(places);
+        _avgRatings = avgRatings;
+      });
+    }
   }
 
   List<SavedPlace> _applyFilter(List<SavedPlace> places) {
@@ -109,7 +112,8 @@ class _MapScreenState extends State<MapScreen> {
     if (_expFilter.distanceEnabled && pos != null) {
       final maxM = _expFilter.maxDistanceKm * 1000;
       final latDelta = maxM / 111000;
-      final lngDelta = maxM / (111000 * cos(pos.lat * pi / 180).abs().clamp(0.001, 1.0));
+      final lngDelta =
+          maxM / (111000 * cos(pos.lat * pi / 180).abs().clamp(0.001, 1.0));
       filtered = filtered.where((p) {
         if ((p.lat - pos.lat).abs() > latDelta) return false;
         if ((p.lng - pos.lng).abs() > lngDelta) return false;
@@ -306,8 +310,18 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return FocusDetector(
-      onFocusGained: () =>
-          ForegroundServiceManager.addDataListener(_onServiceData),
+      onFocusGained: () {
+        ForegroundServiceManager.addDataListener(_onServiceData);
+        _loadPlaces().then((_) {
+          if (mounted) {
+            _loadTrackingPoints().then((_) {
+              if (mounted) {
+                setState(() {}); // Refresh to show tracking points if enabled.
+              }
+            });
+          }
+        });
+      },
       onFocusLost: () =>
           ForegroundServiceManager.removeDataListener(_onServiceData),
       child: Scaffold(
@@ -316,7 +330,8 @@ class _MapScreenState extends State<MapScreen> {
           actions: [
             IconButton(
               icon: Badge(
-                isLabelVisible: _expFilter.isActive || _expFilter.distanceEnabled,
+                isLabelVisible:
+                    _expFilter.isActive || _expFilter.distanceEnabled,
                 child: const Icon(Icons.filter_list),
               ),
               tooltip: 'Filter',

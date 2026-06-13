@@ -266,8 +266,18 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return FocusDetector(
-      onFocusGained: () =>
-          ForegroundServiceManager.addDataListener(_onServiceData),
+      onFocusGained: () {
+        ForegroundServiceManager.addDataListener(_onServiceData);
+        _loadActiveStay().then((_) {
+          if (mounted) {
+            _loadRecentStays().then((_) {
+              if (mounted) {
+                setState(() {}); // Refresh to show tracking points if enabled.
+              }
+            });
+          }
+        });
+      },
       onFocusLost: () =>
           ForegroundServiceManager.removeDataListener(_onServiceData),
       child: Scaffold(

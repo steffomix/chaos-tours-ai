@@ -71,11 +71,16 @@ class _PlacesScreenState extends State<PlacesScreen> {
     final stays = <int, Stay?>{};
     for (final p in places) {
       if (p.id != null) {
-        counts[p.id!] = await DatabaseService.instance.visitCountForPlace(p.id!);
-        stays[p.id!] = await DatabaseService.instance.lastCompletedStayForPlace(p.id!);
+        counts[p.id!] = await DatabaseService.instance.visitCountForPlace(
+          p.id!,
+        );
+        stays[p.id!] = await DatabaseService.instance.lastCompletedStayForPlace(
+          p.id!,
+        );
       }
     }
-    final avgRatings = await DatabaseService.instance.loadAverageRatingsForAllPlaces();
+    final avgRatings = await DatabaseService.instance
+        .loadAverageRatingsForAllPlaces();
     if (mounted) {
       setState(() {
         _places = places;
@@ -118,17 +123,25 @@ class _PlacesScreenState extends State<PlacesScreen> {
       // Bounding-box pre-filter.
       final maxM = _expFilter.maxDistanceKm * 1000;
       final latDelta = maxM / 111000;
-      final lngDelta = maxM / (111000 * cos(pos.lat * pi / 180).abs().clamp(0.001, 1.0));
+      final lngDelta =
+          maxM / (111000 * cos(pos.lat * pi / 180).abs().clamp(0.001, 1.0));
 
-      final candidates = list.where((p) =>
-          (p.lat - pos.lat).abs() <= latDelta &&
-          (p.lng - pos.lng).abs() <= lngDelta).toList();
+      final candidates = list
+          .where(
+            (p) =>
+                (p.lat - pos.lat).abs() <= latDelta &&
+                (p.lng - pos.lng).abs() <= lngDelta,
+          )
+          .toList();
 
       // Haversine exact distance.
-      result = candidates.map((p) {
-        final d = GeoUtils.distanceMeters(pos.lat, pos.lng, p.lat, p.lng);
-        return (place: p, distance: d);
-      }).where((e) => e.distance <= maxM).toList();
+      result = candidates
+          .map((p) {
+            final d = GeoUtils.distanceMeters(pos.lat, pos.lng, p.lat, p.lng);
+            return (place: p, distance: d);
+          })
+          .where((e) => e.distance <= maxM)
+          .toList();
 
       // Sort: distance first, then average rating descending.
       result.sort((a, b) {
@@ -183,8 +196,14 @@ class _PlacesScreenState extends State<PlacesScreen> {
   Widget build(BuildContext context) {
     final filtered = _filtered;
     return FocusDetector(
-      onFocusGained: () =>
-          ForegroundServiceManager.addDataListener(_onServiceData),
+      onFocusGained: () {
+        ForegroundServiceManager.addDataListener(_onServiceData);
+        _loadPlaces().then((_) {
+          if (mounted) {
+            setState(() {}); // Refresh to show tracking points if enabled.
+          }
+        });
+      },
       onFocusLost: () =>
           ForegroundServiceManager.removeDataListener(_onServiceData),
       child: Scaffold(
@@ -217,7 +236,9 @@ class _PlacesScreenState extends State<PlacesScreen> {
                   isLabelVisible: _intervalOnly,
                   child: const Icon(Icons.schedule),
                 ),
-                tooltip: _intervalOnly ? 'Alle Orte anzeigen' : 'Nur Intervall-Orte',
+                tooltip: _intervalOnly
+                    ? 'Alle Orte anzeigen'
+                    : 'Nur Intervall-Orte',
                 onPressed: () => setState(() => _intervalOnly = !_intervalOnly),
               ),
               IconButton(
@@ -251,7 +272,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
                         _searchQuery.isNotEmpty || _expFilter.isActive
                             ? 'Keine Orte gefunden.'
                             : 'Keine Orte gespeichert.\n'
-                                'Orte auf der Karte per Langer Druck hinzufügen.',
+                                  'Orte auf der Karte per Langer Druck hinzufügen.',
                         textAlign: TextAlign.center,
                       ),
                     )
@@ -263,7 +284,9 @@ class _PlacesScreenState extends State<PlacesScreen> {
                           final item = filtered[i];
                           final place = item.place;
                           final count = _visitCounts[place.id] ?? 0;
-                          final stay = place.id != null ? _lastStay[place.id] : null;
+                          final stay = place.id != null
+                              ? _lastStay[place.id]
+                              : null;
                           return _PlaceCard(
                             place: place,
                             count: count,
@@ -331,12 +354,18 @@ class _PlaceCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(place.placeType.icon, color: place.placeType.dotColor, size: 20),
+                  Icon(
+                    place.placeType.icon,
+                    color: place.placeType.dotColor,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       place.name,
-                      style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                      style: textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -360,8 +389,12 @@ class _PlaceCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                count == 0 ? 'Noch nicht besucht' : '$count Besuch${count == 1 ? '' : 'e'}',
-                style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                count == 0
+                    ? 'Noch nicht besucht'
+                    : '$count Besuch${count == 1 ? '' : 'e'}',
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
               ),
               if (lastStay != null) ...[
                 const SizedBox(height: 2),
@@ -370,12 +403,19 @@ class _PlaceCard extends StatelessWidget {
                   '${fmtTime(lastStay!.startDateTime)}'
                   '${lastStay!.endDateTime != null ? ' – ${fmtTime(lastStay!.endDateTime!)}' : ''}'
                   '${lastStay!.endDateTime != null ? '  (${fmtDuration(lastStay!.duration)})' : ''}',
-                  style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
               if (place.notes.isNotEmpty) ...[
                 const SizedBox(height: 6),
-                Text(place.notes, maxLines: 2, overflow: TextOverflow.ellipsis, style: textTheme.bodySmall),
+                Text(
+                  place.notes,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.bodySmall,
+                ),
               ],
             ],
           ),
