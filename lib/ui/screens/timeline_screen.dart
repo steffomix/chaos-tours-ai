@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:focus_detector/focus_detector.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -48,7 +49,6 @@ class _TimelineScreenState extends State<TimelineScreen> {
     super.initState();
     _load();
     _loadLastPosition();
-    ForegroundServiceManager.addDataListener(_onServiceData);
   }
 
   void _onServiceData(Object data) {
@@ -58,7 +58,6 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
   @override
   void dispose() {
-    ForegroundServiceManager.removeDataListener(_onServiceData);
     _searchCtrl.dispose();
     super.dispose();
   }
@@ -172,84 +171,90 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: _searchActive
-            ? TextField(
-                controller: _searchCtrl,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Aufenthalte durchsuchen…',
-                  border: InputBorder.none,
-                ),
-                onChanged: (v) => setState(() => _searchQuery = v),
-              )
-            : const Text('Zeitachse'),
-        actions: [
-          if (_searchActive)
-            IconButton(
-              icon: const Icon(Icons.close),
-              tooltip: 'Suche schließen',
-              onPressed: () => setState(() {
-                _searchActive = false;
-                _searchQuery = '';
-                _searchCtrl.clear();
-              }),
-            )
-          else ...[
-            // Filter by date
-            IconButton(
-              icon: Badge(
-                isLabelVisible: _filterRange != null,
-                child: const Icon(Icons.date_range),
-              ),
-              onPressed: _pickDateRange,
-              tooltip: 'Datumsbereich filtern',
-            ),
-            // Filter by place
-            IconButton(
-              icon: Badge(
-                isLabelVisible: _filterPlaceId != null,
-                child: const Icon(Icons.filter_list),
-              ),
-              onPressed: _showPlaceFilterSheet,
-              tooltip: 'Nach Ort filtern',
-            ),
-            // Clear filters
-            if (_filterRange != null || _filterPlaceId != null)
+    return FocusDetector(
+      onFocusGained: () =>
+          ForegroundServiceManager.addDataListener(_onServiceData),
+      onFocusLost: () =>
+          ForegroundServiceManager.removeDataListener(_onServiceData),
+      child: Scaffold(
+        appBar: AppBar(
+          title: _searchActive
+              ? TextField(
+                  controller: _searchCtrl,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    hintText: 'Aufenthalte durchsuchen…',
+                    border: InputBorder.none,
+                  ),
+                  onChanged: (v) => setState(() => _searchQuery = v),
+                )
+              : const Text('Zeitachse'),
+          actions: [
+            if (_searchActive)
               IconButton(
-                icon: const Icon(Icons.clear),
+                icon: const Icon(Icons.close),
+                tooltip: 'Suche schließen',
                 onPressed: () => setState(() {
-                  _filterRange = null;
-                  _filterPlaceId = null;
+                  _searchActive = false;
+                  _searchQuery = '';
+                  _searchCtrl.clear();
                 }),
-                tooltip: 'Filter zurücksetzen',
+              )
+            else ...[
+              // Filter by date
+              IconButton(
+                icon: Badge(
+                  isLabelVisible: _filterRange != null,
+                  child: const Icon(Icons.date_range),
+                ),
+                onPressed: _pickDateRange,
+                tooltip: 'Datumsbereich filtern',
               ),
-            IconButton(
-              icon: const Icon(Icons.search),
-              tooltip: 'Suchen',
-              onPressed: () => setState(() => _searchActive = true),
-            ),
-          ],
-        ],
-      ),
-      body: DefaultTabController(
-        length: 3,
-        child: Column(
-          children: [
-            const TabBar(
-              tabs: [
-                Tab(icon: Icon(Icons.list), text: 'Liste'),
-                Tab(icon: Icon(Icons.map), text: 'Karte'),
-                Tab(icon: Icon(Icons.schedule), text: 'Planer'),
-              ],
-            ),
-            Expanded(
-              child: TabBarView(
-                children: [_buildList(), _buildMap(), _buildScheduler()],
+              // Filter by place
+              IconButton(
+                icon: Badge(
+                  isLabelVisible: _filterPlaceId != null,
+                  child: const Icon(Icons.filter_list),
+                ),
+                onPressed: _showPlaceFilterSheet,
+                tooltip: 'Nach Ort filtern',
               ),
-            ),
+              // Clear filters
+              if (_filterRange != null || _filterPlaceId != null)
+                IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () => setState(() {
+                    _filterRange = null;
+                    _filterPlaceId = null;
+                  }),
+                  tooltip: 'Filter zurücksetzen',
+                ),
+              IconButton(
+                icon: const Icon(Icons.search),
+                tooltip: 'Suchen',
+                onPressed: () => setState(() => _searchActive = true),
+              ),
+            ],
           ],
+        ),
+        body: DefaultTabController(
+          length: 3,
+          child: Column(
+            children: [
+              const TabBar(
+                tabs: [
+                  Tab(icon: Icon(Icons.list), text: 'Liste'),
+                  Tab(icon: Icon(Icons.map), text: 'Karte'),
+                  Tab(icon: Icon(Icons.schedule), text: 'Planer'),
+                ],
+              ),
+              Expanded(
+                child: TabBarView(
+                  children: [_buildList(), _buildMap(), _buildScheduler()],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

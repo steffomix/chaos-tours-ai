@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:focus_detector/focus_detector.dart';
 
 import '../../models/saved_place.dart';
 import '../../models/stay.dart';
@@ -29,13 +30,11 @@ class _PlacesScreenState extends State<PlacesScreen> {
   @override
   void initState() {
     super.initState();
-    ForegroundServiceManager.addDataListener(_onServiceData);
     _loadPlaces();
   }
 
   @override
   void dispose() {
-    ForegroundServiceManager.removeDataListener(_onServiceData);
     _searchCtrl.dispose();
     super.dispose();
   }
@@ -111,79 +110,85 @@ class _PlacesScreenState extends State<PlacesScreen> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filtered;
-    return Scaffold(
-      appBar: AppBar(
-        title: _searchActive
-            ? TextField(
-                controller: _searchCtrl,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Orte durchsuchen…',
-                  border: InputBorder.none,
-                ),
-                onChanged: (v) => setState(() => _searchQuery = v),
+    return FocusDetector(
+      onFocusGained: () =>
+          ForegroundServiceManager.addDataListener(_onServiceData),
+      onFocusLost: () =>
+          ForegroundServiceManager.removeDataListener(_onServiceData),
+      child: Scaffold(
+        appBar: AppBar(
+          title: _searchActive
+              ? TextField(
+                  controller: _searchCtrl,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    hintText: 'Orte durchsuchen…',
+                    border: InputBorder.none,
+                  ),
+                  onChanged: (v) => setState(() => _searchQuery = v),
+                )
+              : const Text('Orte'),
+          actions: [
+            if (_searchActive)
+              IconButton(
+                icon: const Icon(Icons.close),
+                tooltip: 'Suche schließen',
+                onPressed: () => setState(() {
+                  _searchActive = false;
+                  _searchQuery = '';
+                  _searchCtrl.clear();
+                }),
               )
-            : const Text('Orte'),
-        actions: [
-          if (_searchActive)
-            IconButton(
-              icon: const Icon(Icons.close),
-              tooltip: 'Suche schließen',
-              onPressed: () => setState(() {
-                _searchActive = false;
-                _searchQuery = '';
-                _searchCtrl.clear();
-              }),
-            )
-          else ...[
-            IconButton(
-              icon: Badge(
-                isLabelVisible: _intervalOnly,
-                child: const Icon(Icons.schedule),
+            else ...[
+              IconButton(
+                icon: Badge(
+                  isLabelVisible: _intervalOnly,
+                  child: const Icon(Icons.schedule),
+                ),
+                tooltip: _intervalOnly
+                    ? 'Alle Orte anzeigen'
+                    : 'Nur Intervall-Orte',
+                onPressed: () => setState(() => _intervalOnly = !_intervalOnly),
               ),
-              tooltip: _intervalOnly
-                  ? 'Alle Orte anzeigen'
-                  : 'Nur Intervall-Orte',
-              onPressed: () => setState(() => _intervalOnly = !_intervalOnly),
-            ),
-            IconButton(
-              icon: const Icon(Icons.search),
-              tooltip: 'Suchen',
-              onPressed: () => setState(() => _searchActive = true),
-            ),
+              IconButton(
+                icon: const Icon(Icons.search),
+                tooltip: 'Suchen',
+                onPressed: () => setState(() => _searchActive = true),
+              ),
+            ],
           ],
-        ],
+        ),
+        body: filtered.isEmpty
+            ? Center(
+                child: Text(
+                  _searchQuery.isNotEmpty
+                      ? 'Keine Orte gefunden.'
+                      : 'Keine Orte gespeichert.\n'
+                            'Orte auf der Karte per Langer Druck hinzufügen.',
+                  textAlign: TextAlign.center,
+                ),
+              )
+            : RefreshIndicator(
+                onRefresh: _loadPlaces,
+                child: ListView.builder(
+                  itemCount: filtered.length,
+                  itemBuilder: (ctx, i) {
+                    final place = filtered[i];
+                    final count = _visitCounts[place.id] ?? 0;
+                    final stay = place.id != null ? _lastStay[place.id] : null;
+                    return _PlaceCard(
+                      place: place,
+                      count: count,
+                      lastStay: stay,
+                      fmtDate: _fmtDate,
+                      fmtTime: _fmtTime,
+                      fmtDuration: _fmtDuration,
+                      onTap: () => _openSheet(place),
+                    );
+                  },
+                ),
+              ),
       ),
-      body: filtered.isEmpty
-          ? Center(
-              child: Text(
-                _searchQuery.isNotEmpty
-                    ? 'Keine Orte gefunden.'
-                    : 'Keine Orte gespeichert.\n'
-                          'Orte auf der Karte per Langer Druck hinzufügen.',
-                textAlign: TextAlign.center,
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: _loadPlaces,
-              child: ListView.builder(
-                itemCount: filtered.length,
-                itemBuilder: (ctx, i) {
-                  final place = filtered[i];
-                  final count = _visitCounts[place.id] ?? 0;
-                  final stay = place.id != null ? _lastStay[place.id] : null;
-                  return _PlaceCard(
-                    place: place,
-                    count: count,
-                    lastStay: stay,
-                    fmtDate: _fmtDate,
-                    fmtTime: _fmtTime,
-                    fmtDuration: _fmtDuration,
-                    onTap: () => _openSheet(place),
-                  );
-                },
-              ),
-            ),
     );
   }
 }

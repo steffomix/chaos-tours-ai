@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:focus_detector/focus_detector.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -53,12 +54,10 @@ class _MapScreenState extends State<MapScreen> {
     _loadTrackingPoints();
     // Move map to current location once the map controller is ready.
     WidgetsBinding.instance.addPostFrameCallback((_) => _goToCurrentLocation());
-    ForegroundServiceManager.addDataListener(_onServiceData);
   }
 
   @override
   void dispose() {
-    ForegroundServiceManager.removeDataListener(_onServiceData);
     super.dispose();
   }
 
@@ -260,70 +259,76 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chaos Tours – Karte'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: _showAddressSearch,
-            tooltip: 'Adresse suchen',
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Stack(
-              children: [
-                FlutterMap(
-                  mapController: _mapController,
-                  options: MapOptions(
-                    initialCenter: const LatLng(48.1351, 11.5820),
-                    initialZoom: 13,
-                    onTap: _onMapTap,
-                    onLongPress: _onLongPress,
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'de.chaostours.chaos_tours_ai',
-                    ),
-                    // Saved places layer
-                    CircleLayer<SavedPlace>(
-                      hitNotifier: _hitNotifier,
-                      circles: _places
-                          .where(
-                            (p) =>
-                                p.placeType != PlaceType.forbidden ||
-                                SettingsService.instance.showForbiddenPlaces,
-                          )
-                          .map((place) {
-                            return CircleMarker<SavedPlace>(
-                              hitValue: place,
-                              point: LatLng(place.lat, place.lng),
-                              radius: place.radius,
-                              useRadiusInMeter: true,
-                              color: place.placeType.fillColor,
-                              borderColor: place.placeType.dotColor,
-                              borderStrokeWidth: 2,
-                            );
-                          })
-                          .toList(),
-                    ),
-                    _buildLiveTrackingLayer(),
-                  ],
-                ),
-              ],
+    return FocusDetector(
+      onFocusGained: () =>
+          ForegroundServiceManager.addDataListener(_onServiceData),
+      onFocusLost: () =>
+          ForegroundServiceManager.removeDataListener(_onServiceData),
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Chaos Tours – Karte'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: _showAddressSearch,
+              tooltip: 'Adresse suchen',
             ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _goToCurrentLocation,
-        tooltip: 'Zu meiner Position',
-        child: const Icon(Icons.my_location),
+          ],
+        ),
+        body: Column(
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  FlutterMap(
+                    mapController: _mapController,
+                    options: MapOptions(
+                      initialCenter: const LatLng(48.1351, 11.5820),
+                      initialZoom: 13,
+                      onTap: _onMapTap,
+                      onLongPress: _onLongPress,
+                    ),
+                    children: [
+                      TileLayer(
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'de.chaostours.chaos_tours_ai',
+                      ),
+                      // Saved places layer
+                      CircleLayer<SavedPlace>(
+                        hitNotifier: _hitNotifier,
+                        circles: _places
+                            .where(
+                              (p) =>
+                                  p.placeType != PlaceType.forbidden ||
+                                  SettingsService.instance.showForbiddenPlaces,
+                            )
+                            .map((place) {
+                              return CircleMarker<SavedPlace>(
+                                hitValue: place,
+                                point: LatLng(place.lat, place.lng),
+                                radius: place.radius,
+                                useRadiusInMeter: true,
+                                color: place.placeType.fillColor,
+                                borderColor: place.placeType.dotColor,
+                                borderStrokeWidth: 2,
+                              );
+                            })
+                            .toList(),
+                      ),
+                      _buildLiveTrackingLayer(),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: _goToCurrentLocation,
+          tooltip: 'Zu meiner Position',
+          child: const Icon(Icons.my_location),
+        ),
       ),
     );
   }

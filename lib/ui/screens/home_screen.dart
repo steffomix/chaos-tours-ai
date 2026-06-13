@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:focus_detector/focus_detector.dart';
 
 import '../../models/aktivitaet.dart';
 import '../../models/saved_place.dart';
@@ -42,7 +43,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadActiveStay();
     _loadCurrentAktivitaet();
     _loadRecentStays();
-    ForegroundServiceManager.addDataListener(_onServiceData);
   }
 
   Future<void> _checkActualTrackingState() async {
@@ -67,7 +67,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    ForegroundServiceManager.removeDataListener(_onServiceData);
     super.dispose();
   }
 
@@ -92,8 +91,8 @@ class _HomeScreenState extends State<HomeScreen> {
         default:
           text = 'Tracking aktiv';
       }
-      _loadActiveStay();
-      _loadRecentStays();
+      _loadActiveStay(build: false);
+      _loadRecentStays(build: false);
       if (mounted) setState(() => _trackingStatusText = text);
     }
   }
@@ -104,14 +103,14 @@ class _HomeScreenState extends State<HomeScreen> {
     return '${text.substring(0, maxLength)}…';
   }
 
-  Future<void> _loadRecentStays() async {
+  Future<void> _loadRecentStays({bool build = true}) async {
     final stays = await DatabaseService.instance.loadRecentCompletedStays();
     final allPlaces = await DatabaseService.instance.loadAllPlaces();
     final byId = {
       for (final p in allPlaces)
         if (p.id != null) p.id!: p,
     };
-    if (mounted) {
+    if (mounted && build) {
       setState(() {
         _recentStays = stays;
         _placesById = byId;
@@ -126,14 +125,14 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) setState(() => _currentAktivitaet = a);
   }
 
-  Future<void> _loadActiveStay() async {
+  Future<void> _loadActiveStay({bool build = true}) async {
     final stay = await DatabaseService.instance.loadActiveStay();
     SavedPlace? place;
     if (stay?.placeId != null) {
       final places = await DatabaseService.instance.loadAllPlaces();
       place = places.where((p) => p.id == stay!.placeId).firstOrNull;
     }
-    if (mounted) {
+    if (mounted && build) {
       setState(() {
         _activeStay = stay;
         _activeStayPlace = place;
@@ -266,282 +265,292 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chaos Tours'),
-        actions: [
-          IconButton(
-            icon: Icon(
-              _trackingEnabled ? Icons.my_location : Icons.location_disabled,
-              color: _trackingEnabled
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
-            ),
-            tooltip: _trackingEnabled ? 'Tracking aktiv' : 'Tracking inaktiv',
-            onPressed: _confirmToggleTracking,
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // ── Active Aktivitaet banner ───────────────────────────
-          Material(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            child: InkWell(
-              onTap: () async {
-                await Navigator.pushNamed(context, '/settings');
-                _loadCurrentAktivitaet();
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.settings,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _currentAktivitaet?.name ?? 'Aktivität laden…',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                    ),
-                    Icon(
-                      Icons.chevron_right,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
-                  ],
-                ),
+    return FocusDetector(
+      onFocusGained: () =>
+          ForegroundServiceManager.addDataListener(_onServiceData),
+      onFocusLost: () =>
+          ForegroundServiceManager.removeDataListener(_onServiceData),
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Chaos Tours'),
+          actions: [
+            IconButton(
+              icon: Icon(
+                _trackingEnabled ? Icons.my_location : Icons.location_disabled,
+                color: _trackingEnabled
+                    ? Theme.of(context).colorScheme.primary
+                    : null,
               ),
+              tooltip: _trackingEnabled ? 'Tracking aktiv' : 'Tracking inaktiv',
+              onPressed: _confirmToggleTracking,
             ),
-          ),
-
-          const SizedBox(height: 7, width: 6),
-          // Tracking status row
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.sensors,
-                  size: 16,
-                  color: _trackingEnabled
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.outline,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  _trackingStatusText,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: _trackingEnabled
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.outline,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // ── Aktueller Aufenthalt ───────────────────────────────
-          if (_activeStay != null) ...[
-            Card(
-              margin: const EdgeInsets.fromLTRB(12, 0, 12, 4),
-              elevation: 3,
+          ],
+        ),
+        body: Column(
+          children: [
+            // ── Active Aktivitaet banner ───────────────────────────
+            Material(
               color: Theme.of(context).colorScheme.primaryContainer,
               child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () {
-                  showModalBottomSheet<void>(
-                    context: context,
-                    isScrollControlled: true,
-                    useSafeArea: true,
-                    builder: (_) => StayDetailSheet(
-                      stay: _activeStay!,
-                      onUpdated: _loadActiveStay,
-                    ),
-                  );
+                onTap: () async {
+                  await Navigator.pushNamed(context, '/settings');
+                  _loadCurrentAktivitaet();
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
-                    vertical: 12,
+                    vertical: 10,
                   ),
                   child: Row(
                     children: [
-                      _activeStayPlace != null
-                          ? CircleAvatar(
-                              backgroundColor: _activeStayPlace!
-                                  .placeType
-                                  .dotColor
-                                  .withValues(alpha: 0.2),
-                              child: Icon(
-                                _activeStayPlace!.placeType.icon,
-                                color: _activeStayPlace!.placeType.dotColor,
-                              ),
-                            )
-                          : CircleAvatar(
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.primary.withValues(alpha: 0.15),
-                              child: Icon(
-                                Icons.location_on,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                      const SizedBox(width: 12),
+                      Icon(
+                        Icons.settings,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      ),
+                      const SizedBox(width: 8),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _activeStayPlace?.name ??
-                                  _activeStay!.address ??
-                                  'Unbekannter Ort',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Builder(
-                              builder: (ctx) {
-                                final dur = _activeStay!.duration;
-                                final h = dur.inHours;
-                                final m = dur.inMinutes % 60;
-                                return Text(
-                                  h > 0 ? 'Seit ${h}h ${m}min' : 'Seit ${m}min',
-                                  style: Theme.of(ctx).textTheme.bodySmall,
-                                );
-                              },
-                            ),
-                          ],
+                        child: Text(
+                          _currentAktivitaet?.name ?? 'Aktivität laden…',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onPrimaryContainer,
+                          ),
                         ),
                       ),
-                      const Icon(Icons.chevron_right, color: Colors.grey),
+                      Icon(
+                        Icons.chevron_right,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      ),
                     ],
                   ),
                 ),
               ),
             ),
+
+            const SizedBox(height: 7, width: 6),
+            // Tracking status row
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(40),
-                ),
-                icon: const Icon(Icons.call_split, size: 18),
-                label: const Text('Aufenthalt jetzt beenden & teilen'),
-                onPressed: () async {
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Aufenthalt beenden?'),
-                      content: const Text(
-                        'Der aktuelle Aufenthalt wird jetzt abgeschlossen. '
-                        'Das Tracking läuft weiter und startet bei gleichem Ort '
-                        'sofort einen neuen Aufenthalt.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('Abbrechen'),
-                        ),
-                        FilledButton(
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('Beenden'),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (confirmed != true) return;
-                  ForegroundServiceManager.sendForceEndStay();
-                  await Future<void>.delayed(const Duration(milliseconds: 300));
-                  _loadActiveStay();
-                  _loadRecentStays();
-                },
-              ),
-            ),
-          ],
-          const Divider(height: 1),
-          // ── Letzte Besuche ─────────────────────────────────────
-          Expanded(
-            child: _recentStays.isEmpty
-                ? const Center(
-                    child: Text(
-                      'Noch keine Besuche aufgezeichnet.',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: _loadRecentStays,
-                    child: ListView.builder(
-                      itemCount: _recentStays.length + 1,
-                      itemBuilder: (ctx, i) {
-                        if (i == 0) {
-                          return Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                            child: Text(
-                              'Letzte Besuche',
-                              style: Theme.of(ctx).textTheme.titleSmall
-                                  ?.copyWith(color: Colors.grey),
-                            ),
-                          );
-                        }
-                        final stay = _recentStays[i - 1];
-                        final place = stay.placeId != null
-                            ? _placesById[stay.placeId]
-                            : null;
-                        final name =
-                            place?.name ?? stay.address ?? 'Unbekannter Ort';
-                        final dur = stay.duration;
-                        final h = dur.inHours;
-                        final m = dur.inMinutes % 60;
-                        final durText = h > 0 ? '${h}h ${m}min' : '${m}min';
-                        final start = DateTime.fromMillisecondsSinceEpoch(
-                          stay.startTime,
-                        );
-                        final dateText =
-                            '${start.day.toString().padLeft(2, '0')}.${start.month.toString().padLeft(2, '0')}.${start.year}  '
-                            '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}';
-                        return ListTile(
-                          dense: true,
-                          leading: place != null
-                              ? Icon(
-                                  place.placeType.icon,
-                                  color: place.placeType.dotColor,
-                                  size: 22,
-                                )
-                              : const Icon(
-                                  Icons.location_on,
-                                  size: 22,
-                                  color: Colors.grey,
-                                ),
-                          title: Text(name),
-                          subtitle: Text('$dateText · $durText'),
-                          onTap: () {
-                            showModalBottomSheet<void>(
-                              context: context,
-                              isScrollControlled: true,
-                              useSafeArea: true,
-                              builder: (_) => StayDetailSheet(
-                                stay: stay,
-                                onUpdated: _loadRecentStays,
-                              ),
-                            );
-                          },
-                        );
-                      },
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.sensors,
+                    size: 16,
+                    color: _trackingEnabled
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.outline,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    _trackingStatusText,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: _trackingEnabled
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.outline,
                     ),
                   ),
-          ),
-        ],
+                ],
+              ),
+            ),
+            // ── Aktueller Aufenthalt ───────────────────────────────
+            if (_activeStay != null) ...[
+              Card(
+                margin: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+                elevation: 3,
+                color: Theme.of(context).colorScheme.primaryContainer,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () {
+                    showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      useSafeArea: true,
+                      builder: (_) => StayDetailSheet(
+                        stay: _activeStay!,
+                        onUpdated: _loadActiveStay,
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        _activeStayPlace != null
+                            ? CircleAvatar(
+                                backgroundColor: _activeStayPlace!
+                                    .placeType
+                                    .dotColor
+                                    .withValues(alpha: 0.2),
+                                child: Icon(
+                                  _activeStayPlace!.placeType.icon,
+                                  color: _activeStayPlace!.placeType.dotColor,
+                                ),
+                              )
+                            : CircleAvatar(
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withValues(alpha: 0.15),
+                                child: Icon(
+                                  Icons.location_on,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _activeStayPlace?.name ??
+                                    _activeStay!.address ??
+                                    'Unbekannter Ort',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Builder(
+                                builder: (ctx) {
+                                  final dur = _activeStay!.duration;
+                                  final h = dur.inHours;
+                                  final m = dur.inMinutes % 60;
+                                  return Text(
+                                    h > 0
+                                        ? 'Seit ${h}h ${m}min'
+                                        : 'Seit ${m}min',
+                                    style: Theme.of(ctx).textTheme.bodySmall,
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right, color: Colors.grey),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(40),
+                  ),
+                  icon: const Icon(Icons.call_split, size: 18),
+                  label: const Text('Aufenthalt jetzt beenden & teilen'),
+                  onPressed: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Aufenthalt beenden?'),
+                        content: const Text(
+                          'Der aktuelle Aufenthalt wird jetzt abgeschlossen. '
+                          'Das Tracking läuft weiter und startet bei gleichem Ort '
+                          'sofort einen neuen Aufenthalt.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Abbrechen'),
+                          ),
+                          FilledButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text('Beenden'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed != true) return;
+                    ForegroundServiceManager.sendForceEndStay();
+                    await Future<void>.delayed(
+                      const Duration(milliseconds: 300),
+                    );
+                    _loadActiveStay();
+                    _loadRecentStays();
+                  },
+                ),
+              ),
+            ],
+            const Divider(height: 1),
+            // ── Letzte Besuche ─────────────────────────────────────
+            Expanded(
+              child: _recentStays.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'Noch keine Besuche aufgezeichnet.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _loadRecentStays,
+                      child: ListView.builder(
+                        itemCount: _recentStays.length + 1,
+                        itemBuilder: (ctx, i) {
+                          if (i == 0) {
+                            return Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                              child: Text(
+                                'Letzte Besuche',
+                                style: Theme.of(ctx).textTheme.titleSmall
+                                    ?.copyWith(color: Colors.grey),
+                              ),
+                            );
+                          }
+                          final stay = _recentStays[i - 1];
+                          final place = stay.placeId != null
+                              ? _placesById[stay.placeId]
+                              : null;
+                          final name =
+                              place?.name ?? stay.address ?? 'Unbekannter Ort';
+                          final dur = stay.duration;
+                          final h = dur.inHours;
+                          final m = dur.inMinutes % 60;
+                          final durText = h > 0 ? '${h}h ${m}min' : '${m}min';
+                          final start = DateTime.fromMillisecondsSinceEpoch(
+                            stay.startTime,
+                          );
+                          final dateText =
+                              '${start.day.toString().padLeft(2, '0')}.${start.month.toString().padLeft(2, '0')}.${start.year}  '
+                              '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}';
+                          return ListTile(
+                            dense: true,
+                            leading: place != null
+                                ? Icon(
+                                    place.placeType.icon,
+                                    color: place.placeType.dotColor,
+                                    size: 22,
+                                  )
+                                : const Icon(
+                                    Icons.location_on,
+                                    size: 22,
+                                    color: Colors.grey,
+                                  ),
+                            title: Text(name),
+                            subtitle: Text('$dateText · $durText'),
+                            onTap: () {
+                              showModalBottomSheet<void>(
+                                context: context,
+                                isScrollControlled: true,
+                                useSafeArea: true,
+                                builder: (_) => StayDetailSheet(
+                                  stay: stay,
+                                  onUpdated: _loadRecentStays,
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
