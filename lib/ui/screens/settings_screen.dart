@@ -126,15 +126,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _syncNow() async {
+  Future<void> _syncWithServerNow() async {
     // Ask user which operations are allowed.
-    final opts = await _showSyncOptionsDialog();
+    final opts = await _showSyncWithServerOptionsDialog();
     if (opts == null) return;
     setState(() {
       _syncing = true;
       _syncStatus = null;
     });
     final result = await SyncService.instance.syncWithServer(options: opts);
+    if (mounted) {
+      setState(() {
+        _syncing = false;
+        _syncStatus = result.success
+            ? '${result.pulled} empfangen, ${result.pushed} gesendet'
+            : 'Fehler: ${result.errorMessage}';
+      });
+    }
+  }
+
+  Future<void> _syncWithPeerNow() async {
+    // Ask user which operations are allowed.
+    final opts = await _showSyncWithPeerOptionsDialog();
+    if (opts == null) return;
+    setState(() {
+      _syncing = true;
+      _syncStatus = null;
+    });
+    final result = await SyncService.instance.syncWithPeer(options: opts);
     if (mounted) {
       setState(() {
         _syncing = false;
@@ -188,7 +207,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<SyncOptions?> _showSyncOptionsDialog() async {
+  Future<SyncOptions?> _showSyncWithServerOptionsDialog() async {
     bool allowInsert = true;
     bool allowEdit = true;
     bool allowDelete = true;
@@ -230,6 +249,76 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 subtitle: const Text(
                   'Gelöschte Einträge vom Server übernehmen',
                 ),
+                value: allowDelete,
+                onChanged: (v) =>
+                    setDlgState(() => allowDelete = v ?? allowDelete),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Abbrechen'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(
+                ctx,
+                SyncOptions(
+                  allowInsert: allowInsert,
+                  allowEdit: allowEdit,
+                  allowDelete: allowDelete,
+                ),
+              ),
+              child: const Text('Synchronisieren'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<SyncOptions?> _showSyncWithPeerOptionsDialog() async {
+    bool allowInsert = true;
+    bool allowEdit = true;
+    bool allowDelete = true;
+    return showDialog<SyncOptions>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) => AlertDialog(
+          title: const Text('Synchronisieren'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Welche Änderungen vom Peer sollen auf diesem Gerät angewendet werden?',
+                style: TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              CheckboxListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Einfügen'),
+                subtitle: const Text('Neue Einträge vom Peer hinzufügen'),
+                value: allowInsert,
+                onChanged: (v) =>
+                    setDlgState(() => allowInsert = v ?? allowInsert),
+              ),
+              CheckboxListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Bearbeiten'),
+                subtitle: const Text(
+                  'Vorhandene Einträge vom Peer aktualisieren',
+                ),
+                value: allowEdit,
+                onChanged: (v) => setDlgState(() => allowEdit = v ?? allowEdit),
+              ),
+              CheckboxListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Löschen'),
+                subtitle: const Text('Gelöschte Einträge vom Peer übernehmen'),
                 value: allowDelete,
                 onChanged: (v) =>
                     setDlgState(() => allowDelete = v ?? allowDelete),
@@ -695,6 +784,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: (v) => SyncService.instance.setApiKey(v.trim()),
             ),
           ),
+          FilledButton.icon(
+            onPressed: _syncing ? null : _syncWithServerNow,
+            icon: _syncing
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.sync),
+            label: const Text('Jetzt mit Server synchronisieren'),
+          ),
           ListTile(
             leading: const Icon(Icons.devices_outlined),
             title: const Text('Peer-URL (Gerät-zu-Gerät)'),
@@ -707,6 +810,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
               keyboardType: TextInputType.url,
               onChanged: (v) => SyncService.instance.setPeerUrl(v.trim()),
             ),
+          ),
+          FilledButton.icon(
+            onPressed: _syncing ? null : _syncWithPeerNow,
+            icon: _syncing
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.sync),
+            label: const Text('Jetzt mit Peer synchronisieren'),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -749,20 +866,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                   ),
-                FilledButton.icon(
-                  onPressed: _syncing ? null : _syncNow,
-                  icon: _syncing
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.sync),
-                  label: const Text('Jetzt synchronisieren'),
-                ),
               ],
             ),
           ),
