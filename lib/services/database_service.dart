@@ -6,15 +6,15 @@ import 'package:uuid/uuid.dart';
 
 import '../models/aktivitaet.dart';
 import '../models/activity.dart';
-import '../models/web_source_experience.dart';
 import '../models/person.dart';
+import '../models/place_experience.dart';
 import '../models/place_group.dart';
 import '../models/saved_place.dart';
 import '../models/stay.dart';
 import '../models/stay_activity.dart';
 import '../models/stay_person.dart';
+import '../models/sync_source.dart';
 import '../models/tracking_point.dart';
-import '../models/web_source.dart';
 import 'sync_service.dart' show SyncOptions;
 
 class DatabaseService {
@@ -35,7 +35,7 @@ class DatabaseService {
     final path = join(dbPath, 'chaos_tours.db');
     return openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
@@ -115,12 +115,79 @@ class DatabaseService {
       ''');
     }
     if (oldVersion < 3) {
-      // Create web_source_experiences table.
+      // Create web_source_experiences table (kept for migration, no longer synced).
       await db.execute('''
         CREATE TABLE IF NOT EXISTS web_source_experiences (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           web_source_uuid TEXT NOT NULL,
           text TEXT NOT NULL,
+          created_at INTEGER NOT NULL DEFAULT 0,
+          uuid TEXT NOT NULL DEFAULT '',
+          updated_at INTEGER NOT NULL DEFAULT 0,
+          deleted_at INTEGER,
+          device_id TEXT NOT NULL DEFAULT ''
+        )
+      ''');
+    }
+    if (oldVersion < 4) {
+      // Rename web_sources → sync_sources and add new columns.
+      await db.execute('ALTER TABLE web_sources RENAME TO sync_sources');
+      final scCols = await db.rawQuery('PRAGMA table_info(sync_sources)');
+      final scExisting = scCols.map((c) => c['name'] as String).toSet();
+      if (!scExisting.contains('sync_url')) {
+        // Copy 'url' into new 'sync_url' column.
+        await db.execute(
+          "ALTER TABLE sync_sources ADD COLUMN sync_url TEXT NOT NULL DEFAULT ''",
+        );
+        await db.execute('UPDATE sync_sources SET sync_url = url');
+      }
+      if (!scExisting.contains('info_url')) {
+        await db.execute(
+          "ALTER TABLE sync_sources ADD COLUMN info_url TEXT NOT NULL DEFAULT ''",
+        );
+      }
+      if (!scExisting.contains('description')) {
+        await db.execute(
+          "ALTER TABLE sync_sources ADD COLUMN description TEXT NOT NULL DEFAULT ''",
+        );
+      }
+      if (!scExisting.contains('sync_options')) {
+        await db.execute(
+          "ALTER TABLE sync_sources ADD COLUMN sync_options TEXT NOT NULL DEFAULT '{}'",
+        );
+      }
+
+      // Add website/email/phone to saved_places.
+      final spCols = await db.rawQuery('PRAGMA table_info(saved_places)');
+      final spExisting = spCols.map((c) => c['name'] as String).toSet();
+      if (!spExisting.contains('website')) {
+        await db.execute(
+          "ALTER TABLE saved_places ADD COLUMN website TEXT NOT NULL DEFAULT ''",
+        );
+      }
+      if (!spExisting.contains('email')) {
+        await db.execute(
+          "ALTER TABLE saved_places ADD COLUMN email TEXT NOT NULL DEFAULT ''",
+        );
+      }
+      if (!spExisting.contains('phone')) {
+        await db.execute(
+          "ALTER TABLE saved_places ADD COLUMN phone TEXT NOT NULL DEFAULT ''",
+        );
+      }
+
+      // Create place_experiences table.
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS place_experiences (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          saved_place_uuid TEXT NOT NULL,
+          text TEXT NOT NULL DEFAULT '',
+          rating_dangerous_friendly INTEGER NOT NULL DEFAULT 0,
+          rating_fraud_reliable INTEGER NOT NULL DEFAULT 0,
+          rating_dismissive_accommodation INTEGER NOT NULL DEFAULT 0,
+          rating_food INTEGER NOT NULL DEFAULT 0,
+          rating_equipment INTEGER NOT NULL DEFAULT 0,
+          rating_transport INTEGER NOT NULL DEFAULT 0,
           created_at INTEGER NOT NULL DEFAULT 0,
           uuid TEXT NOT NULL DEFAULT '',
           updated_at INTEGER NOT NULL DEFAULT 0,
@@ -149,7 +216,10 @@ class DatabaseService {
         deleted_at INTEGER,
         device_id TEXT NOT NULL DEFAULT '',
         origin_type INTEGER NOT NULL DEFAULT 0,
-        origin_source_uuid TEXT
+        origin_source_uuid TEXT,
+        website TEXT NOT NULL DEFAULT '',
+        email TEXT NOT NULL DEFAULT '',
+        phone TEXT NOT NULL DEFAULT ''
       )
     ''');
     await db.execute('''
@@ -268,13 +338,14 @@ class DatabaseService {
       )
     ''');
     await db.execute('''
-      CREATE TABLE web_sources (
+      CREATE TABLE sync_sources (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        url TEXT NOT NULL,
-        notes TEXT NOT NULL DEFAULT '',
-        experience TEXT NOT NULL DEFAULT '',
+        sync_url TEXT NOT NULL DEFAULT '',
         api_key TEXT NOT NULL DEFAULT '',
+        info_url TEXT NOT NULL DEFAULT '',
+        description TEXT NOT NULL DEFAULT '',
+        sync_options TEXT NOT NULL DEFAULT '{}',
         uuid TEXT NOT NULL DEFAULT '',
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
@@ -282,10 +353,16 @@ class DatabaseService {
       )
     ''');
     await db.execute('''
-      CREATE TABLE web_source_experiences (
+      CREATE TABLE place_experiences (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        web_source_uuid TEXT NOT NULL,
-        text TEXT NOT NULL,
+        saved_place_uuid TEXT NOT NULL,
+        text TEXT NOT NULL DEFAULT '',
+        rating_dangerous_friendly INTEGER NOT NULL DEFAULT 0,
+        rating_fraud_reliable INTEGER NOT NULL DEFAULT 0,
+        rating_dismissive_accommodation INTEGER NOT NULL DEFAULT 0,
+        rating_food INTEGER NOT NULL DEFAULT 0,
+        rating_equipment INTEGER NOT NULL DEFAULT 0,
+        rating_transport INTEGER NOT NULL DEFAULT 0,
         created_at INTEGER NOT NULL DEFAULT 0,
         uuid TEXT NOT NULL DEFAULT '',
         updated_at INTEGER NOT NULL DEFAULT 0,
@@ -832,84 +909,43 @@ class DatabaseService {
     });
   }
 
-  // ── WebSources ────────────────────────────────────────────────────────────
+  // ── SyncSources ──────────────────────────────────────────────────────────
 
-  Future<int> insertWebSource(WebSource source, {String deviceId = ''}) async {
+  Future<int> insertSyncSource(
+    SyncSource source, {
+    String deviceId = '',
+  }) async {
     final db = await database;
-    return db.insert('web_sources', _withSyncFields(source.toMap(), deviceId));
+    return db.insert('sync_sources', _withSyncFields(source.toMap(), deviceId));
   }
 
-  Future<List<WebSource>> loadAllWebSources() async {
+  Future<List<SyncSource>> loadAllSyncSources() async {
     final db = await database;
     final rows = await db.query(
-      'web_sources',
+      'sync_sources',
       where: 'deleted_at IS NULL',
       orderBy: 'name ASC',
     );
-    return rows.map(WebSource.fromMap).toList();
+    return rows.map(SyncSource.fromMap).toList();
   }
 
-  Future<void> updateWebSource(WebSource source, {String deviceId = ''}) async {
+  Future<void> updateSyncSource(
+    SyncSource source, {
+    String deviceId = '',
+  }) async {
     final db = await database;
     await db.update(
-      'web_sources',
+      'sync_sources',
       _withSyncFields(source.toMap(), deviceId),
       where: 'id = ?',
       whereArgs: [source.id],
     );
   }
 
-  Future<void> deleteWebSource(int id) async {
-    final db = await database;
-    await db.delete('web_sources', where: 'id = ?', whereArgs: [id]);
-  }
-
-  // ── WebSourceExperiences ─────────────────────────────────────────────────
-
-  Future<int> insertWebSourceExperience(
-    WebSourceExperience exp, {
-    String deviceId = '',
-  }) async {
-    final db = await database;
-    return db.insert(
-      'web_source_experiences',
-      _withSyncFields(exp.toMap(), deviceId),
-    );
-  }
-
-  Future<List<WebSourceExperience>> loadExperiencesForWebSource(
-    String webSourceUuid,
-  ) async {
-    final db = await database;
-    final rows = await db.query(
-      'web_source_experiences',
-      where: 'web_source_uuid = ? AND deleted_at IS NULL',
-      whereArgs: [webSourceUuid],
-      orderBy: 'created_at DESC',
-    );
-    return rows.map(WebSourceExperience.fromMap).toList();
-  }
-
-  Future<void> updateWebSourceExperience(
-    WebSourceExperience exp, {
-    String deviceId = '',
-  }) async {
+  Future<void> softDeleteSyncSource(int id, {String deviceId = ''}) async {
     final db = await database;
     await db.update(
-      'web_source_experiences',
-      _withSyncFields(exp.toMap(), deviceId),
-      where: 'id = ?',
-      whereArgs: [exp.id],
-    );
-  }
-
-  Future<void> softDeleteWebSourceExperience(
-    int id, {
-    String deviceId = '',
-  }) async {
-    final db = await database;
-    await db.update(
-      'web_source_experiences',
+      'sync_sources',
       {
         'deleted_at': DateTime.now().millisecondsSinceEpoch,
         'updated_at': DateTime.now().millisecondsSinceEpoch,
@@ -920,11 +956,109 @@ class DatabaseService {
     );
   }
 
-  /// Soft-deletes a web_source by setting deleted_at.
-  Future<void> softDeleteWebSource(int id, {String deviceId = ''}) async {
+  // ── PlaceExperiences ─────────────────────────────────────────────────────
+
+  Future<int> insertPlaceExperience(
+    PlaceExperience exp, {
+    String deviceId = '',
+  }) async {
+    final db = await database;
+    return db.insert(
+      'place_experiences',
+      _withSyncFields(exp.toMap(), deviceId),
+    );
+  }
+
+  Future<List<PlaceExperience>> loadExperiencesForPlace(
+    String savedPlaceUuid,
+  ) async {
+    final db = await database;
+    final rows = await db.query(
+      'place_experiences',
+      where: 'saved_place_uuid = ? AND deleted_at IS NULL',
+      whereArgs: [savedPlaceUuid],
+      orderBy: 'created_at DESC',
+    );
+    return rows.map(PlaceExperience.fromMap).toList();
+  }
+
+  /// Returns the average ratings per saved_place_uuid for all places with
+  /// at least one experience. Map key = uuid, value = average of all 6 dimensions.
+  Future<Map<String, double>> loadAverageRatingsForAllPlaces() async {
+    final db = await database;
+    final rows = await db.rawQuery('''
+      SELECT saved_place_uuid,
+             AVG(rating_dangerous_friendly) AS r1,
+             AVG(rating_fraud_reliable) AS r2,
+             AVG(rating_dismissive_accommodation) AS r3,
+             AVG(rating_food) AS r4,
+             AVG(rating_equipment) AS r5,
+             AVG(rating_transport) AS r6
+      FROM place_experiences
+      WHERE deleted_at IS NULL
+      GROUP BY saved_place_uuid
+    ''');
+    return {
+      for (final r in rows)
+        r['saved_place_uuid'] as String:
+            (((r['r1'] as num?) ?? 0) +
+                ((r['r2'] as num?) ?? 0) +
+                ((r['r3'] as num?) ?? 0) +
+                ((r['r4'] as num?) ?? 0) +
+                ((r['r5'] as num?) ?? 0) +
+                ((r['r6'] as num?) ?? 0)) /
+            6.0,
+    };
+  }
+
+  /// Returns per-dimension average ratings for a single place.
+  Future<Map<String, double>> loadDimensionRatingsForPlace(
+    String savedPlaceUuid,
+  ) async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      '''
+      SELECT
+        AVG(rating_dangerous_friendly) AS r1,
+        AVG(rating_fraud_reliable) AS r2,
+        AVG(rating_dismissive_accommodation) AS r3,
+        AVG(rating_food) AS r4,
+        AVG(rating_equipment) AS r5,
+        AVG(rating_transport) AS r6
+      FROM place_experiences
+      WHERE saved_place_uuid = ? AND deleted_at IS NULL
+    ''',
+      [savedPlaceUuid],
+    );
+    if (rows.isEmpty) return {};
+    final r = rows.first;
+    return {
+      'dangerous_friendly': ((r['r1'] as num?) ?? 0).toDouble(),
+      'fraud_reliable': ((r['r2'] as num?) ?? 0).toDouble(),
+      'dismissive_accommodation': ((r['r3'] as num?) ?? 0).toDouble(),
+      'food': ((r['r4'] as num?) ?? 0).toDouble(),
+      'equipment': ((r['r5'] as num?) ?? 0).toDouble(),
+      'transport': ((r['r6'] as num?) ?? 0).toDouble(),
+    };
+  }
+
+  Future<void> updatePlaceExperience(
+    PlaceExperience exp, {
+    String deviceId = '',
+  }) async {
     final db = await database;
     await db.update(
-      'web_sources',
+      'place_experiences',
+      _withSyncFields(exp.toMap(), deviceId),
+      where: 'id = ?',
+      whereArgs: [exp.id],
+    );
+  }
+
+  Future<void> softDeletePlaceExperience(int id, {String deviceId = ''}) async {
+    final db = await database;
+    await db.update(
+      'place_experiences',
       {
         'deleted_at': DateTime.now().millisecondsSinceEpoch,
         'updated_at': DateTime.now().millisecondsSinceEpoch,

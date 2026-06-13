@@ -94,13 +94,9 @@ async def sync_push(payload: PushPayload):
     return {"upserted": count}
 
 
-# ---------------------------------------------------------------------------
-# Places export (for Web-Quellen import on other devices)
-# ---------------------------------------------------------------------------
-
 @app.get("/places/export", tags=["places"], dependencies=[Depends(verify_api_key)])
 async def export_places():
-    """Returns all non-deleted saved_places as JSON for import by other devices."""
+    """Returns all non-deleted saved_places as JSON (for import by other devices via info_url)."""
     engine = get_engine()
     async with engine.connect() as conn:
         rows = (

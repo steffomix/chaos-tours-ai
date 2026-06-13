@@ -60,6 +60,9 @@ saved_places = Table(
     Column("interval_days", Integer, nullable=True),
     Column("origin_type", Integer, nullable=False, default=0),
     Column("origin_source_uuid", String, nullable=True),
+    Column("website", String, nullable=False, default=""),
+    Column("email", String, nullable=False, default=""),
+    Column("phone", String, nullable=False, default=""),
     *_sync_cols(),
 )
 
@@ -148,15 +151,32 @@ aktivitaeten = Table(
     *_sync_cols(),
 )
 
-web_sources = Table(
-    "web_sources",
+sync_sources = Table(
+    "sync_sources",
     metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("name", String, nullable=False),
-    Column("url", String, nullable=False),
-    Column("notes", Text, nullable=False, default=""),
-    Column("experience", Text, nullable=False, default=""),
+    Column("sync_url", String, nullable=False, default=""),
     Column("api_key", String, nullable=False, default=""),
+    Column("info_url", String, nullable=False, default=""),
+    Column("description", Text, nullable=False, default=""),
+    Column("sync_options", Text, nullable=False, default="{}"),
+    *_sync_cols(),
+)
+
+place_experiences = Table(
+    "place_experiences",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("saved_place_uuid", String, nullable=False),
+    Column("text", Text, nullable=False, default=""),
+    Column("rating_dangerous_friendly", Integer, nullable=False, default=0),
+    Column("rating_fraud_reliable", Integer, nullable=False, default=0),
+    Column("rating_dismissive_accommodation", Integer, nullable=False, default=0),
+    Column("rating_food", Integer, nullable=False, default=0),
+    Column("rating_equipment", Integer, nullable=False, default=0),
+    Column("rating_transport", Integer, nullable=False, default=0),
+    Column("created_at", BigInteger, nullable=False, default=0),
     *_sync_cols(),
 )
 
@@ -170,7 +190,8 @@ SYNC_TABLES = [
     ("stay_persons", stay_persons),
     ("stay_activities", stay_activities),
     ("aktivitaeten", aktivitaeten),
-    ("web_sources", web_sources),
+    ("sync_sources", sync_sources),
+    ("place_experiences", place_experiences),
 ]
 
 

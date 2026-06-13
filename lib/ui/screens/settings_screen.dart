@@ -1,14 +1,10 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 import '../../models/aktivitaet.dart';
 import '../../models/place_group.dart';
 import '../../models/saved_place.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
-import '../../services/sync_service.dart';
 import '../../utils/permission_helper.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -36,14 +32,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Set<int> _schedulerGroupIds = {};
   List<PlaceGroup> _groups = [];
 
-  // Sync settings
-  final TextEditingController _syncServerUrlCtrl = TextEditingController();
-  final TextEditingController _syncApiKeyCtrl = TextEditingController();
-  bool _syncing = false;
-  String? _syncStatus;
-  bool _syncApiKeyVisible = false;
-  String? _localIp;
-  String? _internetIp;
+  // Network info for display (used by SyncSourcesScreen)
 
   // Aktivitaet management
   List<Aktivitaet> _aktivitaeten = [];
@@ -52,8 +41,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
     _searchCountryCtrl.dispose();
-    _syncServerUrlCtrl.dispose();
-    _syncApiKeyCtrl.dispose();
     super.dispose();
   }
 
@@ -78,67 +65,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _schedulerGroupIds = Set<int>.from(s.schedulerGroupIdList);
     _loadGroups();
     _loadAktivitaeten();
-    _loadSyncSettings();
-    _loadNetworkInfo();
-  }
-
-  Future<void> _loadNetworkInfo() async {
-    // Local IP from network interfaces.
-    try {
-      final interfaces = await NetworkInterface.list(
-        type: InternetAddressType.IPv4,
-      );
-      for (final iface in interfaces) {
-        // Skip loopback.
-        final addr = iface.addresses
-            .where((a) => !a.isLoopback)
-            .map((a) => a.address)
-            .firstOrNull;
-        if (addr != null) {
-          if (mounted) setState(() => _localIp = addr);
-          break;
-        }
-      }
-    } catch (_) {}
-    // Internet IP via public API.
-    try {
-      final resp = await http
-          .get(Uri.parse('https://api.ipify.org'))
-          .timeout(const Duration(seconds: 5));
-      if (resp.statusCode == 200 && mounted) {
-        setState(() => _internetIp = resp.body.trim());
-      }
-    } catch (_) {}
-  }
-
-  Future<void> _loadSyncSettings() async {
-    final url = await SyncService.instance.serverUrl;
-    final key = await SyncService.instance.apiKey;
-    if (mounted) {
-      setState(() {
-        _syncServerUrlCtrl.text = url;
-        _syncApiKeyCtrl.text = key;
-      });
-    }
-  }
-
-  Future<void> _syncNow() async {
-    // Ask user which operations are allowed.
-    final opts = await _showSyncOptionsDialog();
-    if (opts == null) return;
-    setState(() {
-      _syncing = true;
-      _syncStatus = null;
-    });
-    final result = await SyncService.instance.syncWithServer(options: opts);
-    if (mounted) {
-      setState(() {
-        _syncing = false;
-        _syncStatus = result.success
-            ? '${result.pulled} empfangen, ${result.pushed} gesendet'
-            : 'Fehler: ${result.errorMessage}';
-      });
-    }
   }
 
   Future<void> _loadGroups() async {
@@ -182,76 +108,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         s.snapshotAsAktivitaet(id: a!.id!, name: a.name),
       );
     }
-  }
-
-  Future<SyncOptions?> _showSyncOptionsDialog() async {
-    bool allowInsert = true;
-    bool allowEdit = true;
-    bool allowDelete = true;
-    return showDialog<SyncOptions>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDlgState) => AlertDialog(
-          title: const Text('Synchronisieren'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Welche Änderungen vom Server sollen auf diesem Gerät angewendet werden?',
-                style: TextStyle(fontSize: 13),
-              ),
-              const SizedBox(height: 12),
-              CheckboxListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Einfügen'),
-                subtitle: const Text('Neue Einträge vom Server hinzufügen'),
-                value: allowInsert,
-                onChanged: (v) =>
-                    setDlgState(() => allowInsert = v ?? allowInsert),
-              ),
-              CheckboxListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Bearbeiten'),
-                subtitle: const Text('Vorhandene Einträge aktualisieren'),
-                value: allowEdit,
-                onChanged: (v) => setDlgState(() => allowEdit = v ?? allowEdit),
-              ),
-              CheckboxListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Löschen'),
-                subtitle: const Text(
-                  'Gelöschte Einträge vom Server übernehmen',
-                ),
-                value: allowDelete,
-                onChanged: (v) =>
-                    setDlgState(() => allowDelete = v ?? allowDelete),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Abbrechen'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(
-                ctx,
-                SyncOptions(
-                  allowInsert: allowInsert,
-                  allowEdit: allowEdit,
-                  allowDelete: allowDelete,
-                ),
-              ),
-              child: const Text('Synchronisieren'),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -642,116 +498,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.public),
-            title: const Text('Web-Quellen'),
-            subtitle: const Text('Orte von externen Quellen importieren'),
+            title: const Text('Sync-Quellen'),
+            subtitle: const Text('Sync-Server verwalten und synchronisieren'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, '/web-sources'),
-          ),
-          const Divider(),
-          // ── Synchronisation ──────────────────────────────────────────
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(
-              'Synchronisation',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.dns_outlined),
-            title: const Text('Server-URL'),
-            subtitle: TextField(
-              controller: _syncServerUrlCtrl,
-              decoration: const InputDecoration(
-                hintText: 'http://192.168.1.10:8000',
-                isDense: true,
-              ),
-              keyboardType: TextInputType.url,
-              onChanged: (v) => SyncService.instance.setServerUrl(v.trim()),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.vpn_key_outlined),
-            title: const Text('API-Key'),
-            subtitle: TextField(
-              controller: _syncApiKeyCtrl,
-              decoration: InputDecoration(
-                hintText: 'Leer = kein Schlüssel',
-                isDense: true,
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _syncApiKeyVisible
-                        ? Icons.visibility_off
-                        : Icons.visibility,
-                  ),
-                  onPressed: () =>
-                      setState(() => _syncApiKeyVisible = !_syncApiKeyVisible),
-                ),
-              ),
-              obscureText: !_syncApiKeyVisible,
-              onChanged: (v) => SyncService.instance.setApiKey(v.trim()),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: FilledButton.icon(
-              onPressed: _syncing ? null : _syncNow,
-              icon: _syncing
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(Icons.sync),
-              label: const Text('Jetzt synchronisieren'),
-            ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (_localIp != null || _internetIp != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.info_outline, size: 14),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            [
-                              if (_localIp != null) 'WLAN: $_localIp',
-                              if (_internetIp != null) 'Internet: $_internetIp',
-                            ].join(
-                              _localIp != null && _internetIp != null
-                                  ? '\n'
-                                  : '',
-                            ),
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                if (_syncStatus != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Text(
-                      _syncStatus!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: _syncStatus!.startsWith('Fehler')
-                            ? Colors.red
-                            : Colors.green,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+            onTap: () => Navigator.pushNamed(context, '/sync-sources'),
           ),
           const Divider(),
           // ── Berechtigungen ───────────────────────────────────────────

@@ -118,8 +118,17 @@ class SavedPlace {
   /// How this place was created.
   final PlaceOriginType originType;
 
-  /// UUID of the [WebSource] this place was imported from, or null.
+  /// UUID of the [SyncSource] this place was imported from, or null.
   final String? originSourceUuid;
+
+  /// Optional website URL for this place.
+  final String website;
+
+  /// Optional contact email for this place.
+  final String email;
+
+  /// Optional contact phone number for this place.
+  final String phone;
 
   SavedPlace({
     this.id,
@@ -139,6 +148,9 @@ class SavedPlace {
     this.deviceId = '',
     this.originType = PlaceOriginType.self,
     this.originSourceUuid,
+    this.website = '',
+    this.email = '',
+    this.phone = '',
   }) : createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch,
        uuid = uuid ?? '',
        updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch;
@@ -168,6 +180,9 @@ class SavedPlace {
       originType: PlaceOriginType
           .values[originIndex.clamp(0, PlaceOriginType.values.length - 1)],
       originSourceUuid: map['origin_source_uuid'] as String?,
+      website: (map['website'] as String?) ?? '',
+      email: (map['email'] as String?) ?? '',
+      phone: (map['phone'] as String?) ?? '',
     );
   }
 
@@ -189,6 +204,9 @@ class SavedPlace {
       'device_id': deviceId,
       'origin_type': originType.index,
       if (originSourceUuid != null) 'origin_source_uuid': originSourceUuid,
+      'website': website,
+      'email': email,
+      'phone': phone,
     };
   }
 
@@ -214,6 +232,9 @@ class SavedPlace {
     PlaceOriginType? originType,
     String? originSourceUuid,
     bool clearOriginSourceUuid = false,
+    String? website,
+    String? email,
+    String? phone,
   }) {
     return SavedPlace(
       id: id ?? this.id,
@@ -237,6 +258,9 @@ class SavedPlace {
       originSourceUuid: clearOriginSourceUuid
           ? null
           : (originSourceUuid ?? this.originSourceUuid),
+      website: website ?? this.website,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
     );
   }
 }

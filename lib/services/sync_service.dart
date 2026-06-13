@@ -3,11 +3,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../models/saved_place.dart';
-import '../models/web_source.dart';
+import '../models/sync_source.dart';
 import 'database_service.dart';
 
-/// Options controlling which pull operations are applied to local data.
+/// Legacy single-table sync options (used by [DatabaseService.upsertByUuid]).
 class SyncOptions {
   /// Allow inserting records that exist on the server but not locally.
   final bool allowInsert;
@@ -27,47 +26,34 @@ class SyncOptions {
   static const all = SyncOptions();
 }
 
-/// Result of a sync operation.
+/// Result of a sync operation against a single server.
 class SyncResult {
   final bool success;
   final String? errorMessage;
   final int pulled;
   final int pushed;
+  final String sourceName;
 
   const SyncResult({
     required this.success,
     this.errorMessage,
     this.pulled = 0,
     this.pushed = 0,
+    this.sourceName = '',
   });
 }
 
-/// Service for synchronising the local SQLite database with a remote
-/// FastAPI server (PostgreSQL).
+/// Service for synchronising the local SQLite database with one or more
+/// remote FastAPI sync servers (PostgreSQL).
 ///
+/// Each [SyncSource] has its own URL, API key, and per-table [SyncSourceOptions].
 /// Sync strategy: timestamp-based delta, last-write-wins per [updated_at].
 class SyncService {
   SyncService._();
   static final SyncService instance = SyncService._();
 
-  static const _keySyncServerUrl = 'sync_server_url';
-  static const _keySyncApiKey = 'sync_api_key';
   static const _keyLastSyncMs = 'sync_last_ms';
   static const _keyDeviceId = 'sync_device_id';
-
-  // Tables that participate in sync (order matters for foreign keys).
-  static const _syncTables = [
-    'place_groups',
-    'saved_places',
-    'persons',
-    'activities',
-    'stays',
-    'stay_persons',
-    'stay_activities',
-    'aktivitaeten',
-    'web_sources',
-    'web_source_experiences',
-  ];
 
   SharedPreferences? _prefs;
 
@@ -75,18 +61,6 @@ class SyncService {
     _prefs ??= await SharedPreferences.getInstance();
     return _prefs!;
   }
-
-  // ── Settings accessors ────────────────────────────────────────────────────
-
-  Future<String> get serverUrl async =>
-      (await _p).getString(_keySyncServerUrl) ?? '';
-  Future<void> setServerUrl(String v) async =>
-      (await _p).setString(_keySyncServerUrl, v);
-
-  Future<String> get apiKey async =>
-      (await _p).getString(_keySyncApiKey) ?? 'chaos-tours-2-promised-land';
-  Future<void> setApiKey(String v) async =>
-      (await _p).setString(_keySyncApiKey, v);
 
   Future<int> get lastSyncMs async => (await _p).getInt(_keyLastSyncMs) ?? 0;
   Future<void> _setLastSyncMs(int ms) async =>
@@ -105,98 +79,82 @@ class SyncService {
 
   // ── Main sync entry points ─────────────────────────────────────────────────
 
-  /// Full delta-sync with the configured server URL.
-  Future<SyncResult> syncWithServer({
-    SyncOptions options = SyncOptions.all,
-  }) async {
-    final url = await serverUrl;
-    final key = await apiKey;
-    if (url.isEmpty) {
-      return const SyncResult(
-        success: false,
-        errorMessage: 'Keine Server-URL konfiguriert',
+  /// Syncs with all configured (non-deleted) sync sources.
+  /// Returns one [SyncResult] per source that has any sync option enabled.
+  Future<List<SyncResult>> syncAll() async {
+    final sources = await DatabaseService.instance.loadAllSyncSources();
+    final results = <SyncResult>[];
+
+    for (final source in sources) {
+      if (source.syncUrl.isEmpty) continue;
+      final anyEnabled = source.syncOptions.tables.values.any(
+        (opts) => opts.anyEnabled,
       );
+      if (!anyEnabled) continue;
+
+      final result = await _syncWithSource(source);
+      results.add(result);
     }
-    return _sync(url, key, options: options);
+
+    if (results.isNotEmpty) {
+      await _setLastSyncMs(DateTime.now().millisecondsSinceEpoch);
+    }
+    return results;
   }
 
-  /// Imports only [SavedPlace] records from a [WebSource].
-  /// Imported places receive [PlaceOriginType.imported] and the source UUID.
-  Future<SyncResult> importFromWebSource(WebSource source) async {
-    try {
-      final uri = Uri.parse('${source.url}/places/export');
-      final resp = await http
-          .get(uri, headers: _headers(source.apiKey))
-          .timeout(const Duration(seconds: 15));
-
-      if (resp.statusCode != 200) {
-        return SyncResult(
-          success: false,
-          errorMessage: 'Server antwortete mit ${resp.statusCode}',
-        );
-      }
-
-      final List<dynamic> raw = jsonDecode(resp.body) as List<dynamic>;
-      int imported = 0;
-      final devId = await deviceId;
-
-      for (final item in raw) {
-        final map = Map<String, dynamic>.from(item as Map);
-        // Mark as imported and reference the source.
-        map['origin_type'] = PlaceOriginType.imported.index;
-        map['origin_source_uuid'] = source.uuid;
-        // Strip remote integer id — upsertByUuid will handle conflicts.
-        map.remove('id');
-        if ((map['uuid'] as String?)?.isEmpty ?? true) {
-          map['uuid'] = DatabaseService.generateUuid();
-        }
-        map['device_id'] = devId;
-        await DatabaseService.instance.upsertByUuid('saved_places', map);
-        imported++;
-      }
-
-      return SyncResult(success: true, pulled: imported);
-    } catch (e) {
-      return SyncResult(success: false, errorMessage: e.toString());
-    }
+  /// Syncs with a single [SyncSource].
+  Future<SyncResult> syncWithSource(SyncSource source) async {
+    final result = await _syncWithSource(source);
+    await _setLastSyncMs(DateTime.now().millisecondsSinceEpoch);
+    return result;
   }
 
   // ── Internal sync logic ───────────────────────────────────────────────────
 
-  Future<SyncResult> _sync(
-    String baseUrl,
-    String key, {
-    SyncOptions options = SyncOptions.all,
-  }) async {
+  Future<SyncResult> _syncWithSource(SyncSource source) async {
     try {
       final devId = await deviceId;
       final since = await lastSyncMs;
-      final now = DateTime.now().millisecondsSinceEpoch;
+
+      // Determine which tables participate (any option enabled).
+      final activeTables = SyncSourceOptions.allTables
+          .where((t) => source.syncOptions.forTable(t).anyEnabled)
+          .toList();
+
+      if (activeTables.isEmpty) {
+        return SyncResult(success: true, sourceName: source.name);
+      }
 
       // ── 1. Pull changes from server ─────────────────────────────────────
       final pullUri = Uri.parse(
-        '$baseUrl/sync/pull?since=$since&device_id=$devId',
+        '${source.syncUrl}/sync/pull?since=$since&device_id=$devId',
       );
       final pullResp = await http
-          .get(pullUri, headers: _headers(key))
+          .get(pullUri, headers: _headers(source.apiKey))
           .timeout(const Duration(seconds: 30));
 
       if (pullResp.statusCode != 200) {
         return SyncResult(
           success: false,
           errorMessage: 'Pull fehlgeschlagen: ${pullResp.statusCode}',
+          sourceName: source.name,
         );
       }
 
       final pullData = jsonDecode(pullResp.body) as Map<String, dynamic>;
       int pulled = 0;
-      for (final table in _syncTables) {
+      for (final table in activeTables) {
+        final tableOpts = source.syncOptions.forTable(table);
         final rows = pullData[table] as List<dynamic>? ?? [];
         for (final row in rows) {
           await DatabaseService.instance.upsertByUuid(
             table,
             Map<String, dynamic>.from(row as Map),
-            options: options,
+            options: SyncOptions(
+              allowInsert: tableOpts.insert,
+              allowEdit: tableOpts.update,
+              allowDelete: tableOpts.delete,
+            ),
           );
           pulled++;
         }
@@ -204,7 +162,7 @@ class SyncService {
 
       // ── 2. Push local changes to server ─────────────────────────────────
       final pushPayload = <String, dynamic>{};
-      for (final table in _syncTables) {
+      for (final table in activeTables) {
         final rows = await DatabaseService.instance.loadChangedRows(
           table,
           since,
@@ -216,11 +174,14 @@ class SyncService {
 
       int pushed = 0;
       if (pushPayload.isNotEmpty) {
-        final pushUri = Uri.parse('$baseUrl/sync/push');
+        final pushUri = Uri.parse('${source.syncUrl}/sync/push');
         final pushResp = await http
             .post(
               pushUri,
-              headers: {..._headers(key), 'Content-Type': 'application/json'},
+              headers: {
+                ..._headers(source.apiKey),
+                'Content-Type': 'application/json',
+              },
               body: jsonEncode({'device_id': devId, 'data': pushPayload}),
             )
             .timeout(const Duration(seconds: 30));
@@ -229,6 +190,7 @@ class SyncService {
           return SyncResult(
             success: false,
             errorMessage: 'Push fehlgeschlagen: ${pushResp.statusCode}',
+            sourceName: source.name,
           );
         }
 
@@ -237,10 +199,18 @@ class SyncService {
         }
       }
 
-      await _setLastSyncMs(now);
-      return SyncResult(success: true, pulled: pulled, pushed: pushed);
+      return SyncResult(
+        success: true,
+        pulled: pulled,
+        pushed: pushed,
+        sourceName: source.name,
+      );
     } catch (e) {
-      return SyncResult(success: false, errorMessage: e.toString());
+      return SyncResult(
+        success: false,
+        errorMessage: e.toString(),
+        sourceName: source.name,
+      );
     }
   }
 

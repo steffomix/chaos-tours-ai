@@ -1,4 +1,4 @@
-import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:focus_detector/focus_detector.dart';
@@ -15,6 +15,7 @@ import '../../services/nominatim_service.dart';
 import '../../services/settings_service.dart';
 import '../../services/tracking_engine.dart';
 import '../../utils/geo_utils.dart';
+import '../widgets/experience_filter_panel.dart';
 import '../widgets/place_bottom_sheet.dart';
 
 /// Categorised live tracking state for the map layer.
@@ -41,8 +42,14 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   List<SavedPlace> _places = [];
+  Map<String, double> _avgRatings = {};
   final MapController _mapController = MapController();
   final LayerHitNotifier<SavedPlace> _hitNotifier = ValueNotifier(null);
+
+  // ── Experience / distance filter ────────────────────────────────────────
+  bool _filterPanelOpen = false;
+  ExperienceFilterState _expFilter = const ExperienceFilterState();
+  ({double lat, double lng})? _currentPos;
 
   // ── Live tracking points (always on) ───────────────────────────────────
   _LiveTrackingState? _liveState;
@@ -56,13 +63,9 @@ class _MapScreenState extends State<MapScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _goToCurrentLocation());
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
   Future<void> _loadPlaces() async {
     final allPlaces = await DatabaseService.instance.loadAllPlaces();
+    final avgRatings = await DatabaseService.instance.loadAverageRatingsForAllPlaces();
     final groupFilter = SettingsService.instance.schedulerGroupIdList;
     final places = groupFilter.isEmpty
         ? allPlaces
@@ -71,7 +74,50 @@ class _MapScreenState extends State<MapScreen> {
                 (p) => p.groupId != null && groupFilter.contains(p.groupId),
               )
               .toList();
-    if (mounted) setState(() => _places = places);
+
+    // Update current position for distance filter.
+    try {
+      final pos = await LocationService.instance.getCurrentPosition();
+      if (pos != null && mounted) {
+        _currentPos = (lat: pos.latitude, lng: pos.longitude);
+      }
+    } catch (_) {}
+
+    if (mounted) setState(() {
+      _places = _applyFilter(places);
+      _avgRatings = avgRatings;
+    });
+  }
+
+  List<SavedPlace> _applyFilter(List<SavedPlace> places) {
+    if (!_expFilter.isActive && !_expFilter.distanceEnabled) return places;
+    final pos = _currentPos;
+
+    List<SavedPlace> filtered = places;
+
+    // Experience filter.
+    if (_expFilter.isActive) {
+      filtered = filtered.where((p) {
+        if (p.uuid.isEmpty) return !_expFilter.requireExperiences;
+        final avg = _avgRatings[p.uuid];
+        if (avg == null) return !_expFilter.requireExperiences;
+        return avg >= _expFilter.minAvgRating;
+      }).toList();
+    }
+
+    // Distance filter (bounding box pre-filter + Haversine).
+    if (_expFilter.distanceEnabled && pos != null) {
+      final maxM = _expFilter.maxDistanceKm * 1000;
+      final latDelta = maxM / 111000;
+      final lngDelta = maxM / (111000 * cos(pos.lat * pi / 180).abs().clamp(0.001, 1.0));
+      filtered = filtered.where((p) {
+        if ((p.lat - pos.lat).abs() > latDelta) return false;
+        if ((p.lng - pos.lng).abs() > lngDelta) return false;
+        return GeoUtils.distanceMeters(pos.lat, pos.lng, p.lat, p.lng) <= maxM;
+      }).toList();
+    }
+
+    return filtered;
   }
 
   void _onServiceData(Object data) {
@@ -269,6 +315,15 @@ class _MapScreenState extends State<MapScreen> {
           title: const Text('Chaos Tours – Karte'),
           actions: [
             IconButton(
+              icon: Badge(
+                isLabelVisible: _expFilter.isActive || _expFilter.distanceEnabled,
+                child: const Icon(Icons.filter_list),
+              ),
+              tooltip: 'Filter',
+              onPressed: () =>
+                  setState(() => _filterPanelOpen = !_filterPanelOpen),
+            ),
+            IconButton(
               icon: const Icon(Icons.search),
               onPressed: _showAddressSearch,
               tooltip: 'Adresse suchen',
@@ -277,6 +332,17 @@ class _MapScreenState extends State<MapScreen> {
         ),
         body: Column(
           children: [
+            if (_filterPanelOpen)
+              ExperienceFilterPanel(
+                filter: _expFilter,
+                onChanged: (f) {
+                  setState(() {
+                    _expFilter = f;
+                    _places = _applyFilter(_places);
+                  });
+                  _loadPlaces();
+                },
+              ),
             Expanded(
               child: Stack(
                 children: [
