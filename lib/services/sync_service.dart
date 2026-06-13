@@ -43,7 +43,7 @@ class SyncResult {
 }
 
 /// Service for synchronising the local SQLite database with a remote
-/// FastAPI server (PostgreSQL) or with a peer device running the same app.
+/// FastAPI server (PostgreSQL).
 ///
 /// Sync strategy: timestamp-based delta, last-write-wins per [updated_at].
 class SyncService {
@@ -52,7 +52,6 @@ class SyncService {
 
   static const _keySyncServerUrl = 'sync_server_url';
   static const _keySyncApiKey = 'sync_api_key';
-  static const _keySyncPeerUrl = 'sync_peer_url';
   static const _keyLastSyncMs = 'sync_last_ms';
   static const _keyDeviceId = 'sync_device_id';
 
@@ -89,11 +88,6 @@ class SyncService {
   Future<void> setApiKey(String v) async =>
       (await _p).setString(_keySyncApiKey, v);
 
-  Future<String> get peerUrl async =>
-      (await _p).getString(_keySyncPeerUrl) ?? '';
-  Future<void> setPeerUrl(String v) async =>
-      (await _p).setString(_keySyncPeerUrl, v);
-
   Future<int> get lastSyncMs async => (await _p).getInt(_keyLastSyncMs) ?? 0;
   Future<void> _setLastSyncMs(int ms) async =>
       (await _p).setInt(_keyLastSyncMs, ms);
@@ -121,21 +115,6 @@ class SyncService {
       return const SyncResult(
         success: false,
         errorMessage: 'Keine Server-URL konfiguriert',
-      );
-    }
-    return _sync(url, key, options: options);
-  }
-
-  /// Delta-sync with a peer device URL (same API contract).
-  Future<SyncResult> syncWithPeer({
-    SyncOptions options = SyncOptions.all,
-  }) async {
-    final url = await peerUrl;
-    final key = await apiKey;
-    if (url.isEmpty) {
-      return const SyncResult(
-        success: false,
-        errorMessage: 'Keine Peer-URL konfiguriert',
       );
     }
     return _sync(url, key, options: options);

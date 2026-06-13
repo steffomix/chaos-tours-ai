@@ -68,6 +68,3 @@ LibreOffice Base kann direkt über JDBC auf die PostgreSQL-Datenbank zugreifen:
 - JDBC-URL: `jdbc:postgresql://localhost:5432/chaos_tours`
 - Benutzer/Passwort: wie in `.env` konfiguriert
 
-## Device-to-Device
-
-Jedes Android-Gerät kann mit jedem anderen Gerät synchronisieren, das diesen Server (oder einen kompatiblen) betreibt. Die Peer-URL im App-Einstellungen-Screen konfigurieren.
