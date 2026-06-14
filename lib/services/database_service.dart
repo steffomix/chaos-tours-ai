@@ -33,14 +33,17 @@ class DatabaseService {
     return _db!;
   }
 
+  // No onUpgrade!
+  // For the app is still in early development and we can always just delete
+  // the old schema and start fresh. This also simplifies development and testing, as we
+  // don't have to worry about migrations when changing the schema.
   Future<Database> _openDatabase() async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'chaos_tours.db');
     return openDatabase(
       path,
-      version: 3,
+      version: 1,
       onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
       onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
     );
   }
@@ -255,32 +258,6 @@ class DatabaseService {
         device_id TEXT NOT NULL DEFAULT ''
       )
     ''');
-  }
-
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      // Add telegram_connections table
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS telegram_connections (
-          uuid TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          description TEXT NOT NULL DEFAULT '',
-          chat_id TEXT NOT NULL DEFAULT '',
-          bot_token TEXT NOT NULL DEFAULT '',
-          updated_at INTEGER NOT NULL DEFAULT 0,
-          deleted_at INTEGER,
-          device_id TEXT NOT NULL DEFAULT ''
-        )
-      ''');
-      // Add telegram_connection_uuid column to place_groups
-      await db.execute(
-        'ALTER TABLE place_groups ADD COLUMN telegram_connection_uuid TEXT',
-      );
-    }
-    if (oldVersion < 3) {
-      // Add telegram_message_id column to stays
-      await db.execute('ALTER TABLE stays ADD COLUMN telegram_message_id TEXT');
-    }
   }
 
   // ── Sync helpers ─────────────────────────────────────────────────────────
