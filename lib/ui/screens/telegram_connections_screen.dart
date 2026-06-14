@@ -115,8 +115,8 @@ class _TelegramConnectionsScreenState extends State<TelegramConnectionsScreen> {
                   TextFormField(
                     controller: chatIdCtrl,
                     decoration: const InputDecoration(
-                      labelText: 'Chat-ID oder Kanalname *',
-                      hintText: '-1001234567890  oder  @meinkanal',
+                      labelText: '-ID-Nummer oder @Kanalname *',
+                      hintText: '-123... oder @Kanal',
                     ),
                     validator: (v) =>
                         v == null || v.trim().isEmpty ? 'Pflichtfeld' : null,

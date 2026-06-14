@@ -33,6 +33,7 @@ class TrackingResult {
 /// isolate. Not thread-safe for concurrent calls.
 class TrackingEngine {
   TrackingStatus _status = TrackingStatus.idle;
+  int _statusSince = DateTime.now().millisecondsSinceEpoch;
   Stay? _currentStay;
   SavedPlace? _currentPlace;
 
@@ -50,14 +51,16 @@ class TrackingEngine {
         _currentPlace = places
             .where((p) => p.uuid == active.placeUuid)
             .firstOrNull;
-        _status = TrackingStatus.haltAtKnown;
+        _setStatus(TrackingStatus.haltAtKnown);
       } else {
-        _status = active.status == StayStatus.detecting
-            ? TrackingStatus.detectingHalt
-            : TrackingStatus.haltAtUnknown;
+        _setStatus(
+          active.status == StayStatus.detecting
+              ? TrackingStatus.detectingHalt
+              : TrackingStatus.haltAtUnknown,
+        );
       }
     } else {
-      _status = TrackingStatus.idle;
+      _setStatus(TrackingStatus.idle);
     }
   }
 
@@ -142,9 +145,9 @@ class TrackingEngine {
         await _endCurrentStay(timestamp);
       }
       if (shortIsCluster && !shortWindowFull) {
-        _status = TrackingStatus.detectingHalt;
+        _setStatus(TrackingStatus.detectingHalt);
       } else {
-        _status = TrackingStatus.moving;
+        _setStatus(TrackingStatus.moving);
       }
       return _result();
     }
@@ -198,7 +201,7 @@ class TrackingEngine {
           effectivePlaceType: effectivePlaceType,
         );
       }
-      _status = TrackingStatus.haltAtKnown;
+      _setStatus(TrackingStatus.haltAtKnown);
       _currentPlace = nearestPlace;
       return _result();
     }
@@ -234,7 +237,7 @@ class TrackingEngine {
           centroidLng: longC.lng,
         );
       }
-      _status = TrackingStatus.haltAtUnknown;
+      _setStatus(TrackingStatus.haltAtUnknown);
       _currentPlace = null;
     } else {
       // Short window clustered, no known place, long window not complete
@@ -242,7 +245,7 @@ class TrackingEngine {
           _status == TrackingStatus.haltAtUnknown) {
         await _endCurrentStay(timestamp);
       }
-      _status = TrackingStatus.detectingHalt;
+      _setStatus(TrackingStatus.detectingHalt);
       _currentPlace = null;
     }
 
@@ -563,7 +566,7 @@ class TrackingEngine {
     if (_currentStay != null) {
       await _endCurrentStay(DateTime.now().millisecondsSinceEpoch);
     }
-    _status = TrackingStatus.idle;
+    _setStatus(TrackingStatus.idle);
   }
 
   /// Immediately ends the current stay (as if the user left) but keeps the
@@ -573,24 +576,50 @@ class TrackingEngine {
   Future<void> forceEndCurrentStay() async {
     if (_currentStay == null) return;
     await _endCurrentStay(DateTime.now().millisecondsSinceEpoch);
-    _status = TrackingStatus.moving;
+    _setStatus(TrackingStatus.moving);
+  }
+
+  void _setStatus(TrackingStatus newStatus) {
+    if (newStatus != _status) {
+      _statusSince = DateTime.now().millisecondsSinceEpoch;
+    }
+    _status = newStatus;
   }
 
   TrackingResult _result() {
+    String fmtDur(Duration dur) {
+      final h = dur.inHours;
+      final m = dur.inMinutes.remainder(60);
+      return h > 0 ? '${h}h\u00a0${m}min' : '${m}min';
+    }
+
+    String trunc(String s, int max) =>
+        s.length <= max ? s : '${s.substring(0, max - 1)}\u2026';
+
+    final now = DateTime.now().millisecondsSinceEpoch;
     String notifText;
     switch (_status) {
       case TrackingStatus.haltAtKnown:
-        notifText = 'Halten bei ${_currentPlace?.name ?? 'bekanntem Ort'}';
+        final name = trunc(_currentPlace?.name ?? 'Bekannter Ort', 22);
+        final dur = _currentStay != null
+            ? fmtDur(Duration(milliseconds: now - _currentStay!.startTime))
+            : null;
+        notifText = dur != null ? '$name · $dur' : name;
       case TrackingStatus.haltAtUnknown:
-        notifText = _currentStay?.address != null
-            ? 'Halten: ${_currentStay!.address}'
-            : 'Halten an unbekanntem Ort';
+        final label = trunc(_currentStay?.address ?? 'Unbekannter Ort', 22);
+        final dur = _currentStay != null
+            ? fmtDur(Duration(milliseconds: now - _currentStay!.startTime))
+            : null;
+        notifText = dur != null ? 'Halten: $label · $dur' : 'Halten: $label';
       case TrackingStatus.detectingHalt:
-        notifText = 'Aufenthalt wird erkannt…';
+        final dur = fmtDur(Duration(milliseconds: now - _statusSince));
+        notifText = 'Aufenthalt wird erkannt seit $dur';
       case TrackingStatus.moving:
-        notifText = 'Unterwegs';
+        final dur = fmtDur(Duration(milliseconds: now - _statusSince));
+        notifText = 'Unterwegs seit $dur';
       case TrackingStatus.idle:
-        notifText = 'Tracking aktiv';
+        final dur = fmtDur(Duration(milliseconds: now - _statusSince));
+        notifText = 'Tracking aktiv seit $dur';
     }
     return TrackingResult(
       status: _status,
