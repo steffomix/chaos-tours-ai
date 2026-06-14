@@ -38,9 +38,8 @@ class DatabaseService {
     final path = join(dbPath, 'chaos_tours.db');
     return openDatabase(
       path,
-      version: 2,
+      version: 1,
       onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
       onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
     );
   }
@@ -254,12 +253,8 @@ class DatabaseService {
         device_id TEXT NOT NULL DEFAULT ''
       )
     ''');
-  }
 
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      // Add telegram_connections table
-      await db.execute('''
+    await db.execute('''
         CREATE TABLE IF NOT EXISTS telegram_connections (
           uuid TEXT PRIMARY KEY,
           name TEXT NOT NULL,
@@ -271,11 +266,10 @@ class DatabaseService {
           device_id TEXT NOT NULL DEFAULT ''
         )
       ''');
-      // Add telegram_connection_uuid column to place_groups
-      await db.execute(
-        'ALTER TABLE place_groups ADD COLUMN telegram_connection_uuid TEXT',
-      );
-    }
+    // Add telegram_connection_uuid column to place_groups
+    await db.execute(
+      'ALTER TABLE place_groups ADD COLUMN telegram_connection_uuid TEXT',
+    );
   }
 
   // ── Sync helpers ─────────────────────────────────────────────────────────
