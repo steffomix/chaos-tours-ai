@@ -37,7 +37,7 @@ class DatabaseService {
     final path = join(dbPath, 'chaos_tours.db');
     return openDatabase(
       path,
-      version: 2,
+      version: 1,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
@@ -218,16 +218,6 @@ class DatabaseService {
         device_id TEXT NOT NULL DEFAULT ''
       )
     ''');
-    await _createPlacePhotosTable(db);
-  }
-
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      await _createPlacePhotosTable(db);
-    }
-  }
-
-  Future<void> _createPlacePhotosTable(Database db) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS place_photos (
         uuid TEXT PRIMARY KEY,
@@ -251,6 +241,8 @@ class DatabaseService {
       'CREATE INDEX IF NOT EXISTS idx_place_photos_stay ON place_photos(stay_uuid)',
     );
   }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {}
 
   // ── Sync helpers ─────────────────────────────────────────────────────────
 

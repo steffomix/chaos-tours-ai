@@ -510,8 +510,6 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                     children: [
                       PhotoGrid(
                         stayUuid: widget.stay.uuid,
-                        placeUuid: widget.stay.placeUuid,
-                        includeStayPhotos: false,
                         deviceId: widget.stay.deviceId,
                       ),
                     ],

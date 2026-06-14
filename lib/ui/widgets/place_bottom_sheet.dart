@@ -11,7 +11,7 @@ import '../../models/stay.dart';
 import '../../services/database_service.dart';
 import '../screens/place_reposition_screen.dart';
 import '../screens/place_visits_screen.dart';
-import 'photo_grid.dart';
+import 'place_photos_section.dart';
 
 class PlaceBottomSheet extends StatefulWidget {
   final SavedPlace place;
@@ -1286,10 +1286,10 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               leading: const Icon(Icons.photo_library_outlined),
               title: const Text('Fotos'),
               children: [
-                PhotoGrid(
+                PlacePhotosSection(
                   placeUuid: widget.place.uuid,
-                  includeStayPhotos: true,
                   deviceId: widget.place.deviceId,
+                  completedStays: _completedStays,
                 ),
               ],
             ),

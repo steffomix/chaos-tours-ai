@@ -50,7 +50,7 @@ class _PhotoGridState extends State<PhotoGrid> {
 
   Future<void> _load() async {
     List<PlacePhoto> photos;
-    if (widget.stayUuid != null && widget.placeUuid == null) {
+    if (widget.stayUuid != null) {
       photos = await DatabaseService.instance.loadPhotosForStay(
         widget.stayUuid!,
       );

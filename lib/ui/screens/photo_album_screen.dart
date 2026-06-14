@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:focus_detector/focus_detector.dart';
 
 import '../../models/place_photo.dart';
 import '../../models/saved_place.dart';
@@ -63,35 +64,40 @@ class _PhotoAlbumScreenState extends State<PhotoAlbumScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Fotoalbum')),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _allPhotos.isEmpty
-          ? const Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.photo_library_outlined,
-                    size: 64,
-                    color: Colors.grey,
-                  ),
-                  SizedBox(height: 12),
-                  Text(
-                    'Noch keine Fotos vorhanden',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Fotos können bei Orten und Besuchen hinzugefügt werden.',
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            )
-          : _buildGroupedList(),
+    return FocusDetector(
+      onFocusGained: () {
+        _load();
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Fotoalbum')),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _allPhotos.isEmpty
+            ? const Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.photo_library_outlined,
+                      size: 64,
+                      color: Colors.grey,
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      'Noch keine Fotos vorhanden',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Fotos können bei Orten und Besuchen hinzugefügt werden.',
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              )
+            : _buildGroupedList(),
+      ),
     );
   }
 
