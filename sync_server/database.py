@@ -71,6 +71,7 @@ place_groups = Table(
     Column("uuid", String, primary_key=True),
     Column("name", String, nullable=False),
     Column("calendar_id", String, nullable=True),
+    Column("telegram_connection_uuid", String, nullable=True),
     Column("include_notes", Integer, nullable=False, default=1),
     Column("include_persons", Integer, nullable=False, default=1),
     Column("include_activities", Integer, nullable=False, default=1),
@@ -88,6 +89,7 @@ stays = Table(
     Column("end_time", BigInteger, nullable=True),
     Column("notes", Text, nullable=False, default=""),
     Column("calendar_event_id", String, nullable=True),
+    Column("telegram_message_id", String, nullable=True),
     Column("address", Text, nullable=True),
     Column("status", String, nullable=False, default="detecting"),
     Column("is_interval", Integer, nullable=False, default=1),
@@ -202,6 +204,17 @@ place_photos = Table(
     *_sync_cols(),
 )
 
+telegram_connections = Table(
+    "telegram_connections",
+    metadata,
+    Column("uuid", String, primary_key=True),
+    Column("name", String, nullable=False),
+    Column("description", Text, nullable=False, default=""),
+    Column("chat_id", String, nullable=False, default=""),
+    Column("bot_token", String, nullable=False, default=""),
+    *_sync_cols(),
+)
+
 # Ordered by foreign-key dependency (parents before children).
 SYNC_TABLES = [
     ("place_groups", place_groups),
@@ -216,6 +229,7 @@ SYNC_TABLES = [
     ("place_experiences", place_experiences),
     ("sync_source_experiences", sync_source_experiences),
     ("place_photos", place_photos),
+    ("telegram_connections", telegram_connections),
 ]
 
 

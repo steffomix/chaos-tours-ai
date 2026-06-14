@@ -7,6 +7,7 @@ from sqlalchemy import select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from config import get_table_config
 from database import SYNC_TABLES
 
 
@@ -15,9 +16,14 @@ async def pull(
     since: int,
     device_id: str,
 ) -> dict[str, list[dict]]:
-    """Return all rows updated after [since] ms, excluding the requesting device."""
+    """Return all rows updated after [since] ms, excluding the requesting device.
+
+    Tables with pull=false in sync_config.json (or SYNC_TABLE_CONFIG) are skipped.
+    """
     result: dict[str, list[dict]] = {}
     for name, table in SYNC_TABLES:
+        if not get_table_config(name).pull:
+            continue
         stmt = select(table).where(table.c.updated_at > since)
         if device_id:
             stmt = stmt.where(table.c.device_id != device_id)
@@ -31,11 +37,16 @@ async def push(
     conn: AsyncConnection,
     data: dict[str, list[dict[str, Any]]],
 ) -> int:
-    """Upsert all incoming rows (last-write-wins per updated_at)."""
+    """Upsert all incoming rows (last-write-wins per updated_at).
+
+    Tables with push=false in sync_config.json (or SYNC_TABLE_CONFIG) are ignored.
+    """
     count = 0
     table_map = {name: tbl for name, tbl in SYNC_TABLES}
 
     for table_name, rows in data.items():
+        if not get_table_config(table_name).push:
+            continue
         table = table_map.get(table_name)
         if table is None:
             continue
