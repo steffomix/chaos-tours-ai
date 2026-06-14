@@ -7,6 +7,7 @@ import '../services/calendar_service.dart';
 import '../services/database_service.dart';
 import '../services/nominatim_service.dart';
 import '../services/settings_service.dart';
+import '../services/telegram_service.dart';
 import '../utils/geo_utils.dart';
 
 enum TrackingStatus { idle, moving, detectingHalt, haltAtKnown, haltAtUnknown }
@@ -271,6 +272,11 @@ class TrackingEngine {
           place.name,
           place.groupUuid,
         );
+        await _createArrivalTelegramMessage(
+          _currentStay!,
+          place.name,
+          place.groupUuid,
+        );
       }
     }
   }
@@ -330,6 +336,11 @@ class TrackingEngine {
             autoPlaceName,
             autoGroupUuid,
           );
+          await _createArrivalTelegramMessage(
+            _currentStay!,
+            autoPlaceName,
+            autoGroupUuid,
+          );
         }
       }
       return;
@@ -364,6 +375,39 @@ class TrackingEngine {
     );
     if (eventId != null) {
       final updated = stay.copyWith(calendarEventId: eventId);
+      await DatabaseService.instance.updateStay(updated);
+      _currentStay = updated;
+    }
+  }
+
+  /// Sends an arrival Telegram message for [stay] and persists the message ID.
+  Future<void> _createArrivalTelegramMessage(
+    Stay stay,
+    String? placeName,
+    String? groupUuid,
+  ) async {
+    if (groupUuid == null) return;
+    final group = await DatabaseService.instance.loadPlaceGroup(groupUuid);
+    if (group == null || group.telegramConnectionUuid == null) return;
+    final conn = await DatabaseService.instance.loadTelegramConnection(
+      group.telegramConnectionUuid!,
+    );
+    if (conn == null) return;
+
+    String esc(String s) => s.replaceAllMapped(
+      RegExp(r'[_*\[\]()~`>#+\-=|{}.!\\]'),
+      (m) => '\\${m[0]}',
+    );
+
+    final title = placeName ?? stay.address ?? 'Unbekannter Ort';
+    final d = DateTime.fromMillisecondsSinceEpoch(stay.startTime);
+    final fmtTime =
+        '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+    final text = '\u{1F4CD} *${esc(title)}*\nAnkunft: ${esc(fmtTime)}';
+
+    final result = await TelegramService.instance.sendMessage(conn, text);
+    if (result.success && result.messageId != null) {
+      final updated = stay.copyWith(telegramMessageId: result.messageId);
       await DatabaseService.instance.updateStay(updated);
       _currentStay = updated;
     }
@@ -421,6 +465,82 @@ class TrackingEngine {
             await DatabaseService.instance.updateStay(
               ended.copyWith(calendarEventId: eventId),
             );
+          }
+        }
+      }
+    }
+
+    // Telegram sync: edit the arrival message with departure details, or send
+    // a new departure message if no arrival message was recorded.
+    if (place != null && place.groupUuid != null) {
+      final group = await DatabaseService.instance.loadPlaceGroup(
+        place.groupUuid!,
+      );
+      if (group != null && group.telegramConnectionUuid != null) {
+        final conn = await DatabaseService.instance.loadTelegramConnection(
+          group.telegramConnectionUuid!,
+        );
+        if (conn != null) {
+          String esc(String s) => s.replaceAllMapped(
+            RegExp(r'[_*\[\]()~`>#+\-=|{}.!\\]'),
+            (m) => '\\${m[0]}',
+          );
+
+          final persons = await DatabaseService.instance.loadPersonsForStay(
+            ended.uuid,
+          );
+          final activities = await DatabaseService.instance
+              .loadActivitiesForStay(ended.uuid);
+
+          final dStart = DateTime.fromMillisecondsSinceEpoch(ended.startTime);
+          final dEnd = DateTime.fromMillisecondsSinceEpoch(endTime);
+          String fmtTime(DateTime d) =>
+              '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+          final duration = ended.copyWith(endTime: endTime).duration;
+          String fmtDur(Duration dur) {
+            final h = dur.inHours;
+            final m = dur.inMinutes.remainder(60);
+            return h > 0 ? '${h}h ${m}min' : '${m}min';
+          }
+
+          final buf = StringBuffer();
+          buf.writeln('\u{1F4CD} *${esc(place.name)}*');
+          buf.writeln(
+            'Ankunft: ${esc(fmtTime(dStart))}  \u2022  Abfahrt: ${esc(fmtTime(dEnd))}',
+          );
+          buf.writeln('Dauer: ${esc(fmtDur(duration))}');
+          if (persons.isNotEmpty) {
+            buf.writeln(
+              'Personen: ${esc(persons.map((p) => p.name).join(', '))}',
+            );
+          }
+          if (activities.isNotEmpty) {
+            buf.writeln(
+              'T\u00e4tigkeiten: ${esc(activities.map((a) => a.description).join(', '))}',
+            );
+          }
+          if (ended.notes.isNotEmpty) {
+            buf.writeln('_${esc(ended.notes)}_');
+          }
+
+          final text = buf.toString().trimRight();
+
+          if (ended.telegramMessageId != null) {
+            await TelegramService.instance.editMessage(
+              conn,
+              ended.telegramMessageId!,
+              text,
+            );
+          } else {
+            final result = await TelegramService.instance.sendMessage(
+              conn,
+              text,
+            );
+            if (result.success && result.messageId != null) {
+              await DatabaseService.instance.updateStay(
+                ended.copyWith(telegramMessageId: result.messageId),
+              );
+            }
           }
         }
       }

@@ -11,6 +11,7 @@ class Stay {
   final int? endTime;
   final String notes;
   final String? calendarEventId;
+  final String? telegramMessageId;
   final String? address;
   final StayStatus status;
 
@@ -29,6 +30,7 @@ class Stay {
     this.endTime,
     this.notes = '',
     this.calendarEventId,
+    this.telegramMessageId,
     this.address,
     this.status = StayStatus.detecting,
     this.isInterval = true,
@@ -57,6 +59,7 @@ class Stay {
       endTime: map['end_time'] as int?,
       notes: (map['notes'] as String?) ?? '',
       calendarEventId: map['calendar_event_id'] as String?,
+      telegramMessageId: map['telegram_message_id'] as String?,
       address: map['address'] as String?,
       status: StayStatus.values.firstWhere(
         (s) => s.name == (map['status'] as String? ?? 'detecting'),
@@ -78,6 +81,7 @@ class Stay {
       if (endTime != null) 'end_time': endTime,
       'notes': notes,
       if (calendarEventId != null) 'calendar_event_id': calendarEventId,
+      if (telegramMessageId != null) 'telegram_message_id': telegramMessageId,
       if (address != null) 'address': address,
       'status': status.name,
       'is_interval': isInterval ? 1 : 0,
@@ -94,12 +98,14 @@ class Stay {
     int? endTime,
     String? notes,
     String? calendarEventId,
+    String? telegramMessageId,
     String? address,
     StayStatus? status,
     bool? isInterval,
     bool clearEndTime = false,
     bool clearPlaceUuid = false,
     bool clearCalendarEventId = false,
+    bool clearTelegramMessageId = false,
     int? updatedAt,
     int? deletedAt,
     bool clearDeletedAt = false,
@@ -114,6 +120,9 @@ class Stay {
       calendarEventId: clearCalendarEventId
           ? null
           : (calendarEventId ?? this.calendarEventId),
+      telegramMessageId: clearTelegramMessageId
+          ? null
+          : (telegramMessageId ?? this.telegramMessageId),
       address: address ?? this.address,
       status: status ?? this.status,
       isInterval: isInterval ?? this.isInterval,
