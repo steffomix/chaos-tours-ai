@@ -11,6 +11,7 @@ import '../../models/stay.dart';
 import '../../services/database_service.dart';
 import '../screens/place_reposition_screen.dart';
 import '../screens/place_visits_screen.dart';
+import 'photo_grid.dart';
 
 class PlaceBottomSheet extends StatefulWidget {
   final SavedPlace place;
@@ -1277,6 +1278,20 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                 ),
               ],
               onChanged: (v) => setState(() => _groupUuid = v),
+            ),
+            const SizedBox(height: 12),
+            // ── Fotos ──────────────────────────────────────────────────
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Fotos'),
+              children: [
+                PhotoGrid(
+                  placeUuid: widget.place.uuid,
+                  includeStayPhotos: true,
+                  deviceId: widget.place.deviceId,
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             // ── Aktionen ───────────────────────────────────────────────

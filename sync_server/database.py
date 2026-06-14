@@ -189,6 +189,19 @@ sync_source_experiences = Table(
     *_sync_cols(),
 )
 
+place_photos = Table(
+    "place_photos",
+    metadata,
+    Column("uuid", String, primary_key=True),
+    Column("place_uuid", String, nullable=True),
+    Column("stay_uuid", String, nullable=True),
+    Column("caption", Text, nullable=False, default=""),
+    Column("taken_at", BigInteger, nullable=False, default=0),
+    Column("photo_data", Text, nullable=False, default=""),
+    Column("created_at", BigInteger, nullable=False, default=0),
+    *_sync_cols(),
+)
+
 # Ordered by foreign-key dependency (parents before children).
 SYNC_TABLES = [
     ("place_groups", place_groups),
@@ -202,6 +215,7 @@ SYNC_TABLES = [
     ("sync_sources", sync_sources),
     ("place_experiences", place_experiences),
     ("sync_source_experiences", sync_source_experiences),
+    ("place_photos", place_photos),
 ]
 
 

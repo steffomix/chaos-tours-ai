@@ -1,7 +1,9 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:focus_detector/focus_detector.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../models/saved_place.dart';
 import '../../models/stay.dart';
@@ -34,6 +36,9 @@ class _PlacesScreenState extends State<PlacesScreen> {
   bool _intervalOnly = false;
   bool _filterPanelOpen = false;
   ExperienceFilterState _expFilter = const ExperienceFilterState();
+
+  // Map
+  final MapController _mapController = MapController();
 
   // Distance
   ({double lat, double lng})? _currentPos;
@@ -190,6 +195,109 @@ class _PlacesScreenState extends State<PlacesScreen> {
   bool get _filterActive =>
       _intervalOnly || _expFilter.isActive || _expFilter.distanceEnabled;
 
+  Color _ratingColor(double? rating) {
+    if (rating == null) return Colors.grey;
+    if (rating >= 9) return Colors.green;
+    if (rating <= -9) return Colors.red;
+    if (rating >= 0) {
+      final t = 1.0 - rating / 9.0;
+      return Color.lerp(Colors.green, Colors.yellow, t)!;
+    } else {
+      final t = (-rating) / 9.0;
+      return Color.lerp(Colors.yellow, Colors.red, t)!;
+    }
+  }
+
+  Widget _buildList(List<({SavedPlace place, double? distance})> filtered) {
+    if (filtered.isEmpty) {
+      return Center(
+        child: Text(
+          _searchQuery.isNotEmpty || _expFilter.isActive
+              ? 'Keine Orte gefunden.'
+              : 'Keine Orte gespeichert.\n'
+                    'Orte auf der Karte per Langer Druck hinzufügen.',
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _loadPlaces,
+      child: ListView.builder(
+        itemCount: filtered.length,
+        itemBuilder: (ctx, i) {
+          final item = filtered[i];
+          final place = item.place;
+          final count = _visitCounts[place.uuid] ?? 0;
+          final stay = _lastStay[place.uuid];
+          return _PlaceCard(
+            place: place,
+            count: count,
+            lastStay: stay,
+            distance: item.distance,
+            avgRating: place.uuid.isNotEmpty ? _avgRatings[place.uuid] : null,
+            fmtDate: _fmtDate,
+            fmtTime: _fmtTime,
+            fmtDuration: _fmtDuration,
+            fmtDistance: _fmtDistance,
+            onTap: () => _openSheet(place),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildMap(List<({SavedPlace place, double? distance})> filtered) {
+    final places = filtered.map((e) => e.place).toList();
+    final markers = places.map((p) {
+      final color = _ratingColor(_avgRatings[p.uuid]);
+      return Marker(
+        point: LatLng(p.lat, p.lng),
+        width: 36,
+        height: 36,
+        child: GestureDetector(
+          onTap: () => _openSheet(p),
+          child: Icon(Icons.location_pin, color: color, size: 36),
+        ),
+      );
+    }).toList();
+
+    final center = _currentPos != null
+        ? LatLng(_currentPos!.lat, _currentPos!.lng)
+        : (places.isNotEmpty
+              ? LatLng(places.first.lat, places.first.lng)
+              : const LatLng(48.1351, 11.5820));
+
+    return Stack(
+      children: [
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(initialCenter: center, initialZoom: 12),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'de.chaostours.chaos_tours_ai',
+            ),
+            MarkerLayer(markers: markers),
+          ],
+        ),
+        Positioned(
+          bottom: 16,
+          right: 16,
+          child: FloatingActionButton.small(
+            heroTag: 'places_location',
+            onPressed: () {
+              final pos = _currentPos;
+              if (pos != null)
+                _mapController.move(LatLng(pos.lat, pos.lng), 14);
+            },
+            tooltip: 'Zur aktuellen Position',
+            child: const Icon(Icons.my_location),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final filtered = _filtered;
@@ -256,52 +364,28 @@ class _PlacesScreenState extends State<PlacesScreen> {
             ],
           ],
         ),
-        body: Column(
-          children: [
-            if (_filterPanelOpen)
-              ExperienceFilterPanel(
-                filter: _expFilter,
-                onChanged: (f) => setState(() => _expFilter = f),
+        body: DefaultTabController(
+          length: 2,
+          child: Column(
+            children: [
+              if (_filterPanelOpen)
+                ExperienceFilterPanel(
+                  filter: _expFilter,
+                  onChanged: (f) => setState(() => _expFilter = f),
+                ),
+              const TabBar(
+                tabs: [
+                  Tab(icon: Icon(Icons.list), text: 'Liste'),
+                  Tab(icon: Icon(Icons.map), text: 'Karte'),
+                ],
               ),
-            Expanded(
-              child: filtered.isEmpty
-                  ? Center(
-                      child: Text(
-                        _searchQuery.isNotEmpty || _expFilter.isActive
-                            ? 'Keine Orte gefunden.'
-                            : 'Keine Orte gespeichert.\n'
-                                  'Orte auf der Karte per Langer Druck hinzufügen.',
-                        textAlign: TextAlign.center,
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _loadPlaces,
-                      child: ListView.builder(
-                        itemCount: filtered.length,
-                        itemBuilder: (ctx, i) {
-                          final item = filtered[i];
-                          final place = item.place;
-                          final count = _visitCounts[place.uuid] ?? 0;
-                          final stay = _lastStay[place.uuid];
-                          return _PlaceCard(
-                            place: place,
-                            count: count,
-                            lastStay: stay,
-                            distance: item.distance,
-                            avgRating: place.uuid.isNotEmpty
-                                ? _avgRatings[place.uuid]
-                                : null,
-                            fmtDate: _fmtDate,
-                            fmtTime: _fmtTime,
-                            fmtDuration: _fmtDuration,
-                            fmtDistance: _fmtDistance,
-                            onTap: () => _openSheet(place),
-                          );
-                        },
-                      ),
-                    ),
-            ),
-          ],
+              Expanded(
+                child: TabBarView(
+                  children: [_buildList(filtered), _buildMap(filtered)],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

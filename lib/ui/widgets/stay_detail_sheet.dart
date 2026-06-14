@@ -8,6 +8,7 @@ import '../../models/stay_activity.dart';
 import '../../models/stay_person.dart';
 import '../../services/database_service.dart';
 import 'place_bottom_sheet.dart';
+import 'photo_grid.dart';
 
 class StayDetailSheet extends StatefulWidget {
   final Stay stay;
@@ -499,6 +500,21 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                           ),
                         )
                         .toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  // ── Fotos ───────────────────────────────────────
+                  ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.photo_library_outlined),
+                    title: const Text('Fotos'),
+                    children: [
+                      PhotoGrid(
+                        stayUuid: widget.stay.uuid,
+                        placeUuid: widget.stay.placeUuid,
+                        includeStayPhotos: false,
+                        deviceId: widget.stay.deviceId,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   FilledButton.icon(

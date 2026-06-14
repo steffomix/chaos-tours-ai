@@ -13,6 +13,7 @@ import '../models/saved_place.dart';
 import '../models/stay.dart';
 import '../models/stay_activity.dart';
 import '../models/stay_person.dart';
+import '../models/place_photo.dart';
 import '../models/sync_source.dart';
 import '../models/sync_source_experience.dart';
 import '../models/tracking_point.dart';
@@ -36,8 +37,9 @@ class DatabaseService {
     final path = join(dbPath, 'chaos_tours.db');
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
       onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
     );
   }
@@ -216,6 +218,38 @@ class DatabaseService {
         device_id TEXT NOT NULL DEFAULT ''
       )
     ''');
+    await _createPlacePhotosTable(db);
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await _createPlacePhotosTable(db);
+    }
+  }
+
+  Future<void> _createPlacePhotosTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS place_photos (
+        uuid TEXT PRIMARY KEY,
+        place_uuid TEXT,
+        stay_uuid TEXT,
+        caption TEXT NOT NULL DEFAULT '',
+        taken_at INTEGER NOT NULL DEFAULT 0,
+        photo_data TEXT NOT NULL DEFAULT '',
+        created_at INTEGER NOT NULL DEFAULT 0,
+        updated_at INTEGER NOT NULL DEFAULT 0,
+        deleted_at INTEGER,
+        device_id TEXT NOT NULL DEFAULT '',
+        FOREIGN KEY (place_uuid) REFERENCES saved_places(uuid) ON DELETE CASCADE,
+        FOREIGN KEY (stay_uuid) REFERENCES stays(uuid) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_place_photos_place ON place_photos(place_uuid)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_place_photos_stay ON place_photos(stay_uuid)',
+    );
   }
 
   // ── Sync helpers ─────────────────────────────────────────────────────────
@@ -1001,6 +1035,108 @@ class DatabaseService {
     final db = await database;
     await db.update(
       'sync_source_experiences',
+      {
+        'deleted_at': DateTime.now().millisecondsSinceEpoch,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+        if (deviceId.isNotEmpty) 'device_id': deviceId,
+      },
+      where: 'uuid = ?',
+      whereArgs: [uuid],
+    );
+  }
+
+  // ── PlacePhotos ───────────────────────────────────────────────────────────
+
+  Future<String> insertPlacePhoto(
+    PlacePhoto photo, {
+    String deviceId = '',
+  }) async {
+    final db = await database;
+    final map = _withSyncFields(photo.toMap(), deviceId);
+    await db.insert(
+      'place_photos',
+      map,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    return map['uuid'] as String;
+  }
+
+  Future<List<PlacePhoto>> loadAllPhotos() async {
+    final db = await database;
+    final rows = await db.query(
+      'place_photos',
+      where: 'deleted_at IS NULL',
+      orderBy: 'taken_at DESC',
+    );
+    return rows.map(PlacePhoto.fromMap).toList();
+  }
+
+  /// All photos for a place, including photos of its stays.
+  Future<List<PlacePhoto>> loadPhotosForPlace(String placeUuid) async {
+    final db = await database;
+    // Collect stay UUIDs for this place.
+    final stayRows = await db.query(
+      'stays',
+      columns: ['uuid'],
+      where: 'place_uuid = ? AND deleted_at IS NULL',
+      whereArgs: [placeUuid],
+    );
+    final stayUuids = stayRows.map((r) => r['uuid'] as String).toList();
+
+    if (stayUuids.isEmpty) {
+      final rows = await db.query(
+        'place_photos',
+        where: 'place_uuid = ? AND deleted_at IS NULL',
+        whereArgs: [placeUuid],
+        orderBy: 'taken_at DESC',
+      );
+      return rows.map(PlacePhoto.fromMap).toList();
+    }
+
+    final placeholders = stayUuids.map((_) => '?').join(',');
+    final rows = await db.rawQuery(
+      '''SELECT * FROM place_photos
+         WHERE deleted_at IS NULL
+           AND (place_uuid = ? OR stay_uuid IN ($placeholders))
+         ORDER BY taken_at DESC''',
+      [placeUuid, ...stayUuids],
+    );
+    return rows.map(PlacePhoto.fromMap).toList();
+  }
+
+  Future<List<PlacePhoto>> loadPhotosForStay(String stayUuid) async {
+    final db = await database;
+    final rows = await db.query(
+      'place_photos',
+      where: 'stay_uuid = ? AND deleted_at IS NULL',
+      whereArgs: [stayUuid],
+      orderBy: 'taken_at DESC',
+    );
+    return rows.map(PlacePhoto.fromMap).toList();
+  }
+
+  Future<void> updatePlacePhotoCaption(
+    String uuid,
+    String caption, {
+    String deviceId = '',
+  }) async {
+    final db = await database;
+    await db.update(
+      'place_photos',
+      {
+        'caption': caption,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+        if (deviceId.isNotEmpty) 'device_id': deviceId,
+      },
+      where: 'uuid = ?',
+      whereArgs: [uuid],
+    );
+  }
+
+  Future<void> softDeletePlacePhoto(String uuid, {String deviceId = ''}) async {
+    final db = await database;
+    await db.update(
+      'place_photos',
       {
         'deleted_at': DateTime.now().millisecondsSinceEpoch,
         'updated_at': DateTime.now().millisecondsSinceEpoch,

@@ -52,6 +52,7 @@ class SyncSourceOptions {
     'sync_sources',
     'place_experiences',
     'sync_source_experiences',
+    'place_photos',
   ];
 
   final Map<String, SyncTableOptions> tables;

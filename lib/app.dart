@@ -4,6 +4,7 @@ import 'ui/screens/activities_screen.dart';
 import 'ui/screens/home_screen.dart';
 import 'ui/screens/map_screen.dart';
 import 'ui/screens/persons_screen.dart';
+import 'ui/screens/photo_album_screen.dart';
 import 'ui/screens/place_groups_screen.dart';
 import 'ui/screens/places_screen.dart';
 import 'ui/screens/database_dump_screen.dart';
@@ -26,6 +27,7 @@ class _AppState extends State<App> {
     const MapScreen(),
     const PlacesScreen(),
     const TimelineScreen(),
+    const PhotoAlbumScreen(),
   ];
 
   @override
@@ -66,6 +68,10 @@ class _AppState extends State<App> {
             NavigationDestination(
               icon: Icon(Icons.timeline),
               label: 'Zeitachse',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.photo_library_outlined),
+              label: 'Fotos',
             ),
           ],
         ),
