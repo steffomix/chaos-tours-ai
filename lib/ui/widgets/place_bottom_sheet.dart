@@ -35,6 +35,10 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
   String? _groupUuid;
   List<PlaceGroup> _groups = [];
 
+  late TextEditingController _websiteCtrl;
+  late TextEditingController _emailCtrl;
+  late TextEditingController _phoneCtrl;
+
   bool _intervalEnabled = false;
   late TextEditingController _intervalDaysCtrl;
 
@@ -55,6 +59,9 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     super.initState();
     _nameCtrl = TextEditingController(text: widget.place.name);
     _notesCtrl = TextEditingController(text: widget.place.notes);
+    _websiteCtrl = TextEditingController(text: widget.place.website);
+    _emailCtrl = TextEditingController(text: widget.place.email);
+    _phoneCtrl = TextEditingController(text: widget.place.phone);
     _radius = widget.place.radius;
     _groupUuid = widget.place.groupUuid;
     _intervalEnabled = widget.place.intervalEnabled;
@@ -430,6 +437,9 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
   void dispose() {
     _nameCtrl.dispose();
     _notesCtrl.dispose();
+    _websiteCtrl.dispose();
+    _emailCtrl.dispose();
+    _phoneCtrl.dispose();
     _intervalDaysCtrl.dispose();
     super.dispose();
   }
@@ -553,6 +563,9 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     final updated = widget.place.copyWith(
       name: _nameCtrl.text.trim(),
       notes: _notesCtrl.text.trim(),
+      website: _websiteCtrl.text.trim(),
+      email: _emailCtrl.text.trim(),
+      phone: _phoneCtrl.text.trim(),
       radius: _radius,
       groupUuid: groupUuid,
       clearGroupUuid: groupUuid == null,
@@ -978,6 +991,48 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               ),
               maxLines: 3,
             ),
+            const SizedBox(height: 12),
+            // ── Website / Email / Telefon ──────────────────────────────
+            _ContactField(
+              controller: _websiteCtrl,
+              labelText: 'Website',
+              icon: Icons.language,
+              keyboardType: TextInputType.url,
+              onLaunch: () async {
+                final raw = _websiteCtrl.text.trim();
+                if (raw.isEmpty) return;
+                final url = raw.startsWith('http') ? raw : 'https://$raw';
+                final uri = Uri.tryParse(url);
+                if (uri != null)
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+              },
+            ),
+            const SizedBox(height: 8),
+            _ContactField(
+              controller: _emailCtrl,
+              labelText: 'E-Mail',
+              icon: Icons.email_outlined,
+              keyboardType: TextInputType.emailAddress,
+              onLaunch: () async {
+                final raw = _emailCtrl.text.trim();
+                if (raw.isEmpty) return;
+                final uri = Uri(scheme: 'mailto', path: raw);
+                await launchUrl(uri);
+              },
+            ),
+            const SizedBox(height: 8),
+            _ContactField(
+              controller: _phoneCtrl,
+              labelText: 'Telefon',
+              icon: Icons.phone_outlined,
+              keyboardType: TextInputType.phone,
+              onLaunch: () async {
+                final raw = _phoneCtrl.text.trim();
+                if (raw.isEmpty) return;
+                final uri = Uri(scheme: 'tel', path: raw);
+                await launchUrl(uri);
+              },
+            ),
             const SizedBox(height: 8),
             // ── Survival-Erfahrungen ─────────────────────────────────────
             ExpansionTile(
@@ -1248,6 +1303,41 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A text field with a leading icon and a tappable launch button on the right.
+class _ContactField extends StatelessWidget {
+  final TextEditingController controller;
+  final String labelText;
+  final IconData icon;
+  final TextInputType keyboardType;
+  final VoidCallback onLaunch;
+
+  const _ContactField({
+    required this.controller,
+    required this.labelText,
+    required this.icon,
+    required this.keyboardType,
+    required this.onLaunch,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: labelText,
+        border: const OutlineInputBorder(),
+        prefixIcon: Icon(icon),
+        suffixIcon: IconButton(
+          icon: const Icon(Icons.open_in_new),
+          tooltip: '$labelText öffnen',
+          onPressed: onLaunch,
         ),
       ),
     );
