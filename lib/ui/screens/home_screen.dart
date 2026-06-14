@@ -146,9 +146,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Ask Android to whitelist this app via the standard system dialog.
     // Requires REQUEST_IGNORE_BATTERY_OPTIMIZATIONS in the manifest.
-    final result =
-        await FlutterForegroundTask.requestIgnoreBatteryOptimization();
-    if (result is ServiceRequestSuccess) return true;
+    await FlutterForegroundTask.requestIgnoreBatteryOptimization();
+
+    // Re-check: on some devices (e.g. Samsung) the API returns a failure even
+    // though the user just tapped "Allow" in the system dialog. A second read
+    // of the flag gives the correct result.
+    final nowIgnoring =
+        await FlutterForegroundTask.isIgnoringBatteryOptimizations;
+    if (nowIgnoring) return true;
 
     // If the direct request failed (e.g. Samsung blocks it), open the
     // battery settings page and tell the user what to do.
