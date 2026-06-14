@@ -8,6 +8,7 @@ class PlaceGroup {
   final String uuid;
   final String name;
   final String? calendarId;
+  final String? telegramConnectionUuid;
   final bool includeNotes;
   final bool includePersons;
   final bool includeActivities;
@@ -23,6 +24,7 @@ class PlaceGroup {
     String? uuid,
     required this.name,
     this.calendarId,
+    this.telegramConnectionUuid,
     this.includeNotes = true,
     this.includePersons = true,
     this.includeActivities = true,
@@ -40,6 +42,7 @@ class PlaceGroup {
       uuid: map['uuid'] as String?,
       name: map['name'] as String,
       calendarId: map['calendar_id'] as String?,
+      telegramConnectionUuid: map['telegram_connection_uuid'] as String?,
       includeNotes: (map['include_notes'] as int? ?? 1) == 1,
       includePersons: (map['include_persons'] as int? ?? 1) == 1,
       includeActivities: (map['include_activities'] as int? ?? 1) == 1,
@@ -58,6 +61,8 @@ class PlaceGroup {
       'uuid': uuid,
       'name': name,
       if (calendarId != null) 'calendar_id': calendarId,
+      if (telegramConnectionUuid != null)
+        'telegram_connection_uuid': telegramConnectionUuid,
       'include_notes': includeNotes ? 1 : 0,
       'include_persons': includePersons ? 1 : 0,
       'include_activities': includeActivities ? 1 : 0,
@@ -73,12 +78,14 @@ class PlaceGroup {
     String? uuid,
     String? name,
     String? calendarId,
+    String? telegramConnectionUuid,
     bool? includeNotes,
     bool? includePersons,
     bool? includeActivities,
     bool? isAutoGroup,
     PlaceType? placeType,
     bool clearCalendarId = false,
+    bool clearTelegramConnectionUuid = false,
     int? updatedAt,
     int? deletedAt,
     bool clearDeletedAt = false,
@@ -88,6 +95,9 @@ class PlaceGroup {
       uuid: uuid ?? this.uuid,
       name: name ?? this.name,
       calendarId: clearCalendarId ? null : (calendarId ?? this.calendarId),
+      telegramConnectionUuid: clearTelegramConnectionUuid
+          ? null
+          : (telegramConnectionUuid ?? this.telegramConnectionUuid),
       includeNotes: includeNotes ?? this.includeNotes,
       includePersons: includePersons ?? this.includePersons,
       includeActivities: includeActivities ?? this.includeActivities,

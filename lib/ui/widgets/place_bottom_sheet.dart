@@ -9,6 +9,7 @@ import '../../models/place_group.dart';
 import '../../models/saved_place.dart';
 import '../../models/stay.dart';
 import '../../services/database_service.dart';
+import '../../services/telegram_service.dart';
 import '../screens/place_reposition_screen.dart';
 import '../screens/place_visits_screen.dart';
 import 'place_photos_section.dart';
@@ -828,6 +829,110 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     }
   }
 
+  Future<void> _sendToTelegram() async {
+    final group = _groupUuid != null
+        ? _groups.where((g) => g.uuid == _groupUuid).firstOrNull
+        : null;
+    final connUuid = group?.telegramConnectionUuid;
+    if (connUuid == null) return;
+
+    final conn = await DatabaseService.instance.loadTelegramConnection(
+      connUuid,
+    );
+    if (conn == null) return;
+
+    // Build report text (plain text, escaping Markdown V2 special characters)
+    final place = widget.place;
+    final db = DatabaseService.instance;
+    final uuid = place.uuid;
+
+    final allStays = await db.loadStaysForPlace(uuid);
+    final completed =
+        allStays
+            .where((s) => s.status == StayStatus.completed && s.endTime != null)
+            .toList()
+          ..sort((a, b) => a.startTime.compareTo(b.startTime));
+
+    String fmtDt(int ms) {
+      final d = DateTime.fromMillisecondsSinceEpoch(ms);
+      return '${d.day.toString().padLeft(2, '0')}.'
+          '${d.month.toString().padLeft(2, '0')}.'
+          '${d.year} '
+          '${d.hour.toString().padLeft(2, '0')}:'
+          '${d.minute.toString().padLeft(2, '0')}';
+    }
+
+    // Escape Markdown V2 special chars
+    String esc(String s) => s.replaceAllMapped(
+      RegExp(r'[_*\[\]()~`>#+\-=|{}.!\\]'),
+      (m) => '\\${m[0]}',
+    );
+
+    final buf = StringBuffer();
+    buf.writeln('*${esc(place.name)}*');
+    buf.writeln();
+    buf.writeln('Typ: ${esc(place.placeType.label)}');
+    buf.writeln(
+      'Koordinaten: ${esc(place.lat.toStringAsFixed(6))}, ${esc(place.lng.toStringAsFixed(6))}',
+    );
+    if (group != null) buf.writeln('Gruppe: ${esc(group.name)}');
+    buf.writeln('Besuche: ${esc(completed.length.toString())}');
+    if (place.notes.isNotEmpty) {
+      buf.writeln();
+      buf.writeln(esc(place.notes));
+    }
+
+    if (completed.isNotEmpty) {
+      final durations = completed.map((s) => s.duration).toList();
+      final totalSec = durations.fold<int>(0, (sum, d) => sum + d.inSeconds);
+      final avgDuration = Duration(seconds: totalSec ~/ durations.length);
+      buf.writeln();
+      buf.writeln('*Statistik*');
+      buf.writeln('Erster Besuch: ${esc(fmtDt(completed.first.startTime))}');
+      buf.writeln('Letzter Besuch: ${esc(fmtDt(completed.last.startTime))}');
+      buf.writeln('Durchschnitt: ${esc(_fmtDuration(avgDuration))}');
+    }
+
+    if (!mounted) return;
+    // Show confirmation dialog before sending
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('An Telegram senden?'),
+        content: Text('Bericht für „${place.name}" an „${conn.name}" senden?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Senden'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final result = await TelegramService.instance.sendMessage(
+      conn,
+      buf.toString(),
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.success
+                ? 'Bericht an Telegram gesendet'
+                : 'Fehler: ${result.errorMessage}',
+          ),
+          backgroundColor: result.success ? null : Colors.red,
+        ),
+      );
+    }
+  }
+
   Widget _buildStats() {
     if (!_statsLoaded) {
       return const Padding(
@@ -1144,6 +1249,20 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                 style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ),
+            // ── Bericht an Telegram ────────────────────────────────────
+            if (_groupUuid != null &&
+                _groups
+                        .where((g) => g.uuid == _groupUuid)
+                        .firstOrNull
+                        ?.telegramConnectionUuid !=
+                    null) ...[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _sendToTelegram,
+                icon: const Icon(Icons.send),
+                label: const Text('Bericht an Telegram senden'),
+              ),
+            ],
             const SizedBox(height: 4),
             // ── Besuchs-Intervall ──────────────────────────────────────
             SwitchListTile(

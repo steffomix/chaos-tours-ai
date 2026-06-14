@@ -69,11 +69,16 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
   Future<PlaceGroup?> _showEditDialog(PlaceGroup? existing) async {
     final nameCtrl = TextEditingController(text: existing?.name ?? '');
     String? calendarId = existing?.calendarId;
+    String? telegramConnectionUuid = existing?.telegramConnectionUuid;
     bool includeNotes = existing?.includeNotes ?? true;
     bool includePersons = existing?.includePersons ?? true;
     bool includeActivities = existing?.includeActivities ?? true;
     bool isAutoGroup = existing?.isAutoGroup ?? false;
     PlaceType placeType = existing?.placeType ?? PlaceType.public;
+
+    // Load available telegram connections for the picker
+    final telegramConnections = await DatabaseService.instance
+        .loadAllTelegramConnections();
 
     return showDialog<PlaceGroup>(
       context: context,
@@ -118,6 +123,48 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
                     ],
                   ),
                 ),
+                // Telegram connection picker
+                if (telegramConnections.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.send),
+                    title: Text(
+                      telegramConnectionUuid != null
+                          ? (telegramConnections
+                                    .where(
+                                      (c) => c.uuid == telegramConnectionUuid,
+                                    )
+                                    .firstOrNull
+                                    ?.name ??
+                                'Telegram gewählt')
+                          : 'Kein Telegram',
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        DropdownButton<String?>(
+                          value: telegramConnectionUuid,
+                          hint: const Text('Wählen'),
+                          items: [
+                            const DropdownMenuItem(
+                              value: null,
+                              child: Text('Keine'),
+                            ),
+                            ...telegramConnections.map(
+                              (c) => DropdownMenuItem(
+                                value: c.uuid,
+                                child: Text(c.name),
+                              ),
+                            ),
+                          ],
+                          onChanged: (v) =>
+                              setS(() => telegramConnectionUuid = v),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Notizen in Kalender'),
@@ -185,6 +232,7 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
                   uuid: existing?.uuid,
                   name: name,
                   calendarId: calendarId,
+                  telegramConnectionUuid: telegramConnectionUuid,
                   includeNotes: includeNotes,
                   includePersons: includePersons,
                   includeActivities: includeActivities,
@@ -260,6 +308,10 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
                       if (g.calendarId != null) ...const [
                         SizedBox(width: 8),
                         Icon(Icons.calendar_today, size: 14),
+                      ],
+                      if (g.telegramConnectionUuid != null) ...const [
+                        SizedBox(width: 8),
+                        Icon(Icons.send, size: 14),
                       ],
                     ],
                   ),

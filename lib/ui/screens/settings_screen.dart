@@ -504,6 +504,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.pushNamed(context, '/sync-sources'),
           ),
+          ListTile(
+            leading: const Icon(Icons.send),
+            title: const Text('Telegram-Verbindungen'),
+            subtitle: const Text('Telegram-Bots für Ortsberichte verwalten'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.pushNamed(context, '/telegram-connections'),
+          ),
           const Divider(),
           // ── Berechtigungen ───────────────────────────────────────────
           const Padding(

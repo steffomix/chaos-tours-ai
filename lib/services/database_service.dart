@@ -16,6 +16,7 @@ import '../models/stay_person.dart';
 import '../models/place_photo.dart';
 import '../models/sync_source.dart';
 import '../models/sync_source_experience.dart';
+import '../models/telegram_connection.dart';
 import '../models/tracking_point.dart';
 import 'sync_service.dart' show SyncOptions;
 
@@ -37,7 +38,7 @@ class DatabaseService {
     final path = join(dbPath, 'chaos_tours.db');
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
@@ -50,6 +51,7 @@ class DatabaseService {
         uuid TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         calendar_id TEXT,
+        telegram_connection_uuid TEXT,
         include_notes INTEGER NOT NULL DEFAULT 1,
         include_persons INTEGER NOT NULL DEFAULT 1,
         include_activities INTEGER NOT NULL DEFAULT 1,
@@ -240,9 +242,41 @@ class DatabaseService {
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_place_photos_stay ON place_photos(stay_uuid)',
     );
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS telegram_connections (
+        uuid TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        chat_id TEXT NOT NULL DEFAULT '',
+        bot_token TEXT NOT NULL DEFAULT '',
+        updated_at INTEGER NOT NULL DEFAULT 0,
+        deleted_at INTEGER,
+        device_id TEXT NOT NULL DEFAULT ''
+      )
+    ''');
   }
 
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {}
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Add telegram_connections table
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS telegram_connections (
+          uuid TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT NOT NULL DEFAULT '',
+          chat_id TEXT NOT NULL DEFAULT '',
+          bot_token TEXT NOT NULL DEFAULT '',
+          updated_at INTEGER NOT NULL DEFAULT 0,
+          deleted_at INTEGER,
+          device_id TEXT NOT NULL DEFAULT ''
+        )
+      ''');
+      // Add telegram_connection_uuid column to place_groups
+      await db.execute(
+        'ALTER TABLE place_groups ADD COLUMN telegram_connection_uuid TEXT',
+      );
+    }
+  }
 
   // ── Sync helpers ─────────────────────────────────────────────────────────
 
@@ -865,6 +899,73 @@ class DatabaseService {
     final db = await database;
     await db.update(
       'sync_sources',
+      {
+        'deleted_at': DateTime.now().millisecondsSinceEpoch,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+        if (deviceId.isNotEmpty) 'device_id': deviceId,
+      },
+      where: 'uuid = ?',
+      whereArgs: [uuid],
+    );
+  }
+
+  // ── TelegramConnections ──────────────────────────────────────────────────
+
+  Future<String> insertTelegramConnection(
+    TelegramConnection conn, {
+    String deviceId = '',
+  }) async {
+    final db = await database;
+    final map = _withSyncFields(conn.toMap(), deviceId);
+    await db.insert(
+      'telegram_connections',
+      map,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    return map['uuid'] as String;
+  }
+
+  Future<List<TelegramConnection>> loadAllTelegramConnections() async {
+    final db = await database;
+    final rows = await db.query(
+      'telegram_connections',
+      where: 'deleted_at IS NULL',
+      orderBy: 'name ASC',
+    );
+    return rows.map(TelegramConnection.fromMap).toList();
+  }
+
+  Future<TelegramConnection?> loadTelegramConnection(String uuid) async {
+    final db = await database;
+    final rows = await db.query(
+      'telegram_connections',
+      where: 'uuid = ? AND deleted_at IS NULL',
+      whereArgs: [uuid],
+    );
+    if (rows.isEmpty) return null;
+    return TelegramConnection.fromMap(rows.first);
+  }
+
+  Future<void> updateTelegramConnection(
+    TelegramConnection conn, {
+    String deviceId = '',
+  }) async {
+    final db = await database;
+    await db.update(
+      'telegram_connections',
+      _withSyncFields(conn.toMap(), deviceId),
+      where: 'uuid = ?',
+      whereArgs: [conn.uuid],
+    );
+  }
+
+  Future<void> softDeleteTelegramConnection(
+    String uuid, {
+    String deviceId = '',
+  }) async {
+    final db = await database;
+    await db.update(
+      'telegram_connections',
       {
         'deleted_at': DateTime.now().millisecondsSinceEpoch,
         'updated_at': DateTime.now().millisecondsSinceEpoch,

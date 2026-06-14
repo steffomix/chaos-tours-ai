@@ -11,6 +11,7 @@ import 'ui/screens/database_dump_screen.dart';
 import 'ui/screens/settings_screen.dart';
 import 'ui/screens/timeline_screen.dart';
 import 'ui/screens/sync_sources_screen.dart';
+import 'ui/screens/telegram_connections_screen.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -55,6 +56,7 @@ class _AppState extends State<App> {
         '/activities': (_) => const ActivitiesScreen(),
         '/database-dump': (_) => const DatabaseDumpScreen(),
         '/sync-sources': (_) => const SyncSourcesScreen(),
+        '/telegram-connections': (_) => const TelegramConnectionsScreen(),
       },
       home: Scaffold(
         body: IndexedStack(index: _currentIndex, children: _screens),
