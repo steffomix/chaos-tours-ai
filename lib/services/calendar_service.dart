@@ -85,6 +85,8 @@ class CalendarService {
     String? placeName, {
     List<StayPerson> persons = const [],
     List<StayActivity> activities = const [],
+    double? lat,
+    double? lng,
   }) async {
     final calId = group.calendarId;
     if (calId == null) return null;
@@ -101,6 +103,8 @@ class CalendarService {
       group: group,
       persons: persons,
       activities: activities,
+      lat: lat,
+      lng: lng,
     );
 
     final event = Event(
@@ -127,6 +131,8 @@ class CalendarService {
     String? placeName, {
     List<StayPerson> persons = const [],
     List<StayActivity> activities = const [],
+    double? lat,
+    double? lng,
   }) async {
     if (stay.calendarEventId == null) return false;
     final calId = group.calendarId;
@@ -146,6 +152,8 @@ class CalendarService {
       group: group,
       persons: persons,
       activities: activities,
+      lat: lat,
+      lng: lng,
     );
 
     final event = Event(
@@ -166,8 +174,36 @@ class CalendarService {
     required PlaceGroup group,
     required List<StayPerson> persons,
     required List<StayActivity> activities,
+    double? lat,
+    double? lng,
   }) {
     final lines = <String>[];
+
+    // ── Timing header ───────────────────────────────────────────────
+    String fmtDt(DateTime d) =>
+        '${d.day.toString().padLeft(2, '0')}.'
+        '${d.month.toString().padLeft(2, '0')}.'
+        '${d.year} '
+        '${d.hour.toString().padLeft(2, '0')}:'
+        '${d.minute.toString().padLeft(2, '0')}';
+    lines.add('Ankunft:  ${fmtDt(stay.startDateTime)}');
+    if (stay.endDateTime != null) {
+      lines.add('Abfahrt:  ${fmtDt(stay.endDateTime!)}');
+      final dur = stay.endDateTime!.difference(stay.startDateTime);
+      final h = dur.inHours;
+      final m = dur.inMinutes.remainder(60);
+      lines.add('Dauer:    ${h > 0 ? '${h}h ' : ''}${m}min');
+    }
+
+    // ── Google Maps link ─────────────────────────────────────────────
+    if (lat != null && lng != null) {
+      lines.add(
+        'maps.google.com/?q=${lat.toStringAsFixed(6)},${lng.toStringAsFixed(6)}',
+      );
+    }
+
+    if (lines.isNotEmpty) lines.add('');
+
     if (group.includeNotes && stay.notes.isNotEmpty) {
       lines.add(stay.notes);
     }

@@ -450,6 +450,8 @@ class TrackingEngine {
             place.name,
             persons: persons.cast(),
             activities: activities.cast(),
+            lat: place.lat,
+            lng: place.lng,
           );
         }
         if (!updated) {
@@ -460,6 +462,8 @@ class TrackingEngine {
             place.name,
             persons: persons.cast(),
             activities: activities.cast(),
+            lat: place.lat,
+            lng: place.lng,
           );
           if (eventId != null) {
             await DatabaseService.instance.updateStay(
@@ -509,6 +513,9 @@ class TrackingEngine {
             'Ankunft: ${esc(fmtTime(dStart))}  \u2022  Abfahrt: ${esc(fmtTime(dEnd))}',
           );
           buf.writeln('Dauer: ${esc(fmtDur(duration))}');
+          buf.writeln(
+            '[Google Maps](http://maps\.google\.com/?q=${place.lat.toStringAsFixed(6)},${place.lng.toStringAsFixed(6)})',
+          );
           if (persons.isNotEmpty) {
             buf.writeln(
               'Personen: ${esc(persons.map((p) => p.name).join(', '))}',
