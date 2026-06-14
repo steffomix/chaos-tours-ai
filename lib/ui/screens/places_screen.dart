@@ -11,6 +11,7 @@ import '../../services/database_service.dart';
 import '../../services/foreground_service_handler.dart';
 import '../../services/location_service.dart';
 import '../../utils/geo_utils.dart';
+import '../../utils/place_creation_helper.dart';
 import '../widgets/place_bottom_sheet.dart';
 import '../widgets/experience_filter_panel.dart';
 
@@ -271,7 +272,16 @@ class _PlacesScreenState extends State<PlacesScreen> {
       children: [
         FlutterMap(
           mapController: _mapController,
-          options: MapOptions(initialCenter: center, initialZoom: 12),
+          options: MapOptions(
+            initialCenter: center,
+            initialZoom: 12,
+            onLongPress: (tap, latlng) => createPlaceFromLongPress(
+              context,
+              tap,
+              latlng,
+              onCreated: _loadPlaces,
+            ),
+          ),
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -375,8 +385,8 @@ class _PlacesScreenState extends State<PlacesScreen> {
                 ),
               const TabBar(
                 tabs: [
-                  Tab(icon: Icon(Icons.list), text: 'Liste'),
-                  Tab(icon: Icon(Icons.map), text: 'Karte'),
+                  Tab(icon: Icon(Icons.list), text: 'Orte'),
+                  Tab(icon: Icon(Icons.map), text: 'Survive'),
                 ],
               ),
               Expanded(

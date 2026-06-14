@@ -15,6 +15,7 @@ import '../../services/nominatim_service.dart';
 import '../../services/settings_service.dart';
 import '../../services/tracking_engine.dart';
 import '../../utils/geo_utils.dart';
+import '../../utils/place_creation_helper.dart';
 import '../widgets/experience_filter_panel.dart';
 import '../widgets/place_bottom_sheet.dart';
 
@@ -238,42 +239,8 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Future<void> _onLongPress(TapPosition _, LatLng latlng) async {
-    final nameController = TextEditingController();
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Neuer Ort'),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(labelText: 'Name'),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Speichern'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    final name = nameController.text.trim();
-    if (name.isEmpty) return;
-
-    final newPlace = SavedPlace(
-      name: name,
-      lat: latlng.latitude,
-      lng: latlng.longitude,
-      groupUuid: SettingsService.instance.defaultPlaceGroupUuid,
-    );
-    await DatabaseService.instance.insertPlace(newPlace);
-    await _loadPlaces();
-  }
+  Future<void> _onLongPress(TapPosition tap, LatLng latlng) =>
+      createPlaceFromLongPress(context, tap, latlng, onCreated: _loadPlaces);
 
   void _showPlaceSheet(SavedPlace place) {
     showModalBottomSheet(

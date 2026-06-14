@@ -13,6 +13,7 @@ import '../../models/stay_person.dart';
 import '../../services/database_service.dart';
 import '../../services/foreground_service_handler.dart';
 import '../../services/settings_service.dart';
+import '../../utils/place_creation_helper.dart';
 import '../widgets/place_bottom_sheet.dart';
 import '../widgets/stay_card.dart';
 
@@ -197,7 +198,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                   ),
                   onChanged: (v) => setState(() => _searchQuery = v),
                 )
-              : const Text('Zeitachse'),
+              : const Text('Besuche'),
           actions: [
             if (_searchActive)
               IconButton(
@@ -252,8 +253,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
             children: [
               const TabBar(
                 tabs: [
-                  Tab(icon: Icon(Icons.list), text: 'Liste'),
-                  Tab(icon: Icon(Icons.map), text: 'Karte'),
+                  Tab(icon: Icon(Icons.list), text: 'Besuche'),
+                  Tab(icon: Icon(Icons.map), text: 'Reise'),
                   Tab(icon: Icon(Icons.schedule), text: 'Planer'),
                 ],
               ),
@@ -410,7 +411,11 @@ class _TimelineScreenState extends State<TimelineScreen> {
       children: [
         FlutterMap(
           mapController: _mapController,
-          options: MapOptions(initialCenter: center, initialZoom: 12),
+          options: MapOptions(
+            initialCenter: center,
+            initialZoom: 12,
+            onLongPress: _onMapLongPress,
+          ),
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -631,6 +636,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
       ),
     );
   }
+
+  Future<void> _onMapLongPress(TapPosition tap, LatLng latlng) =>
+      createPlaceFromLongPress(context, tap, latlng, onCreated: _load);
 
   void _showPlaceFilterSheet() {
     showModalBottomSheet<void>(

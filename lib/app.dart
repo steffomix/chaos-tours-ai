@@ -64,13 +64,10 @@ class _AppState extends State<App> {
           selectedIndex: _currentIndex,
           onDestinationSelected: _onTabSelected,
           destinations: const [
-            NavigationDestination(icon: Icon(Icons.home), label: 'Übersicht'),
+            NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
             NavigationDestination(icon: Icon(Icons.map), label: 'Karte'),
             NavigationDestination(icon: Icon(Icons.place), label: 'Orte'),
-            NavigationDestination(
-              icon: Icon(Icons.timeline),
-              label: 'Zeitachse',
-            ),
+            NavigationDestination(icon: Icon(Icons.timeline), label: 'Besuche'),
             NavigationDestination(
               icon: Icon(Icons.photo_library_outlined),
               label: 'Fotos',

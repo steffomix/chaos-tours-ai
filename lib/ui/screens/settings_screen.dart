@@ -340,7 +340,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ListTile(
             title: Text(
-              'Zeitachsen-Verlauf: $_timelineHistoryDays '
+              'Besuchs-Verlauf: $_timelineHistoryDays '
               '${_timelineHistoryDays == 1 ? 'Tag' : 'Tage'}',
             ),
             subtitle: Column(
