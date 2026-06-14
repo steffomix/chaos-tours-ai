@@ -37,4 +37,9 @@ class PermissionHelper {
     final notification = await Permission.notification.isGranted;
     return location && background && notification;
   }
+
+  /// Check whether fine location permission is granted (without requesting).
+  Future<bool> hasLocationPermission() async {
+    return Permission.locationWhenInUse.isGranted;
+  }
 }

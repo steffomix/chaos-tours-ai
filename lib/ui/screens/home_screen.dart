@@ -191,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
         await PermissionHelper.instance.requestNotificationPermission();
       }
       final locationGranted = await PermissionHelper.instance
-          .requestLocationPermission();
+          .hasLocationPermission();
       if (!locationGranted) return;
 
       final batteryOk = await _ensureBatteryOptimizationExempt();
