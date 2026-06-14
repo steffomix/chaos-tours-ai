@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 
 import 'ui/screens/activities_screen.dart';
 import 'ui/screens/home_screen.dart';
@@ -45,6 +47,8 @@ class _AppState extends State<App> {
     return MaterialApp(
       title: 'Chaos Tours',
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: ThemeData(
         colorSchemeSeed: const Color(0xFFd6b050),
         useMaterial3: true,
@@ -63,14 +67,26 @@ class _AppState extends State<App> {
         bottomNavigationBar: NavigationBar(
           selectedIndex: _currentIndex,
           onDestinationSelected: _onTabSelected,
-          destinations: const [
-            NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
-            NavigationDestination(icon: Icon(Icons.map), label: 'Karte'),
-            NavigationDestination(icon: Icon(Icons.place), label: 'Orte'),
-            NavigationDestination(icon: Icon(Icons.timeline), label: 'Besuche'),
+          destinations: [
             NavigationDestination(
-              icon: Icon(Icons.photo_library_outlined),
-              label: 'Fotos',
+              icon: const Icon(Icons.home),
+              label: AppLocalizations.of(context)!.navHome,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.map),
+              label: AppLocalizations.of(context)!.navMap,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.place),
+              label: AppLocalizations.of(context)!.navPlaces,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.timeline),
+              label: AppLocalizations.of(context)!.navVisits,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.photo_library_outlined),
+              label: AppLocalizations.of(context)!.navPhotos,
             ),
           ],
         ),

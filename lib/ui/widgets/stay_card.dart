@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 
 import '../../models/saved_place.dart';
 import '../../models/stay.dart';
@@ -42,7 +43,7 @@ class StayCard extends StatelessWidget {
   void _openSheet(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
-isScrollControlled: true,
+      isScrollControlled: true,
       useSafeArea: true,
       builder: (_) => StayDetailSheet(stay: stay, onUpdated: onUpdated),
     );
@@ -51,7 +52,8 @@ isScrollControlled: true,
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final placeName = place?.name ?? stay.address ?? 'Unbekannter Ort';
+    final l10n = AppLocalizations.of(context)!;
+    final placeName = place?.name ?? stay.address ?? l10n.unknownPlace;
     final startDt = stay.startDateTime;
     final endDt = stay.endDateTime;
     final isActive = stay.isActive;
@@ -100,7 +102,7 @@ isScrollControlled: true,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        'Aktiv',
+                        l10n.active,
                         style: TextStyle(
                           color: colorScheme.onPrimary,
                           fontSize: 11,
@@ -114,7 +116,7 @@ isScrollControlled: true,
               Text(
                 endDt != null
                     ? '${_formatDate(startDt)}  ${_formatTime(startDt)} – ${_formatTime(endDt)}  (${_formatDuration(stay.duration)})'
-                    : '${_formatDate(startDt)}  ${_formatTime(startDt)} – läuft noch…',
+                    : '${_formatDate(startDt)}  ${_formatTime(startDt)} – ${l10n.stillRunning}',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),

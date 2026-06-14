@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../models/place_photo.dart';
@@ -122,6 +123,7 @@ class _PlacePhotosSectionState extends State<PlacePhotosSection> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (_loading) {
       return const Padding(
         padding: EdgeInsets.all(16),
@@ -135,29 +137,29 @@ class _PlacePhotosSectionState extends State<PlacePhotosSection> {
         // ── Ort-Fotos ────────────────────────────────────────────────────
         _SectionHeader(
           icon: Icons.place_outlined,
-          label: 'Fotos am Ort',
+          label: l10n.photosAtPlace,
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
                 icon: const Icon(Icons.camera_alt, size: 20),
-                tooltip: 'Kamera',
+                tooltip: l10n.camera,
                 onPressed: () => _addPlacePhoto(source: ImageSource.camera),
               ),
               IconButton(
                 icon: const Icon(Icons.add_photo_alternate, size: 20),
-                tooltip: 'Aus Galerie',
+                tooltip: l10n.fromGallery,
                 onPressed: () => _addPlacePhoto(source: ImageSource.gallery),
               ),
             ],
           ),
         ),
         if (_placePhotos.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             child: Text(
-              'Noch keine Fotos am Ort.',
-              style: TextStyle(color: Colors.grey, fontSize: 13),
+              l10n.noPlacePhotos,
+              style: const TextStyle(color: Colors.grey, fontSize: 13),
             ),
           )
         else
@@ -167,21 +169,21 @@ class _PlacePhotosSectionState extends State<PlacePhotosSection> {
           ),
         const Divider(height: 24),
         // ── Besuche-Fotos ─────────────────────────────────────────────────
-        _SectionHeader(icon: Icons.history, label: 'Fotos aus Besuchen'),
-        ..._buildStaySections(),
+        _SectionHeader(icon: Icons.history, label: l10n.photosFromVisits),
+        ..._buildStaySections(l10n),
         if (_stayPhotos.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             child: Text(
-              'Keine Besuchs-Fotos vorhanden.',
-              style: TextStyle(color: Colors.grey, fontSize: 13),
+              l10n.noVisitPhotos,
+              style: const TextStyle(color: Colors.grey, fontSize: 13),
             ),
           ),
       ],
     );
   }
 
-  List<Widget> _buildStaySections() {
+  List<Widget> _buildStaySections(AppLocalizations l10n) {
     final result = <Widget>[];
     // Build a lookup map from the passed completedStays for metadata.
     final stayByUuid = {for (final s in widget.completedStays) s.uuid: s};
@@ -201,7 +203,7 @@ class _PlacePhotosSectionState extends State<PlacePhotosSection> {
       final photos = _stayPhotos[stayUuid]!;
       final stay = stayByUuid[stayUuid];
 
-      final startLabel = stay != null ? _fmtMs(stay.startTime) : 'Besuch';
+      final startLabel = stay != null ? _fmtMs(stay.startTime) : l10n.visit;
       final endLabel = stay?.endTime != null
           ? ' – ${_fmtMs(stay!.endTime!)}'
           : '';
@@ -226,7 +228,7 @@ class _PlacePhotosSectionState extends State<PlacePhotosSection> {
                     visualDensity: VisualDensity.compact,
                   ),
                   icon: const Icon(Icons.open_in_new, size: 16),
-                  label: const Text('Besuch'),
+                  label: Text(l10n.visit),
                   onPressed: () => _openStay(stay),
                 ),
             ],
@@ -370,22 +372,23 @@ class _FullScreenViewerState extends State<_FullScreenViewer> {
   }
 
   Future<void> _delete() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Foto löschen'),
-        content: const Text('Dieses Foto wirklich löschen?'),
+        title: Text(l10n.photoDeleteTitle),
+        content: Text(l10n.photoDeleteContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Löschen'),
+            child: Text(l10n.delete),
           ),
         ],
       ),

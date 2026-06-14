@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/sync_source.dart';
@@ -52,19 +53,20 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
   }
 
   Future<void> _delete(SyncSource source) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Quelle löschen?'),
-        content: Text('„${source.name}" wird unwiderruflich gelöscht.'),
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.sourceDeleteTitle),
+        content: Text(l10n.sourceDeleteContent(source.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Löschen'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -80,25 +82,21 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
   }
 
   Future<void> _syncNow(SyncSource source) async {
+    final l10n = AppLocalizations.of(context)!;
     // Warn about backup first.
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Synchronisieren'),
-        content: const Text(
-          '⚠️ Es wird dringend empfohlen, vor der Synchronisation eine '
-          'Sicherheitskopie der Datenbank zu exportieren '
-          '(Einstellungen → Datenbank-Dump).\n\n'
-          'Jetzt synchronisieren?',
-        ),
+        title: Text(l10n.syncTitle),
+        content: Text(l10n.syncWarning),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Synchronisieren'),
+            child: Text(l10n.synchronize),
           ),
         ],
       ),
@@ -113,8 +111,8 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
         SnackBar(
           content: Text(
             result.success
-                ? '${result.pulled} empfangen, ${result.pushed} gesendet'
-                : 'Fehler: ${result.errorMessage}',
+                ? l10n.syncResultSuccess(result.pulled, result.pushed)
+                : l10n.syncError(result.errorMessage ?? ''),
           ),
           backgroundColor: result.success ? null : Colors.red,
         ),
@@ -125,24 +123,20 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
   }
 
   Future<void> _syncAll() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Alle synchronisieren'),
-        content: const Text(
-          '⚠️ Es wird dringend empfohlen, vor der Synchronisation eine '
-          'Sicherheitskopie der Datenbank zu exportieren '
-          '(Einstellungen → Datenbank-Dump).\n\n'
-          'Mit allen aktiven Sync-Quellen synchronisieren?',
-        ),
+        title: Text(l10n.syncAllTitle),
+        content: Text(l10n.syncAllWarning),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Synchronisieren'),
+            child: Text(l10n.synchronize),
           ),
         ],
       ),
@@ -154,11 +148,9 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
       final results = await SyncService.instance.syncAll();
       if (!mounted) return;
       if (results.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Keine aktiven Sync-Quellen konfiguriert'),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.noActiveSyncSources)));
         return;
       }
       final ok = results.where((r) => r.success).length;
@@ -168,8 +160,14 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '$ok Quelle(n) OK ($totalPulled empfangen, $totalPushed gesendet)'
-            '${fail > 0 ? ', $fail Fehler' : ''}',
+            fail > 0
+                ? l10n.syncAllResultWithErrors(
+                    ok,
+                    totalPulled,
+                    totalPushed,
+                    fail,
+                  )
+                : l10n.syncAllResult(ok, totalPulled, totalPushed),
           ),
           backgroundColor: fail > 0 ? Colors.orange : null,
         ),
@@ -192,96 +190,97 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
 
     final result = await showDialog<SyncSource>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDlgState) => AlertDialog(
-          title: Text(
-            existing == null ? 'Neue Sync-Quelle' : 'Quelle bearbeiten',
-          ),
-          content: SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: nameCtrl,
-                    decoration: const InputDecoration(labelText: 'Name *'),
-                    validator: (v) =>
-                        v == null || v.trim().isEmpty ? 'Pflichtfeld' : null,
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: syncUrlCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Sync-Adresse *',
-                      hintText: 'http://192.168.1.10:8000',
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
+        return StatefulBuilder(
+          builder: (ctx, setDlgState) => AlertDialog(
+            title: Text(
+              existing == null ? l10n.newSyncSource : l10n.editSyncSource,
+            ),
+            content: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: nameCtrl,
+                      decoration: InputDecoration(labelText: '${l10n.name} *'),
+                      validator: (v) =>
+                          v == null || v.trim().isEmpty ? l10n.required : null,
                     ),
-                    validator: (v) =>
-                        v == null || v.trim().isEmpty ? 'Pflichtfeld' : null,
-                    keyboardType: TextInputType.url,
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: apiKeyCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'API-Key',
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          apiKeyVisible
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                        ),
-                        onPressed: () =>
-                            setDlgState(() => apiKeyVisible = !apiKeyVisible),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: syncUrlCtrl,
+                      decoration: InputDecoration(
+                        labelText: l10n.syncAddress,
+                        hintText: l10n.syncAddressHint,
                       ),
+                      validator: (v) =>
+                          v == null || v.trim().isEmpty ? l10n.required : null,
+                      keyboardType: TextInputType.url,
                     ),
-                    obscureText: !apiKeyVisible,
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: infoUrlCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Info-URL (optional)',
-                      hintText: 'https://example.com',
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: apiKeyCtrl,
+                      decoration: InputDecoration(
+                        labelText: l10n.apiKey,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            apiKeyVisible
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                          onPressed: () =>
+                              setDlgState(() => apiKeyVisible = !apiKeyVisible),
+                        ),
+                      ),
+                      obscureText: !apiKeyVisible,
                     ),
-                    keyboardType: TextInputType.url,
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: descCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Beschreibung',
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: infoUrlCtrl,
+                      decoration: InputDecoration(
+                        labelText: l10n.infoUrlOptional,
+                        hintText: l10n.infoUrlHint,
+                      ),
+                      keyboardType: TextInputType.url,
                     ),
-                    maxLines: 3,
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: descCtrl,
+                      decoration: InputDecoration(labelText: l10n.description),
+                      maxLines: 3,
+                    ),
+                  ],
+                ),
               ),
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(l10n.cancel),
+              ),
+              FilledButton(
+                onPressed: () {
+                  if (formKey.currentState?.validate() != true) return;
+                  Navigator.pop(
+                    ctx,
+                    (existing ?? SyncSource(name: '', syncUrl: '')).copyWith(
+                      name: nameCtrl.text.trim(),
+                      syncUrl: syncUrlCtrl.text.trim(),
+                      apiKey: apiKeyCtrl.text.trim(),
+                      infoUrl: infoUrlCtrl.text.trim(),
+                      description: descCtrl.text.trim(),
+                    ),
+                  );
+                },
+                child: Text(l10n.save),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Abbrechen'),
-            ),
-            FilledButton(
-              onPressed: () {
-                if (formKey.currentState?.validate() != true) return;
-                Navigator.pop(
-                  ctx,
-                  (existing ?? SyncSource(name: '', syncUrl: '')).copyWith(
-                    name: nameCtrl.text.trim(),
-                    syncUrl: syncUrlCtrl.text.trim(),
-                    apiKey: apiKeyCtrl.text.trim(),
-                    infoUrl: infoUrlCtrl.text.trim(),
-                    description: descCtrl.text.trim(),
-                  ),
-                );
-              },
-              child: const Text('Speichern'),
-            ),
-          ],
-        ),
-      ),
+        );
+      },
     );
 
     return result;
@@ -290,132 +289,141 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
   // ── Sync Options Dialog ────────────────────────────────────────────────────
 
   Future<void> _editSyncOptions(SyncSource source) async {
+    final l10n = AppLocalizations.of(context)!;
     // Create a mutable copy of options.
     var opts = source.syncOptions;
 
     final labels = {
-      'place_groups': 'Ortsgruppen',
-      'saved_places': 'Orte',
-      'persons': 'Personen',
-      'activities': 'Tätigkeiten',
-      'stays': 'Aufenthalte',
-      'stay_persons': 'Aufenthalts-Personen',
-      'stay_activities': 'Aufenthalts-Tätigkeiten',
-      'aktivitaeten': 'Aktivitäten',
-      'sync_sources': 'Sync-Quellen',
-      'place_experiences': 'Orts-Erfahrungen',
-      'sync_source_experiences': 'Quellen-Erfahrungen',
+      'place_groups': l10n.placeGroups,
+      'saved_places': l10n.tabPlaces,
+      'persons': l10n.persons,
+      'activities': l10n.activities,
+      'stays': l10n.visitsTitle,
+      'stay_persons': l10n.stayPersons,
+      'stay_activities': l10n.stayActivities,
+      'aktivitaeten': l10n.sectionActivity,
+      'sync_sources': l10n.syncSources,
+      'place_experiences': l10n.placeExperiences,
+      'sync_source_experiences': l10n.sourceExperiences,
     };
 
     final saved = await showDialog<SyncSourceOptions>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDlgState) => AlertDialog(
-          title: const Text('Sync-Optionen'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '⚠️ Vor dem Aktivieren von Bearbeiten/Löschen empfiehlt sich '
-                  'ein Datenbank-Export als Sicherheitskopie.',
-                  style: TextStyle(fontSize: 12, color: Colors.orange),
-                ),
-                const SizedBox(height: 8),
-                const Row(
-                  children: [
-                    SizedBox(width: 130),
-                    Expanded(
-                      child: Center(
-                        child: Text('Einfügen', style: TextStyle(fontSize: 11)),
-                      ),
-                    ),
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          'Bearbeiten',
-                          style: TextStyle(fontSize: 11),
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
+        return StatefulBuilder(
+          builder: (ctx, setDlgState) => AlertDialog(
+            title: Text(l10n.syncOptionsTitle),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.syncOptionsWarning,
+                    style: const TextStyle(fontSize: 12, color: Colors.orange),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const SizedBox(width: 130),
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            l10n.insert,
+                            style: const TextStyle(fontSize: 11),
+                          ),
                         ),
                       ),
-                    ),
-                    Expanded(
-                      child: Center(
-                        child: Text('Löschen', style: TextStyle(fontSize: 11)),
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            l10n.edit,
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            l10n.delete,
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: SyncSourceOptions.allTables.map((table) {
+                          final tableOpts = opts.forTable(table);
+                          return Row(
+                            children: [
+                              SizedBox(
+                                width: 130,
+                                child: Text(
+                                  labels[table] ?? table,
+                                  style: const TextStyle(fontSize: 12),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Expanded(
+                                child: Checkbox(
+                                  value: tableOpts.insert,
+                                  onChanged: (v) => setDlgState(() {
+                                    opts = opts.copyWithTable(
+                                      table,
+                                      tableOpts.copyWith(insert: v ?? false),
+                                    );
+                                  }),
+                                ),
+                              ),
+                              Expanded(
+                                child: Checkbox(
+                                  value: tableOpts.update,
+                                  onChanged: (v) => setDlgState(() {
+                                    opts = opts.copyWithTable(
+                                      table,
+                                      tableOpts.copyWith(update: v ?? false),
+                                    );
+                                  }),
+                                ),
+                              ),
+                              Expanded(
+                                child: Checkbox(
+                                  value: tableOpts.delete,
+                                  onChanged: (v) => setDlgState(() {
+                                    opts = opts.copyWithTable(
+                                      table,
+                                      tableOpts.copyWith(delete: v ?? false),
+                                    );
+                                  }),
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
                       ),
                     ),
-                  ],
-                ),
-                Flexible(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: SyncSourceOptions.allTables.map((table) {
-                        final tableOpts = opts.forTable(table);
-                        return Row(
-                          children: [
-                            SizedBox(
-                              width: 130,
-                              child: Text(
-                                labels[table] ?? table,
-                                style: const TextStyle(fontSize: 12),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Expanded(
-                              child: Checkbox(
-                                value: tableOpts.insert,
-                                onChanged: (v) => setDlgState(() {
-                                  opts = opts.copyWithTable(
-                                    table,
-                                    tableOpts.copyWith(insert: v ?? false),
-                                  );
-                                }),
-                              ),
-                            ),
-                            Expanded(
-                              child: Checkbox(
-                                value: tableOpts.update,
-                                onChanged: (v) => setDlgState(() {
-                                  opts = opts.copyWithTable(
-                                    table,
-                                    tableOpts.copyWith(update: v ?? false),
-                                  );
-                                }),
-                              ),
-                            ),
-                            Expanded(
-                              child: Checkbox(
-                                value: tableOpts.delete,
-                                onChanged: (v) => setDlgState(() {
-                                  opts = opts.copyWithTable(
-                                    table,
-                                    tableOpts.copyWith(delete: v ?? false),
-                                  );
-                                }),
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList(),
-                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(l10n.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, opts),
+                child: Text(l10n.save),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Abbrechen'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, opts),
-              child: const Text('Speichern'),
-            ),
-          ],
-        ),
-      ),
+        );
+      },
     );
 
     if (saved != null) {
@@ -432,9 +440,10 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sync-Quellen'),
+        title: Text(l10n.syncSourcesTitle),
         actions: [
           if (_syncing)
             const Padding(
@@ -448,23 +457,18 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
           else
             IconButton(
               icon: const Icon(Icons.sync),
-              tooltip: 'Alle synchronisieren',
+              tooltip: l10n.syncAllTooltip,
               onPressed: _sources.isEmpty ? null : _syncAll,
             ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _add,
-        tooltip: 'Quelle hinzufügen',
+        tooltip: l10n.addSourceTooltip,
         child: const Icon(Icons.add),
       ),
       body: _sources.isEmpty
-          ? const Center(
-              child: Text(
-                'Keine Sync-Quellen vorhanden.\nTippe + um eine hinzuzufügen.',
-                textAlign: TextAlign.center,
-              ),
-            )
+          ? Center(child: Text(l10n.noSyncSources, textAlign: TextAlign.center))
           : ListView.builder(
               itemCount: _sources.length,
               itemBuilder: (_, i) {
@@ -515,40 +519,43 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
                             _delete(src);
                         }
                       },
-                      itemBuilder: (_) => const [
-                        PopupMenuItem(
-                          value: _SourceAction.sync,
-                          child: ListTile(
-                            leading: Icon(Icons.sync),
-                            title: Text('Jetzt synchronisieren'),
-                            contentPadding: EdgeInsets.zero,
+                      itemBuilder: (ctx) {
+                        final l10n = AppLocalizations.of(ctx)!;
+                        return [
+                          PopupMenuItem(
+                            value: _SourceAction.sync,
+                            child: ListTile(
+                              leading: const Icon(Icons.sync),
+                              title: Text(l10n.syncNow),
+                              contentPadding: EdgeInsets.zero,
+                            ),
                           ),
-                        ),
-                        PopupMenuItem(
-                          value: _SourceAction.options,
-                          child: ListTile(
-                            leading: Icon(Icons.tune),
-                            title: Text('Sync-Optionen'),
-                            contentPadding: EdgeInsets.zero,
+                          PopupMenuItem(
+                            value: _SourceAction.options,
+                            child: ListTile(
+                              leading: const Icon(Icons.tune),
+                              title: Text(l10n.syncOptionsMenu),
+                              contentPadding: EdgeInsets.zero,
+                            ),
                           ),
-                        ),
-                        PopupMenuItem(
-                          value: _SourceAction.edit,
-                          child: ListTile(
-                            leading: Icon(Icons.edit),
-                            title: Text('Bearbeiten'),
-                            contentPadding: EdgeInsets.zero,
+                          PopupMenuItem(
+                            value: _SourceAction.edit,
+                            child: ListTile(
+                              leading: const Icon(Icons.edit),
+                              title: Text(l10n.edit),
+                              contentPadding: EdgeInsets.zero,
+                            ),
                           ),
-                        ),
-                        PopupMenuItem(
-                          value: _SourceAction.delete,
-                          child: ListTile(
-                            leading: Icon(Icons.delete),
-                            title: Text('Löschen'),
-                            contentPadding: EdgeInsets.zero,
+                          PopupMenuItem(
+                            value: _SourceAction.delete,
+                            child: ListTile(
+                              leading: const Icon(Icons.delete),
+                              title: Text(l10n.delete),
+                              contentPadding: EdgeInsets.zero,
+                            ),
                           ),
-                        ),
-                      ],
+                        ];
+                      },
                     ),
                     onTap: () => _showDetails(src),
                   ),
@@ -565,8 +572,9 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
         .take(3)
         .join(', ');
     final total = opts.tables.values.where((o) => o.anyEnabled).length;
-    if (total == 0) return 'Keine Sync-Optionen aktiv';
-    if (total > 3) return '$active … ($total Tabellen aktiv)';
+    if (total == 0) return AppLocalizations.of(context)!.noSyncOptions;
+    if (total > 3)
+      return '$active … (${AppLocalizations.of(context)!.tablesActive(total)})';
     return active;
   }
 
@@ -609,28 +617,29 @@ class _SyncSourceDetailsSheetState extends State<_SyncSourceDetailsSheet> {
   }
 
   Future<void> _addExperience() async {
+    final l10n = AppLocalizations.of(context)!;
     final ctrl = TextEditingController();
     final text = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Erfahrung hinzufügen'),
+        title: Text(l10n.addExperience),
         content: TextField(
           controller: ctrl,
           maxLines: 4,
           autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Notiz, Erfahrung oder Bewertung…',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            hintText: l10n.experienceHint,
+            border: const OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-            child: const Text('Speichern'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -655,6 +664,7 @@ class _SyncSourceDetailsSheetState extends State<_SyncSourceDetailsSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.5,
@@ -669,24 +679,24 @@ class _SyncSourceDetailsSheetState extends State<_SyncSourceDetailsSheet> {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
-            _row(Icons.sync, 'Sync-Adresse', widget.source.syncUrl),
+            _row(Icons.sync, l10n.syncAddressLabel, widget.source.syncUrl),
             if (widget.source.infoUrl.isNotEmpty)
               InkWell(
                 onTap: () => launchUrl(Uri.parse(widget.source.infoUrl)),
                 child: _row(
                   Icons.link,
-                  'Info-URL',
+                  l10n.infoUrlLabel,
                   widget.source.infoUrl,
                   color: Colors.blue,
                 ),
               ),
             if (widget.source.description.isNotEmpty)
-              _row(Icons.notes, 'Beschreibung', widget.source.description),
+              _row(Icons.notes, l10n.description, widget.source.description),
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 8),
             Text(
-              'Aktive Sync-Optionen',
+              l10n.activeSyncOptions,
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: 8),
@@ -694,9 +704,9 @@ class _SyncSourceDetailsSheetState extends State<_SyncSourceDetailsSheet> {
               final opts = widget.source.syncOptions.forTable(t);
               if (!opts.anyEnabled) return const SizedBox.shrink();
               final parts = [
-                if (opts.insert) 'Einfügen',
-                if (opts.update) 'Bearbeiten',
-                if (opts.delete) 'Löschen',
+                if (opts.insert) l10n.insert,
+                if (opts.update) l10n.edit,
+                if (opts.delete) l10n.delete,
               ];
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
@@ -721,22 +731,22 @@ class _SyncSourceDetailsSheetState extends State<_SyncSourceDetailsSheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Erfahrungen',
+                  l10n.experiencesTitle,
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 IconButton(
                   icon: const Icon(Icons.add),
-                  tooltip: 'Erfahrung hinzufügen',
+                  tooltip: l10n.addExperience,
                   onPressed: _addExperience,
                 ),
               ],
             ),
             if (_experiences.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(
-                  'Noch keine Erfahrungen vorhanden.',
-                  style: TextStyle(color: Colors.grey),
+                  l10n.noExperiences,
+                  style: const TextStyle(color: Colors.grey),
                 ),
               )
             else

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 
 import '../../models/person.dart';
 import '../../services/database_service.dart';
@@ -41,19 +42,20 @@ class _PersonsScreenState extends State<PersonsScreen> {
   }
 
   Future<void> _delete(Person person) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Person löschen?'),
-        content: Text('„${person.name}" wirklich entfernen?'),
+        title: Text(l10n.personDeleteTitle),
+        content: Text(l10n.personDeleteContent(person.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Löschen', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -65,30 +67,31 @@ class _PersonsScreenState extends State<PersonsScreen> {
   }
 
   Future<Person?> _showEditDialog(Person? existing) {
+    final l10n = AppLocalizations.of(context)!;
     final nameCtrl = TextEditingController(text: existing?.name ?? '');
     final roleCtrl = TextEditingController(text: existing?.role ?? '');
 
     return showDialog<Person>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(existing == null ? 'Neue Person' : 'Person bearbeiten'),
+        title: Text(existing == null ? l10n.newPerson : l10n.editPerson),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: nameCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.name,
+                border: const OutlineInputBorder(),
               ),
               autofocus: true,
             ),
             const SizedBox(height: 12),
             TextField(
               controller: roleCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Rolle / Beschreibung (optional)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.roleOptional,
+                border: const OutlineInputBorder(),
               ),
             ),
           ],
@@ -96,7 +99,7 @@ class _PersonsScreenState extends State<PersonsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -111,7 +114,7 @@ class _PersonsScreenState extends State<PersonsScreen> {
                 ),
               );
             },
-            child: const Text('Speichern'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -120,10 +123,11 @@ class _PersonsScreenState extends State<PersonsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Personen')),
+      appBar: AppBar(title: Text(l10n.personsScreenTitle)),
       body: _persons.isEmpty
-          ? const Center(child: Text('Noch keine Personen vorhanden.'))
+          ? Center(child: Text(l10n.noPersonsYet))
           : ListView.builder(
               itemCount: _persons.length,
               itemBuilder: (ctx, i) {
@@ -150,7 +154,7 @@ class _PersonsScreenState extends State<PersonsScreen> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _add,
-        tooltip: 'Person hinzufügen',
+        tooltip: l10n.addPersonTooltip,
         child: const Icon(Icons.person_add),
       ),
     );

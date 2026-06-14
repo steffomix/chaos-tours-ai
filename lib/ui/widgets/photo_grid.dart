@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../models/place_photo.dart';
@@ -137,6 +138,7 @@ class _PhotoGridState extends State<PhotoGrid> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -151,22 +153,22 @@ class _PhotoGridState extends State<PhotoGrid> {
             TextButton.icon(
               onPressed: _takePicture,
               icon: const Icon(Icons.camera_alt, size: 18),
-              label: const Text('Kamera'),
+              label: Text(l10n.camera),
             ),
             TextButton.icon(
               onPressed: _addPhoto,
               icon: const Icon(Icons.add_photo_alternate, size: 18),
-              label: const Text('Hinzufügen'),
+              label: Text(l10n.add),
             ),
           ],
         ),
         if (_photos.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 32),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32),
             child: Center(
               child: Text(
-                'Noch keine Fotos',
-                style: TextStyle(color: Colors.grey),
+                l10n.noPhotosGrid,
+                style: const TextStyle(color: Colors.grey),
               ),
             ),
           )
@@ -244,22 +246,23 @@ class _PhotoViewerState extends State<_PhotoViewer> {
   PlacePhoto get _current => widget.photos[_currentIndex];
 
   Future<void> _delete() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Foto löschen'),
-        content: const Text('Dieses Foto wirklich löschen?'),
+        title: Text(l10n.photoDeleteTitle),
+        content: Text(l10n.photoDeleteContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Löschen'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -274,24 +277,25 @@ class _PhotoViewerState extends State<_PhotoViewer> {
   }
 
   Future<void> _editCaption() async {
+    final l10n = AppLocalizations.of(context)!;
     final ctrl = TextEditingController(text: _current.caption);
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Beschriftung'),
+        title: Text(l10n.captionTitle),
         content: TextField(
           controller: ctrl,
-          decoration: const InputDecoration(hintText: 'Beschriftung eingeben'),
+          decoration: InputDecoration(hintText: l10n.captionHint),
           autofocus: true,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, ctrl.text),
-            child: const Text('Speichern'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -322,12 +326,12 @@ class _PhotoViewerState extends State<_PhotoViewer> {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.white),
-            tooltip: 'Beschriftung bearbeiten',
+            tooltip: AppLocalizations.of(context)!.editCaptionTooltip,
             onPressed: _editCaption,
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline, color: Colors.white),
-            tooltip: 'Foto löschen',
+            tooltip: AppLocalizations.of(context)!.deletePhotoTooltip,
             onPressed: _delete,
           ),
         ],

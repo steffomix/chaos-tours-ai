@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 
 import '../../models/aktivitaet.dart';
 import '../../models/place_group.dart';
@@ -113,53 +114,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Einstellungen'),
+        title: Text(l10n.settingsTitle),
         actions: [
           TextButton(
             onPressed: () async {
               await _saveAll();
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Einstellungen gespeichert')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(l10n.settingsSaved)));
               }
             },
-            child: const Text('Speichern'),
+            child: Text(l10n.save),
           ),
         ],
       ),
       body: ListView(
         children: [
           // ── Aktivität ─────────────────────────────────────────────────
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
             child: Text(
-              'Aktivität',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              l10n.sectionActivity,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
           ListTile(
             leading: const Icon(Icons.bolt),
-            title: Text(_activeAktivitaet?.name ?? 'Keine Aktivität'),
-            subtitle: Text(
-              '${_aktivitaeten.length} '
-              '${_aktivitaeten.length == 1 ? 'Aktivität' : 'Aktivitäten'} vorhanden',
-            ),
+            title: Text(_activeAktivitaet?.name ?? l10n.noActivity),
+            subtitle: Text(l10n.activityCount(_aktivitaeten.length)),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
                   icon: const Icon(Icons.edit_outlined),
-                  tooltip: 'Umbenennen',
+                  tooltip: l10n.tooltipRename,
                   onPressed: _activeAktivitaet == null
                       ? null
                       : () => _renameAktivitaet(_activeAktivitaet!),
                 ),
                 IconButton(
                   icon: const Icon(Icons.swap_horiz),
-                  tooltip: 'Wechseln / Neu erstellen',
+                  tooltip: l10n.tooltipSwitchCreate,
                   onPressed: _showAktivitaetenPicker,
                 ),
               ],
@@ -167,15 +166,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const Divider(),
           // ── Tracking Settings ─────────────────────────────────────────
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: Text(
-              'Tracking',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              l10n.sectionTracking,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
           ListTile(
-            title: Text('GPS-Intervall: ${_gpsInterval}s'),
+            title: Text(l10n.gpsInterval(_gpsInterval)),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -187,17 +186,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   label: '${_gpsInterval}s',
                   onChanged: (v) => setState(() => _gpsInterval = v.round()),
                 ),
-                const Text(
-                  'Hinweis: Änderungen werden erst nach Neustart des Trackings wirksam.',
-                  style: TextStyle(fontSize: 11),
+                Text(
+                  l10n.gpsIntervalHint,
+                  style: const TextStyle(fontSize: 11),
                 ),
               ],
             ),
           ),
           ListTile(
             title: Text(
-              'GPS-Glättung: '
-              '${_gpsSmoothingPoints == 1 ? 'deaktiviert' : '$_gpsSmoothingPoints Punkte'}',
+              l10n.gpsSmoothing(
+                _gpsSmoothingPoints == 1
+                    ? l10n.gpsSmoothingDisabled
+                    : l10n.gpsSmoothingPoints(_gpsSmoothingPoints),
+              ),
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,17 +215,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onChanged: (v) =>
                       setState(() => _gpsSmoothingPoints = v.round()),
                 ),
-                const Text(
-                  'Mittelt die letzten N GPS-Punkte.',
-                  style: TextStyle(fontSize: 11),
+                Text(
+                  l10n.gpsSmoothingHint,
+                  style: const TextStyle(fontSize: 11),
                 ),
               ],
             ),
           ),
           ListTile(
-            title: Text(
-              'Aufenthalt erkennen nach: ${(_stayDetection / 60).toStringAsFixed(0)} min',
-            ),
+            title: Text(l10n.stayDetection((_stayDetection / 60).round())),
             subtitle: Slider(
               value: _stayDetection.toDouble(),
               min: 60,
@@ -234,9 +234,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           ListTile(
-            title: Text(
-              'Auto-Ort erstellen nach: ${(_autoPlaceTime / 60).toStringAsFixed(0)} min',
-            ),
+            title: Text(l10n.autoPlaceTime((_autoPlaceTime / 60).round())),
             subtitle: Slider(
               value: _autoPlaceTime.toDouble(),
               min: 300,
@@ -247,9 +245,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           ListTile(
-            title: Text(
-              'Standard-Radius: ${_defaultRadius.toStringAsFixed(0)} m',
-            ),
+            title: Text(l10n.defaultRadius(_defaultRadius.toStringAsFixed(0))),
             subtitle: Slider(
               value: _defaultRadius,
               min: 10,
@@ -260,25 +256,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           SwitchListTile(
-            title: const Text('Orte automatisch erstellen'),
-            subtitle: const Text(
-              'Neue Orte bei langen Aufenthalten an unbekannten Orten anlegen',
-            ),
+            title: Text(l10n.autoCreatePlaces),
+            subtitle: Text(l10n.autoCreatePlacesSubtitle),
             value: _autoCreatePlaces,
             onChanged: (v) => setState(() => _autoCreatePlaces = v),
           ),
           if (_autoCreatePlaces)
             ListTile(
-              title: const Text('Gruppe für Auto-Orte'),
+              title: Text(l10n.autoPlaceGroup),
               trailing: DropdownButton<String?>(
                 value: _autoPlaceGroupUuid == null
                     ? null
                     : (_groups.any((g) => g.uuid == _autoPlaceGroupUuid)
                           ? _autoPlaceGroupUuid
                           : null),
-                hint: const Text('Keine'),
+                hint: Text(l10n.none),
                 items: [
-                  const DropdownMenuItem(value: null, child: Text('Keine')),
+                  DropdownMenuItem(value: null, child: Text(l10n.none)),
                   ..._groups.map(
                     (g) => DropdownMenuItem(value: g.uuid, child: Text(g.name)),
                   ),
@@ -287,19 +281,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ListTile(
-            title: const Text('Standard-Gruppe für neue Orte'),
-            subtitle: const Text(
-              'Voreingestellte Gruppe beim manuellen Erstellen von Orten',
-            ),
+            title: Text(l10n.defaultPlaceGroup),
+            subtitle: Text(l10n.defaultPlaceGroupSubtitle),
             trailing: DropdownButton<String?>(
               value: _defaultPlaceGroupUuid == null
                   ? null
                   : (_groups.any((g) => g.uuid == _defaultPlaceGroupUuid)
                         ? _defaultPlaceGroupUuid
                         : null),
-              hint: const Text('Keine'),
+              hint: Text(l10n.none),
               items: [
-                const DropdownMenuItem(value: null, child: Text('Keine')),
+                DropdownMenuItem(value: null, child: Text(l10n.none)),
                 ..._groups.map(
                   (g) => DropdownMenuItem(value: g.uuid, child: Text(g.name)),
                 ),
@@ -309,25 +301,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const Divider(),
           // ── Kartendarstellung ─────────────────────────────────────────
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: Text(
-              'Kartendarstellung',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              l10n.sectionMapDisplay,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
           SwitchListTile(
-            title: const Text('GPS-Punkte anzeigen'),
-            subtitle: const Text(
-              'Tracking-Punkte farbig auf der Karte einblenden',
-            ),
+            title: Text(l10n.showGpsPoints),
+            subtitle: Text(l10n.showGpsPointsSubtitle),
             value: _showTrackingPoints,
             onChanged: (v) => setState(() => _showTrackingPoints = v),
           ),
           if (_showTrackingPoints)
             ListTile(
               title: Text(
-                'Punktgröße: ${_trackingPointRadius.toStringAsFixed(1)} m',
+                l10n.pointSize(_trackingPointRadius.toStringAsFixed(1)),
               ),
               subtitle: Slider(
                 value: _trackingPointRadius,
@@ -340,8 +330,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ListTile(
             title: Text(
-              'Besuchs-Verlauf: $_timelineHistoryDays '
-              '${_timelineHistoryDays == 1 ? 'Tag' : 'Tage'}',
+              l10n.visitHistory(
+                _timelineHistoryDays == 1
+                    ? l10n.visitHistoryDay(_timelineHistoryDays)
+                    : l10n.visitHistoryDays(_timelineHistoryDays),
+              ),
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -355,27 +348,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onChanged: (v) =>
                       setState(() => _timelineHistoryDays = v.round()),
                 ),
-                const Text(
-                  'Wie viele Tage der Reiseverlauf auf der Zeitachsen-Karte angezeigt wird.',
-                  style: TextStyle(fontSize: 11),
+                Text(
+                  l10n.visitHistoryHint,
+                  style: const TextStyle(fontSize: 11),
                 ),
               ],
             ),
           ),
           const Divider(),
           // ── Planer ──────────────────────────────────────────────────
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: Text(
-              'Planer',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              l10n.sectionPlanner,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
           ListTile(
-            title: Text(
-              'Farbskala-Bereich: $_schedulerColorRange '
-              '${_schedulerColorRange == 1 ? 'Tag' : 'Tage'}',
-            ),
+            title: Text(l10n.colorRange(_schedulerColorRange)),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -389,22 +379,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       setState(() => _schedulerColorRange = v.round()),
                 ),
                 Text(
-                  '$_schedulerColorRange Tage = grün  •  0 = gelb  •  -$_schedulerColorRange = rot',
+                  l10n.colorRangeHint(_schedulerColorRange),
                   style: const TextStyle(fontSize: 11),
                 ),
               ],
             ),
           ),
           ListTile(
-            title: const Text('Angezeigte Gruppen (Karte & Planer)'),
+            title: Text(l10n.shownGroups),
             subtitle: _groups.isEmpty
-                ? const Text('Keine Gruppen vorhanden')
+                ? Text(l10n.noGroupsAvailable)
                 : Wrap(
                     spacing: 6,
                     runSpacing: 4,
                     children: [
                       FilterChip(
-                        label: const Text('Alle'),
+                        label: Text(l10n.all),
                         selected: _schedulerGroupIds.isEmpty,
                         onSelected: (_) =>
                             setState(() => _schedulerGroupIds.clear()),
@@ -434,96 +424,96 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const Divider(),
           // ── Adresssuche ───────────────────────────────────────────────
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: Text(
-              'Adresssuche',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              l10n.sectionAddressSearch,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
           ListTile(
             leading: const Icon(Icons.flag_outlined),
-            title: const Text('Standard-Land für Adresssuche'),
+            title: Text(l10n.defaultCountry),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextField(
                   controller: _searchCountryCtrl,
-                  decoration: const InputDecoration(
-                    hintText: 'z. B. Deutschland',
+                  decoration: InputDecoration(
+                    hintText: l10n.defaultCountryHint,
                     isDense: true,
                   ),
                   onChanged: (v) => _searchCountry = v,
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'Wird in der Karten-Adresssuche als Standardland vorausgefüllt.',
-                  style: TextStyle(fontSize: 11),
+                Text(
+                  l10n.defaultCountrySubtitle,
+                  style: const TextStyle(fontSize: 11),
                 ),
               ],
             ),
           ),
           const Divider(),
           // ── Verwaltung ───────────────────────────────────────────────
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: Text(
-              'Verwaltung',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              l10n.sectionManagement,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
           ListTile(
             leading: const Icon(Icons.folder),
-            title: const Text('Ortsgruppen'),
+            title: Text(l10n.placeGroups),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.pushNamed(context, '/place-groups'),
           ),
           ListTile(
             leading: const Icon(Icons.people),
-            title: const Text('Personen'),
+            title: Text(l10n.persons),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.pushNamed(context, '/persons'),
           ),
           ListTile(
             leading: const Icon(Icons.work_outline),
-            title: const Text('Tätigkeiten'),
+            title: Text(l10n.activities),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.pushNamed(context, '/activities'),
           ),
           ListTile(
             leading: const Icon(Icons.storage),
-            title: const Text('Datenbank-Dump'),
-            subtitle: const Text('Dump erstellen, laden & teilen'),
+            title: Text(l10n.databaseDump),
+            subtitle: Text(l10n.databaseDumpSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.pushNamed(context, '/database-dump'),
           ),
           ListTile(
             leading: const Icon(Icons.public),
-            title: const Text('Sync-Quellen'),
-            subtitle: const Text('Sync-Server verwalten und synchronisieren'),
+            title: Text(l10n.syncSources),
+            subtitle: Text(l10n.syncSourcesSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.pushNamed(context, '/sync-sources'),
           ),
           ListTile(
             leading: const Icon(Icons.send),
-            title: const Text('Telegram-Verbindungen'),
-            subtitle: const Text('Telegram-Bots für Ortsberichte verwalten'),
+            title: Text(l10n.telegramConnections),
+            subtitle: Text(l10n.telegramConnectionsSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.pushNamed(context, '/telegram-connections'),
           ),
           const Divider(),
           // ── Berechtigungen ───────────────────────────────────────────
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: Text(
-              'Berechtigungen',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              l10n.sectionPermissions,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
           ListTile(
             leading: const Icon(Icons.location_on),
-            title: const Text('Standortberechtigung'),
-            subtitle: const Text('Standort im Vordergrund anfordern'),
+            title: Text(l10n.locationPermission),
+            subtitle: Text(l10n.locationPermissionSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () async {
               final granted = await PermissionHelper.instance
@@ -532,7 +522,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      granted ? 'Standort gewährt' : 'Standort verweigert',
+                      granted ? l10n.locationGranted : l10n.locationDenied,
                     ),
                   ),
                 );
@@ -541,8 +531,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.location_searching),
-            title: const Text('Hintergrund-Standort'),
-            subtitle: const Text('Standort im Hintergrund anfordern'),
+            title: Text(l10n.backgroundLocation),
+            subtitle: Text(l10n.backgroundLocationSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () async {
               final granted = await PermissionHelper.instance
@@ -552,8 +542,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   SnackBar(
                     content: Text(
                       granted
-                          ? 'Hintergrund-Standort gewährt'
-                          : 'Hintergrund-Standort verweigert',
+                          ? l10n.backgroundLocationGranted
+                          : l10n.backgroundLocationDenied,
                     ),
                   ),
                 );
@@ -562,8 +552,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.notifications),
-            title: const Text('Benachrichtigungen'),
-            subtitle: const Text('Benachrichtigungsberechtigung anfordern'),
+            title: Text(l10n.notifications),
+            subtitle: Text(l10n.notificationsSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () async {
               final granted = await PermissionHelper.instance
@@ -573,8 +563,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   SnackBar(
                     content: Text(
                       granted
-                          ? 'Benachrichtigungen gewährt'
-                          : 'Benachrichtigungen verweigert',
+                          ? l10n.notificationsGranted
+                          : l10n.notificationsDenied,
                     ),
                   ),
                 );
@@ -583,10 +573,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           SwitchListTile(
             secondary: const Icon(Icons.calendar_today),
-            title: const Text('Kalender-Sync'),
-            subtitle: const Text(
-              'Aufenthalte automatisch im Gerätekalender eintragen',
-            ),
+            title: Text(l10n.calendarSync),
+            subtitle: Text(l10n.calendarSyncSubtitle),
             value: SettingsService.instance.calendarEnabled,
             onChanged: (v) =>
                 setState(() => SettingsService.instance.calendarEnabled = v),
@@ -594,7 +582,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (SettingsService.instance.calendarEnabled)
             ListTile(
               leading: const Icon(Icons.lock_open_outlined),
-              title: const Text('Kalenderberechtigung anfordern'),
+              title: Text(l10n.calendarPermission),
               trailing: const Icon(Icons.chevron_right),
               onTap: () async {
                 final granted = await PermissionHelper.instance
@@ -603,7 +591,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        granted ? 'Kalender gewährt' : 'Kalender verweigert',
+                        granted ? l10n.calendarGranted : l10n.calendarDenied,
                       ),
                     ),
                   );
@@ -622,10 +610,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.delete_forever, color: Colors.red),
               title: Text(
-                '„${_activeAktivitaet!.name}" löschen',
+                l10n.deleteActivityLabel(_activeAktivitaet!.name),
                 style: const TextStyle(color: Colors.red),
               ),
-              subtitle: const Text('Aktuelle Aktivität dauerhaft entfernen'),
+              subtitle: Text(l10n.deleteActivity),
               onTap: _deleteCurrentAktivitaet,
             ),
           ],
@@ -644,19 +632,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx2, setSheetState) {
+            final l10n = AppLocalizations.of(ctx2)!;
             return SafeArea(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                     child: Row(
                       children: [
-                        Icon(Icons.bolt),
-                        SizedBox(width: 8),
+                        const Icon(Icons.bolt),
+                        const SizedBox(width: 8),
                         Text(
-                          'Aktivität wählen',
-                          style: TextStyle(
+                          l10n.pickActivity,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -673,7 +662,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ? Icons.radio_button_checked
                             : Icons.radio_button_off,
                         color: isActive
-                            ? Theme.of(context).colorScheme.primary
+                            ? Theme.of(ctx2).colorScheme.primary
                             : null,
                       ),
                       title: Text(
@@ -681,7 +670,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         style: isActive
                             ? TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.primary,
+                                color: Theme.of(ctx2).colorScheme.primary,
                               )
                             : null,
                       ),
@@ -694,7 +683,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const Divider(height: 1),
                   ListTile(
                     leading: const Icon(Icons.add_circle_outline),
-                    title: const Text('Neue Aktivität erstellen'),
+                    title: Text(l10n.newActivityCreate),
                     onTap: () async {
                       Navigator.pop(ctx2);
                       await _createNewAktivitaet();
@@ -738,50 +727,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Neue Aktivität'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameCtrl,
-              decoration: const InputDecoration(labelText: 'Name'),
-              autofocus: true,
-            ),
-            if (_aktivitaeten.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              const Text(
-                'Einstellungen kopieren von:',
-                style: TextStyle(fontSize: 13),
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
+        return AlertDialog(
+          title: Text(l10n.newActivityLabel),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                decoration: InputDecoration(labelText: l10n.name),
+                autofocus: true,
               ),
-              StatefulBuilder(
-                builder: (ctx2, setInner) => DropdownButton<Aktivitaet>(
-                  isExpanded: true,
-                  value: template,
-                  items: _aktivitaeten
-                      .map(
-                        (a) => DropdownMenuItem(value: a, child: Text(a.name)),
-                      )
-                      .toList(),
-                  onChanged: (v) {
-                    if (v != null) setInner(() => template = v);
-                  },
+              if (_aktivitaeten.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  l10n.copySettingsFrom,
+                  style: const TextStyle(fontSize: 13),
                 ),
-              ),
+                StatefulBuilder(
+                  builder: (ctx2, setInner) => DropdownButton<Aktivitaet>(
+                    isExpanded: true,
+                    value: template,
+                    items: _aktivitaeten
+                        .map(
+                          (a) =>
+                              DropdownMenuItem(value: a, child: Text(a.name)),
+                        )
+                        .toList(),
+                    onChanged: (v) {
+                      if (v != null) setInner(() => template = v);
+                    },
+                  ),
+                ),
+              ],
             ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l10n.create),
+            ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Erstellen'),
-          ),
-        ],
-      ),
+        );
+      },
     );
 
     if (confirmed != true) return;
@@ -799,24 +792,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final ctrl = TextEditingController(text: a.name);
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Aktivität umbenennen'),
-        content: TextField(
-          controller: ctrl,
-          decoration: const InputDecoration(labelText: 'Name'),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
+        return AlertDialog(
+          title: Text(l10n.renameActivity),
+          content: TextField(
+            controller: ctrl,
+            decoration: InputDecoration(labelText: l10n.name),
+            autofocus: true,
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Speichern'),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l10n.save),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed != true) return;
     final name = ctrl.text.trim();
@@ -832,23 +828,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Aktivität löschen?'),
-        content: Text(
-          '„${a.name}" wirklich löschen?\n\n'
-          'Die Einstellungen dieser Aktivität werden unwiderruflich entfernt.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Löschen', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
+        return AlertDialog(
+          title: Text(l10n.deleteActivityTitle),
+          content: Text(l10n.deleteActivityContent(a.name)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(
+                l10n.delete,
+                style: const TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed != true) return;
 
@@ -859,9 +858,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _loadAktivitaeten();
 
     if (mounted) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('„${a.name}" gelöscht')));
+      ).showSnackBar(SnackBar(content: Text(l10n.activityDeleted(a.name))));
     }
   }
 }

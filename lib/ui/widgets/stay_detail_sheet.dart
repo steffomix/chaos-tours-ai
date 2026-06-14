@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 
 import '../../models/activity.dart';
 import '../../models/person.dart';
@@ -245,7 +246,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Person hinzufügen',
+              AppLocalizations.of(ctx)!.addPersonSheetTitle,
               style: Theme.of(ctx).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
@@ -266,9 +267,9 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
             const Divider(),
             TextField(
               controller: controller,
-              decoration: const InputDecoration(
-                labelText: 'Name eingeben (neu)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(ctx)!.personNewHint,
+                border: const OutlineInputBorder(),
               ),
               textInputAction: TextInputAction.done,
               onSubmitted: (v) {
@@ -282,7 +283,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                 Navigator.pop(ctx);
                 _addPersonAdhoc(controller.text);
               },
-              child: const Text('Hinzufügen'),
+              child: Text(AppLocalizations.of(ctx)!.add),
             ),
           ],
         ),
@@ -316,7 +317,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Tätigkeit hinzufügen',
+              AppLocalizations.of(ctx)!.addActivitySheetTitle,
               style: Theme.of(ctx).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
@@ -335,9 +336,9 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
             const Divider(),
             TextField(
               controller: controller,
-              decoration: const InputDecoration(
-                labelText: 'Tätigkeit eingeben (neu)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(ctx)!.activityNewHint,
+                border: const OutlineInputBorder(),
               ),
               textInputAction: TextInputAction.done,
               onSubmitted: (v) {
@@ -351,7 +352,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                 Navigator.pop(ctx);
                 _addActivityAdhoc(controller.text);
               },
-              child: const Text('Hinzufügen'),
+              child: Text(AppLocalizations.of(ctx)!.add),
             ),
           ],
         ),
@@ -361,6 +362,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: EdgeInsets.only(
         left: 16,
@@ -385,7 +387,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                   Row(
                     children: [
                       Text(
-                        'Aufenthalt bearbeiten',
+                        l10n.editStay,
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const Spacer(),
@@ -407,7 +409,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.play_circle_outline),
-                    title: const Text('Beginn'),
+                    title: Text(l10n.begin),
                     subtitle: Text(_fmtDt(_startDt)),
                     trailing: const Icon(Icons.edit, size: 18),
                     onTap: () => _pickDateTime(isStart: true),
@@ -417,7 +419,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.stop_circle_outlined),
-                      title: const Text('Ende'),
+                      title: Text(l10n.end),
                       subtitle: Text(_fmtDt(_endDt!)),
                       trailing: const Icon(Icons.edit, size: 18),
                       onTap: () => _pickDateTime(isStart: false),
@@ -426,9 +428,9 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                   // ── Notes ─────────────────────────────────────────────
                   TextField(
                     controller: _notesCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Notizen',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.notes,
+                      border: const OutlineInputBorder(),
                     ),
                     maxLines: 3,
                   ),
@@ -437,10 +439,8 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                     const SizedBox(height: 8),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Intervall-Besuch'),
-                      subtitle: const Text(
-                        'Besuch zählt zur Intervall-Berechnung',
-                      ),
+                      title: Text(l10n.intervalVisit),
+                      subtitle: Text(l10n.intervalVisitSubtitle),
                       value: _isInterval,
                       onChanged: (v) => setState(() => _isInterval = v),
                     ),
@@ -450,14 +450,14 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                   Row(
                     children: [
                       Text(
-                        'Personen',
+                        l10n.persons,
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                       const Spacer(),
                       IconButton(
                         icon: const Icon(Icons.person_add),
                         onPressed: _showAddPersonDialog,
-                        tooltip: 'Person hinzufügen',
+                        tooltip: l10n.addPersonSheetTitle,
                       ),
                     ],
                   ),
@@ -478,14 +478,14 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                   Row(
                     children: [
                       Text(
-                        'Tätigkeiten',
+                        l10n.activities,
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                       const Spacer(),
                       IconButton(
                         icon: const Icon(Icons.add_task),
                         onPressed: _showAddActivityDialog,
-                        tooltip: 'Tätigkeit hinzufügen',
+                        tooltip: l10n.addActivitySheetTitle,
                       ),
                     ],
                   ),
@@ -506,7 +506,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                   ExpansionTile(
                     tilePadding: EdgeInsets.zero,
                     leading: const Icon(Icons.photo_library_outlined),
-                    title: const Text('Fotos'),
+                    title: Text(l10n.photos),
                     children: [
                       PhotoGrid(
                         stayUuid: widget.stay.uuid,
@@ -521,7 +521,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                       if (mounted) Navigator.pop(context);
                     },
                     icon: const Icon(Icons.save),
-                    label: const Text('Speichern'),
+                    label: Text(l10n.save),
                   ),
                   const SizedBox(height: 8),
                   OutlinedButton.icon(
@@ -533,7 +533,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                       ),
                     ),
                     icon: const Icon(Icons.delete_outline),
-                    label: const Text('Aufenthalt löschen'),
+                    label: Text(l10n.deleteStay),
                   ),
                 ],
               ),

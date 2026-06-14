@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:focus_detector/focus_detector.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -192,18 +193,18 @@ class _TimelineScreenState extends State<TimelineScreen> {
               ? TextField(
                   controller: _searchCtrl,
                   autofocus: true,
-                  decoration: const InputDecoration(
-                    hintText: 'Aufenthalte durchsuchen…',
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context)!.searchStaysHint,
                     border: InputBorder.none,
                   ),
                   onChanged: (v) => setState(() => _searchQuery = v),
                 )
-              : const Text('Besuche'),
+              : Text(AppLocalizations.of(context)!.visitsTitle),
           actions: [
             if (_searchActive)
               IconButton(
                 icon: const Icon(Icons.close),
-                tooltip: 'Suche schließen',
+                tooltip: AppLocalizations.of(context)!.closeSearch,
                 onPressed: () => setState(() {
                   _searchActive = false;
                   _searchQuery = '';
@@ -218,7 +219,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                   child: const Icon(Icons.date_range),
                 ),
                 onPressed: _pickDateRange,
-                tooltip: 'Datumsbereich filtern',
+                tooltip: AppLocalizations.of(context)!.filterByDate,
               ),
               // Filter by place
               IconButton(
@@ -227,7 +228,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                   child: const Icon(Icons.filter_list),
                 ),
                 onPressed: _showPlaceFilterSheet,
-                tooltip: 'Nach Ort filtern',
+                tooltip: AppLocalizations.of(context)!.filterByPlace,
               ),
               // Clear filters
               if (_filterRange != null || _filterPlaceUuid != null)
@@ -237,11 +238,11 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     _filterRange = null;
                     _filterPlaceUuid = null;
                   }),
-                  tooltip: 'Filter zurücksetzen',
+                  tooltip: AppLocalizations.of(context)!.resetFilter,
                 ),
               IconButton(
                 icon: const Icon(Icons.search),
-                tooltip: 'Suchen',
+                tooltip: AppLocalizations.of(context)!.search,
                 onPressed: () => setState(() => _searchActive = true),
               ),
             ],
@@ -251,11 +252,20 @@ class _TimelineScreenState extends State<TimelineScreen> {
           length: 3,
           child: Column(
             children: [
-              const TabBar(
+              TabBar(
                 tabs: [
-                  Tab(icon: Icon(Icons.list), text: 'Besuche'),
-                  Tab(icon: Icon(Icons.map), text: 'Reise'),
-                  Tab(icon: Icon(Icons.schedule), text: 'Planer'),
+                  Tab(
+                    icon: const Icon(Icons.list),
+                    text: AppLocalizations.of(context)!.tabList,
+                  ),
+                  Tab(
+                    icon: const Icon(Icons.map),
+                    text: AppLocalizations.of(context)!.tabJourney,
+                  ),
+                  Tab(
+                    icon: const Icon(Icons.schedule),
+                    text: AppLocalizations.of(context)!.tabPlanner,
+                  ),
                 ],
               ),
               Expanded(
@@ -271,13 +281,11 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   Widget _buildList() {
+    final l10n = AppLocalizations.of(context)!;
     final filtered = _filteredStays;
     if (filtered.isEmpty) {
-      return const Center(
-        child: Text(
-          'Keine abgeschlossenen Aufenthalte gefunden.\nTracking einschalten um Aufenthalte aufzuzeichnen.',
-          textAlign: TextAlign.center,
-        ),
+      return Center(
+        child: Text(l10n.noStaysFound, textAlign: TextAlign.center),
       );
     }
 
@@ -443,7 +451,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
               final pos = _lastKnownPosition;
               if (pos != null) _mapController.move(pos, 14);
             },
-            tooltip: 'Zur letzten Position',
+            tooltip: AppLocalizations.of(context)!.toLastPosition,
             child: const Icon(Icons.my_location),
           ),
         ),
@@ -486,12 +494,11 @@ class _TimelineScreenState extends State<TimelineScreen> {
     }
 
     if (schedulerPlaces.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: Text(
-            'Keine Planer-Orte vorhanden.\n\n'
-            'Aktiviere das Besuchs-Intervall für Orte in den Ortseinstellungen.',
+            AppLocalizations.of(context)!.noSchedulerPlaces,
             textAlign: TextAlign.center,
           ),
         ),
@@ -530,12 +537,17 @@ class _TimelineScreenState extends State<TimelineScreen> {
               : null;
 
           String daysLabel;
+          final l10n = AppLocalizations.of(ctx)!;
           if (days == 0) {
-            daysLabel = 'Heute';
+            daysLabel = l10n.schedulerToday;
           } else if (days > 0) {
-            daysLabel = 'in $days ${days == 1 ? 'Tag' : 'Tagen'}';
+            daysLabel = days == 1
+                ? l10n.schedulerInDay(days)
+                : l10n.schedulerInDays(days);
           } else {
-            daysLabel = '${-days} ${(-days) == 1 ? 'Tag' : 'Tage'} überfällig';
+            daysLabel = (-days) == 1
+                ? l10n.schedulerOverdueDay(-days)
+                : l10n.schedulerOverdueDays(-days);
           }
 
           return Card(
@@ -615,7 +627,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                             ),
                           if (place.intervalDays != null)
                             Text(
-                              'Intervall: ${place.intervalDays} Tage',
+                              l10n.intervalDays(place.intervalDays!),
                               style: Theme.of(ctx).textTheme.bodySmall
                                   ?.copyWith(
                                     color: Theme.of(
@@ -649,7 +661,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
         children: [
           ListTile(
             leading: const Icon(Icons.clear),
-            title: const Text('Alle Orte'),
+            title: Text(AppLocalizations.of(ctx)!.allPlaces),
             selected: _filterPlaceUuid == null,
             onTap: () {
               setState(() => _filterPlaceUuid = null);

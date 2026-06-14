@@ -1,0 +1,1851 @@
+{
+  "@@locale": "de",
+  "appTitle": "Chaos Tours",
+  "@appTitle": {
+    "description": "App title"
+  },
+  "cancel": "Abbrechen",
+  "@cancel": {
+    "description": "Cancel button"
+  },
+  "save": "Speichern",
+  "@save": {
+    "description": "Save button"
+  },
+  "delete": "Löschen",
+  "@delete": {
+    "description": "Delete button"
+  },
+  "edit": "Bearbeiten",
+  "@edit": {
+    "description": "Edit button"
+  },
+  "add": "Hinzufügen",
+  "@add": {
+    "description": "Add button"
+  },
+  "ok": "OK",
+  "@ok": {
+    "description": "OK button"
+  },
+  "yes": "Ja",
+  "@yes": {
+    "description": "Yes"
+  },
+  "no": "Nein",
+  "@no": {
+    "description": "No"
+  },
+  "search": "Suchen",
+  "@search": {
+    "description": "Search"
+  },
+  "none": "Keine",
+  "all": "Alle",
+  "@all": {
+    "description": "All label"
+  },
+  "create": "Erstellen",
+  "@create": {
+    "description": "Create button"
+  },
+  "@none": {
+    "description": "None"
+  },
+  "close": "Schließen",
+  "@close": {
+    "description": "Close"
+  },
+  "send": "Senden",
+  "@send": {
+    "description": "Send"
+  },
+  "apply": "Übernehmen",
+  "@apply": {
+    "description": "Apply"
+  },
+  "unknown": "Unbekannt",
+  "@unknown": {
+    "description": "Unknown"
+  },
+  "version": "Version 2.0.0",
+  "@version": {
+    "description": "App version"
+  },
+  "name": "Name",
+  "@name": {
+    "description": "Name label"
+  },
+  "reset": "Zurücksetzen",
+  "@reset": {
+    "description": "Reset"
+  },
+  "required": "Pflichtfeld",
+  "@required": {
+    "description": "Required field validation message"
+  },
+  "description": "Beschreibung",
+  "@description": {
+    "description": "Description label"
+  },
+  "active": "Aktiv",
+  "@active": {
+    "description": "Active status"
+  },
+  "type": "Typ",
+  "@type": {
+    "description": "Type label"
+  },
+  "replace": "Ersetzen",
+  "@replace": {
+    "description": "Replace button"
+  },
+  "synchronize": "Synchronisieren",
+  "@synchronize": {
+    "description": "Synchronize button"
+  },
+  "navHome": "Home",
+  "@navHome": {
+    "description": "Bottom nav: Home"
+  },
+  "navMap": "Karte",
+  "@navMap": {
+    "description": "Bottom nav: Map"
+  },
+  "navPlaces": "Orte",
+  "@navPlaces": {
+    "description": "Bottom nav: Places"
+  },
+  "navVisits": "Besuche",
+  "@navVisits": {
+    "description": "Bottom nav: Visits"
+  },
+  "navPhotos": "Fotos",
+  "@navPhotos": {
+    "description": "Bottom nav: Photos"
+  },
+  "trackingDisabled": "Tracking deaktiviert",
+  "@trackingDisabled": {
+    "description": "Tracking disabled status"
+  },
+  "trackingRunning": "Tracking läuft…",
+  "@trackingRunning": {
+    "description": "Tracking running status"
+  },
+  "trackingActive": "Tracking aktiv",
+  "@trackingActive": {
+    "description": "Tracking active"
+  },
+  "trackingInactive": "Tracking inaktiv",
+  "@trackingInactive": {
+    "description": "Tracking inactive"
+  },
+  "trackingStatusMoving": "Unterwegs",
+  "@trackingStatusMoving": {
+    "description": "Tracking status: moving"
+  },
+  "trackingStatusHaltKnown": "Halten bei {place}",
+  "@trackingStatusHaltKnown": {
+    "description": "Staying at known place",
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "trackingStatusHaltUnknown": "Halten: {address}",
+  "@trackingStatusHaltUnknown": {
+    "description": "Staying at unknown address",
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "trackingStatusHalt": "Halten",
+  "@trackingStatusHalt": {
+    "description": "Staying (generic)"
+  },
+  "trackingStatusDetecting": "Aufenthalt wird erkannt…",
+  "@trackingStatusDetecting": {
+    "description": "Detecting stay"
+  },
+  "trackingCollecting": "Tracking sammelt GPS Daten…",
+  "@trackingCollecting": {
+    "description": "Tracking collecting GPS data"
+  },
+  "aktivitaetLoading": "Aktivität laden…",
+  "@aktivitaetLoading": {
+    "description": "Loading activity"
+  },
+  "unknownPlace": "Unbekannter Ort",
+  "@unknownPlace": {
+    "description": "Unknown place"
+  },
+  "sinceHoursMinutes": "Seit {h}h {m}min",
+  "@sinceHoursMinutes": {
+    "description": "Since hours and minutes",
+    "placeholders": {
+      "h": {
+        "type": "int"
+      },
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "sinceMinutes": "Seit {m}min",
+  "@sinceMinutes": {
+    "description": "Since minutes",
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "endStayNow": "Aufenthalt jetzt beenden & teilen",
+  "@endStayNow": {
+    "description": "End and share stay button"
+  },
+  "endStayTitle": "Aufenthalt beenden?",
+  "@endStayTitle": {
+    "description": "End stay dialog title"
+  },
+  "endStayContent": "Der aktuelle Aufenthalt wird jetzt abgeschlossen. Das Tracking läuft weiter und startet bei gleichem Ort sofort einen neuen Aufenthalt.",
+  "@endStayContent": {
+    "description": "End stay dialog content"
+  },
+  "endStayButton": "Beenden",
+  "@endStayButton": {
+    "description": "End stay button"
+  },
+  "noVisitsYet": "Noch keine Besuche aufgezeichnet.",
+  "@noVisitsYet": {
+    "description": "No visits recorded yet"
+  },
+  "recentVisits": "Letzte Besuche",
+  "@recentVisits": {
+    "description": "Recent visits section title"
+  },
+  "enableTracking": "Tracking aktivieren?",
+  "@enableTracking": {
+    "description": "Enable tracking dialog title"
+  },
+  "disableTracking": "Tracking deaktivieren?",
+  "@disableTracking": {
+    "description": "Disable tracking dialog title"
+  },
+  "enableTrackingContent": "Soll das automatische Hintergrund-Tracking gestartet werden?",
+  "@enableTrackingContent": {
+    "description": "Enable tracking dialog content"
+  },
+  "disableTrackingContent": "Soll das automatische Hintergrund-Tracking gestoppt werden?",
+  "@disableTrackingContent": {
+    "description": "Disable tracking dialog content"
+  },
+  "activate": "Aktivieren",
+  "@activate": {
+    "description": "Activate button"
+  },
+  "deactivate": "Deaktivieren",
+  "@deactivate": {
+    "description": "Deactivate button"
+  },
+  "batteryOptTitle": "Akkuoptimierung deaktivieren",
+  "@batteryOptTitle": {
+    "description": "Battery optimization dialog title"
+  },
+  "batteryOptContent": "Der Hintergrund-Dienst konnte nicht gestartet werden.\n\nBitte deaktiviere die Akkuoptimierung für Chaos Tours:\nEinstellungen → Apps → Chaos Tours → Akku → Nicht eingeschränkt",
+  "@batteryOptContent": {
+    "description": "Battery optimization dialog content"
+  },
+  "openSettings": "Einstellungen öffnen",
+  "@openSettings": {
+    "description": "Open settings button"
+  },
+  "settingsTitle": "Einstellungen",
+  "@settingsTitle": {
+    "description": "Settings screen title"
+  },
+  "settingsSaved": "Einstellungen gespeichert",
+  "@settingsSaved": {
+    "description": "Settings saved snackbar"
+  },
+  "sectionActivity": "Aktivität",
+  "@sectionActivity": {
+    "description": "Activity section header"
+  },
+  "noActivity": "Keine Aktivität",
+  "@noActivity": {
+    "description": "No activity"
+  },
+  "activityCount": "{count, plural, one{{count} Aktivität vorhanden} other{{count} Aktivitäten vorhanden}}",
+  "@activityCount": {
+    "description": "Activity count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tooltipRename": "Umbenennen",
+  "@tooltipRename": {
+    "description": "Rename tooltip"
+  },
+  "tooltipSwitchCreate": "Wechseln / Neu erstellen",
+  "@tooltipSwitchCreate": {
+    "description": "Switch or create tooltip"
+  },
+  "sectionTracking": "Tracking",
+  "@sectionTracking": {
+    "description": "Tracking section header"
+  },
+  "gpsInterval": "GPS-Intervall: {value}s",
+  "@gpsInterval": {
+    "description": "GPS interval setting",
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "gpsIntervalHint": "Hinweis: Änderungen werden erst nach Neustart des Trackings wirksam.",
+  "@gpsIntervalHint": {
+    "description": "GPS interval hint"
+  },
+  "gpsSmoothing": "GPS-Glättung: {value}",
+  "@gpsSmoothing": {
+    "description": "GPS smoothing setting",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "gpsSmoothingDisabled": "deaktiviert",
+  "@gpsSmoothingDisabled": {
+    "description": "GPS smoothing disabled"
+  },
+  "gpsSmoothingPoints": "{n} Punkte",
+  "@gpsSmoothingPoints": {
+    "description": "GPS smoothing points",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "gpsSmoothingHint": "Mittelt die letzten N GPS-Punkte.",
+  "@gpsSmoothingHint": {
+    "description": "GPS smoothing hint"
+  },
+  "stayDetection": "Aufenthalt erkennen nach: {min} min",
+  "@stayDetection": {
+    "description": "Stay detection setting",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "autoPlaceTime": "Auto-Ort erstellen nach: {min} min",
+  "@autoPlaceTime": {
+    "description": "Auto place creation time",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "defaultRadius": "Standard-Radius: {m} m",
+  "@defaultRadius": {
+    "description": "Default radius setting",
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "autoCreatePlaces": "Orte automatisch erstellen",
+  "@autoCreatePlaces": {
+    "description": "Auto create places toggle"
+  },
+  "autoCreatePlacesSubtitle": "Neue Orte bei langen Aufenthalten an unbekannten Orten anlegen",
+  "@autoCreatePlacesSubtitle": {
+    "description": "Auto create places subtitle"
+  },
+  "autoPlaceGroup": "Gruppe für Auto-Orte",
+  "@autoPlaceGroup": {
+    "description": "Auto place group setting"
+  },
+  "defaultPlaceGroup": "Standard-Gruppe für neue Orte",
+  "@defaultPlaceGroup": {
+    "description": "Default place group setting"
+  },
+  "defaultPlaceGroupSubtitle": "Voreingestellte Gruppe beim manuellen Erstellen von Orten",
+  "@defaultPlaceGroupSubtitle": {
+    "description": "Default place group subtitle"
+  },
+  "sectionMapDisplay": "Kartendarstellung",
+  "@sectionMapDisplay": {
+    "description": "Map display section header"
+  },
+  "showGpsPoints": "GPS-Punkte anzeigen",
+  "@showGpsPoints": {
+    "description": "Show GPS points toggle"
+  },
+  "showGpsPointsSubtitle": "Tracking-Punkte farbig auf der Karte einblenden",
+  "@showGpsPointsSubtitle": {
+    "description": "Show GPS points subtitle"
+  },
+  "pointSize": "Punktgröße: {m} m",
+  "@pointSize": {
+    "description": "Point size setting",
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "visitHistory": "Besuchs-Verlauf: {days}",
+  "@visitHistory": {
+    "description": "Visit history setting",
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "visitHistoryDay": "{days} Tag",
+  "@visitHistoryDay": {
+    "description": "Visit history one day",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "visitHistoryDays": "{days} Tage",
+  "@visitHistoryDays": {
+    "description": "Visit history multiple days",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "visitHistoryHint": "Wie viele Tage der Reiseverlauf auf der Zeitachsen-Karte angezeigt wird.",
+  "@visitHistoryHint": {
+    "description": "Visit history hint"
+  },
+  "sectionPlanner": "Planer",
+  "@sectionPlanner": {
+    "description": "Planner section header"
+  },
+  "colorRange": "Farbskala-Bereich: {days}",
+  "@colorRange": {
+    "description": "Color range setting",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "colorRangeHint": "{range} Tage = grün  •  0 = gelb  •  -{range} = rot",
+  "@colorRangeHint": {
+    "description": "Color range hint",
+    "placeholders": {
+      "range": {
+        "type": "int"
+      }
+    }
+  },
+  "shownGroups": "Angezeigte Gruppen (Karte & Planer)",
+  "@shownGroups": {
+    "description": "Shown groups setting"
+  },
+  "noGroupsAvailable": "Keine Gruppen vorhanden",
+  "@noGroupsAvailable": {
+    "description": "No groups available"
+  },
+  "sectionAddressSearch": "Adresssuche",
+  "@sectionAddressSearch": {
+    "description": "Address search section header"
+  },
+  "defaultCountry": "Standard-Land für Adresssuche",
+  "@defaultCountry": {
+    "description": "Default country setting"
+  },
+  "defaultCountryHint": "z. B. Deutschland",
+  "@defaultCountryHint": {
+    "description": "Default country hint"
+  },
+  "defaultCountrySubtitle": "Wird in der Karten-Adresssuche als Standardland vorausgefüllt.",
+  "@defaultCountrySubtitle": {
+    "description": "Default country subtitle"
+  },
+  "sectionManagement": "Verwaltung",
+  "@sectionManagement": {
+    "description": "Management section header"
+  },
+  "placeGroups": "Ortsgruppen",
+  "@placeGroups": {
+    "description": "Place groups"
+  },
+  "persons": "Personen",
+  "@persons": {
+    "description": "Persons"
+  },
+  "activities": "Tätigkeiten",
+  "@activities": {
+    "description": "Activities"
+  },
+  "databaseDump": "Datenbank-Dump",
+  "@databaseDump": {
+    "description": "Database dump"
+  },
+  "databaseDumpSubtitle": "Dump erstellen, laden & teilen",
+  "@databaseDumpSubtitle": {
+    "description": "Database dump subtitle"
+  },
+  "syncSources": "Sync-Quellen",
+  "@syncSources": {
+    "description": "Sync sources"
+  },
+  "syncSourcesSubtitle": "Sync-Server verwalten und synchronisieren",
+  "@syncSourcesSubtitle": {
+    "description": "Sync sources subtitle"
+  },
+  "telegramConnections": "Telegram-Verbindungen",
+  "@telegramConnections": {
+    "description": "Telegram connections"
+  },
+  "telegramConnectionsSubtitle": "Telegram-Bots für Ortsberichte verwalten",
+  "@telegramConnectionsSubtitle": {
+    "description": "Telegram connections subtitle"
+  },
+  "sectionPermissions": "Berechtigungen",
+  "@sectionPermissions": {
+    "description": "Permissions section header"
+  },
+  "locationPermission": "Standortberechtigung",
+  "@locationPermission": {
+    "description": "Location permission"
+  },
+  "locationPermissionSubtitle": "Standort im Vordergrund anfordern",
+  "@locationPermissionSubtitle": {
+    "description": "Location permission subtitle"
+  },
+  "backgroundLocation": "Hintergrund-Standort",
+  "@backgroundLocation": {
+    "description": "Background location"
+  },
+  "backgroundLocationSubtitle": "Standort im Hintergrund anfordern",
+  "@backgroundLocationSubtitle": {
+    "description": "Background location subtitle"
+  },
+  "notifications": "Benachrichtigungen",
+  "@notifications": {
+    "description": "Notifications"
+  },
+  "notificationsSubtitle": "Benachrichtigungsberechtigung anfordern",
+  "@notificationsSubtitle": {
+    "description": "Notifications subtitle"
+  },
+  "calendarSync": "Kalender-Sync",
+  "@calendarSync": {
+    "description": "Calendar sync"
+  },
+  "calendarSyncSubtitle": "Aufenthalte automatisch im Gerätekalender eintragen",
+  "@calendarSyncSubtitle": {
+    "description": "Calendar sync subtitle"
+  },
+  "calendarPermission": "Kalenderberechtigung anfordern",
+  "@calendarPermission": {
+    "description": "Calendar permission"
+  },
+  "locationGranted": "Standort gewährt",
+  "@locationGranted": {
+    "description": "Location permission granted"
+  },
+  "locationDenied": "Standort verweigert",
+  "@locationDenied": {
+    "description": "Location permission denied"
+  },
+  "backgroundLocationGranted": "Hintergrund-Standort gewährt",
+  "@backgroundLocationGranted": {
+    "description": "Background location granted"
+  },
+  "backgroundLocationDenied": "Hintergrund-Standort verweigert",
+  "@backgroundLocationDenied": {
+    "description": "Background location denied"
+  },
+  "notificationsGranted": "Benachrichtigungen gewährt",
+  "@notificationsGranted": {
+    "description": "Notifications permission granted"
+  },
+  "notificationsDenied": "Benachrichtigungen verweigert",
+  "@notificationsDenied": {
+    "description": "Notifications permission denied"
+  },
+  "calendarGranted": "Kalender gewährt",
+  "@calendarGranted": {
+    "description": "Calendar permission granted"
+  },
+  "calendarDenied": "Kalender verweigert",
+  "@calendarDenied": {
+    "description": "Calendar permission denied"
+  },
+  "deleteActivity": "Aktuelle Aktivität dauerhaft entfernen",
+  "@deleteActivity": {
+    "description": "Delete current activity"
+  },
+  "pickActivity": "Aktivität wählen",
+  "@pickActivity": {
+    "description": "Pick activity"
+  },
+  "newActivityCreate": "Neue Aktivität erstellen",
+  "@newActivityCreate": {
+    "description": "Create new activity"
+  },
+  "newActivityLabel": "Neue Aktivität",
+  "@newActivityLabel": {
+    "description": "New activity label"
+  },
+  "copySettingsFrom": "Einstellungen kopieren von:",
+  "@copySettingsFrom": {
+    "description": "Copy settings from"
+  },
+  "renameActivity": "Aktivität umbenennen",
+  "@renameActivity": {
+    "description": "Rename activity"
+  },
+  "deleteActivityTitle": "Aktivität löschen?",
+  "@deleteActivityTitle": {
+    "description": "Delete activity dialog title"
+  },
+  "deleteActivityContent": "„{name}\" wirklich löschen?\n\nDie Einstellungen dieser Aktivität werden unwiderruflich entfernt.",
+  "@deleteActivityContent": {
+    "description": "Delete activity dialog content",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "activityDeleted": "„{name}\" gelöscht",
+  "@activityDeleted": {
+    "description": "Activity deleted snackbar",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteActivityLabel": "„{name}\" löschen",
+  "@deleteActivityLabel": {
+    "description": "Delete activity button label",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "visitsTitle": "Besuche",
+  "@visitsTitle": {
+    "description": "Visits screen title"
+  },
+  "searchStaysHint": "Aufenthalte durchsuchen…",
+  "@searchStaysHint": {
+    "description": "Search stays hint"
+  },
+  "searchStays": "Aufenthalte durchsuchen…",
+  "@searchStays": {
+    "description": "Search stays hint"
+  },
+  "closeSearch": "Suche schließen",
+  "@closeSearch": {
+    "description": "Close search tooltip"
+  },
+  "filterByDate": "Datumsbereich filtern",
+  "@filterByDate": {
+    "description": "Filter by date range tooltip"
+  },
+  "filterByPlace": "Nach Ort filtern",
+  "@filterByPlace": {
+    "description": "Filter by place tooltip"
+  },
+  "resetFilter": "Filter zurücksetzen",
+  "@resetFilter": {
+    "description": "Reset filter tooltip"
+  },
+  "tabList": "Besuche",
+  "@tabList": {
+    "description": "Visits tab"
+  },
+  "tabJourney": "Reise",
+  "@tabJourney": {
+    "description": "Journey tab"
+  },
+  "tabPlanner": "Planer",
+  "@tabPlanner": {
+    "description": "Planner tab"
+  },
+  "noStaysFound": "Keine abgeschlossenen Aufenthalte gefunden.\nTracking einschalten um Aufenthalte aufzuzeichnen.",
+  "@noStaysFound": {
+    "description": "No stays found message"
+  },
+  "toLastPosition": "Zur letzten Position",
+  "@toLastPosition": {
+    "description": "To last position button"
+  },
+  "noSchedulerPlaces": "Keine Planer-Orte vorhanden.\n\nAktiviere das Besuchs-Intervall für Orte in den Ortseinstellungen.",
+  "@noSchedulerPlaces": {
+    "description": "No scheduler places message"
+  },
+  "schedulerToday": "Heute",
+  "@schedulerToday": {
+    "description": "Scheduler today"
+  },
+  "schedulerInDays": "in {n} Tagen",
+  "@schedulerInDays": {
+    "description": "Scheduler in N days",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "schedulerInDay": "in {n} Tag",
+  "@schedulerInDay": {
+    "description": "Scheduler in 1 day",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "schedulerOverdueDays": "{n} Tage überfällig",
+  "@schedulerOverdueDays": {
+    "description": "Scheduler overdue by N days",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "schedulerOverdueDay": "{n} Tag überfällig",
+  "@schedulerOverdueDay": {
+    "description": "Scheduler overdue by 1 day",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "intervalDays": "Intervall: {n} Tage",
+  "@intervalDays": {
+    "description": "Visit interval days",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "allPlaces": "Alle Orte",
+  "@allPlaces": {
+    "description": "All places"
+  },
+  "placesTitle": "Orte",
+  "@placesTitle": {
+    "description": "Places screen title"
+  },
+  "searchPlaces": "Orte durchsuchen…",
+  "@searchPlaces": {
+    "description": "Search places hint"
+  },
+  "showIntervalOnly": "Nur Intervall-Orte",
+  "@showIntervalOnly": {
+    "description": "Show interval places only tooltip"
+  },
+  "showAllPlaces": "Alle Orte anzeigen",
+  "@showAllPlaces": {
+    "description": "Show all places tooltip"
+  },
+  "filter": "Filter",
+  "@filter": {
+    "description": "Filter"
+  },
+  "tabPlaces": "Orte",
+  "@tabPlaces": {
+    "description": "Places tab"
+  },
+  "noPlacesFound": "Keine Orte gefunden.",
+  "@noPlacesFound": {
+    "description": "No places found"
+  },
+  "noPlacesSaved": "Keine Orte gespeichert.\nOrte auf der Karte per Langer Druck hinzufügen.",
+  "@noPlacesSaved": {
+    "description": "No places saved"
+  },
+  "notVisitedYet": "Noch nicht besucht",
+  "@notVisitedYet": {
+    "description": "Not visited yet"
+  },
+  "visitCount": "{count} Besuch",
+  "@visitCount": {
+    "description": "Visit count singular",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "visitCountPlural": "{count} Besuche",
+  "@visitCountPlural": {
+    "description": "Visit count plural",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lastVisit": "Zuletzt: {date}  {time}",
+  "@lastVisit": {
+    "description": "Last visit",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "toCurrentPosition": "Zur aktuellen Position",
+  "@toCurrentPosition": {
+    "description": "To current position tooltip"
+  },
+  "activitiesScreenTitle": "Tätigkeiten",
+  "@activitiesScreenTitle": {
+    "description": "Activities screen title"
+  },
+  "noActivitiesYet": "Noch keine Tätigkeiten vorhanden.",
+  "@noActivitiesYet": {
+    "description": "No activities yet"
+  },
+  "taskDeleteTitle": "Tätigkeit löschen?",
+  "@taskDeleteTitle": {
+    "description": "Delete task dialog title"
+  },
+  "taskDeleteContent": "„{name}\" wirklich entfernen?",
+  "@taskDeleteContent": {
+    "description": "Delete task dialog content",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "newTask": "Neue Tätigkeit",
+  "@newTask": {
+    "description": "New task dialog title"
+  },
+  "editTask": "Tätigkeit bearbeiten",
+  "@editTask": {
+    "description": "Edit task dialog title"
+  },
+  "addTaskTooltip": "Tätigkeit hinzufügen",
+  "@addTaskTooltip": {
+    "description": "Add task tooltip"
+  },
+  "databaseTitle": "Datenbank",
+  "@databaseTitle": {
+    "description": "Database screen title"
+  },
+  "tabExport": "Exportieren",
+  "@tabExport": {
+    "description": "Export tab"
+  },
+  "tabImport": "Importieren",
+  "@tabImport": {
+    "description": "Import tab"
+  },
+  "tabReset": "Zurücksetzen",
+  "@tabReset": {
+    "description": "Reset tab"
+  },
+  "exportTitle": "Datenbank exportieren",
+  "@exportTitle": {
+    "description": "Export database title"
+  },
+  "exportDescription": "Die SQLite-Datenbankdatei wird direkt geteilt. Sie kann als Backup gespeichert oder auf ein anderes Gerät übertragen werden.",
+  "@exportDescription": {
+    "description": "Export description"
+  },
+  "shareDatabase": "Datenbank teilen",
+  "@shareDatabase": {
+    "description": "Share database button"
+  },
+  "importTitle": "Datenbank importieren",
+  "@importTitle": {
+    "description": "Import database title"
+  },
+  "importHowTo": "So importierst du eine Datenbank:\n\n1. Öffne die Dateien-App\n2. Halte die .db-Datei gedrückt\n3. Tippe auf „Teilen\"\n4. Wähle „Chaos Tours\" aus der Liste",
+  "@importHowTo": {
+    "description": "Import how-to instructions"
+  },
+  "importHint": "Diese App öffnet sich automatisch, wenn du eine Datei hierher teilst.",
+  "@importHint": {
+    "description": "Import hint"
+  },
+  "fileReceived": "Datei empfangen:",
+  "@fileReceived": {
+    "description": "File received label"
+  },
+  "importButton": "Importieren",
+  "@importButton": {
+    "description": "Import button"
+  },
+  "dbReplaceTitle": "Datenbank ersetzen?",
+  "@dbReplaceTitle": {
+    "description": "Replace database dialog title"
+  },
+  "dbReplaceContent": "Die aktuelle Datenbank wird vollständig durch die geteilte Datei ersetzt.\n\nAlle vorhandenen Daten gehen verloren.\n\nFortfahren?",
+  "@dbReplaceContent": {
+    "description": "Replace database dialog content"
+  },
+  "importSuccess": "Datenbank erfolgreich importiert",
+  "@importSuccess": {
+    "description": "Import success message"
+  },
+  "dbResetTitle": "Datenbank zurücksetzen?",
+  "@dbResetTitle": {
+    "description": "Reset database dialog title"
+  },
+  "dbResetContent": "Alle Daten werden unwiderruflich gelöscht. Die Datenbankstruktur bleibt erhalten.\n\nFortfahren?",
+  "@dbResetContent": {
+    "description": "Reset database dialog content"
+  },
+  "resetSuccess": "Datenbank zurückgesetzt",
+  "@resetSuccess": {
+    "description": "Reset success message"
+  },
+  "exportFailed": "Export fehlgeschlagen: {error}",
+  "@exportFailed": {
+    "description": "Export failed message",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "importFailed": "Import fehlgeschlagen: {error}",
+  "@importFailed": {
+    "description": "Import failed message",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "resetFailed": "Zurücksetzen fehlgeschlagen: {error}",
+  "@resetFailed": {
+    "description": "Reset failed message",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "mapTitle": "Chaos Tours – Karte",
+  "@mapTitle": {
+    "description": "Map screen title"
+  },
+  "tooltipFilter": "Filter",
+  "@tooltipFilter": {
+    "description": "Filter tooltip"
+  },
+  "tooltipAddressSearch": "Adresse suchen",
+  "@tooltipAddressSearch": {
+    "description": "Address search tooltip"
+  },
+  "whichPlaceToOpen": "Welchen Ort öffnen?",
+  "@whichPlaceToOpen": {
+    "description": "Which place to open"
+  },
+  "createPlaceHere": "Ort hier erstellen",
+  "@createPlaceHere": {
+    "description": "Create place here"
+  },
+  "routeInGoogleMaps": "Route in Google Maps",
+  "@routeInGoogleMaps": {
+    "description": "Route in Google Maps"
+  },
+  "toMyPosition": "Zu meiner Position",
+  "@toMyPosition": {
+    "description": "To my position tooltip"
+  },
+  "noResultsFound": "Keine Ergebnisse gefunden.",
+  "@noResultsFound": {
+    "description": "No results found"
+  },
+  "addressSearch": "Adresse suchen",
+  "@addressSearch": {
+    "description": "Address search sheet title"
+  },
+  "country": "Land",
+  "@country": {
+    "description": "Country label"
+  },
+  "countryHint": "z. B. Deutschland",
+  "@countryHint": {
+    "description": "Country hint"
+  },
+  "cityPlace": "Stadt / Ort",
+  "@cityPlace": {
+    "description": "City or place label"
+  },
+  "cityHint": "z. B. München",
+  "@cityHint": {
+    "description": "City hint"
+  },
+  "streetOptional": "Straße (optional)",
+  "@streetOptional": {
+    "description": "Street optional label"
+  },
+  "streetHint": "z. B. Marienplatz 1",
+  "@streetHint": {
+    "description": "Street hint"
+  },
+  "personsScreenTitle": "Personen",
+  "@personsScreenTitle": {
+    "description": "Persons screen title"
+  },
+  "noPersonsYet": "Noch keine Personen vorhanden.",
+  "@noPersonsYet": {
+    "description": "No persons yet"
+  },
+  "personDeleteTitle": "Person löschen?",
+  "@personDeleteTitle": {
+    "description": "Delete person dialog title"
+  },
+  "personDeleteContent": "„{name}\" wirklich entfernen?",
+  "@personDeleteContent": {
+    "description": "Delete person dialog content",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "newPerson": "Neue Person",
+  "@newPerson": {
+    "description": "New person dialog title"
+  },
+  "editPerson": "Person bearbeiten",
+  "@editPerson": {
+    "description": "Edit person dialog title"
+  },
+  "roleOptional": "Rolle / Beschreibung (optional)",
+  "@roleOptional": {
+    "description": "Role optional label"
+  },
+  "addPersonTooltip": "Person hinzufügen",
+  "@addPersonTooltip": {
+    "description": "Add person tooltip"
+  },
+  "photoAlbumTitle": "Fotoalbum",
+  "@photoAlbumTitle": {
+    "description": "Photo album screen title"
+  },
+  "noPhotosYet": "Noch keine Fotos vorhanden",
+  "@noPhotosYet": {
+    "description": "No photos yet"
+  },
+  "noPhotosHint": "Fotos können bei Orten und Besuchen hinzugefügt werden.",
+  "@noPhotosHint": {
+    "description": "No photos hint"
+  },
+  "withoutPlace": "Ohne Ort",
+  "@withoutPlace": {
+    "description": "Without place label"
+  },
+  "photoCount": "{count} Foto",
+  "@photoCount": {
+    "description": "Photo count singular",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photoCountPlural": "{count} Fotos",
+  "@photoCountPlural": {
+    "description": "Photo count plural",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photoDeleteTitle": "Foto löschen",
+  "@photoDeleteTitle": {
+    "description": "Delete photo dialog title"
+  },
+  "photoDeleteContent": "Dieses Foto wirklich löschen?",
+  "@photoDeleteContent": {
+    "description": "Delete photo dialog content"
+  },
+  "placeGroupsTitle": "Ortsgruppen",
+  "@placeGroupsTitle": {
+    "description": "Place groups screen title"
+  },
+  "noGroupsYet": "Noch keine Gruppen vorhanden.",
+  "@noGroupsYet": {
+    "description": "No groups yet"
+  },
+  "groupDeleteTitle": "Gruppe löschen?",
+  "@groupDeleteTitle": {
+    "description": "Delete group dialog title"
+  },
+  "groupDeleteContent": "„{name}\" wirklich löschen?",
+  "@groupDeleteContent": {
+    "description": "Delete group dialog content",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "newGroup": "Neue Gruppe",
+  "@newGroup": {
+    "description": "New group dialog title"
+  },
+  "editGroup": "Gruppe bearbeiten",
+  "@editGroup": {
+    "description": "Edit group dialog title"
+  },
+  "calendarChosen": "Kalender gewählt",
+  "@calendarChosen": {
+    "description": "Calendar chosen"
+  },
+  "noCalendar": "Kein Kalender",
+  "@noCalendar": {
+    "description": "No calendar"
+  },
+  "telegramChosen": "Telegram gewählt",
+  "@telegramChosen": {
+    "description": "Telegram connection chosen"
+  },
+  "noTelegram": "Kein Telegram",
+  "@noTelegram": {
+    "description": "No Telegram connection"
+  },
+  "choose": "Wählen",
+  "@choose": {
+    "description": "Choose hint"
+  },
+  "notesInCalendar": "Notizen in Kalender",
+  "@notesInCalendar": {
+    "description": "Notes in calendar checkbox"
+  },
+  "personsInCalendar": "Personen in Kalender",
+  "@personsInCalendar": {
+    "description": "Persons in calendar checkbox"
+  },
+  "activitiesInCalendar": "Tätigkeiten in Kalender",
+  "@activitiesInCalendar": {
+    "description": "Activities in calendar checkbox"
+  },
+  "autoGroup": "Auto-Gruppe",
+  "@autoGroup": {
+    "description": "Auto group checkbox"
+  },
+  "autoGroupSubtitle": "Automatisch erkannte Orte werden hier einsortiert",
+  "@autoGroupSubtitle": {
+    "description": "Auto group subtitle"
+  },
+  "pickCalendar": "Kalender wählen",
+  "@pickCalendar": {
+    "description": "Pick calendar dialog title"
+  },
+  "addGroupTooltip": "Gruppe hinzufügen",
+  "@addGroupTooltip": {
+    "description": "Add group tooltip"
+  },
+  "repositionTitle": "Position: {name}",
+  "@repositionTitle": {
+    "description": "Reposition screen title",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "repositionConfirmTitle": "Position übernehmen?",
+  "@repositionConfirmTitle": {
+    "description": "Reposition confirm dialog title"
+  },
+  "repositionConfirmContent": "„{name}\" wird auf\n{lat}, {lng}\nverschoben.",
+  "@repositionConfirmContent": {
+    "description": "Reposition confirm dialog content",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "lat": {
+        "type": "String"
+      },
+      "lng": {
+        "type": "String"
+      }
+    }
+  },
+  "showCurrentLocation": "Aktuellen Standort anzeigen",
+  "@showCurrentLocation": {
+    "description": "Show current location tooltip"
+  },
+  "placeVisitsTitle": "Besuche: {name}",
+  "@placeVisitsTitle": {
+    "description": "Place visits screen title",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "syncSourcesTitle": "Sync-Quellen",
+  "@syncSourcesTitle": {
+    "description": "Sync sources screen title"
+  },
+  "stayPersons": "Aufenthalts-Personen",
+  "@stayPersons": {
+    "description": "Stay persons table label"
+  },
+  "stayActivities": "Aufenthalts-Tätigkeiten",
+  "@stayActivities": {
+    "description": "Stay activities table label"
+  },
+  "placeExperiences": "Orts-Erfahrungen",
+  "@placeExperiences": {
+    "description": "Place experiences table label"
+  },
+  "sourceExperiences": "Quellen-Erfahrungen",
+  "@sourceExperiences": {
+    "description": "Source experiences table label"
+  },
+  "sourceDeleteTitle": "Quelle löschen?",
+  "@sourceDeleteTitle": {
+    "description": "Delete source dialog title"
+  },
+  "sourceDeleteContent": "„{name}\" wird unwiderruflich gelöscht.",
+  "@sourceDeleteContent": {
+    "description": "Delete source dialog content",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "syncWarning": "⚠️ Es wird dringend empfohlen, vor der Synchronisation eine Sicherheitskopie der Datenbank zu exportieren (Einstellungen → Datenbank-Dump).\n\nJetzt synchronisieren?",
+  "@syncWarning": {
+    "description": "Sync warning dialog content"
+  },
+  "syncAllTitle": "Alle synchronisieren",
+  "@syncAllTitle": {
+    "description": "Sync all dialog title"
+  },
+  "syncAllWarning": "⚠️ Es wird dringend empfohlen, vor der Synchronisation eine Sicherheitskopie der Datenbank zu exportieren (Einstellungen → Datenbank-Dump).\n\nMit allen aktiven Sync-Quellen synchronisieren?",
+  "@syncAllWarning": {
+    "description": "Sync all warning dialog content"
+  },
+  "newSyncSource": "Neue Sync-Quelle",
+  "@newSyncSource": {
+    "description": "New sync source dialog title"
+  },
+  "editSyncSource": "Quelle bearbeiten",
+  "@editSyncSource": {
+    "description": "Edit sync source dialog title"
+  },
+  "syncAddress": "Sync-Adresse *",
+  "@syncAddress": {
+    "description": "Sync address label"
+  },
+  "syncAddressHint": "http://192.168.1.10:8000",
+  "@syncAddressHint": {
+    "description": "Sync address hint"
+  },
+  "apiKey": "API-Key",
+  "@apiKey": {
+    "description": "API key label"
+  },
+  "infoUrlOptional": "Info-URL (optional)",
+  "@infoUrlOptional": {
+    "description": "Info URL optional label"
+  },
+  "infoUrlHint": "https://example.com",
+  "@infoUrlHint": {
+    "description": "Info URL hint"
+  },
+  "syncOptionsTitle": "Sync-Optionen",
+  "@syncOptionsTitle": {
+    "description": "Sync options dialog title"
+  },
+  "syncOptionsWarning": "⚠️ Vor dem Aktivieren von Bearbeiten/Löschen empfiehlt sich ein Datenbank-Export als Sicherheitskopie.",
+  "@syncOptionsWarning": {
+    "description": "Sync options warning"
+  },
+  "insert": "Einfügen",
+  "@insert": {
+    "description": "Insert column header"
+  },
+  "noSyncOptions": "Keine Sync-Optionen aktiv",
+  "@noSyncOptions": {
+    "description": "No sync options active"
+  },
+  "tablesActive": "{count} Tabellen aktiv",
+  "@tablesActive": {
+    "description": "Tables active count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noExperiences": "Noch keine Erfahrungen vorhanden.",
+  "@noExperiences": {
+    "description": "No experiences yet"
+  },
+  "experiencesTitle": "Erfahrungen",
+  "@experiencesTitle": {
+    "description": "Experiences section title"
+  },
+  "syncTitle": "Synchronisieren",
+  "@syncTitle": {
+    "description": "Sync dialog title"
+  },
+  "syncResultSuccess": "{pulled} empfangen, {pushed} gesendet",
+  "@syncResultSuccess": {
+    "description": "Sync result success",
+    "placeholders": {
+      "pulled": {
+        "type": "int"
+      },
+      "pushed": {
+        "type": "int"
+      }
+    }
+  },
+  "syncError": "Fehler: {error}",
+  "@syncError": {
+    "description": "Sync error message",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noActiveSyncSources": "Keine aktiven Sync-Quellen konfiguriert",
+  "@noActiveSyncSources": {
+    "description": "No active sync sources"
+  },
+  "syncAllResult": "{ok} Quelle(n) OK ({pulled} empfangen, {pushed} gesendet)",
+  "@syncAllResult": {
+    "description": "Sync all result",
+    "placeholders": {
+      "ok": {
+        "type": "int"
+      },
+      "pulled": {
+        "type": "int"
+      },
+      "pushed": {
+        "type": "int"
+      }
+    }
+  },
+  "syncAllResultWithErrors": "{ok} Quelle(n) OK ({pulled} empfangen, {pushed} gesendet), {fail} Fehler",
+  "@syncAllResultWithErrors": {
+    "description": "Sync all result with errors",
+    "placeholders": {
+      "ok": {
+        "type": "int"
+      },
+      "pulled": {
+        "type": "int"
+      },
+      "pushed": {
+        "type": "int"
+      },
+      "fail": {
+        "type": "int"
+      }
+    }
+  },
+  "syncAllTooltip": "Alle synchronisieren",
+  "@syncAllTooltip": {
+    "description": "Sync all tooltip"
+  },
+  "addSourceTooltip": "Quelle hinzufügen",
+  "@addSourceTooltip": {
+    "description": "Add source tooltip"
+  },
+  "noSyncSources": "Keine Sync-Quellen vorhanden.\nTippe + um eine hinzuzufügen.",
+  "@noSyncSources": {
+    "description": "No sync sources message"
+  },
+  "syncNow": "Jetzt synchronisieren",
+  "@syncNow": {
+    "description": "Sync now menu item"
+  },
+  "syncOptionsMenu": "Sync-Optionen",
+  "@syncOptionsMenu": {
+    "description": "Sync options menu item"
+  },
+  "addExperience": "Erfahrung hinzufügen",
+  "@addExperience": {
+    "description": "Add experience button"
+  },
+  "experienceHint": "Notiz, Erfahrung oder Bewertung…",
+  "@experienceHint": {
+    "description": "Experience hint text"
+  },
+  "syncAddressLabel": "Sync-Adresse",
+  "@syncAddressLabel": {
+    "description": "Sync address detail label"
+  },
+  "infoUrlLabel": "Info-URL",
+  "@infoUrlLabel": {
+    "description": "Info URL detail label"
+  },
+  "activeSyncOptions": "Aktive Sync-Optionen",
+  "@activeSyncOptions": {
+    "description": "Active sync options title"
+  },
+  "telegramConnectionsTitle": "Telegram-Verbindungen",
+  "@telegramConnectionsTitle": {
+    "description": "Telegram connections screen title"
+  },
+  "noTelegramConnections": "Noch keine Telegram-Verbindungen vorhanden.",
+  "@noTelegramConnections": {
+    "description": "No Telegram connections yet"
+  },
+  "connectionDeleteTitle": "Verbindung löschen?",
+  "@connectionDeleteTitle": {
+    "description": "Delete connection dialog title"
+  },
+  "connectionDeleteContent": "„{name}\" wird unwiderruflich gelöscht.",
+  "@connectionDeleteContent": {
+    "description": "Delete connection dialog content",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "newTelegramConnection": "Neue Telegram-Verbindung",
+  "@newTelegramConnection": {
+    "description": "New Telegram connection dialog title"
+  },
+  "editTelegramConnection": "Verbindung bearbeiten",
+  "@editTelegramConnection": {
+    "description": "Edit Telegram connection dialog title"
+  },
+  "chatIdLabel": "-ID-Nummer oder @Kanalname *",
+  "@chatIdLabel": {
+    "description": "Chat ID label"
+  },
+  "chatIdHint": "-123... oder @Kanal",
+  "@chatIdHint": {
+    "description": "Chat ID hint"
+  },
+  "botTokenLabel": "Bot-Token *",
+  "@botTokenLabel": {
+    "description": "Bot token label"
+  },
+  "botTokenHint": "123456:ABC-DEF…",
+  "@botTokenHint": {
+    "description": "Bot token hint"
+  },
+  "distance": "Entfernung",
+  "@distance": {
+    "description": "Distance filter label"
+  },
+  "maxDistance": "max. {dist}",
+  "@maxDistance": {
+    "description": "Max distance label",
+    "placeholders": {
+      "dist": {
+        "type": "String"
+      }
+    }
+  },
+  "experienceFilter": "Erfahrungs-Filter",
+  "@experienceFilter": {
+    "description": "Experience filter label"
+  },
+  "resetFilter2": "Zurücksetzen",
+  "@resetFilter2": {
+    "description": "Reset filter button in experience panel"
+  },
+  "activateExperienceFilter": "Erfahrungsfilter aktivieren",
+  "@activateExperienceFilter": {
+    "description": "Activate experience filter checkbox"
+  },
+  "minAvgRating": "Min. ⌀ Bewertung:",
+  "@minAvgRating": {
+    "description": "Min average rating label"
+  },
+  "camera": "Kamera",
+  "@camera": {
+    "description": "Camera button"
+  },
+  "fromGallery": "Aus Galerie",
+  "@fromGallery": {
+    "description": "From gallery"
+  },
+  "noPhotosGrid": "Noch keine Fotos",
+  "@noPhotosGrid": {
+    "description": "No photos in grid"
+  },
+  "captionTitle": "Beschriftung",
+  "@captionTitle": {
+    "description": "Caption dialog title"
+  },
+  "captionHint": "Beschriftung eingeben",
+  "@captionHint": {
+    "description": "Caption hint"
+  },
+  "editCaptionTooltip": "Beschriftung bearbeiten",
+  "@editCaptionTooltip": {
+    "description": "Edit caption tooltip"
+  },
+  "deletePhotoTooltip": "Foto löschen",
+  "@deletePhotoTooltip": {
+    "description": "Delete photo tooltip"
+  },
+  "photosAtPlace": "Fotos am Ort",
+  "@photosAtPlace": {
+    "description": "Photos at place section header"
+  },
+  "noPlacePhotos": "Noch keine Fotos am Ort.",
+  "@noPlacePhotos": {
+    "description": "No place photos"
+  },
+  "photosFromVisits": "Fotos aus Besuchen",
+  "@photosFromVisits": {
+    "description": "Photos from visits section header"
+  },
+  "noVisitPhotos": "Keine Besuchs-Fotos vorhanden.",
+  "@noVisitPhotos": {
+    "description": "No visit photos"
+  },
+  "visit": "Besuch",
+  "@visit": {
+    "description": "Visit label"
+  },
+  "stillRunning": "läuft noch…",
+  "@stillRunning": {
+    "description": "Stay still running"
+  },
+  "editStay": "Aufenthalt bearbeiten",
+  "@editStay": {
+    "description": "Edit stay sheet title"
+  },
+  "begin": "Beginn",
+  "@begin": {
+    "description": "Begin/start label"
+  },
+  "end": "Ende",
+  "@end": {
+    "description": "End label"
+  },
+  "notes": "Notizen",
+  "@notes": {
+    "description": "Notes label"
+  },
+  "intervalVisit": "Intervall-Besuch",
+  "@intervalVisit": {
+    "description": "Interval visit toggle"
+  },
+  "intervalVisitSubtitle": "Besuch zählt zur Intervall-Berechnung",
+  "@intervalVisitSubtitle": {
+    "description": "Interval visit subtitle"
+  },
+  "addPersonSheetTitle": "Person hinzufügen",
+  "@addPersonSheetTitle": {
+    "description": "Add person sheet title"
+  },
+  "nameNewHint": "Name eingeben (neu)",
+  "@nameNewHint": {
+    "description": "New name hint"
+  },
+  "addActivitySheetTitle": "Tätigkeit hinzufügen",
+  "@addActivitySheetTitle": {
+    "description": "Add activity sheet title"
+  },
+  "activityNewHint": "Tätigkeit eingeben (neu)",
+  "@activityNewHint": {
+    "description": "New activity hint"
+  },
+  "photos": "Fotos",
+  "@photos": {
+    "description": "Photos section title"
+  },
+  "deleteStay": "Aufenthalt löschen",
+  "@deleteStay": {
+    "description": "Delete stay button"
+  },
+  "deleteStayTitle": "Aufenthalt löschen",
+  "@deleteStayTitle": {
+    "description": "Delete stay dialog title"
+  },
+  "deleteStayContent": "Soll dieser Aufenthalt wirklich gelöscht werden? Diese Aktion kann nicht rückgängig gemacht werden.",
+  "@deleteStayContent": {
+    "description": "Delete stay dialog content"
+  },
+  "personNewHint": "Name eingeben (neu)",
+  "@personNewHint": {
+    "description": "New person name hint"
+  },
+  "experienceDeleteTitle": "Erfahrung löschen?",
+  "@experienceDeleteTitle": {
+    "description": "Delete experience dialog title"
+  },
+  "experienceDeleteContent": "Dieser Eintrag wird unwiderruflich gelöscht.",
+  "@experienceDeleteContent": {
+    "description": "Delete experience dialog content"
+  },
+  "addOrEditExperienceTitle": "Erfahrung hinzufügen",
+  "@addOrEditExperienceTitle": {
+    "description": "Add experience dialog title"
+  },
+  "editExperienceTitle": "Erfahrung bearbeiten",
+  "@editExperienceTitle": {
+    "description": "Edit experience dialog title"
+  },
+  "reportOptional": "Bericht (optional)",
+  "@reportOptional": {
+    "description": "Report optional label"
+  },
+  "ratingsLabel": "Bewertungen (−9 bis +9):",
+  "@ratingsLabel": {
+    "description": "Ratings label"
+  },
+  "ratingDangerFriendly": "Gefährlich ↔ Freundlich",
+  "@ratingDangerFriendly": {
+    "description": "Rating: dangerous to friendly"
+  },
+  "ratingFraudReliable": "Betrügerisch ↔ Zuverlässig",
+  "@ratingFraudReliable": {
+    "description": "Rating: fraudulent to reliable"
+  },
+  "ratingDismissiveAccommodation": "Abweisend ↔ Bietet Unterkunft",
+  "@ratingDismissiveAccommodation": {
+    "description": "Rating: dismissive to accommodation"
+  },
+  "ratingFood": "Fordert ↔ Bietet Verpflegung",
+  "@ratingFood": {
+    "description": "Rating: demands to provides food"
+  },
+  "ratingEquipment": "Fordert ↔ Bietet Equipment",
+  "@ratingEquipment": {
+    "description": "Rating: demands to provides equipment"
+  },
+  "ratingTransport": "Fordert ↔ Bietet Transport",
+  "@ratingTransport": {
+    "description": "Rating: demands to provides transport"
+  },
+  "noExperiencesYet": "Noch keine Erfahrungsberichte vorhanden.",
+  "@noExperiencesYet": {
+    "description": "No experiences yet"
+  },
+  "survivalExperiences": "Survival-Erfahrungen",
+  "@survivalExperiences": {
+    "description": "Survival experiences section"
+  },
+  "statistics": "Statistik",
+  "@statistics": {
+    "description": "Statistics section"
+  },
+  "visitNow": "Jetzt besuchen",
+  "@visitNow": {
+    "description": "Visit now button"
+  },
+  "copyFullReport": "Vollständigen Bericht kopieren",
+  "@copyFullReport": {
+    "description": "Copy full report button"
+  },
+  "sendReportToTelegram": "Bericht an Telegram senden",
+  "@sendReportToTelegram": {
+    "description": "Send report to Telegram button"
+  },
+  "visitInterval": "Besuchs-Intervall",
+  "@visitInterval": {
+    "description": "Visit interval section"
+  },
+  "intervalDaysLabel": "Intervall (Tage)",
+  "@intervalDaysLabel": {
+    "description": "Interval days label"
+  },
+  "intervalDaysHint": "z. B. 14",
+  "@intervalDaysHint": {
+    "description": "Interval days hint"
+  },
+  "intervalDaysSuffix": "Tage",
+  "@intervalDaysSuffix": {
+    "description": "Interval days suffix"
+  },
+  "changePositionOnMap": "Position auf Karte ändern",
+  "@changePositionOnMap": {
+    "description": "Change position on map button"
+  },
+  "radius": "Radius: {m} m",
+  "@radius": {
+    "description": "Radius display",
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "group": "Gruppe",
+  "@group": {
+    "description": "Group label"
+  },
+  "noGroup": "Keine Gruppe",
+  "@noGroup": {
+    "description": "No group option"
+  },
+  "placeDeleteTitle": "Ort löschen?",
+  "@placeDeleteTitle": {
+    "description": "Delete place dialog title"
+  },
+  "placeDeleteContent": "„{name}\" wirklich löschen?",
+  "@placeDeleteContent": {
+    "description": "Delete place dialog content",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gpsCopied": "GPS-Koordinaten kopiert",
+  "@gpsCopied": {
+    "description": "GPS coordinates copied snackbar"
+  },
+  "reportCopied": "Bericht in Zwischenablage kopiert",
+  "@reportCopied": {
+    "description": "Report copied snackbar"
+  },
+  "telegramSendTitle": "An Telegram senden?",
+  "@telegramSendTitle": {
+    "description": "Send to Telegram dialog title"
+  },
+  "telegramSendContent": "Bericht für „{place}\" an „{connection}\" senden?",
+  "@telegramSendContent": {
+    "description": "Send to Telegram dialog content",
+    "placeholders": {
+      "place": {
+        "type": "String"
+      },
+      "connection": {
+        "type": "String"
+      }
+    }
+  },
+  "openInGoogleMaps": "In Google Maps öffnen",
+  "@openInGoogleMaps": {
+    "description": "Open in Google Maps tooltip"
+  },
+  "noteName": "Notiz",
+  "@noteName": {
+    "description": "Note label"
+  },
+  "website": "Website",
+  "@website": {
+    "description": "Website label"
+  },
+  "email": "E-Mail",
+  "@email": {
+    "description": "Email label"
+  },
+  "phone": "Telefon",
+  "@phone": {
+    "description": "Phone label"
+  },
+  "saveVisit": "Besuch speichern",
+  "@saveVisit": {
+    "description": "Save visit button"
+  },
+  "importAutoOpenHint": "Diese App öffnet sich automatisch, wenn du eine Datei hierher teilst.",
+  "@importAutoOpenHint": {
+    "description": "Import auto-open hint"
+  },
+  "importOverwriteWarning": "Alle vorhandenen Daten werden überschrieben.",
+  "@importOverwriteWarning": {
+    "description": "Import overwrite warning"
+  },
+  "importNow": "Jetzt importieren",
+  "@importNow": {
+    "description": "Import now button"
+  },
+  "importWaiting": "Warte auf geteilte Datei …",
+  "@importWaiting": {
+    "description": "Import waiting for shared file"
+  },
+  "resetTitle": "Datenbank zurücksetzen",
+  "@resetTitle": {
+    "description": "Reset database section title"
+  },
+  "resetDescription": "Alle Daten werden unwiderruflich gelöscht. Die Datenbankstruktur bleibt erhalten.",
+  "@resetDescription": {
+    "description": "Reset database description"
+  },
+  "resetIrreversibleWarning": "Diese Aktion kann nicht rückgängig gemacht werden.",
+  "@resetIrreversibleWarning": {
+    "description": "Reset irreversible warning"
+  },
+  "deleteAllData": "Alle Daten löschen",
+  "@deleteAllData": {
+    "description": "Delete all data button"
+  },
+  "trackingActivateTitle": "Tracking aktivieren?",
+  "@trackingActivateTitle": {
+    "description": "Tracking activate dialog title"
+  },
+  "trackingDeactivateTitle": "Tracking deaktivieren?",
+  "@trackingDeactivateTitle": {
+    "description": "Tracking deactivate dialog title"
+  },
+  "trackingActivateContent": "Soll das automatische Hintergrund-Tracking gestartet werden?",
+  "@trackingActivateContent": {
+    "description": "Tracking activate dialog content"
+  },
+  "trackingDeactivateContent": "Soll das automatische Hintergrund-Tracking gestoppt werden?",
+  "@trackingDeactivateContent": {
+    "description": "Tracking deactivate dialog content"
+  },
+  "trackingActiveTooltip": "Tracking aktiv",
+  "@trackingActiveTooltip": {
+    "description": "Tracking active tooltip"
+  },
+  "trackingInactiveTooltip": "Tracking inaktiv",
+  "@trackingInactiveTooltip": {
+    "description": "Tracking inactive tooltip"
+  },
+  "trackingNotificationText": "Automatisches Tracking aktiv",
+  "@trackingNotificationText": {
+    "description": "Foreground service notification text"
+  },
+  "trackingStatusHaltUnknownAddress": "Halten: {address}",
+  "@trackingStatusHaltUnknownAddress": {
+    "description": "Tracking status halt at unknown address",
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  }
+}

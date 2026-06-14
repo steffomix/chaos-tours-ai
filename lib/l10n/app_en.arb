@@ -1,0 +1,782 @@
+{
+  "@@locale": "en",
+  "appTitle": "Chaos Tours",
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "add": "Add",
+  "ok": "OK",
+  "yes": "Yes",
+  "no": "No",
+  "search": "Search",
+  "none": "None",
+  "all": "All",
+  "@all": {
+    "description": "All label"
+  },
+  "create": "Create",
+  "@create": {
+    "description": "Create button"
+  },
+  "close": "Close",
+  "send": "Send",
+  "apply": "Apply",
+  "unknown": "Unknown",
+  "version": "Version 2.0.0",
+  "name": "Name",
+  "reset": "Reset",
+  "required": "Required",
+  "description": "Description",
+  "active": "Active",
+  "type": "Type",
+  "replace": "Replace",
+  "synchronize": "Synchronize",
+  "navHome": "Home",
+  "navMap": "Map",
+  "navPlaces": "Places",
+  "navVisits": "Visits",
+  "navPhotos": "Photos",
+  "trackingDisabled": "Tracking disabled",
+  "trackingRunning": "Tracking running…",
+  "trackingActive": "Tracking active",
+  "trackingInactive": "Tracking inactive",
+  "trackingStatusMoving": "Moving",
+  "trackingStatusHaltKnown": "Staying at {place}",
+  "@trackingStatusHaltKnown": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "trackingStatusHaltUnknown": "Staying: {address}",
+  "@trackingStatusHaltUnknown": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "trackingStatusHalt": "Staying",
+  "trackingStatusDetecting": "Detecting stay…",
+  "trackingCollecting": "Tracking collecting GPS data…",
+  "aktivitaetLoading": "Loading activity…",
+  "unknownPlace": "Unknown place",
+  "sinceHoursMinutes": "For {h}h {m}min",
+  "@sinceHoursMinutes": {
+    "placeholders": {
+      "h": {
+        "type": "int"
+      },
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "sinceMinutes": "For {m}min",
+  "@sinceMinutes": {
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "endStayNow": "End & share stay now",
+  "endStayTitle": "End stay?",
+  "endStayContent": "The current stay will be ended now. Tracking continues and will start a new stay if you remain at the same place.",
+  "endStayButton": "End",
+  "noVisitsYet": "No visits recorded yet.",
+  "recentVisits": "Recent visits",
+  "enableTracking": "Enable tracking?",
+  "disableTracking": "Disable tracking?",
+  "enableTrackingContent": "Start automatic background tracking?",
+  "disableTrackingContent": "Stop automatic background tracking?",
+  "activate": "Activate",
+  "deactivate": "Deactivate",
+  "batteryOptTitle": "Disable battery optimization",
+  "batteryOptContent": "The background service could not be started.\n\nPlease disable battery optimization for Chaos Tours:\nSettings → Apps → Chaos Tours → Battery → Unrestricted",
+  "openSettings": "Open settings",
+  "settingsTitle": "Settings",
+  "settingsSaved": "Settings saved",
+  "sectionActivity": "Activity",
+  "noActivity": "No activity",
+  "activityCount": "{count, plural, one{{count} activity} other{{count} activities}}",
+  "@activityCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tooltipRename": "Rename",
+  "tooltipSwitchCreate": "Switch / Create new",
+  "sectionTracking": "Tracking",
+  "gpsInterval": "GPS interval: {value}s",
+  "@gpsInterval": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "gpsIntervalHint": "Note: Changes take effect after restarting tracking.",
+  "gpsSmoothing": "GPS smoothing: {value}",
+  "@gpsSmoothing": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "gpsSmoothingDisabled": "disabled",
+  "gpsSmoothingPoints": "{n} points",
+  "@gpsSmoothingPoints": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "gpsSmoothingHint": "Averages the last N GPS points.",
+  "stayDetection": "Detect stay after: {min} min",
+  "@stayDetection": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "autoPlaceTime": "Create auto-place after: {min} min",
+  "@autoPlaceTime": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "defaultRadius": "Default radius: {m} m",
+  "@defaultRadius": {
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "autoCreatePlaces": "Automatically create places",
+  "autoCreatePlacesSubtitle": "Create new places for long stays at unknown locations",
+  "autoPlaceGroup": "Group for auto-places",
+  "defaultPlaceGroup": "Default group for new places",
+  "defaultPlaceGroupSubtitle": "Preset group when manually creating places",
+  "sectionMapDisplay": "Map display",
+  "showGpsPoints": "Show GPS points",
+  "showGpsPointsSubtitle": "Show tracking points in color on the map",
+  "pointSize": "Point size: {m} m",
+  "@pointSize": {
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "visitHistory": "Visit history: {days}",
+  "@visitHistory": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "visitHistoryDay": "{days} day",
+  "@visitHistoryDay": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "visitHistoryDays": "{days} days",
+  "@visitHistoryDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "visitHistoryHint": "How many days of travel history are shown on the timeline map.",
+  "sectionPlanner": "Planner",
+  "colorRange": "Color range: {days}",
+  "@colorRange": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "colorRangeHint": "{range} days = green  •  0 = yellow  •  -{range} = red",
+  "@colorRangeHint": {
+    "placeholders": {
+      "range": {
+        "type": "int"
+      }
+    }
+  },
+  "shownGroups": "Shown groups (map & planner)",
+  "noGroupsAvailable": "No groups available",
+  "sectionAddressSearch": "Address search",
+  "defaultCountry": "Default country for address search",
+  "defaultCountryHint": "e.g. Germany",
+  "defaultCountrySubtitle": "Pre-filled as default country in the map address search.",
+  "sectionManagement": "Management",
+  "placeGroups": "Place groups",
+  "persons": "Persons",
+  "activities": "Activities",
+  "databaseDump": "Database dump",
+  "databaseDumpSubtitle": "Create, load & share dump",
+  "syncSources": "Sync sources",
+  "syncSourcesSubtitle": "Manage and synchronize sync server",
+  "telegramConnections": "Telegram connections",
+  "telegramConnectionsSubtitle": "Manage Telegram bots for place reports",
+  "sectionPermissions": "Permissions",
+  "locationPermission": "Location permission",
+  "locationPermissionSubtitle": "Request foreground location",
+  "backgroundLocation": "Background location",
+  "backgroundLocationSubtitle": "Request background location",
+  "notifications": "Notifications",
+  "notificationsSubtitle": "Request notification permission",
+  "calendarSync": "Calendar sync",
+  "calendarSyncSubtitle": "Automatically add stays to device calendar",
+  "calendarPermission": "Request calendar permission",
+  "locationGranted": "Location granted",
+  "locationDenied": "Location denied",
+  "backgroundLocationGranted": "Background location granted",
+  "backgroundLocationDenied": "Background location denied",
+  "notificationsGranted": "Notifications granted",
+  "notificationsDenied": "Notifications denied",
+  "calendarGranted": "Calendar granted",
+  "calendarDenied": "Calendar denied",
+  "deleteActivity": "Permanently remove current activity",
+  "pickActivity": "Select activity",
+  "newActivityCreate": "Create new activity",
+  "newActivityLabel": "New activity",
+  "copySettingsFrom": "Copy settings from:",
+  "renameActivity": "Rename activity",
+  "deleteActivityTitle": "Delete activity?",
+  "deleteActivityContent": "Really delete \"{name}\"?\n\nThe settings of this activity will be permanently removed.",
+  "@deleteActivityContent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "activityDeleted": "\"{name}\" deleted",
+  "@activityDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteActivityLabel": "Delete \"{name}\"",
+  "@deleteActivityLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "visitsTitle": "Visits",
+  "searchStaysHint": "Search stays…",
+  "searchStays": "Search stays…",
+  "closeSearch": "Close search",
+  "filterByDate": "Filter by date range",
+  "filterByPlace": "Filter by place",
+  "resetFilter": "Reset filter",
+  "tabList": "Visits",
+  "tabJourney": "Journey",
+  "tabPlanner": "Planner",
+  "noStaysFound": "No completed stays found.\nTurn on tracking to record stays.",
+  "toLastPosition": "To last position",
+  "noSchedulerPlaces": "No planner places available.\n\nEnable the visit interval for places in the place settings.",
+  "schedulerToday": "Today",
+  "schedulerInDays": "in {n} days",
+  "@schedulerInDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "schedulerInDay": "in {n} day",
+  "@schedulerInDay": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "schedulerOverdueDays": "{n} days overdue",
+  "@schedulerOverdueDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "schedulerOverdueDay": "{n} day overdue",
+  "@schedulerOverdueDay": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "intervalDays": "Interval: {n} days",
+  "@intervalDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "allPlaces": "All places",
+  "placesTitle": "Places",
+  "searchPlaces": "Search places…",
+  "showIntervalOnly": "Interval places only",
+  "showAllPlaces": "Show all places",
+  "filter": "Filter",
+  "tabPlaces": "Places",
+  "noPlacesFound": "No places found.",
+  "noPlacesSaved": "No places saved.\nAdd places on the map with a long press.",
+  "notVisitedYet": "Not visited yet",
+  "visitCount": "{count} visit",
+  "@visitCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "visitCountPlural": "{count} visits",
+  "@visitCountPlural": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lastVisit": "Last: {date}  {time}",
+  "@lastVisit": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "toCurrentPosition": "To current position",
+  "activitiesScreenTitle": "Activities",
+  "noActivitiesYet": "No activities yet.",
+  "taskDeleteTitle": "Delete activity?",
+  "taskDeleteContent": "Really remove \"{name}\"?",
+  "@taskDeleteContent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "newTask": "New activity",
+  "editTask": "Edit activity",
+  "addTaskTooltip": "Add activity",
+  "databaseTitle": "Database",
+  "tabExport": "Export",
+  "tabImport": "Import",
+  "tabReset": "Reset",
+  "exportTitle": "Export database",
+  "exportDescription": "The SQLite database file is shared directly. It can be saved as a backup or transferred to another device.",
+  "shareDatabase": "Share database",
+  "importTitle": "Import database",
+  "importHowTo": "How to import a database:\n\n1. Open the Files app\n2. Long-press the .db file\n3. Tap \"Share\"\n4. Select \"Chaos Tours\" from the list",
+  "importHint": "This app opens automatically when you share a file to it.",
+  "fileReceived": "File received:",
+  "importButton": "Import",
+  "dbReplaceTitle": "Replace database?",
+  "dbReplaceContent": "The current database will be completely replaced by the shared file.\n\nAll existing data will be lost.\n\nProceed?",
+  "importSuccess": "Database imported successfully",
+  "dbResetTitle": "Reset database?",
+  "dbResetContent": "All data will be permanently deleted. The database structure will be preserved.\n\nProceed?",
+  "resetSuccess": "Database reset",
+  "exportFailed": "Export failed: {error}",
+  "@exportFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "importFailed": "Import failed: {error}",
+  "@importFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "resetFailed": "Reset failed: {error}",
+  "@resetFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "mapTitle": "Chaos Tours – Map",
+  "tooltipFilter": "Filter",
+  "tooltipAddressSearch": "Search address",
+  "whichPlaceToOpen": "Which place to open?",
+  "createPlaceHere": "Create place here",
+  "routeInGoogleMaps": "Route in Google Maps",
+  "toMyPosition": "To my position",
+  "noResultsFound": "No results found.",
+  "addressSearch": "Search address",
+  "country": "Country",
+  "countryHint": "e.g. Germany",
+  "cityPlace": "City / Place",
+  "cityHint": "e.g. Munich",
+  "streetOptional": "Street (optional)",
+  "streetHint": "e.g. Marienplatz 1",
+  "personsScreenTitle": "Persons",
+  "noPersonsYet": "No persons yet.",
+  "personDeleteTitle": "Delete person?",
+  "personDeleteContent": "Really remove \"{name}\"?",
+  "@personDeleteContent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "newPerson": "New person",
+  "editPerson": "Edit person",
+  "roleOptional": "Role / Description (optional)",
+  "addPersonTooltip": "Add person",
+  "photoAlbumTitle": "Photo album",
+  "noPhotosYet": "No photos yet",
+  "noPhotosHint": "Photos can be added at places and visits.",
+  "withoutPlace": "Without place",
+  "photoCount": "{count} photo",
+  "@photoCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photoCountPlural": "{count} photos",
+  "@photoCountPlural": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photoDeleteTitle": "Delete photo",
+  "photoDeleteContent": "Really delete this photo?",
+  "placeGroupsTitle": "Place groups",
+  "noGroupsYet": "No groups yet.",
+  "groupDeleteTitle": "Delete group?",
+  "groupDeleteContent": "Really delete \"{name}\"?",
+  "@groupDeleteContent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "newGroup": "New group",
+  "editGroup": "Edit group",
+  "calendarChosen": "Calendar selected",
+  "noCalendar": "No calendar",
+  "telegramChosen": "Telegram selected",
+  "noTelegram": "No Telegram",
+  "choose": "Select",
+  "notesInCalendar": "Notes in calendar",
+  "personsInCalendar": "Persons in calendar",
+  "activitiesInCalendar": "Activities in calendar",
+  "autoGroup": "Auto group",
+  "autoGroupSubtitle": "Automatically recognized places are sorted here",
+  "pickCalendar": "Select calendar",
+  "addGroupTooltip": "Add group",
+  "repositionTitle": "Position: {name}",
+  "@repositionTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "repositionConfirmTitle": "Apply position?",
+  "repositionConfirmContent": "\"{name}\" will be moved to\n{lat}, {lng}.",
+  "@repositionConfirmContent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "lat": {
+        "type": "String"
+      },
+      "lng": {
+        "type": "String"
+      }
+    }
+  },
+  "showCurrentLocation": "Show current location",
+  "placeVisitsTitle": "Visits: {name}",
+  "@placeVisitsTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "syncSourcesTitle": "Sync sources",
+  "stayPersons": "Stay persons",
+  "stayActivities": "Stay activities",
+  "placeExperiences": "Place experiences",
+  "sourceExperiences": "Source experiences",
+  "sourceDeleteTitle": "Delete source?",
+  "sourceDeleteContent": "\"{name}\" will be permanently deleted.",
+  "@sourceDeleteContent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "syncWarning": "⚠️ It is strongly recommended to export a database backup before syncing (Settings → Database dump).\n\nSynchronize now?",
+  "syncAllTitle": "Sync all",
+  "syncAllWarning": "⚠️ It is strongly recommended to export a database backup before syncing (Settings → Database dump).\n\nSynchronize with all active sync sources?",
+  "newSyncSource": "New sync source",
+  "editSyncSource": "Edit source",
+  "syncAddress": "Sync address *",
+  "syncAddressHint": "http://192.168.1.10:8000",
+  "apiKey": "API key",
+  "infoUrlOptional": "Info URL (optional)",
+  "infoUrlHint": "https://example.com",
+  "syncOptionsTitle": "Sync options",
+  "syncOptionsWarning": "⚠️ It is recommended to export a database backup before enabling edit/delete.",
+  "insert": "Insert",
+  "noSyncOptions": "No sync options active",
+  "tablesActive": "{count} tables active",
+  "@tablesActive": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noExperiences": "No experiences yet.",
+  "experiencesTitle": "Experiences",
+  "syncTitle": "Synchronize",
+  "syncResultSuccess": "{pulled} received, {pushed} sent",
+  "@syncResultSuccess": {
+    "placeholders": {
+      "pulled": {
+        "type": "int"
+      },
+      "pushed": {
+        "type": "int"
+      }
+    }
+  },
+  "syncError": "Error: {error}",
+  "@syncError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noActiveSyncSources": "No active sync sources configured",
+  "syncAllResult": "{ok} source(s) OK ({pulled} received, {pushed} sent)",
+  "@syncAllResult": {
+    "placeholders": {
+      "ok": {
+        "type": "int"
+      },
+      "pulled": {
+        "type": "int"
+      },
+      "pushed": {
+        "type": "int"
+      }
+    }
+  },
+  "syncAllResultWithErrors": "{ok} source(s) OK ({pulled} received, {pushed} sent), {fail} error(s)",
+  "@syncAllResultWithErrors": {
+    "placeholders": {
+      "ok": {
+        "type": "int"
+      },
+      "pulled": {
+        "type": "int"
+      },
+      "pushed": {
+        "type": "int"
+      },
+      "fail": {
+        "type": "int"
+      }
+    }
+  },
+  "syncAllTooltip": "Sync all",
+  "addSourceTooltip": "Add source",
+  "noSyncSources": "No sync sources available.\nTap + to add one.",
+  "syncNow": "Sync now",
+  "syncOptionsMenu": "Sync options",
+  "addExperience": "Add experience",
+  "experienceHint": "Note, experience or rating…",
+  "syncAddressLabel": "Sync address",
+  "infoUrlLabel": "Info URL",
+  "activeSyncOptions": "Active sync options",
+  "telegramConnectionsTitle": "Telegram connections",
+  "noTelegramConnections": "No Telegram connections yet.",
+  "connectionDeleteTitle": "Delete connection?",
+  "connectionDeleteContent": "\"{name}\" will be permanently deleted.",
+  "@connectionDeleteContent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "newTelegramConnection": "New Telegram connection",
+  "editTelegramConnection": "Edit connection",
+  "chatIdLabel": "Chat ID or @channel *",
+  "chatIdHint": "-123... or @channel",
+  "botTokenLabel": "Bot token *",
+  "botTokenHint": "123456:ABC-DEF…",
+  "distance": "Distance",
+  "maxDistance": "max. {dist}",
+  "@maxDistance": {
+    "placeholders": {
+      "dist": {
+        "type": "String"
+      }
+    }
+  },
+  "experienceFilter": "Experience filter",
+  "resetFilter2": "Reset",
+  "activateExperienceFilter": "Activate experience filter",
+  "minAvgRating": "Min. avg rating:",
+  "camera": "Camera",
+  "fromGallery": "From gallery",
+  "noPhotosGrid": "No photos yet",
+  "captionTitle": "Caption",
+  "captionHint": "Enter caption",
+  "editCaptionTooltip": "Edit caption",
+  "deletePhotoTooltip": "Delete photo",
+  "photosAtPlace": "Photos at place",
+  "noPlacePhotos": "No photos at this place yet.",
+  "photosFromVisits": "Photos from visits",
+  "noVisitPhotos": "No visit photos available.",
+  "visit": "Visit",
+  "stillRunning": "still running…",
+  "editStay": "Edit stay",
+  "begin": "Start",
+  "end": "End",
+  "notes": "Notes",
+  "intervalVisit": "Interval visit",
+  "intervalVisitSubtitle": "Visit counts toward interval calculation",
+  "addPersonSheetTitle": "Add person",
+  "nameNewHint": "Enter name (new)",
+  "addActivitySheetTitle": "Add activity",
+  "activityNewHint": "Enter activity (new)",
+  "photos": "Photos",
+  "deleteStay": "Delete stay",
+  "deleteStayTitle": "Delete stay",
+  "deleteStayContent": "Do you really want to delete this stay? This action cannot be undone.",
+  "personNewHint": "Enter name (new)",
+  "experienceDeleteTitle": "Delete experience?",
+  "experienceDeleteContent": "This entry will be permanently deleted.",
+  "addOrEditExperienceTitle": "Add experience",
+  "editExperienceTitle": "Edit experience",
+  "reportOptional": "Report (optional)",
+  "ratingsLabel": "Ratings (−9 to +9):",
+  "ratingDangerFriendly": "Dangerous ↔ Friendly",
+  "ratingFraudReliable": "Fraudulent ↔ Reliable",
+  "ratingDismissiveAccommodation": "Dismissive ↔ Provides accommodation",
+  "ratingFood": "Demands ↔ Provides food",
+  "ratingEquipment": "Demands ↔ Provides equipment",
+  "ratingTransport": "Demands ↔ Provides transport",
+  "noExperiencesYet": "No experience reports yet.",
+  "survivalExperiences": "Survival experiences",
+  "statistics": "Statistics",
+  "visitNow": "Visit now",
+  "copyFullReport": "Copy full report",
+  "sendReportToTelegram": "Send report to Telegram",
+  "visitInterval": "Visit interval",
+  "intervalDaysLabel": "Interval (days)",
+  "intervalDaysHint": "e.g. 14",
+  "intervalDaysSuffix": "days",
+  "changePositionOnMap": "Change position on map",
+  "radius": "Radius: {m} m",
+  "@radius": {
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "group": "Group",
+  "noGroup": "No group",
+  "placeDeleteTitle": "Delete place?",
+  "placeDeleteContent": "Really delete \"{name}\"?",
+  "@placeDeleteContent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gpsCopied": "GPS coordinates copied",
+  "reportCopied": "Report copied to clipboard",
+  "telegramSendTitle": "Send to Telegram?",
+  "telegramSendContent": "Send report for \"{place}\" to \"{connection}\"?",
+  "@telegramSendContent": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      },
+      "connection": {
+        "type": "String"
+      }
+    }
+  },
+  "openInGoogleMaps": "Open in Google Maps",
+  "noteName": "Note",
+  "website": "Website",
+  "email": "Email",
+  "phone": "Phone",
+  "saveVisit": "Save visit",
+  "importAutoOpenHint": "This app opens automatically when you share a file here.",
+  "importOverwriteWarning": "All existing data will be overwritten.",
+  "importNow": "Import now",
+  "importWaiting": "Waiting for shared file…",
+  "resetTitle": "Reset database",
+  "resetDescription": "All data will be permanently deleted. The database structure will be preserved.",
+  "resetIrreversibleWarning": "This action cannot be undone.",
+  "deleteAllData": "Delete all data",
+  "trackingActivateTitle": "Enable tracking?",
+  "trackingDeactivateTitle": "Disable tracking?",
+  "trackingActivateContent": "Should automatic background tracking be started?",
+  "trackingDeactivateContent": "Should automatic background tracking be stopped?",
+  "trackingActiveTooltip": "Tracking active",
+  "trackingInactiveTooltip": "Tracking inactive",
+  "trackingNotificationText": "Automatic tracking active",
+  "trackingStatusHaltUnknownAddress": "Staying: {address}"
+}

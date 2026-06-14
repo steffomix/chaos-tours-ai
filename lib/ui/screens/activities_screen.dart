@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 
 import '../../models/activity.dart';
 import '../../services/database_service.dart';
@@ -41,19 +42,20 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
   }
 
   Future<void> _delete(Activity activity) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Tätigkeit löschen?'),
-        content: Text('„${activity.name}" wirklich entfernen?'),
+        title: Text(l10n.taskDeleteTitle),
+        content: Text(l10n.taskDeleteContent(activity.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Löschen', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -66,25 +68,24 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
 
   Future<Activity?> _showEditDialog(Activity? existing) {
     final nameCtrl = TextEditingController(text: existing?.name ?? '');
+    final l10n = AppLocalizations.of(context)!;
 
     return showDialog<Activity>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(
-          existing == null ? 'Neue Tätigkeit' : 'Tätigkeit bearbeiten',
-        ),
+        title: Text(existing == null ? l10n.newTask : l10n.editTask),
         content: TextField(
           controller: nameCtrl,
-          decoration: const InputDecoration(
-            labelText: 'Name',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l10n.name,
+            border: const OutlineInputBorder(),
           ),
           autofocus: true,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -92,7 +93,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
               if (name.isEmpty) return;
               Navigator.pop(ctx, Activity(uuid: existing?.uuid, name: name));
             },
-            child: const Text('Speichern'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -101,10 +102,11 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Tätigkeiten')),
+      appBar: AppBar(title: Text(l10n.activitiesScreenTitle)),
       body: _activities.isEmpty
-          ? const Center(child: Text('Noch keine Tätigkeiten vorhanden.'))
+          ? Center(child: Text(l10n.noActivitiesYet))
           : ListView.builder(
               itemCount: _activities.length,
               itemBuilder: (ctx, i) {
@@ -130,7 +132,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _add,
-        tooltip: 'Tätigkeit hinzufügen',
+        tooltip: l10n.addTaskTooltip,
         child: const Icon(Icons.add),
       ),
     );

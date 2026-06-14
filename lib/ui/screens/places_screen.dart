@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:focus_detector/focus_detector.dart';
 import 'package:latlong2/latlong.dart';
@@ -210,13 +211,13 @@ class _PlacesScreenState extends State<PlacesScreen> {
   }
 
   Widget _buildList(List<({SavedPlace place, double? distance})> filtered) {
+    final l10n = AppLocalizations.of(context)!;
     if (filtered.isEmpty) {
       return Center(
         child: Text(
           _searchQuery.isNotEmpty || _expFilter.isActive
-              ? 'Keine Orte gefunden.'
-              : 'Keine Orte gespeichert.\n'
-                    'Orte auf der Karte per Langer Druck hinzufügen.',
+              ? l10n.noPlacesFound
+              : l10n.noPlacesSaved,
           textAlign: TextAlign.center,
         ),
       );
@@ -248,6 +249,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
   }
 
   Widget _buildMap(List<({SavedPlace place, double? distance})> filtered) {
+    final l10n = AppLocalizations.of(context)!;
     final places = filtered.map((e) => e.place).toList();
     final markers = places.map((p) {
       final color = _ratingColor(_avgRatings[p.uuid]);
@@ -300,7 +302,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
               if (pos != null)
                 _mapController.move(LatLng(pos.lat, pos.lng), 14);
             },
-            tooltip: 'Zur aktuellen Position',
+            tooltip: l10n.toCurrentPosition,
             child: const Icon(Icons.my_location),
           ),
         ),
@@ -310,6 +312,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final filtered = _filtered;
     return FocusDetector(
       onFocusGained: () {
@@ -328,18 +331,18 @@ class _PlacesScreenState extends State<PlacesScreen> {
               ? TextField(
                   controller: _searchCtrl,
                   autofocus: true,
-                  decoration: const InputDecoration(
-                    hintText: 'Orte durchsuchen…',
+                  decoration: InputDecoration(
+                    hintText: l10n.searchPlaces,
                     border: InputBorder.none,
                   ),
                   onChanged: (v) => setState(() => _searchQuery = v),
                 )
-              : const Text('Orte'),
+              : Text(l10n.placesTitle),
           actions: [
             if (_searchActive)
               IconButton(
                 icon: const Icon(Icons.close),
-                tooltip: 'Suche schließen',
+                tooltip: l10n.closeSearch,
                 onPressed: () => setState(() {
                   _searchActive = false;
                   _searchQuery = '';
@@ -353,8 +356,8 @@ class _PlacesScreenState extends State<PlacesScreen> {
                   child: const Icon(Icons.schedule),
                 ),
                 tooltip: _intervalOnly
-                    ? 'Alle Orte anzeigen'
-                    : 'Nur Intervall-Orte',
+                    ? l10n.showAllPlaces
+                    : l10n.showIntervalOnly,
                 onPressed: () => setState(() => _intervalOnly = !_intervalOnly),
               ),
               IconButton(
@@ -362,13 +365,13 @@ class _PlacesScreenState extends State<PlacesScreen> {
                   isLabelVisible: _filterActive,
                   child: const Icon(Icons.filter_list),
                 ),
-                tooltip: 'Filter',
+                tooltip: l10n.tooltipFilter,
                 onPressed: () =>
                     setState(() => _filterPanelOpen = !_filterPanelOpen),
               ),
               IconButton(
                 icon: const Icon(Icons.search),
-                tooltip: 'Suchen',
+                tooltip: l10n.search,
                 onPressed: () => setState(() => _searchActive = true),
               ),
             ],
@@ -383,10 +386,10 @@ class _PlacesScreenState extends State<PlacesScreen> {
                   filter: _expFilter,
                   onChanged: (f) => setState(() => _expFilter = f),
                 ),
-              const TabBar(
+              TabBar(
                 tabs: [
-                  Tab(icon: Icon(Icons.list), text: 'Orte'),
-                  Tab(icon: Icon(Icons.map), text: 'Survive'),
+                  Tab(icon: const Icon(Icons.list), text: l10n.tabPlaces),
+                  const Tab(icon: Icon(Icons.map), text: 'Survive'),
                 ],
               ),
               Expanded(
@@ -429,6 +432,7 @@ class _PlaceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -480,8 +484,10 @@ class _PlaceCard extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 count == 0
-                    ? 'Noch nicht besucht'
-                    : '$count Besuch${count == 1 ? '' : 'e'}',
+                    ? l10n.notVisitedYet
+                    : (count == 1
+                          ? l10n.visitCount(count)
+                          : l10n.visitCountPlural(count)),
                 style: textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -489,8 +495,7 @@ class _PlaceCard extends StatelessWidget {
               if (lastStay != null) ...[
                 const SizedBox(height: 2),
                 Text(
-                  'Zuletzt: ${fmtDate(lastStay!.startTime)}  '
-                  '${fmtTime(lastStay!.startDateTime)}'
+                  '${l10n.lastVisit(fmtDate(lastStay!.startTime), fmtTime(lastStay!.startDateTime))}'
                   '${lastStay!.endDateTime != null ? ' – ${fmtTime(lastStay!.endDateTime!)}' : ''}'
                   '${lastStay!.endDateTime != null ? '  (${fmtDuration(lastStay!.duration)})' : ''}',
                   style: textTheme.bodySmall?.copyWith(

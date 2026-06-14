@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:focus_detector/focus_detector.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -219,7 +220,7 @@ class _MapScreenState extends State<MapScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
             child: Text(
-              'Welchen Ort öffnen?',
+              AppLocalizations.of(ctx)!.whichPlaceToOpen,
               style: Theme.of(ctx).textTheme.titleMedium,
             ),
           ),
@@ -276,6 +277,7 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return FocusDetector(
       onFocusGained: () {
         ForegroundServiceManager.addDataListener(_onServiceData);
@@ -293,7 +295,7 @@ class _MapScreenState extends State<MapScreen> {
           ForegroundServiceManager.removeDataListener(_onServiceData),
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Chaos Tours – Karte'),
+          title: Text(l10n.mapTitle),
           actions: [
             IconButton(
               icon: Badge(
@@ -301,14 +303,14 @@ class _MapScreenState extends State<MapScreen> {
                     _expFilter.isActive || _expFilter.distanceEnabled,
                 child: const Icon(Icons.filter_list),
               ),
-              tooltip: 'Filter',
+              tooltip: l10n.tooltipFilter,
               onPressed: () =>
                   setState(() => _filterPanelOpen = !_filterPanelOpen),
             ),
             IconButton(
               icon: const Icon(Icons.search),
               onPressed: _showAddressSearch,
-              tooltip: 'Adresse suchen',
+              tooltip: l10n.tooltipAddressSearch,
             ),
           ],
         ),
@@ -374,7 +376,7 @@ class _MapScreenState extends State<MapScreen> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: _goToCurrentLocation,
-          tooltip: 'Zu meiner Position',
+          tooltip: l10n.toMyPosition,
           child: const Icon(Icons.my_location),
         ),
       ),
@@ -431,7 +433,7 @@ class _MapScreenState extends State<MapScreen> {
             const Divider(height: 1),
             ListTile(
               leading: const Icon(Icons.add_location_alt_outlined),
-              title: const Text('Ort hier erstellen'),
+              title: Text(AppLocalizations.of(ctx)!.createPlaceHere),
               onTap: () {
                 Navigator.pop(ctx);
                 _onLongPress(const TapPosition(Offset.zero, Offset.zero), pos);
@@ -439,7 +441,7 @@ class _MapScreenState extends State<MapScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.directions),
-              title: const Text('Route in Google Maps'),
+              title: Text(AppLocalizations.of(ctx)!.routeInGoogleMaps),
               onTap: () async {
                 Navigator.pop(ctx);
                 final uri = Uri.parse(
@@ -601,13 +603,15 @@ class _AddressSearchSheetState extends State<_AddressSearchSheet> {
       setState(() {
         _searching = false;
         _results = results;
-        if (results.isEmpty) _error = 'Keine Ergebnisse gefunden.';
+        if (results.isEmpty)
+          _error = AppLocalizations.of(context)!.noResultsFound;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -622,7 +626,7 @@ class _AddressSearchSheetState extends State<_AddressSearchSheet> {
                 const Icon(Icons.search),
                 const SizedBox(width: 8),
                 Text(
-                  'Adresse suchen',
+                  l10n.addressSearch,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ],
@@ -635,11 +639,11 @@ class _AddressSearchSheetState extends State<_AddressSearchSheet> {
               children: [
                 TextField(
                   controller: widget.countryCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Land',
-                    hintText: 'z. B. Deutschland',
-                    prefixIcon: Icon(Icons.flag_outlined),
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.country,
+                    hintText: l10n.countryHint,
+                    prefixIcon: const Icon(Icons.flag_outlined),
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                   textInputAction: TextInputAction.next,
@@ -647,11 +651,11 @@ class _AddressSearchSheetState extends State<_AddressSearchSheet> {
                 const SizedBox(height: 8),
                 TextField(
                   controller: widget.cityCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Stadt / Ort',
-                    hintText: 'z. B. München',
-                    prefixIcon: Icon(Icons.location_city),
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.cityPlace,
+                    hintText: l10n.cityHint,
+                    prefixIcon: const Icon(Icons.location_city),
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                   textInputAction: TextInputAction.next,
@@ -659,11 +663,11 @@ class _AddressSearchSheetState extends State<_AddressSearchSheet> {
                 const SizedBox(height: 8),
                 TextField(
                   controller: widget.streetCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Straße (optional)',
-                    hintText: 'z. B. Marienplatz 1',
-                    prefixIcon: Icon(Icons.signpost_outlined),
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.streetOptional,
+                    hintText: l10n.streetHint,
+                    prefixIcon: const Icon(Icons.signpost_outlined),
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                   textInputAction: TextInputAction.search,
@@ -681,7 +685,7 @@ class _AddressSearchSheetState extends State<_AddressSearchSheet> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.search),
-                    label: const Text('Suchen'),
+                    label: Text(l10n.search),
                   ),
                 ),
               ],

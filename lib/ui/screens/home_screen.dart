@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:focus_detector/focus_detector.dart';
 
@@ -21,6 +22,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  AppLocalizations? _l10n;
+
   // Active Aktivitaet
   Aktivitaet? _currentAktivitaet;
 
@@ -28,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _trackingEnabled = false;
   Stay? _activeStay;
   SavedPlace? _activeStayPlace;
-  String _trackingStatusText = 'Tracking deaktiviert';
+  String _trackingStatusText = '';
 
   // Recent visits
   List<Stay> _recentStays = [];
@@ -59,8 +62,8 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _trackingEnabled = serviceRunning;
         _trackingStatusText = serviceRunning
-            ? 'Tracking läuft…'
-            : 'Tracking deaktiviert';
+            ? (_l10n?.trackingRunning ?? '')
+            : (_l10n?.trackingDisabled ?? '');
       });
     }
   }
@@ -81,15 +84,17 @@ class _HomeScreenState extends State<HomeScreen> {
       String text;
       switch (statusName) {
         case 'haltAtKnown':
-          text = 'Halten bei ${_cutText(placeName) ?? 'bekanntem Ort'}';
+          text = _l10n?.trackingStatusHaltKnown(_cutText(placeName) ?? (_l10n?.unknownPlace ?? '')) ?? '';
         case 'haltAtUnknown':
-          text = address != null ? 'Halten: ${_cutText(address)}' : 'Halten';
+          text = address != null
+              ? (_l10n?.trackingStatusHaltUnknownAddress(_cutText(address)!) ?? '')
+              : (_l10n?.trackingStatusHalt ?? '');
         case 'detectingHalt':
-          text = 'Aufenthalt wird erkannt…';
+          text = _l10n?.trackingStatusDetecting ?? '';
         case 'moving':
-          text = 'Unterwegs';
+          text = _l10n?.trackingStatusMoving ?? '';
         default:
-          text = 'Tracking aktiv';
+          text = _l10n?.trackingActive ?? '';
       }
       _loadActiveStay(build: false);
       _loadRecentStays(build: false);
@@ -158,26 +163,23 @@ class _HomeScreenState extends State<HomeScreen> {
     // If the direct request failed (e.g. Samsung blocks it), open the
     // battery settings page and tell the user what to do.
     if (!mounted) return false;
+    final l10n = _l10n ?? AppLocalizations.of(context)!;
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Akkuoptimierung deaktivieren'),
-        content: const Text(
-          'Der Hintergrund-Dienst konnte nicht gestartet werden.\n\n'
-          'Bitte deaktiviere die Akkuoptimierung für Chaos Tours:\n'
-          'Einstellungen → Apps → Chaos Tours → Akku → Nicht eingeschränkt',
-        ),
+        title: Text(l10n.batteryOptTitle),
+        content: Text(l10n.batteryOptContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
               await FlutterForegroundTask.openIgnoreBatteryOptimizationSettings();
             },
-            child: const Text('Einstellungen öffnen'),
+            child: Text(l10n.openSettings),
           ),
         ],
       ),
@@ -206,14 +208,14 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _trackingEnabled = value;
       _trackingStatusText = value
-          ? 'Tracking sammelt GPS Daten…'
-          : 'Tracking deaktiviert';
+          ? (_l10n?.trackingCollecting ?? '')
+          : (_l10n?.trackingDisabled ?? '');
     });
     SettingsService.instance.trackingEnabled = value;
 
     if (value) {
       final result = await ForegroundServiceManager.startService(
-        notificationText: 'Automatisches Tracking aktiv',
+        notificationText: _l10n?.trackingNotificationText ?? 'Automatisches Tracking aktiv',
       );
       if (result is ServiceRequestFailure) {
         debugPrint('[Tracking] startService FAILED: ${result.error}');
@@ -238,26 +240,27 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _confirmToggleTracking() async {
+    final l10n = AppLocalizations.of(context)!;
     final newValue = !_trackingEnabled;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(
-          newValue ? 'Tracking aktivieren?' : 'Tracking deaktivieren?',
+          newValue ? l10n.trackingActivateTitle : l10n.trackingDeactivateTitle,
         ),
         content: Text(
           newValue
-              ? 'Soll das automatische Hintergrund-Tracking gestartet werden?'
-              : 'Soll das automatische Hintergrund-Tracking gestoppt werden?',
+              ? l10n.trackingActivateContent
+              : l10n.trackingDeactivateContent,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(newValue ? 'Aktivieren' : 'Deaktivieren'),
+            child: Text(newValue ? l10n.activate : l10n.deactivate),
           ),
         ],
       ),
@@ -267,6 +270,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _l10n = AppLocalizations.of(context)!;
+    final l10n = _l10n!;
+    // Refresh status text if it's empty (first build after init)
+    if (_trackingStatusText.isEmpty) {
+      _trackingStatusText = _trackingEnabled ? l10n.trackingRunning : l10n.trackingDisabled;
+    }
     return FocusDetector(
       onFocusGained: () {
         ForegroundServiceManager.addDataListener(_onServiceData);
@@ -284,7 +293,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ForegroundServiceManager.removeDataListener(_onServiceData),
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Chaos Tours'),
+          title: Text(l10n.appTitle),
           actions: [
             IconButton(
               icon: Icon(
@@ -293,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ? Theme.of(context).colorScheme.primary
                     : null,
               ),
-              tooltip: _trackingEnabled ? 'Tracking aktiv' : 'Tracking inaktiv',
+              tooltip: _trackingEnabled ? l10n.trackingActiveTooltip : l10n.trackingInactiveTooltip,
               onPressed: _confirmToggleTracking,
             ),
           ],
@@ -421,7 +430,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               Text(
                                 _activeStayPlace?.name ??
                                     _activeStay!.address ??
-                                    'Unbekannter Ort',
+                                    l10n.unknownPlace,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -455,25 +464,21 @@ class _HomeScreenState extends State<HomeScreen> {
                     minimumSize: const Size.fromHeight(40),
                   ),
                   icon: const Icon(Icons.call_split, size: 18),
-                  label: const Text('Aufenthalt jetzt beenden & teilen'),
+                  label: Text(l10n.endStayNow),
                   onPressed: () async {
                     final confirmed = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        title: const Text('Aufenthalt beenden?'),
-                        content: const Text(
-                          'Der aktuelle Aufenthalt wird jetzt abgeschlossen. '
-                          'Das Tracking läuft weiter und startet bei gleichem Ort '
-                          'sofort einen neuen Aufenthalt.',
-                        ),
+                        title: Text(l10n.endStayTitle),
+                        content: Text(l10n.endStayContent),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('Abbrechen'),
+                            child: Text(l10n.cancel),
                           ),
                           FilledButton(
                             onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text('Beenden'),
+                            child: Text(l10n.end),
                           ),
                         ],
                       ),
@@ -493,10 +498,10 @@ class _HomeScreenState extends State<HomeScreen> {
             // ── Letzte Besuche ─────────────────────────────────────
             Expanded(
               child: _recentStays.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Text(
-                        'Noch keine Besuche aufgezeichnet.',
-                        style: TextStyle(color: Colors.grey),
+                        l10n.noVisitsYet,
+                        style: const TextStyle(color: Colors.grey),
                       ),
                     )
                   : RefreshIndicator(
@@ -508,7 +513,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             return Padding(
                               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                               child: Text(
-                                'Letzte Besuche',
+                                l10n.recentVisits,
                                 style: Theme.of(ctx).textTheme.titleSmall
                                     ?.copyWith(color: Colors.grey),
                               ),
@@ -519,7 +524,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ? _placesByUuid[stay.placeUuid]
                               : null;
                           final name =
-                              place?.name ?? stay.address ?? 'Unbekannter Ort';
+                              place?.name ?? stay.address ?? l10n.unknownPlace;
                           final dur = stay.duration;
                           final h = dur.inHours;
                           final m = dur.inMinutes % 60;

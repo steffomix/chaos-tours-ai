@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -46,27 +47,29 @@ class _PlaceRepositionScreenState extends State<PlaceRepositionScreen> {
   }
 
   Future<void> _confirm() async {
+    final l10n = AppLocalizations.of(context)!;
     final pos = _pendingPosition;
     if (pos == null) return;
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Position übernehmen?'),
+        title: Text(l10n.repositionConfirmTitle),
         content: Text(
-          '„${widget.targetPlace.name}" wird auf\n'
-          '${pos.latitude.toStringAsFixed(6)}, '
-          '${pos.longitude.toStringAsFixed(6)}\n'
-          'verschoben.',
+          l10n.repositionConfirmContent(
+            widget.targetPlace.name,
+            pos.latitude.toStringAsFixed(6),
+            pos.longitude.toStringAsFixed(6),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Übernehmen'),
+            child: Text(l10n.apply),
           ),
         ],
       ),
@@ -90,16 +93,17 @@ class _PlaceRepositionScreenState extends State<PlaceRepositionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final target = widget.targetPlace;
     final pending = _pendingPosition;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Position: ${target.name}'),
+        title: Text(l10n.repositionTitle(target.name)),
         actions: [
           IconButton(
             icon: const Icon(Icons.my_location),
-            tooltip: 'Aktuellen Standort anzeigen',
+            tooltip: l10n.showCurrentLocation,
             onPressed: _goToCurrentLocation,
           ),
         ],
@@ -192,7 +196,7 @@ class _PlaceRepositionScreenState extends State<PlaceRepositionScreen> {
           : FloatingActionButton.extended(
               onPressed: _confirm,
               icon: const Icon(Icons.check),
-              label: const Text('Position übernehmen'),
+              label: Text(l10n.apply),
             ),
     );
   }

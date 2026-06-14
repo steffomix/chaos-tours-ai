@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 
 /// Immutable filter state for experience-based place filtering.
 class ExperienceFilterState {
@@ -55,6 +56,7 @@ class ExperienceFilterPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     return Material(
       elevation: 2,
@@ -73,14 +75,14 @@ class ExperienceFilterPanel extends StatelessWidget {
                       onChanged(filter.copyWith(distanceEnabled: v)),
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'Entfernung',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                Text(
+                  l10n.distance,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const Spacer(),
                 if (filter.distanceEnabled)
                   Text(
-                    'max. ${_fmtDist(filter.maxDistanceKm)}',
+                    l10n.maxDistance(_fmtDist(filter.maxDistanceKm)),
                     style: TextStyle(color: colorScheme.primary),
                   ),
               ],
@@ -99,9 +101,9 @@ class ExperienceFilterPanel extends StatelessWidget {
             // ── Experience filter ─────────────────────────────────────────
             Row(
               children: [
-                const Text(
-                  'Erfahrungs-Filter',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                Text(
+                  l10n.experienceFilter,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const Spacer(),
                 TextButton(
@@ -111,7 +113,7 @@ class ExperienceFilterPanel extends StatelessWidget {
                       requireExperiences: false,
                     ),
                   ),
-                  child: const Text('Zurücksetzen'),
+                  child: Text(l10n.resetFilter),
                 ),
               ],
             ),
@@ -123,13 +125,13 @@ class ExperienceFilterPanel extends StatelessWidget {
                     filter.copyWith(requireExperiences: v ?? false),
                   ),
                 ),
-                const Text('Erfahrungsfilter aktivieren'),
+                Text(l10n.activateExperienceFilter),
               ],
             ),
             Row(
               children: [
                 const SizedBox(width: 8),
-                const Text('Min. ⌀ Bewertung:'),
+                Text(l10n.minAvgRating),
                 const SizedBox(width: 8),
               ],
             ),

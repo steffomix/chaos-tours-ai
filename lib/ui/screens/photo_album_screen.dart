@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:focus_detector/focus_detector.dart';
 
 import '../../models/place_photo.dart';
@@ -64,44 +65,45 @@ class _PhotoAlbumScreenState extends State<PhotoAlbumScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return FocusDetector(
       onFocusGained: () {
         _load();
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('Fotoalbum')),
+        appBar: AppBar(title: Text(l10n.photoAlbumTitle)),
         body: _loading
             ? const Center(child: CircularProgressIndicator())
             : _allPhotos.isEmpty
-            ? const Center(
+            ? Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.photo_library_outlined,
                       size: 64,
                       color: Colors.grey,
                     ),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     Text(
-                      'Noch keine Fotos vorhanden',
-                      style: TextStyle(color: Colors.grey),
+                      l10n.noPhotosYet,
+                      style: const TextStyle(color: Colors.grey),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
-                      'Fotos können bei Orten und Besuchen hinzugefügt werden.',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                      l10n.noPhotosHint,
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
                       textAlign: TextAlign.center,
                     ),
                   ],
                 ),
               )
-            : _buildGroupedList(),
+            : _buildGroupedList(l10n),
       ),
     );
   }
 
-  Widget _buildGroupedList() {
+  Widget _buildGroupedList(AppLocalizations l10n) {
     final grouped = _grouped();
     // Sort: known places first (by name), then unknown
     final sortedKeys = grouped.keys.toList()
@@ -120,8 +122,8 @@ class _PhotoAlbumScreenState extends State<PhotoAlbumScreen> {
         final placeUuid = sortedKeys[index];
         final photos = grouped[placeUuid]!;
         final placeName = placeUuid != null
-            ? (_placesByUuid[placeUuid]?.name ?? 'Unbekannter Ort')
-            : 'Ohne Ort';
+            ? (_placesByUuid[placeUuid]?.name ?? l10n.unknownPlace)
+            : l10n.withoutPlace;
         return _PlacePhotoGroup(
           placeName: placeName,
           photos: photos,
@@ -175,7 +177,11 @@ class _PlacePhotoGroup extends StatelessWidget {
                 ),
               ),
               Text(
-                '${photos.length} Foto${photos.length != 1 ? 's' : ''}',
+                photos.length == 1
+                    ? AppLocalizations.of(context)!.photoCount(photos.length)
+                    : AppLocalizations.of(
+                        context,
+                      )!.photoCountPlural(photos.length),
                 style: Theme.of(
                   context,
                 ).textTheme.bodySmall?.copyWith(color: Colors.grey),
@@ -254,22 +260,23 @@ class _AlbumPhotoViewerState extends State<_AlbumPhotoViewer> {
   }
 
   Future<void> _delete() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Foto löschen'),
-        content: const Text('Dieses Foto wirklich löschen?'),
+        title: Text(l10n.photoDeleteTitle),
+        content: Text(l10n.photoDeleteContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Löschen'),
+            child: Text(l10n.delete),
           ),
         ],
       ),

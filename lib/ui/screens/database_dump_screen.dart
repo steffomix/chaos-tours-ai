@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus, XFile;
 
@@ -64,6 +65,7 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
   // ── Export ────────────────────────────────────────────────────────────────
 
   Future<void> _exportDatabase() async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _exporting = true);
     try {
       final path = await DatabaseService.instance.getDatabaseFilePath();
@@ -71,7 +73,7 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
         ShareParams(files: [XFile(path)], title: 'Chaos Tours Datenbank'),
       );
     } catch (e) {
-      _showError('Export fehlgeschlagen: $e');
+      _showError(l10n.exportFailed(e.toString()));
     } finally {
       setState(() => _exporting = false);
     }
@@ -84,23 +86,22 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
     if (path == null) return;
 
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Datenbank ersetzen?'),
-        content: const Text(
-          'Die aktuelle Datenbank wird vollständig durch die geteilte Datei ersetzt.\n\nAlle vorhandenen Daten gehen verloren.\n\nFortfahren?',
-        ),
+        title: Text(l10n.dbReplaceTitle),
+        content: Text(l10n.dbReplaceContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
-              'Ersetzen',
-              style: TextStyle(color: Colors.orange),
+            child: Text(
+              l10n.replace,
+              style: const TextStyle(color: Colors.orange),
             ),
           ),
         ],
@@ -114,11 +115,11 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
       if (mounted) {
         setState(() => _pendingImportPath = null);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Datenbank erfolgreich importiert')),
+          SnackBar(content: Text(l10n.importSuccess)),
         );
       }
     } catch (e) {
-      _showError('Import fehlgeschlagen: $e');
+      _showError(l10n.importFailed(e.toString()));
     } finally {
       setState(() => _importing = false);
     }
@@ -127,23 +128,22 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
   // ── Reset ─────────────────────────────────────────────────────────────────
 
   Future<void> _resetDatabase() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Datenbank zurücksetzen?'),
-        content: const Text(
-          'Alle Daten werden unwiderruflich gelöscht. Die Datenbankstruktur bleibt erhalten.\n\nFortfahren?',
-        ),
+        title: Text(l10n.dbResetTitle),
+        content: Text(l10n.dbResetContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
-              'Zurücksetzen',
-              style: TextStyle(color: Colors.red),
+            child: Text(
+              l10n.reset,
+              style: const TextStyle(color: Colors.red),
             ),
           ),
         ],
@@ -156,11 +156,11 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
       await DatabaseService.instance.resetAllData();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Datenbank zurückgesetzt')),
+          SnackBar(content: Text(l10n.resetSuccess)),
         );
       }
     } catch (e) {
-      _showError('Zurücksetzen fehlgeschlagen: $e');
+      _showError(l10n.resetFailed(e.toString()));
     } finally {
       setState(() => _resetting = false);
     }
@@ -177,15 +177,16 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Datenbank'),
+        title: Text(l10n.databaseTitle),
         bottom: TabBar(
           controller: _tabCtrl,
-          tabs: const [
-            Tab(icon: Icon(Icons.upload_file), text: 'Exportieren'),
-            Tab(icon: Icon(Icons.download_for_offline), text: 'Importieren'),
-            Tab(icon: Icon(Icons.delete_forever), text: 'Zurücksetzen'),
+          tabs: [
+            Tab(icon: const Icon(Icons.upload_file), text: l10n.tabExport),
+            Tab(icon: const Icon(Icons.download_for_offline), text: l10n.tabImport),
+            Tab(icon: const Icon(Icons.delete_forever), text: l10n.tabReset),
           ],
         ),
       ),
@@ -200,6 +201,7 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
   }
 
   Widget _buildExportTab() {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -208,14 +210,14 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
           const Spacer(),
           const Icon(Icons.storage, size: 64, color: Colors.blue),
           const SizedBox(height: 16),
-          const Text(
-            'Datenbank exportieren',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          Text(
+            l10n.exportTitle,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Die SQLite-Datenbankdatei wird direkt geteilt. Sie kann als Backup gespeichert oder auf ein anderes Gerät übertragen werden.',
+          Text(
+            l10n.exportDescription,
             textAlign: TextAlign.center,
           ),
           const Spacer(),
@@ -231,7 +233,7 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
                     ),
                   )
                 : const Icon(Icons.share),
-            label: const Text('Datenbank teilen'),
+            label: Text(l10n.shareDatabase),
           ),
           const SizedBox(height: 16),
         ],
@@ -240,6 +242,7 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
   }
 
   Widget _buildImportTab() {
+    final l10n = AppLocalizations.of(context)!;
     final hasFile = _pendingImportPath != null;
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -253,19 +256,15 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
             color: hasFile ? Colors.green : Colors.orange,
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Datenbank importieren',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          Text(
+            l10n.importTitle,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
           if (!hasFile) ...[
-            const Text(
-              'So importierst du eine Datenbank:\n\n'
-              '1. Öffne die Dateien-App\n'
-              '2. Halte die .db-Datei gedrückt\n'
-              '3. Tippe auf „Teilen"\n'
-              '4. Wähle „Chaos Tours" aus der Liste',
+            Text(
+              l10n.importHowTo,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -276,14 +275,14 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.blue.shade300),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.blue),
-                  SizedBox(width: 8),
+                  const Icon(Icons.info_outline, color: Colors.blue),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Diese App öffnet sich automatisch, wenn du eine Datei hierher teilst.',
-                      style: TextStyle(color: Colors.blue),
+                      l10n.importAutoOpenHint,
+                      style: const TextStyle(color: Colors.blue),
                     ),
                   ),
                 ],
@@ -291,7 +290,7 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
             ),
           ] else ...[
             Text(
-              'Datei empfangen:',
+              l10n.fileReceived,
               textAlign: TextAlign.center,
               style: TextStyle(color: Theme.of(context).hintColor),
             ),
@@ -317,14 +316,14 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.orange.shade300),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.warning_amber, color: Colors.orange),
-                  SizedBox(width: 8),
+                  const Icon(Icons.warning_amber, color: Colors.orange),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Alle vorhandenen Daten werden überschrieben.',
-                      style: TextStyle(color: Colors.orange),
+                      l10n.importOverwriteWarning,
+                      style: const TextStyle(color: Colors.orange),
                     ),
                   ),
                 ],
@@ -348,21 +347,21 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
                       ),
                     )
                   : const Icon(Icons.download_for_offline),
-              label: const Text('Jetzt importieren'),
+              label: Text(l10n.importNow),
             )
           else
             OutlinedButton.icon(
               onPressed: null,
               icon: const Icon(Icons.hourglass_empty),
-              label: const Text('Warte auf geteilte Datei …'),
+              label: Text(l10n.importWaiting),
             ),
           const SizedBox(height: 16),
         ],
       ),
     );
   }
-
   Widget _buildResetTab() {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -371,14 +370,14 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
           const Spacer(),
           const Icon(Icons.delete_forever, size: 64, color: Colors.red),
           const SizedBox(height: 16),
-          const Text(
-            'Datenbank zurücksetzen',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          Text(
+            l10n.resetTitle,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Alle Daten werden unwiderruflich gelöscht. Die Datenbankstruktur bleibt erhalten.',
+          Text(
+            l10n.resetDescription,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
@@ -389,14 +388,14 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.red.shade300),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.warning, color: Colors.red),
-                SizedBox(width: 8),
+                const Icon(Icons.warning, color: Colors.red),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Diese Aktion kann nicht rückgängig gemacht werden.',
-                    style: TextStyle(color: Colors.red),
+                    l10n.resetIrreversibleWarning,
+                    style: const TextStyle(color: Colors.red),
                   ),
                 ),
               ],
@@ -416,7 +415,7 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
                     ),
                   )
                 : const Icon(Icons.delete_forever),
-            label: const Text('Alle Daten löschen'),
+            label: Text(l10n.deleteAllData),
           ),
           const SizedBox(height: 16),
         ],

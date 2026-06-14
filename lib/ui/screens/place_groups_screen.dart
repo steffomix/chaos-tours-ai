@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 
 import '../../models/place_group.dart';
 import '../../models/saved_place.dart';
@@ -43,19 +44,20 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
   }
 
   Future<void> _deleteGroup(PlaceGroup group) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Gruppe löschen?'),
-        content: Text('„${group.name}" wirklich löschen?'),
+        title: Text(l10n.groupDeleteTitle),
+        content: Text(l10n.groupDeleteContent(group.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Löschen', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -83,168 +85,171 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
     return showDialog<PlaceGroup>(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setS) => AlertDialog(
-          title: Text(existing == null ? 'Neue Gruppe' : 'Gruppe bearbeiten'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Name',
-                    border: OutlineInputBorder(),
+        builder: (ctx, setS) {
+          final l10n = AppLocalizations.of(ctx)!;
+          return AlertDialog(
+            title: Text(existing == null ? l10n.newGroup : l10n.editGroup),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameCtrl,
+                    decoration: InputDecoration(
+                      labelText: l10n.name,
+                      border: const OutlineInputBorder(),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                // Calendar picker
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.calendar_today),
-                  title: Text(
-                    calendarId != null ? 'Kalender gewählt' : 'Kein Kalender',
-                  ),
-                  subtitle: calendarId != null ? Text(calendarId!) : null,
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () async {
-                          final id = await _pickCalendar(ctx);
-                          if (id != null) setS(() => calendarId = id);
-                        },
-                      ),
-                      if (calendarId != null)
-                        IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () => setS(() => calendarId = null),
-                        ),
-                    ],
-                  ),
-                ),
-                // Telegram connection picker
-                if (telegramConnections.isNotEmpty) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 12),
+                  // Calendar picker
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.send),
+                    leading: const Icon(Icons.calendar_today),
                     title: Text(
-                      telegramConnectionUuid != null
-                          ? (telegramConnections
-                                    .where(
-                                      (c) => c.uuid == telegramConnectionUuid,
-                                    )
-                                    .firstOrNull
-                                    ?.name ??
-                                'Telegram gewählt')
-                          : 'Kein Telegram',
+                      calendarId != null
+                          ? l10n.calendarChosen
+                          : l10n.noCalendar,
                     ),
+                    subtitle: calendarId != null ? Text(calendarId!) : null,
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        DropdownButton<String?>(
-                          value: telegramConnectionUuid,
-                          hint: const Text('Wählen'),
-                          items: [
-                            const DropdownMenuItem(
-                              value: null,
-                              child: Text('Keine'),
-                            ),
-                            ...telegramConnections.map(
-                              (c) => DropdownMenuItem(
-                                value: c.uuid,
-                                child: Text(c.name),
-                              ),
-                            ),
-                          ],
-                          onChanged: (v) =>
-                              setS(() => telegramConnectionUuid = v),
+                        IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () async {
+                            final id = await _pickCalendar(ctx);
+                            if (id != null) setS(() => calendarId = id);
+                          },
                         ),
+                        if (calendarId != null)
+                          IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () => setS(() => calendarId = null),
+                          ),
                       ],
                     ),
                   ),
-                ],
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Notizen in Kalender'),
-                  value: includeNotes,
-                  onChanged: (v) => setS(() => includeNotes = v ?? true),
-                ),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Personen in Kalender'),
-                  value: includePersons,
-                  onChanged: (v) => setS(() => includePersons = v ?? true),
-                ),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Tätigkeiten in Kalender'),
-                  value: includeActivities,
-                  onChanged: (v) => setS(() => includeActivities = v ?? true),
-                ),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Auto-Gruppe'),
-                  subtitle: const Text(
-                    'Automatisch erkannte Orte werden hier einsortiert',
+                  // Telegram connection picker
+                  if (telegramConnections.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.send),
+                      title: Text(
+                        telegramConnectionUuid != null
+                            ? (telegramConnections
+                                      .where(
+                                        (c) => c.uuid == telegramConnectionUuid,
+                                      )
+                                      .firstOrNull
+                                      ?.name ??
+                                  l10n.telegramChosen)
+                            : l10n.noTelegram,
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          DropdownButton<String?>(
+                            value: telegramConnectionUuid,
+                            hint: Text(l10n.choose),
+                            items: [
+                              DropdownMenuItem(
+                                value: null,
+                                child: Text(l10n.none),
+                              ),
+                              ...telegramConnections.map(
+                                (c) => DropdownMenuItem(
+                                  value: c.uuid,
+                                  child: Text(c.name),
+                                ),
+                              ),
+                            ],
+                            onChanged: (v) =>
+                                setS(() => telegramConnectionUuid = v),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l10n.notesInCalendar),
+                    value: includeNotes,
+                    onChanged: (v) => setS(() => includeNotes = v ?? true),
                   ),
-                  value: isAutoGroup,
-                  onChanged: (v) => setS(() => isAutoGroup = v ?? false),
-                ),
-                const SizedBox(height: 8),
-                const Text('Typ:'),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: PlaceType.values.map((t) {
-                    final selected = placeType == t;
-                    return ChoiceChip(
-                      avatar: Icon(
-                        t.icon,
-                        size: 16,
-                        color: selected ? Colors.white : t.dotColor,
-                      ),
-                      label: Text(t.label),
-                      selected: selected,
-                      selectedColor: t.dotColor,
-                      labelStyle: TextStyle(
-                        color: selected ? Colors.white : null,
-                      ),
-                      onSelected: (_) => setS(() => placeType = t),
-                    );
-                  }).toList(),
-                ),
-              ],
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l10n.personsInCalendar),
+                    value: includePersons,
+                    onChanged: (v) => setS(() => includePersons = v ?? true),
+                  ),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l10n.activitiesInCalendar),
+                    value: includeActivities,
+                    onChanged: (v) => setS(() => includeActivities = v ?? true),
+                  ),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l10n.autoGroup),
+                    subtitle: Text(l10n.autoGroupSubtitle),
+                    value: isAutoGroup,
+                    onChanged: (v) => setS(() => isAutoGroup = v ?? false),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(l10n.type),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: PlaceType.values.map((t) {
+                      final selected = placeType == t;
+                      return ChoiceChip(
+                        avatar: Icon(
+                          t.icon,
+                          size: 16,
+                          color: selected ? Colors.white : t.dotColor,
+                        ),
+                        label: Text(t.label),
+                        selected: selected,
+                        selectedColor: t.dotColor,
+                        labelStyle: TextStyle(
+                          color: selected ? Colors.white : null,
+                        ),
+                        onSelected: (_) => setS(() => placeType = t),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Abbrechen'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final name = nameCtrl.text.trim();
-                if (name.isEmpty) return;
-                final group = PlaceGroup(
-                  uuid: existing?.uuid,
-                  name: name,
-                  calendarId: calendarId,
-                  telegramConnectionUuid: telegramConnectionUuid,
-                  includeNotes: includeNotes,
-                  includePersons: includePersons,
-                  includeActivities: includeActivities,
-                  isAutoGroup: isAutoGroup,
-                  placeType: placeType,
-                );
-                Navigator.pop(ctx, group);
-              },
-              child: const Text('Speichern'),
-            ),
-          ],
-        ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(l10n.cancel),
+              ),
+              FilledButton(
+                onPressed: () {
+                  final name = nameCtrl.text.trim();
+                  if (name.isEmpty) return;
+                  final group = PlaceGroup(
+                    uuid: existing?.uuid,
+                    name: name,
+                    calendarId: calendarId,
+                    telegramConnectionUuid: telegramConnectionUuid,
+                    includeNotes: includeNotes,
+                    includePersons: includePersons,
+                    includeActivities: includeActivities,
+                    isAutoGroup: isAutoGroup,
+                    placeType: placeType,
+                  );
+                  Navigator.pop(ctx, group);
+                },
+                child: Text(l10n.save),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -259,7 +264,7 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
     return showDialog<String>(
       context: ctx,
       builder: (dCtx) => AlertDialog(
-        title: const Text('Kalender wählen'),
+        title: Text(AppLocalizations.of(dCtx)!.pickCalendar),
         content: SizedBox(
           width: double.maxFinite,
           child: ListView(
@@ -282,10 +287,11 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Ortsgruppen')),
+      appBar: AppBar(title: Text(l10n.placeGroupsTitle)),
       body: _groups.isEmpty
-          ? const Center(child: Text('Noch keine Gruppen vorhanden.'))
+          ? Center(child: Text(l10n.noGroupsYet))
           : ListView.builder(
               itemCount: _groups.length,
               itemBuilder: (ctx, i) {
@@ -333,7 +339,7 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addGroup,
-        tooltip: 'Gruppe hinzufügen',
+        tooltip: l10n.addGroupTooltip,
         child: const Icon(Icons.add),
       ),
     );

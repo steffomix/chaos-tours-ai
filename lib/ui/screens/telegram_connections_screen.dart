@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/telegram_connection.dart';
@@ -47,19 +48,20 @@ class _TelegramConnectionsScreenState extends State<TelegramConnectionsScreen> {
   }
 
   Future<void> _delete(TelegramConnection conn) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Verbindung löschen?'),
-        content: Text('„${conn.name}" wird unwiderruflich gelöscht.'),
+        title: Text(l10n.connectionDeleteTitle),
+        content: Text(l10n.connectionDeleteContent(conn.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Löschen'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -85,89 +87,90 @@ class _TelegramConnectionsScreenState extends State<TelegramConnectionsScreen> {
     return showDialog<TelegramConnection>(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDlgState) => AlertDialog(
-          title: Text(
-            existing == null
-                ? 'Neue Telegram-Verbindung'
-                : 'Verbindung bearbeiten',
-          ),
-          content: SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: nameCtrl,
-                    decoration: const InputDecoration(labelText: 'Name *'),
-                    validator: (v) =>
-                        v == null || v.trim().isEmpty ? 'Pflichtfeld' : null,
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: descCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Beschreibung',
+        builder: (ctx, setDlgState) {
+          final l10n = AppLocalizations.of(ctx)!;
+          return AlertDialog(
+            title: Text(
+              existing == null
+                  ? l10n.newTelegramConnection
+                  : l10n.editTelegramConnection,
+            ),
+            content: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: nameCtrl,
+                      decoration: InputDecoration(labelText: '${l10n.name} *'),
+                      validator: (v) =>
+                          v == null || v.trim().isEmpty ? l10n.required : null,
                     ),
-                    maxLines: 2,
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: chatIdCtrl,
-                    decoration: const InputDecoration(
-                      labelText: '-ID-Nummer oder @Kanalname *',
-                      hintText: '-123... oder @Kanal',
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: descCtrl,
+                      decoration: InputDecoration(labelText: l10n.description),
+                      maxLines: 2,
                     ),
-                    validator: (v) =>
-                        v == null || v.trim().isEmpty ? 'Pflichtfeld' : null,
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: tokenCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Bot-Token *',
-                      hintText: '123456:ABC-DEF…',
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          tokenVisible
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                        ),
-                        onPressed: () =>
-                            setDlgState(() => tokenVisible = !tokenVisible),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: chatIdCtrl,
+                      decoration: InputDecoration(
+                        labelText: l10n.chatIdLabel,
+                        hintText: l10n.chatIdHint,
                       ),
+                      validator: (v) =>
+                          v == null || v.trim().isEmpty ? l10n.required : null,
                     ),
-                    obscureText: !tokenVisible,
-                    validator: (v) =>
-                        v == null || v.trim().isEmpty ? 'Pflichtfeld' : null,
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: tokenCtrl,
+                      decoration: InputDecoration(
+                        labelText: l10n.botTokenLabel,
+                        hintText: l10n.botTokenHint,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            tokenVisible
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                          onPressed: () =>
+                              setDlgState(() => tokenVisible = !tokenVisible),
+                        ),
+                      ),
+                      obscureText: !tokenVisible,
+                      validator: (v) =>
+                          v == null || v.trim().isEmpty ? l10n.required : null,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Abbrechen'),
-            ),
-            FilledButton(
-              onPressed: () {
-                if (formKey.currentState?.validate() != true) return;
-                Navigator.pop(
-                  ctx,
-                  TelegramConnection(
-                    uuid: existing?.uuid,
-                    name: nameCtrl.text.trim(),
-                    description: descCtrl.text.trim(),
-                    chatId: chatIdCtrl.text.trim(),
-                    botToken: tokenCtrl.text.trim(),
-                  ),
-                );
-              },
-              child: const Text('Speichern'),
-            ),
-          ],
-        ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(l10n.cancel),
+              ),
+              FilledButton(
+                onPressed: () {
+                  if (formKey.currentState?.validate() != true) return;
+                  Navigator.pop(
+                    ctx,
+                    TelegramConnection(
+                      uuid: existing?.uuid,
+                      name: nameCtrl.text.trim(),
+                      description: descCtrl.text.trim(),
+                      chatId: chatIdCtrl.text.trim(),
+                      botToken: tokenCtrl.text.trim(),
+                    ),
+                  );
+                },
+                child: Text(l10n.save),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -176,16 +179,15 @@ class _TelegramConnectionsScreenState extends State<TelegramConnectionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Telegram-Verbindungen')),
+      appBar: AppBar(title: Text(l10n.telegramConnectionsTitle)),
       floatingActionButton: FloatingActionButton(
         onPressed: _add,
         child: const Icon(Icons.add),
       ),
       body: _connections.isEmpty
-          ? const Center(
-              child: Text('Noch keine Telegram-Verbindungen vorhanden.'),
-            )
+          ? Center(child: Text(l10n.noTelegramConnections))
           : ListView.builder(
               itemCount: _connections.length,
               itemBuilder: (ctx, i) {
