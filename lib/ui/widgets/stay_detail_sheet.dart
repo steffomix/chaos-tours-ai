@@ -49,17 +49,17 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
   }
 
   Future<void> _load() async {
-    final stayId = widget.stay.id!;
+    final stayUuid = widget.stay.uuid;
     final results = await Future.wait([
-      DatabaseService.instance.loadPersonsForStay(stayId),
-      DatabaseService.instance.loadActivitiesForStay(stayId),
+      DatabaseService.instance.loadPersonsForStay(stayUuid),
+      DatabaseService.instance.loadActivitiesForStay(stayUuid),
       DatabaseService.instance.loadAllPersons(),
       DatabaseService.instance.loadAllActivities(),
     ]);
     SavedPlace? place;
-    if (widget.stay.placeId != null) {
+    if (widget.stay.placeUuid != null) {
       final places = await DatabaseService.instance.loadAllPlaces();
-      place = places.where((p) => p.id == widget.stay.placeId).firstOrNull;
+      place = places.where((p) => p.uuid == widget.stay.placeUuid).firstOrNull;
     }
     if (mounted) {
       setState(() {
@@ -97,7 +97,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
       ),
     );
     if (confirmed != true || !mounted) return;
-    await DatabaseService.instance.deleteStay(widget.stay.id!);
+    await DatabaseService.instance.deleteStay(widget.stay.uuid);
     if (mounted) {
       Navigator.pop(context);
       widget.onUpdated?.call();
@@ -173,8 +173,8 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
 
   Future<void> _addPersonFromList(Person person) async {
     final sp = StayPerson(
-      stayId: widget.stay.id!,
-      personId: person.id,
+      stayUuid: widget.stay.uuid,
+      personUuid: person.uuid,
       name: person.name,
     );
     await DatabaseService.instance.insertStayPerson(sp);
@@ -184,20 +184,20 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
   Future<void> _addPersonAdhoc(String name) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return;
-    final sp = StayPerson(stayId: widget.stay.id!, name: trimmed);
+    final sp = StayPerson(stayUuid: widget.stay.uuid, name: trimmed);
     await DatabaseService.instance.insertStayPerson(sp);
     await _load();
   }
 
   Future<void> _removeStayPerson(StayPerson sp) async {
-    await DatabaseService.instance.deleteStayPerson(sp.id!);
+    await DatabaseService.instance.deleteStayPerson(sp.uuid);
     await _load();
   }
 
   Future<void> _addActivityFromList(Activity activity) async {
     final sa = StayActivity(
-      stayId: widget.stay.id!,
-      activityId: activity.id,
+      stayUuid: widget.stay.uuid,
+      activityUuid: activity.uuid,
       description: activity.name,
     );
     await DatabaseService.instance.insertStayActivity(sa);
@@ -207,22 +207,22 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
   Future<void> _addActivityAdhoc(String description) async {
     final trimmed = description.trim();
     if (trimmed.isEmpty) return;
-    final sa = StayActivity(stayId: widget.stay.id!, description: trimmed);
+    final sa = StayActivity(stayUuid: widget.stay.uuid, description: trimmed);
     await DatabaseService.instance.insertStayActivity(sa);
     await _load();
   }
 
   Future<void> _removeStayActivity(StayActivity sa) async {
-    await DatabaseService.instance.deleteStayActivity(sa.id!);
+    await DatabaseService.instance.deleteStayActivity(sa.uuid);
     await _load();
   }
 
   void _showAddPersonDialog() {
     final controller = TextEditingController();
     // Persons already added
-    final addedPersonIds = _stayPersons
-        .map((p) => p.personId)
-        .whereType<int>()
+    final addedPersonUuids = _stayPersons
+        .map((p) => p.personUuid)
+        .whereType<String>()
         .toSet();
 
     showModalBottomSheet<void>(
@@ -250,7 +250,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
             const SizedBox(height: 12),
             // Known persons
             ..._allPersons
-                .where((p) => !addedPersonIds.contains(p.id))
+                .where((p) => !addedPersonUuids.contains(p.uuid))
                 .map(
                   (p) => ListTile(
                     leading: const Icon(Icons.person),
@@ -292,8 +292,8 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
   void _showAddActivityDialog() {
     final controller = TextEditingController();
     final addedActivityIds = _stayActivities
-        .map((a) => a.activityId)
-        .whereType<int>()
+        .map((a) => a.activityUuid)
+        .whereType<String>()
         .toSet();
 
     showModalBottomSheet<void>(
@@ -320,7 +320,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
             ),
             const SizedBox(height: 12),
             ..._allActivities
-                .where((a) => !addedActivityIds.contains(a.id))
+                .where((a) => !addedActivityIds.contains(a.uuid))
                 .map(
                   (a) => ListTile(
                     leading: const Icon(Icons.work_outline),

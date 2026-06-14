@@ -11,10 +11,10 @@ class SettingsService {
   static const String _keyAutoPlace = 'auto_place_seconds';
   static const String _keyDefaultRadius = 'default_radius_meters';
   static const String _keyAutoCreate = 'auto_create_places';
-  static const String _keyAutoPlaceGroup = 'auto_place_group_id';
-  static const String _keyDefaultPlaceGroup = 'default_place_group_id';
+  static const String _keyAutoPlaceGroup = 'auto_place_group_uuid';
+  static const String _keyDefaultPlaceGroup = 'default_place_group_uuid';
   static const String _keyTrackingEnabled = 'tracking_enabled';
-  static const String _keyActiveAktivitaetId = 'active_aktivitaet_id';
+  static const String _keyActiveAktivitaetId = 'active_aktivitaet_uuid';
   static const String _keyShowForbiddenPlaces = 'show_forbidden_places';
   static const String _keyShowTrackingPoints = 'show_tracking_points';
   static const String _keyTrackingPointRadius = 'tracking_point_radius';
@@ -65,23 +65,23 @@ class SettingsService {
   bool get autoCreatePlaces => _p.getBool(_keyAutoCreate) ?? true;
   set autoCreatePlaces(bool v) => _p.setBool(_keyAutoCreate, v);
 
-  /// Group ID for automatically created places (nullable).
-  int? get autoPlaceGroupId => _p.getInt(_keyAutoPlaceGroup);
-  set autoPlaceGroupId(int? v) {
-    if (v == null) {
+  /// UUID of group for automatically created places (nullable).
+  String? get autoPlaceGroupUuid => _p.getString(_keyAutoPlaceGroup);
+  set autoPlaceGroupUuid(String? v) {
+    if (v == null || v.isEmpty) {
       _p.remove(_keyAutoPlaceGroup);
     } else {
-      _p.setInt(_keyAutoPlaceGroup, v);
+      _p.setString(_keyAutoPlaceGroup, v);
     }
   }
 
-  /// Group ID pre-selected when the user creates a place manually (nullable).
-  int? get defaultPlaceGroupId => _p.getInt(_keyDefaultPlaceGroup);
-  set defaultPlaceGroupId(int? v) {
-    if (v == null) {
+  /// UUID of group pre-selected when the user creates a place manually (nullable).
+  String? get defaultPlaceGroupUuid => _p.getString(_keyDefaultPlaceGroup);
+  set defaultPlaceGroupUuid(String? v) {
+    if (v == null || v.isEmpty) {
       _p.remove(_keyDefaultPlaceGroup);
     } else {
-      _p.setInt(_keyDefaultPlaceGroup, v);
+      _p.setString(_keyDefaultPlaceGroup, v);
     }
   }
 
@@ -131,30 +131,30 @@ class SettingsService {
   set schedulerColorRange(int v) =>
       _p.setInt(_keySchedulerColorRange, v.clamp(1, 365));
 
-  /// Comma-separated group IDs to display in map and scheduler (empty = all).
+  /// Comma-separated group UUIDs to display in map and scheduler (empty = all).
   String get schedulerGroupIds => _p.getString(_keySchedulerGroupIds) ?? '';
   set schedulerGroupIds(String v) => _p.setString(_keySchedulerGroupIds, v);
 
-  /// Parses [schedulerGroupIds] into a list of integers (empty = all groups).
-  List<int> get schedulerGroupIdList {
+  /// Parses [schedulerGroupIds] into a list of UUID strings (empty = all groups).
+  List<String> get schedulerGroupUuidList {
     final raw = schedulerGroupIds;
     if (raw.isEmpty) return [];
     return raw
         .split(',')
-        .map((s) => int.tryParse(s.trim()))
-        .whereType<int>()
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
         .toList();
   }
 
   // ── Aktivitaet binding ───────────────────────────────────────────────────
 
-  /// The ID of the currently selected [Aktivitaet].
-  int? get activeAktivitaetId => _p.getInt(_keyActiveAktivitaetId);
-  set activeAktivitaetId(int? v) {
-    if (v == null) {
+  /// The UUID of the currently selected [Aktivitaet].
+  String? get activeAktivitaetUuid => _p.getString(_keyActiveAktivitaetId);
+  set activeAktivitaetUuid(String? v) {
+    if (v == null || v.isEmpty) {
       _p.remove(_keyActiveAktivitaetId);
     } else {
-      _p.setInt(_keyActiveAktivitaetId, v);
+      _p.setString(_keyActiveAktivitaetId, v);
     }
   }
 
@@ -167,28 +167,30 @@ class SettingsService {
     autoPlaceSeconds = a.autoPlaceSeconds;
     defaultRadiusMeters = a.defaultRadiusMeters;
     autoCreatePlaces = a.autoCreatePlaces;
-    autoPlaceGroupId = a.autoPlaceGroupId;
-    defaultPlaceGroupId = a.defaultPlaceGroupId;
+    autoPlaceGroupUuid = a.autoPlaceGroupUuid;
+    defaultPlaceGroupUuid = a.defaultPlaceGroupUuid;
     timelineHistoryDays = a.timelineHistoryDays;
     searchCountry = a.searchCountry;
     schedulerColorRange = a.schedulerColorRange;
     schedulerGroupIds = a.schedulerGroupIds;
-    activeAktivitaetId = a.id;
+    activeAktivitaetUuid = a.uuid;
   }
 
   /// Builds an [Aktivitaet] snapshot of the current SharedPreferences values.
-  /// Useful when saving the settings screen back to DB.
-  Aktivitaet snapshotAsAktivitaet({required int id, required String name}) {
+  Aktivitaet snapshotAsAktivitaet({
+    required String uuid,
+    required String name,
+  }) {
     return Aktivitaet(
-      id: id,
+      uuid: uuid,
       name: name,
       gpsIntervalSeconds: gpsIntervalSeconds,
       stayDetectionSeconds: stayDetectionSeconds,
       autoPlaceSeconds: autoPlaceSeconds,
       defaultRadiusMeters: defaultRadiusMeters,
       autoCreatePlaces: autoCreatePlaces,
-      autoPlaceGroupId: autoPlaceGroupId,
-      defaultPlaceGroupId: defaultPlaceGroupId,
+      autoPlaceGroupUuid: autoPlaceGroupUuid,
+      defaultPlaceGroupUuid: defaultPlaceGroupUuid,
       timelineHistoryDays: timelineHistoryDays,
       searchCountry: searchCountry,
       schedulerColorRange: schedulerColorRange,

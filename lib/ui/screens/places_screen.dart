@@ -21,8 +21,8 @@ class PlacesScreen extends StatefulWidget {
 
 class _PlacesScreenState extends State<PlacesScreen> {
   List<SavedPlace> _places = [];
-  Map<int, int> _visitCounts = {};
-  Map<int, Stay?> _lastStay = {};
+  Map<String, int> _visitCounts = {};
+  Map<String, Stay?> _lastStay = {};
   Map<String, double> _avgRatings = {};
 
   // Search
@@ -67,17 +67,15 @@ class _PlacesScreenState extends State<PlacesScreen> {
 
   Future<void> _loadPlaces() async {
     final places = await DatabaseService.instance.loadAllPlaces();
-    final counts = <int, int>{};
-    final stays = <int, Stay?>{};
+    final counts = <String, int>{};
+    final stays = <String, Stay?>{};
     for (final p in places) {
-      if (p.id != null) {
-        counts[p.id!] = await DatabaseService.instance.visitCountForPlace(
-          p.id!,
-        );
-        stays[p.id!] = await DatabaseService.instance.lastCompletedStayForPlace(
-          p.id!,
-        );
-      }
+      counts[p.uuid] = await DatabaseService.instance.visitCountForPlace(
+        p.uuid,
+      );
+      stays[p.uuid] = await DatabaseService.instance.lastCompletedStayForPlace(
+        p.uuid,
+      );
     }
     final avgRatings = await DatabaseService.instance
         .loadAverageRatingsForAllPlaces();
@@ -283,10 +281,8 @@ class _PlacesScreenState extends State<PlacesScreen> {
                         itemBuilder: (ctx, i) {
                           final item = filtered[i];
                           final place = item.place;
-                          final count = _visitCounts[place.id] ?? 0;
-                          final stay = place.id != null
-                              ? _lastStay[place.id]
-                              : null;
+                          final count = _visitCounts[place.uuid] ?? 0;
+                          final stay = _lastStay[place.uuid];
                           return _PlaceCard(
                             place: place,
                             count: count,

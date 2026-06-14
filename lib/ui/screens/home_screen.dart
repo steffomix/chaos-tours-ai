@@ -32,7 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Recent visits
   List<Stay> _recentStays = [];
-  Map<int, SavedPlace> _placesById = {};
+  Map<String, SavedPlace> _placesByUuid = {};
 
   @override
   void initState() {
@@ -106,31 +106,28 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadRecentStays({bool build = true}) async {
     final stays = await DatabaseService.instance.loadRecentCompletedStays();
     final allPlaces = await DatabaseService.instance.loadAllPlaces();
-    final byId = {
-      for (final p in allPlaces)
-        if (p.id != null) p.id!: p,
-    };
+    final byUuid = {for (final p in allPlaces) p.uuid: p};
     if (mounted && build) {
       setState(() {
         _recentStays = stays;
-        _placesById = byId;
+        _placesByUuid = byUuid;
       });
     }
   }
 
   Future<void> _loadCurrentAktivitaet() async {
-    final id = SettingsService.instance.activeAktivitaetId;
-    if (id == null) return;
-    final a = await DatabaseService.instance.loadAktivitaet(id);
+    final uuid = SettingsService.instance.activeAktivitaetUuid;
+    if (uuid == null) return;
+    final a = await DatabaseService.instance.loadAktivitaet(uuid);
     if (mounted) setState(() => _currentAktivitaet = a);
   }
 
   Future<void> _loadActiveStay({bool build = true}) async {
     final stay = await DatabaseService.instance.loadActiveStay();
     SavedPlace? place;
-    if (stay?.placeId != null) {
+    if (stay?.placeUuid != null) {
       final places = await DatabaseService.instance.loadAllPlaces();
-      place = places.where((p) => p.id == stay!.placeId).firstOrNull;
+      place = places.where((p) => p.uuid == stay!.placeUuid).firstOrNull;
     }
     if (mounted && build) {
       setState(() {
@@ -513,8 +510,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             );
                           }
                           final stay = _recentStays[i - 1];
-                          final place = stay.placeId != null
-                              ? _placesById[stay.placeId]
+                          final place = stay.placeUuid != null
+                              ? _placesByUuid[stay.placeUuid]
                               : null;
                           final name =
                               place?.name ?? stay.address ?? 'Unbekannter Ort';

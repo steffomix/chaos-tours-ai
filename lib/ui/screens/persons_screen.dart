@@ -59,7 +59,7 @@ class _PersonsScreenState extends State<PersonsScreen> {
       ),
     );
     if (confirmed == true) {
-      await DatabaseService.instance.deletePerson(person.id!);
+      await DatabaseService.instance.deletePerson(person.uuid);
       await _load();
     }
   }
@@ -105,7 +105,7 @@ class _PersonsScreenState extends State<PersonsScreen> {
               Navigator.pop(
                 ctx,
                 Person(
-                  id: existing?.id,
+                  uuid: existing?.uuid,
                   name: name,
                   role: roleCtrl.text.trim(),
                 ),

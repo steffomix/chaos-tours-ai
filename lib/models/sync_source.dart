@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'package:uuid/uuid.dart';
+
+const _uuid = Uuid();
 
 /// Sync options for a single table (insert/update/delete independently).
 class SyncTableOptions {
@@ -48,6 +51,7 @@ class SyncSourceOptions {
     'aktivitaeten',
     'sync_sources',
     'place_experiences',
+    'sync_source_experiences',
   ];
 
   final Map<String, SyncTableOptions> tables;
@@ -95,7 +99,7 @@ class SyncSourceOptions {
 /// A remote server used for bidirectional data sync.
 /// Also optionally provides a public info URL for additional information.
 class SyncSource {
-  final int? id;
+  final String uuid;
 
   /// Display name for this source.
   final String name;
@@ -116,25 +120,23 @@ class SyncSource {
   final SyncSourceOptions syncOptions;
 
   // ── Sync fields ──────────────────────────────────────────────────────────
-  final String uuid;
   final int updatedAt;
   final int? deletedAt;
   final String deviceId;
 
   SyncSource({
-    this.id,
+    String? uuid,
     required this.name,
     required this.syncUrl,
     this.apiKey = '',
     this.infoUrl = '',
     this.description = '',
     SyncSourceOptions? syncOptions,
-    String? uuid,
     int? updatedAt,
     this.deletedAt,
     this.deviceId = '',
   }) : syncOptions = syncOptions ?? SyncSourceOptions(),
-       uuid = uuid ?? '',
+       uuid = uuid?.isNotEmpty == true ? uuid! : _uuid.v4(),
        updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch;
 
   factory SyncSource.fromMap(Map<String, dynamic> map) {
@@ -146,14 +148,13 @@ class SyncSource {
       opts = SyncSourceOptions();
     }
     return SyncSource(
-      id: map['id'] as int?,
+      uuid: map['uuid'] as String?,
       name: map['name'] as String,
       syncUrl: (map['sync_url'] as String?) ?? '',
       apiKey: (map['api_key'] as String?) ?? '',
       infoUrl: (map['info_url'] as String?) ?? '',
       description: (map['description'] as String?) ?? '',
       syncOptions: opts,
-      uuid: (map['uuid'] as String?) ?? '',
       updatedAt:
           (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       deletedAt: map['deleted_at'] as int?,
@@ -163,14 +164,13 @@ class SyncSource {
 
   Map<String, dynamic> toMap() {
     return {
-      if (id != null) 'id': id,
+      'uuid': uuid,
       'name': name,
       'sync_url': syncUrl,
       'api_key': apiKey,
       'info_url': infoUrl,
       'description': description,
       'sync_options': syncOptions.toJson(),
-      'uuid': uuid,
       'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
       'device_id': deviceId,
@@ -178,27 +178,25 @@ class SyncSource {
   }
 
   SyncSource copyWith({
-    int? id,
+    String? uuid,
     String? name,
     String? syncUrl,
     String? apiKey,
     String? infoUrl,
     String? description,
     SyncSourceOptions? syncOptions,
-    String? uuid,
     int? updatedAt,
     int? deletedAt,
     String? deviceId,
   }) {
     return SyncSource(
-      id: id ?? this.id,
+      uuid: uuid ?? this.uuid,
       name: name ?? this.name,
       syncUrl: syncUrl ?? this.syncUrl,
       apiKey: apiKey ?? this.apiKey,
       infoUrl: infoUrl ?? this.infoUrl,
       description: description ?? this.description,
       syncOptions: syncOptions ?? this.syncOptions,
-      uuid: uuid ?? this.uuid,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
       deviceId: deviceId ?? this.deviceId,

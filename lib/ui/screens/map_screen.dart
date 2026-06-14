@@ -67,12 +67,12 @@ class _MapScreenState extends State<MapScreen> {
     final allPlaces = await DatabaseService.instance.loadAllPlaces();
     final avgRatings = await DatabaseService.instance
         .loadAverageRatingsForAllPlaces();
-    final groupFilter = SettingsService.instance.schedulerGroupIdList;
+    final groupFilter = SettingsService.instance.schedulerGroupUuidList;
     final places = groupFilter.isEmpty
         ? allPlaces
         : allPlaces
               .where(
-                (p) => p.groupId != null && groupFilter.contains(p.groupId),
+                (p) => p.groupUuid != null && groupFilter.contains(p.groupUuid),
               )
               .toList();
 
@@ -269,7 +269,7 @@ class _MapScreenState extends State<MapScreen> {
       name: name,
       lat: latlng.latitude,
       lng: latlng.longitude,
-      groupId: SettingsService.instance.defaultPlaceGroupId,
+      groupUuid: SettingsService.instance.defaultPlaceGroupUuid,
     );
     await DatabaseService.instance.insertPlace(newPlace);
     await _loadPlaces();

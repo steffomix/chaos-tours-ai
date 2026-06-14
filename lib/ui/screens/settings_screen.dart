@@ -20,8 +20,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _autoPlaceTime;
   late double _defaultRadius;
   late bool _autoCreatePlaces;
-  int? _autoPlaceGroupId;
-  int? _defaultPlaceGroupId;
+  String? _autoPlaceGroupUuid;
+  String? _defaultPlaceGroupUuid;
   late int _gpsSmoothingPoints;
   late bool _showTrackingPoints;
   late double _trackingPointRadius;
@@ -29,7 +29,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _searchCountry;
   final TextEditingController _searchCountryCtrl = TextEditingController();
   late int _schedulerColorRange;
-  Set<int> _schedulerGroupIds = {};
+  Set<String> _schedulerGroupIds = {};
   List<PlaceGroup> _groups = [];
 
   // Network info for display (used by SyncSourcesScreen)
@@ -53,8 +53,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _autoPlaceTime = s.autoPlaceSeconds;
     _defaultRadius = s.defaultRadiusMeters;
     _autoCreatePlaces = s.autoCreatePlaces;
-    _autoPlaceGroupId = s.autoPlaceGroupId;
-    _defaultPlaceGroupId = s.defaultPlaceGroupId;
+    _autoPlaceGroupUuid = s.autoPlaceGroupUuid;
+    _defaultPlaceGroupUuid = s.defaultPlaceGroupUuid;
     _gpsSmoothingPoints = s.gpsSmoothingPoints;
     _showTrackingPoints = s.showTrackingPoints;
     _trackingPointRadius = s.trackingPointRadius;
@@ -62,7 +62,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _searchCountry = s.searchCountry;
     _searchCountryCtrl.text = _searchCountry;
     _schedulerColorRange = s.schedulerColorRange;
-    _schedulerGroupIds = Set<int>.from(s.schedulerGroupIdList);
+    _schedulerGroupIds = Set<String>.from(s.schedulerGroupUuidList);
     _loadGroups();
     _loadAktivitaeten();
   }
@@ -74,12 +74,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadAktivitaeten() async {
     final list = await DatabaseService.instance.loadAllAktivitaeten();
-    final activeId = SettingsService.instance.activeAktivitaetId;
+    final activeUuid = SettingsService.instance.activeAktivitaetUuid;
     if (mounted) {
       setState(() {
         _aktivitaeten = list;
         _activeAktivitaet =
-            list.where((a) => a.id == activeId).firstOrNull ?? list.firstOrNull;
+            list.where((a) => a.uuid == activeUuid).firstOrNull ??
+            list.firstOrNull;
       });
     }
   }
@@ -91,8 +92,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     s.autoPlaceSeconds = _autoPlaceTime;
     s.defaultRadiusMeters = _defaultRadius;
     s.autoCreatePlaces = _autoCreatePlaces;
-    s.autoPlaceGroupId = _autoPlaceGroupId;
-    s.defaultPlaceGroupId = _defaultPlaceGroupId;
+    s.autoPlaceGroupUuid = _autoPlaceGroupUuid;
+    s.defaultPlaceGroupUuid = _defaultPlaceGroupUuid;
     s.gpsSmoothingPoints = _gpsSmoothingPoints;
     s.showTrackingPoints = _showTrackingPoints;
     s.trackingPointRadius = _trackingPointRadius;
@@ -103,9 +104,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     // Persist settings back into the active Aktivitaet.
     final a = _activeAktivitaet;
-    if (a?.id != null) {
+    if (a != null) {
       await DatabaseService.instance.updateAktivitaet(
-        s.snapshotAsAktivitaet(id: a!.id!, name: a.name),
+        s.snapshotAsAktivitaet(uuid: a.uuid, name: a.name),
       );
     }
   }
@@ -269,20 +270,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (_autoCreatePlaces)
             ListTile(
               title: const Text('Gruppe für Auto-Orte'),
-              trailing: DropdownButton<int?>(
-                value: _autoPlaceGroupId == null
+              trailing: DropdownButton<String?>(
+                value: _autoPlaceGroupUuid == null
                     ? null
-                    : (_groups.any((g) => g.id == _autoPlaceGroupId)
-                          ? _autoPlaceGroupId
+                    : (_groups.any((g) => g.uuid == _autoPlaceGroupUuid)
+                          ? _autoPlaceGroupUuid
                           : null),
                 hint: const Text('Keine'),
                 items: [
                   const DropdownMenuItem(value: null, child: Text('Keine')),
                   ..._groups.map(
-                    (g) => DropdownMenuItem(value: g.id, child: Text(g.name)),
+                    (g) => DropdownMenuItem(value: g.uuid, child: Text(g.name)),
                   ),
                 ],
-                onChanged: (v) => setState(() => _autoPlaceGroupId = v),
+                onChanged: (v) => setState(() => _autoPlaceGroupUuid = v),
               ),
             ),
           ListTile(
@@ -290,20 +291,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: const Text(
               'Voreingestellte Gruppe beim manuellen Erstellen von Orten',
             ),
-            trailing: DropdownButton<int?>(
-              value: _defaultPlaceGroupId == null
+            trailing: DropdownButton<String?>(
+              value: _defaultPlaceGroupUuid == null
                   ? null
-                  : (_groups.any((g) => g.id == _defaultPlaceGroupId)
-                        ? _defaultPlaceGroupId
+                  : (_groups.any((g) => g.uuid == _defaultPlaceGroupUuid)
+                        ? _defaultPlaceGroupUuid
                         : null),
               hint: const Text('Keine'),
               items: [
                 const DropdownMenuItem(value: null, child: Text('Keine')),
                 ..._groups.map(
-                  (g) => DropdownMenuItem(value: g.id, child: Text(g.name)),
+                  (g) => DropdownMenuItem(value: g.uuid, child: Text(g.name)),
                 ),
               ],
-              onChanged: (v) => setState(() => _defaultPlaceGroupId = v),
+              onChanged: (v) => setState(() => _defaultPlaceGroupUuid = v),
             ),
           ),
           const Divider(),
@@ -416,13 +417,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             color: g.placeType.dotColor,
                           ),
                           label: Text(g.name),
-                          selected: _schedulerGroupIds.contains(g.id),
+                          selected: _schedulerGroupIds.contains(g.uuid),
                           onSelected: (selected) {
                             setState(() {
                               if (selected) {
-                                _schedulerGroupIds.add(g.id!);
+                                _schedulerGroupIds.add(g.uuid);
                               } else {
-                                _schedulerGroupIds.remove(g.id);
+                                _schedulerGroupIds.remove(g.uuid);
                               }
                             });
                           },
@@ -658,7 +659,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const Divider(height: 1),
                   ..._aktivitaeten.map((a) {
-                    final isActive = a.id == _activeAktivitaet?.id;
+                    final isActive = a.uuid == _activeAktivitaet?.uuid;
                     return ListTile(
                       leading: Icon(
                         isActive
@@ -715,8 +716,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _autoPlaceTime = a.autoPlaceSeconds;
         _defaultRadius = a.defaultRadiusMeters;
         _autoCreatePlaces = a.autoCreatePlaces;
-        _autoPlaceGroupId = a.autoPlaceGroupId;
-        _defaultPlaceGroupId = a.defaultPlaceGroupId;
+        _autoPlaceGroupUuid = a.autoPlaceGroupUuid;
+        _defaultPlaceGroupUuid = a.defaultPlaceGroupUuid;
       });
     }
   }
@@ -726,7 +727,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       text: 'Aktivität ${_aktivitaeten.length + 1}',
     );
     // Offer to copy from an existing one as template.
-    Aktivitaet template = _activeAktivitaet ?? const Aktivitaet(name: '');
+    Aktivitaet template = _activeAktivitaet ?? Aktivitaet(name: '');
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -780,7 +781,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final name = nameCtrl.text.trim();
     if (name.isEmpty) return;
 
-    final newA = template.copyWith(id: null, name: name);
+    final newA = template.copyWith(name: name);
     final id = await DatabaseService.instance.insertAktivitaet(newA);
     final created = await DatabaseService.instance.loadAktivitaet(id);
     if (created != null) await _switchAktivitaet(created);
@@ -845,9 +846,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (confirmed != true) return;
 
     // Switch to another Aktivitaet before deleting.
-    final next = _aktivitaeten.firstWhere((x) => x.id != a.id);
+    final next = _aktivitaeten.firstWhere((x) => x.uuid != a.uuid);
     await _switchAktivitaet(next);
-    await DatabaseService.instance.deleteAktivitaet(a.id!);
+    await DatabaseService.instance.deleteAktivitaet(a.uuid);
     await _loadAktivitaeten();
 
     if (mounted) {

@@ -59,7 +59,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
       ),
     );
     if (confirmed == true) {
-      await DatabaseService.instance.deleteActivity(activity.id!);
+      await DatabaseService.instance.deleteActivity(activity.uuid);
       await _load();
     }
   }
@@ -90,7 +90,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
             onPressed: () {
               final name = nameCtrl.text.trim();
               if (name.isEmpty) return;
-              Navigator.pop(ctx, Activity(id: existing?.id, name: name));
+              Navigator.pop(ctx, Activity(uuid: existing?.uuid, name: name));
             },
             child: const Text('Speichern'),
           ),

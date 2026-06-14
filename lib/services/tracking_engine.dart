@@ -44,9 +44,11 @@ class TrackingEngine {
     final active = await DatabaseService.instance.loadActiveStay();
     if (active != null) {
       _currentStay = active;
-      if (active.placeId != null) {
+      if (active.placeUuid != null) {
         final places = await DatabaseService.instance.loadAllPlaces();
-        _currentPlace = places.where((p) => p.id == active.placeId).firstOrNull;
+        _currentPlace = places
+            .where((p) => p.uuid == active.placeUuid)
+            .firstOrNull;
         _status = TrackingStatus.haltAtKnown;
       } else {
         _status = active.status == StayStatus.detecting
@@ -184,13 +186,13 @@ class TrackingEngine {
 
       // End stay if: switched to different place, OR privacy now suppresses stay.
       if (_currentStay != null &&
-          (_currentStay!.placeId != nearestPlace.id || !stayAllowed)) {
+          (_currentStay!.placeUuid != nearestPlace.uuid || !stayAllowed)) {
         await _endCurrentStay(timestamp);
       }
       if (_currentStay == null && stayAllowed) {
         // Start a new stay anchored at the earliest point in the short window.
         await _startStay(
-          placeId: nearestPlace.id,
+          placeUuid: nearestPlace.uuid,
           startTime: shortWindow.first.timestamp,
           effectivePlaceType: effectivePlaceType,
         );
@@ -247,27 +249,27 @@ class TrackingEngine {
   }
 
   Future<void> _startStay({
-    required int? placeId,
+    required String? placeUuid,
     required int startTime,
     PlaceType effectivePlaceType = PlaceType.public,
   }) async {
     final stay = Stay(
-      placeId: placeId,
+      placeUuid: placeUuid,
       startTime: startTime,
       status: StayStatus.active,
     );
-    final id = await DatabaseService.instance.insertStay(stay);
-    _currentStay = stay.copyWith(id: id);
+    final stayUuid = await DatabaseService.instance.insertStay(stay);
+    _currentStay = stay.copyWith(uuid: stayUuid);
 
     // Create arrival calendar event — only if effective privacy allows it.
-    if (placeId != null && effectivePlaceType.syncsCalendar) {
+    if (placeUuid != null && effectivePlaceType.syncsCalendar) {
       final places = await DatabaseService.instance.loadAllPlaces();
-      final place = places.where((p) => p.id == placeId).firstOrNull;
+      final place = places.where((p) => p.uuid == placeUuid).firstOrNull;
       if (place != null) {
         await _createArrivalCalendarEvent(
           _currentStay!,
           place.name,
-          place.groupId,
+          place.groupUuid,
         );
       }
     }
@@ -303,31 +305,30 @@ class TrackingEngine {
         lat: centroidLat,
         lng: centroidLng,
         radius: settings.defaultRadiusMeters,
-        groupId: settings.autoPlaceGroupId,
+        groupUuid: settings.autoPlaceGroupUuid,
       );
-      final placeId = await DatabaseService.instance.insertPlace(place);
+      final placeUuid = await DatabaseService.instance.insertPlace(place);
 
       final stay = Stay(
-        placeId: placeId,
+        placeUuid: placeUuid,
         startTime: startTime,
         address: address,
         status: StayStatus.active,
       );
-      final id = await DatabaseService.instance.insertStay(stay);
-      _currentStay = stay.copyWith(id: id);
+      final stayUuid = await DatabaseService.instance.insertStay(stay);
+      _currentStay = stay.copyWith(uuid: stayUuid);
 
       // Create arrival calendar event for auto-created place
-      // (only if the group's placeType allows calendar sync)
-      final autoGroupId = settings.autoPlaceGroupId;
-      if (autoGroupId != null) {
+      final autoGroupUuid = settings.autoPlaceGroupUuid;
+      if (autoGroupUuid != null) {
         final autoGroup = await DatabaseService.instance.loadPlaceGroup(
-          autoGroupId,
+          autoGroupUuid,
         );
         if (autoGroup != null && autoGroup.placeType.syncsCalendar) {
           await _createArrivalCalendarEvent(
             _currentStay!,
             autoPlaceName,
-            autoGroupId,
+            autoGroupUuid,
           );
         }
       }
@@ -340,8 +341,8 @@ class TrackingEngine {
       address: address,
       status: StayStatus.active,
     );
-    final id = await DatabaseService.instance.insertStay(stay);
-    _currentStay = stay.copyWith(id: id);
+    final stayUuid = await DatabaseService.instance.insertStay(stay);
+    _currentStay = stay.copyWith(uuid: stayUuid);
   }
 
   /// Creates a preliminary "arrival" calendar event for [stay] and persists
@@ -349,11 +350,11 @@ class TrackingEngine {
   Future<void> _createArrivalCalendarEvent(
     Stay stay,
     String? placeName,
-    int? groupId,
+    String? groupUuid,
   ) async {
     if (!SettingsService.instance.calendarEnabled) return;
-    if (groupId == null) return;
-    final group = await DatabaseService.instance.loadPlaceGroup(groupId);
+    if (groupUuid == null) return;
+    final group = await DatabaseService.instance.loadPlaceGroup(groupUuid);
     if (group == null || group.calendarId == null) return;
 
     final eventId = await CalendarService.instance.createArrivalEvent(
@@ -361,7 +362,7 @@ class TrackingEngine {
       group,
       placeName,
     );
-    if (eventId != null && stay.id != null) {
+    if (eventId != null) {
       final updated = stay.copyWith(calendarEventId: eventId);
       await DatabaseService.instance.updateStay(updated);
       _currentStay = updated;
@@ -383,18 +384,18 @@ class TrackingEngine {
     if (place != null &&
         SettingsService.instance.calendarEnabled &&
         (calendarType?.syncsCalendar ?? false) &&
-        place.groupId != null) {
+        place.groupUuid != null) {
       final group = await DatabaseService.instance.loadPlaceGroup(
-        place.groupId!,
+        place.groupUuid!,
       );
       if (group != null) {
         // Load persons & activities for the full description
-        final persons = ended.id != null
-            ? await DatabaseService.instance.loadPersonsForStay(ended.id!)
-            : <dynamic>[];
-        final activities = ended.id != null
-            ? await DatabaseService.instance.loadActivitiesForStay(ended.id!)
-            : <dynamic>[];
+        final persons = await DatabaseService.instance.loadPersonsForStay(
+          ended.uuid,
+        );
+        final activities = await DatabaseService.instance.loadActivitiesForStay(
+          ended.uuid,
+        );
 
         bool updated = false;
         if (ended.calendarEventId != null) {

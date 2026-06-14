@@ -1,8 +1,12 @@
+import 'package:uuid/uuid.dart';
+
+const _uuid = Uuid();
+
 enum StayStatus { detecting, active, completed }
 
 class Stay {
-  final int? id;
-  final int? placeId;
+  final String uuid;
+  final String? placeUuid;
   final int startTime;
   final int? endTime;
   final String notes;
@@ -11,18 +15,16 @@ class Stay {
   final StayStatus status;
 
   /// Whether this stay counts toward the interval scheduler.
-  /// When false the visit is recorded normally but does not reset the interval.
   final bool isInterval;
 
   // ── Sync fields ──────────────────────────────────────────────────────────
-  final String uuid;
   final int updatedAt;
   final int? deletedAt;
   final String deviceId;
 
   Stay({
-    this.id,
-    this.placeId,
+    String? uuid,
+    this.placeUuid,
     required this.startTime,
     this.endTime,
     this.notes = '',
@@ -30,11 +32,10 @@ class Stay {
     this.address,
     this.status = StayStatus.detecting,
     this.isInterval = true,
-    String? uuid,
     int? updatedAt,
     this.deletedAt,
     this.deviceId = '',
-  }) : uuid = uuid ?? '',
+  }) : uuid = uuid?.isNotEmpty == true ? uuid! : _uuid.v4(),
        updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch;
 
   bool get isActive => status != StayStatus.completed;
@@ -50,8 +51,8 @@ class Stay {
 
   factory Stay.fromMap(Map<String, dynamic> map) {
     return Stay(
-      id: map['id'] as int?,
-      placeId: map['place_id'] as int?,
+      uuid: map['uuid'] as String?,
+      placeUuid: map['place_uuid'] as String?,
       startTime: map['start_time'] as int,
       endTime: map['end_time'] as int?,
       notes: (map['notes'] as String?) ?? '',
@@ -62,7 +63,6 @@ class Stay {
         orElse: () => StayStatus.detecting,
       ),
       isInterval: (map['is_interval'] as int? ?? 1) == 1,
-      uuid: (map['uuid'] as String?) ?? '',
       updatedAt:
           (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       deletedAt: map['deleted_at'] as int?,
@@ -72,8 +72,8 @@ class Stay {
 
   Map<String, dynamic> toMap() {
     return {
-      if (id != null) 'id': id,
-      if (placeId != null) 'place_id': placeId,
+      'uuid': uuid,
+      if (placeUuid != null) 'place_uuid': placeUuid,
       'start_time': startTime,
       if (endTime != null) 'end_time': endTime,
       'notes': notes,
@@ -81,7 +81,6 @@ class Stay {
       if (address != null) 'address': address,
       'status': status.name,
       'is_interval': isInterval ? 1 : 0,
-      'uuid': uuid,
       'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
       'device_id': deviceId,
@@ -89,8 +88,8 @@ class Stay {
   }
 
   Stay copyWith({
-    int? id,
-    int? placeId,
+    String? uuid,
+    String? placeUuid,
     int? startTime,
     int? endTime,
     String? notes,
@@ -99,17 +98,16 @@ class Stay {
     StayStatus? status,
     bool? isInterval,
     bool clearEndTime = false,
-    bool clearPlaceId = false,
+    bool clearPlaceUuid = false,
     bool clearCalendarEventId = false,
-    String? uuid,
     int? updatedAt,
     int? deletedAt,
     bool clearDeletedAt = false,
     String? deviceId,
   }) {
     return Stay(
-      id: id ?? this.id,
-      placeId: clearPlaceId ? null : (placeId ?? this.placeId),
+      uuid: uuid ?? this.uuid,
+      placeUuid: clearPlaceUuid ? null : (placeUuid ?? this.placeUuid),
       startTime: startTime ?? this.startTime,
       endTime: clearEndTime ? null : (endTime ?? this.endTime),
       notes: notes ?? this.notes,
@@ -119,7 +117,6 @@ class Stay {
       address: address ?? this.address,
       status: status ?? this.status,
       isInterval: isInterval ?? this.isInterval,
-      uuid: uuid ?? this.uuid,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
       deviceId: deviceId ?? this.deviceId,

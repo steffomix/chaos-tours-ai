@@ -27,13 +27,13 @@ class _TimelineScreenState extends State<TimelineScreen> {
   List<Stay> _stays = [];
   List<SavedPlace> _places = [];
   List<PlaceGroup> _groups = [];
-  Map<int, List<StayPerson>> _personsByStay = {};
-  Map<int, List<StayActivity>> _activitiesByStay = {};
-  Map<int, int?> _lastVisitByPlace = {}; // placeId -> lastVisit ms
+  Map<String, List<StayPerson>> _personsByStay = {};
+  Map<String, List<StayActivity>> _activitiesByStay = {};
+  Map<String, int?> _lastVisitByPlace = {}; // placeUuid -> lastVisit ms
 
   // Filter state
   DateTimeRange? _filterRange;
-  int? _filterPlaceId;
+  String? _filterPlaceUuid;
 
   // Search state
   bool _searchActive = false;
@@ -84,20 +84,18 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
     // Load relations for all stays
     final personLists = await Future.wait(
-      stays.map((s) => DatabaseService.instance.loadPersonsForStay(s.id!)),
+      stays.map((s) => DatabaseService.instance.loadPersonsForStay(s.uuid)),
     );
     final activityLists = await Future.wait(
-      stays.map((s) => DatabaseService.instance.loadActivitiesForStay(s.id!)),
+      stays.map((s) => DatabaseService.instance.loadActivitiesForStay(s.uuid)),
     );
 
     // Load last-visit timestamps for interval-enabled places
-    final intervalPlaces = places.where(
-      (p) => p.intervalEnabled && p.id != null,
-    );
-    final lastVisits = <int, int?>{};
+    final intervalPlaces = places.where((p) => p.intervalEnabled);
+    final lastVisits = <String, int?>{};
     for (final p in intervalPlaces) {
-      lastVisits[p.id!] = await DatabaseService.instance.lastVisitedAtForPlace(
-        p.id!,
+      lastVisits[p.uuid] = await DatabaseService.instance.lastVisitedAtForPlace(
+        p.uuid,
       );
     }
 
@@ -107,10 +105,11 @@ class _TimelineScreenState extends State<TimelineScreen> {
         _places = places;
         _groups = groups;
         _personsByStay = {
-          for (var i = 0; i < stays.length; i++) stays[i].id!: personLists[i],
+          for (var i = 0; i < stays.length; i++) stays[i].uuid: personLists[i],
         };
         _activitiesByStay = {
-          for (var i = 0; i < stays.length; i++) stays[i].id!: activityLists[i],
+          for (var i = 0; i < stays.length; i++)
+            stays[i].uuid: activityLists[i],
         };
         _lastVisitByPlace = lastVisits;
       });
@@ -125,7 +124,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
           return false;
         }
       }
-      if (_filterPlaceId != null && s.placeId != _filterPlaceId) {
+      if (_filterPlaceUuid != null && s.placeUuid != _filterPlaceUuid) {
         return false;
       }
       if (_searchQuery.isNotEmpty) {
@@ -134,10 +133,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
         final placeName = place?.name.toLowerCase() ?? '';
         final address = s.address?.toLowerCase() ?? '';
         final notes = s.notes.toLowerCase();
-        final persons = (_personsByStay[s.id] ?? [])
+        final persons = (_personsByStay[s.uuid] ?? [])
             .map((p) => p.name.toLowerCase())
             .join(' ');
-        final activities = (_activitiesByStay[s.id] ?? [])
+        final activities = (_activitiesByStay[s.uuid] ?? [])
             .map((a) => a.description.toLowerCase())
             .join(' ');
         if (!placeName.contains(q) &&
@@ -153,8 +152,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   SavedPlace? _placeForStay(Stay s) {
-    if (s.placeId == null) return null;
-    return _places.where((p) => p.id == s.placeId).firstOrNull;
+    if (s.placeUuid == null) return null;
+    return _places.where((p) => p.uuid == s.placeUuid).firstOrNull;
   }
 
   Future<void> _pickDateRange() async {
@@ -223,19 +222,19 @@ class _TimelineScreenState extends State<TimelineScreen> {
               // Filter by place
               IconButton(
                 icon: Badge(
-                  isLabelVisible: _filterPlaceId != null,
+                  isLabelVisible: _filterPlaceUuid != null,
                   child: const Icon(Icons.filter_list),
                 ),
                 onPressed: _showPlaceFilterSheet,
                 tooltip: 'Nach Ort filtern',
               ),
               // Clear filters
-              if (_filterRange != null || _filterPlaceId != null)
+              if (_filterRange != null || _filterPlaceUuid != null)
                 IconButton(
                   icon: const Icon(Icons.clear),
                   onPressed: () => setState(() {
                     _filterRange = null;
-                    _filterPlaceId = null;
+                    _filterPlaceUuid = null;
                   }),
                   tooltip: 'Filter zurücksetzen',
                 ),
@@ -326,8 +325,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
               return StayCard(
                 stay: stay,
                 place: _placeForStay(stay),
-                persons: _personsByStay[stay.id] ?? [],
-                activities: _activitiesByStay[stay.id] ?? [],
+                persons: _personsByStay[stay.uuid] ?? [],
+                activities: _activitiesByStay[stay.uuid] ?? [],
                 onUpdated: _load,
               );
             }
@@ -372,7 +371,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
       if (!p.intervalEnabled) {
         markerColor = Colors.grey;
       } else {
-        final lastMs = _lastVisitByPlace[p.id];
+        final lastMs = _lastVisitByPlace[p.uuid];
         int daysRemaining;
         if (lastMs == null) {
           daysRemaining = 0;
@@ -467,7 +466,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
   Widget _buildScheduler() {
     final settings = SettingsService.instance;
     final colorRange = settings.schedulerColorRange;
-    final groupFilter = settings.schedulerGroupIdList;
+    final groupFilter = settings.schedulerGroupUuidList;
 
     // Filter to interval-enabled places
     var schedulerPlaces = _places.where((p) => p.intervalEnabled).toList();
@@ -475,7 +474,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
     // Apply group filter
     if (groupFilter.isNotEmpty) {
       schedulerPlaces = schedulerPlaces
-          .where((p) => p.groupId != null && groupFilter.contains(p.groupId))
+          .where(
+            (p) => p.groupUuid != null && groupFilter.contains(p.groupUuid),
+          )
           .toList();
     }
 
@@ -495,7 +496,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
     // Calculate days-remaining for each place
     final now = DateTime.now();
     final entries = schedulerPlaces.map((p) {
-      final lastMs = _lastVisitByPlace[p.id];
+      final lastMs = _lastVisitByPlace[p.uuid];
       int daysRemaining;
       if (lastMs == null) {
         // Never visited → due today
@@ -519,8 +520,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
           final place = entry.place;
           final days = entry.daysRemaining;
           final color = _urgencyColor(days, colorRange);
-          final group = place.groupId != null
-              ? _groups.where((g) => g.id == place.groupId).firstOrNull
+          final group = place.groupUuid != null
+              ? _groups.where((g) => g.uuid == place.groupUuid).firstOrNull
               : null;
 
           String daysLabel;
@@ -641,9 +642,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
           ListTile(
             leading: const Icon(Icons.clear),
             title: const Text('Alle Orte'),
-            selected: _filterPlaceId == null,
+            selected: _filterPlaceUuid == null,
             onTap: () {
-              setState(() => _filterPlaceId = null);
+              setState(() => _filterPlaceUuid = null);
               Navigator.pop(ctx);
             },
           ),
@@ -651,9 +652,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
             (p) => ListTile(
               leading: const Icon(Icons.location_on),
               title: Text(p.name),
-              selected: _filterPlaceId == p.id,
+              selected: _filterPlaceUuid == p.uuid,
               onTap: () {
-                setState(() => _filterPlaceId = p.id);
+                setState(() => _filterPlaceUuid = p.uuid);
                 Navigator.pop(ctx);
               },
             ),

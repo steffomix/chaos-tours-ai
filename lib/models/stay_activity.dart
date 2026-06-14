@@ -1,34 +1,35 @@
+import 'package:uuid/uuid.dart';
+
+const _uuid = Uuid();
+
 class StayActivity {
-  final int? id;
-  final int stayId;
-  final int? activityId;
+  final String uuid;
+  final String stayUuid;
+  final String? activityUuid;
   final String description;
 
   // ── Sync fields ──────────────────────────────────────────────────────────
-  final String uuid;
   final int updatedAt;
   final int? deletedAt;
   final String deviceId;
 
   StayActivity({
-    this.id,
-    required this.stayId,
-    this.activityId,
-    required this.description,
     String? uuid,
+    required this.stayUuid,
+    this.activityUuid,
+    required this.description,
     int? updatedAt,
     this.deletedAt,
     this.deviceId = '',
-  }) : uuid = uuid ?? '',
+  }) : uuid = uuid?.isNotEmpty == true ? uuid! : _uuid.v4(),
        updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch;
 
   factory StayActivity.fromMap(Map<String, dynamic> map) {
     return StayActivity(
-      id: map['id'] as int?,
-      stayId: map['stay_id'] as int,
-      activityId: map['activity_id'] as int?,
+      uuid: map['uuid'] as String?,
+      stayUuid: map['stay_uuid'] as String,
+      activityUuid: map['activity_uuid'] as String?,
       description: map['description'] as String,
-      uuid: (map['uuid'] as String?) ?? '',
       updatedAt:
           (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       deletedAt: map['deleted_at'] as int?,
@@ -38,11 +39,10 @@ class StayActivity {
 
   Map<String, dynamic> toMap() {
     return {
-      if (id != null) 'id': id,
-      'stay_id': stayId,
-      if (activityId != null) 'activity_id': activityId,
-      'description': description,
       'uuid': uuid,
+      'stay_uuid': stayUuid,
+      if (activityUuid != null) 'activity_uuid': activityUuid,
+      'description': description,
       'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
       'device_id': deviceId,

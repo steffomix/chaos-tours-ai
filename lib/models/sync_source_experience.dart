@@ -1,10 +1,12 @@
-/// A user experience / review entry linked to a [WebSource] by its UUID.
-/// Multiple experiences can exist per web source, from different devices.
-class WebSourceExperience {
-  final int? id;
+import 'package:uuid/uuid.dart';
 
-  /// UUID of the parent [WebSource].
-  final String webSourceUuid;
+const _uuid = Uuid();
+
+/// A user experience / note linked to a [SyncSource] by its UUID.
+/// Multiple experiences can exist per sync source, from different devices.
+class SyncSourceExperience {
+  /// UUID of the parent [SyncSource].
+  final String syncSourceUuid;
 
   /// The experience text written by the user.
   final String text;
@@ -18,27 +20,25 @@ class WebSourceExperience {
   final int? deletedAt;
   final String deviceId;
 
-  WebSourceExperience({
-    this.id,
-    required this.webSourceUuid,
+  SyncSourceExperience({
+    String? uuid,
+    required this.syncSourceUuid,
     required this.text,
     int? createdAt,
-    String? uuid,
     int? updatedAt,
     this.deletedAt,
     this.deviceId = '',
-  }) : createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch,
-       uuid = uuid ?? '',
+  }) : uuid = uuid?.isNotEmpty == true ? uuid! : _uuid.v4(),
+       createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch,
        updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch;
 
-  factory WebSourceExperience.fromMap(Map<String, dynamic> map) {
-    return WebSourceExperience(
-      id: map['id'] as int?,
-      webSourceUuid: (map['web_source_uuid'] as String?) ?? '',
+  factory SyncSourceExperience.fromMap(Map<String, dynamic> map) {
+    return SyncSourceExperience(
+      uuid: map['uuid'] as String?,
+      syncSourceUuid: (map['sync_source_uuid'] as String?) ?? '',
       text: (map['text'] as String?) ?? '',
       createdAt:
           (map['created_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
-      uuid: (map['uuid'] as String?) ?? '',
       updatedAt:
           (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       deletedAt: map['deleted_at'] as int?,
@@ -48,35 +48,33 @@ class WebSourceExperience {
 
   Map<String, dynamic> toMap() {
     return {
-      if (id != null) 'id': id,
-      'web_source_uuid': webSourceUuid,
+      'uuid': uuid,
+      'sync_source_uuid': syncSourceUuid,
       'text': text,
       'created_at': createdAt,
-      'uuid': uuid,
       'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
       'device_id': deviceId,
     };
   }
 
-  WebSourceExperience copyWith({
-    int? id,
-    String? webSourceUuid,
+  SyncSourceExperience copyWith({
+    String? uuid,
+    String? syncSourceUuid,
     String? text,
     int? createdAt,
-    String? uuid,
     int? updatedAt,
     int? deletedAt,
+    bool clearDeletedAt = false,
     String? deviceId,
   }) {
-    return WebSourceExperience(
-      id: id ?? this.id,
-      webSourceUuid: webSourceUuid ?? this.webSourceUuid,
+    return SyncSourceExperience(
+      uuid: uuid ?? this.uuid,
+      syncSourceUuid: syncSourceUuid ?? this.syncSourceUuid,
       text: text ?? this.text,
       createdAt: createdAt ?? this.createdAt,
-      uuid: uuid ?? this.uuid,
       updatedAt: updatedAt ?? this.updatedAt,
-      deletedAt: deletedAt ?? this.deletedAt,
+      deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
       deviceId: deviceId ?? this.deviceId,
     );
   }

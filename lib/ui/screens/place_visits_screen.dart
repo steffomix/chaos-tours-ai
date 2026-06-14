@@ -19,8 +19,8 @@ class PlaceVisitsScreen extends StatefulWidget {
 
 class _PlaceVisitsScreenState extends State<PlaceVisitsScreen> {
   List<Stay> _stays = [];
-  Map<int, List<StayPerson>> _personsByStay = {};
-  Map<int, List<StayActivity>> _activitiesByStay = {};
+  Map<String, List<StayPerson>> _personsByStay = {};
+  Map<String, List<StayActivity>> _activitiesByStay = {};
   bool _loading = true;
 
   @override
@@ -33,7 +33,7 @@ class _PlaceVisitsScreenState extends State<PlaceVisitsScreen> {
     if (mounted) setState(() => _loading = true);
 
     final stays = await DatabaseService.instance.loadStaysForPlace(
-      widget.place.id!,
+      widget.place.uuid,
     );
     // Sort newest first, only completed
     final completed =
@@ -41,11 +41,11 @@ class _PlaceVisitsScreenState extends State<PlaceVisitsScreen> {
           ..sort((a, b) => b.startTime.compareTo(a.startTime));
 
     final personLists = await Future.wait(
-      completed.map((s) => DatabaseService.instance.loadPersonsForStay(s.id!)),
+      completed.map((s) => DatabaseService.instance.loadPersonsForStay(s.uuid)),
     );
     final activityLists = await Future.wait(
       completed.map(
-        (s) => DatabaseService.instance.loadActivitiesForStay(s.id!),
+        (s) => DatabaseService.instance.loadActivitiesForStay(s.uuid),
       ),
     );
 
@@ -54,11 +54,11 @@ class _PlaceVisitsScreenState extends State<PlaceVisitsScreen> {
         _stays = completed;
         _personsByStay = {
           for (var i = 0; i < completed.length; i++)
-            completed[i].id!: personLists[i],
+            completed[i].uuid: personLists[i],
         };
         _activitiesByStay = {
           for (var i = 0; i < completed.length; i++)
-            completed[i].id!: activityLists[i],
+            completed[i].uuid: activityLists[i],
         };
         _loading = false;
       });
@@ -92,8 +92,8 @@ class _PlaceVisitsScreenState extends State<PlaceVisitsScreen> {
                   return StayCard(
                     stay: stay,
                     place: widget.place,
-                    persons: _personsByStay[stay.id] ?? [],
-                    activities: _activitiesByStay[stay.id] ?? [],
+                    persons: _personsByStay[stay.uuid] ?? [],
+                    activities: _activitiesByStay[stay.uuid] ?? [],
                     onUpdated: _load,
                   );
                 },

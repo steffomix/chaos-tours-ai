@@ -32,7 +32,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
   late TextEditingController _nameCtrl;
   late TextEditingController _notesCtrl;
   late double _radius;
-  int? _groupId;
+  String? _groupUuid;
   List<PlaceGroup> _groups = [];
 
   bool _intervalEnabled = false;
@@ -56,7 +56,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     _nameCtrl = TextEditingController(text: widget.place.name);
     _notesCtrl = TextEditingController(text: widget.place.notes);
     _radius = widget.place.radius;
-    _groupId = widget.place.groupId;
+    _groupUuid = widget.place.groupUuid;
     _intervalEnabled = widget.place.intervalEnabled;
     _intervalDaysCtrl = TextEditingController(
       text: widget.place.intervalDays?.toString() ?? '',
@@ -278,7 +278,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     if (confirmed != true) return;
     final devId = await _getDeviceId();
     await DatabaseService.instance.softDeletePlaceExperience(
-      exp.id!,
+      exp.uuid,
       deviceId: devId,
     );
     await _loadExperiences();
@@ -396,10 +396,9 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
   }
 
   Future<void> _loadVisitStats() async {
-    final id = widget.place.id;
-    if (id == null) return;
-    final count = await DatabaseService.instance.visitCountForPlace(id);
-    final last = await DatabaseService.instance.lastVisitedAtForPlace(id);
+    final uuid = widget.place.uuid;
+    final count = await DatabaseService.instance.visitCountForPlace(uuid);
+    final last = await DatabaseService.instance.lastVisitedAtForPlace(uuid);
     if (mounted) {
       setState(() {
         _visitCount = count;
@@ -409,16 +408,15 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
   }
 
   Future<void> _loadStatistics() async {
-    final id = widget.place.id;
-    if (id == null) return;
-    final stays = await DatabaseService.instance.loadStaysForPlace(id);
+    final uuid = widget.place.uuid;
+    final stays = await DatabaseService.instance.loadStaysForPlace(uuid);
     final completed =
         stays
             .where((s) => s.status == StayStatus.completed && s.endTime != null)
             .toList()
           ..sort((a, b) => a.startTime.compareTo(b.startTime));
     final persons = await DatabaseService.instance
-        .loadDistinctPersonNamesForPlace(id);
+        .loadDistinctPersonNamesForPlace(uuid);
     if (mounted) {
       setState(() {
         _completedStays = completed;
@@ -528,7 +526,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                     label: const Text('Besuch speichern'),
                     onPressed: () async {
                       final stay = Stay(
-                        placeId: widget.place.id,
+                        placeUuid: widget.place.uuid,
                         startTime: startDt.millisecondsSinceEpoch,
                         endTime: endDt.millisecondsSinceEpoch,
                         status: StayStatus.completed,
@@ -549,15 +547,15 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
   }
 
   Future<void> _save() async {
-    final groupId = _groupId;
+    final groupUuid = _groupUuid;
     final intervalDaysText = _intervalDaysCtrl.text.trim();
     final parsedIntervalDays = int.tryParse(intervalDaysText);
     final updated = widget.place.copyWith(
       name: _nameCtrl.text.trim(),
       notes: _notesCtrl.text.trim(),
       radius: _radius,
-      groupId: groupId,
-      clearGroupId: groupId == null,
+      groupUuid: groupUuid,
+      clearGroupUuid: groupUuid == null,
       intervalEnabled: _intervalEnabled,
       intervalDays: parsedIntervalDays,
       clearIntervalDays: intervalDaysText.isEmpty,
@@ -586,7 +584,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
       ),
     );
     if (confirmed != true) return;
-    await DatabaseService.instance.deletePlace(widget.place.id!);
+    await DatabaseService.instance.deletePlace(widget.place.uuid);
     widget.onDeleted();
     if (mounted) Navigator.pop(context);
   }
@@ -653,18 +651,18 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
   Future<void> _copyReport() async {
     final place = widget.place;
     final db = DatabaseService.instance;
-    final id = place.id;
+    final uuid = place.uuid;
 
     // Load all completed stays with persons and activities
-    final allStays = id != null ? await db.loadStaysForPlace(id) : <Stay>[];
+    final allStays = await db.loadStaysForPlace(uuid);
     final completed =
         allStays
             .where((s) => s.status == StayStatus.completed && s.endTime != null)
             .toList()
           ..sort((a, b) => a.startTime.compareTo(b.startTime));
 
-    final group = _groupId != null
-        ? _groups.where((g) => g.id == _groupId).firstOrNull
+    final group = _groupUuid != null
+        ? _groups.where((g) => g.uuid == _groupUuid).firstOrNull
         : null;
 
     String fmtDt(int ms) {
@@ -721,9 +719,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
         buf.writeln('| Personen | ${_distinctPersonNames.join(', ')} |');
       } else {
         // load if not already loaded
-        final persons = id != null
-            ? await db.loadDistinctPersonNamesForPlace(id)
-            : <String>[];
+        final persons = await db.loadDistinctPersonNamesForPlace(uuid);
         if (persons.isNotEmpty) {
           buf.writeln('| Personen | ${persons.join(', ')} |');
         }
@@ -748,22 +744,20 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
         }
         buf.writeln();
 
-        if (stay.id != null) {
-          final persons = await db.loadPersonsForStay(stay.id!);
-          if (persons.isNotEmpty) {
-            buf.writeln(
-              '**Personen:** ${persons.map((p) => p.name).join(', ')}  ',
-            );
-            buf.writeln();
+        final persons = await db.loadPersonsForStay(stay.uuid);
+        if (persons.isNotEmpty) {
+          buf.writeln(
+            '**Personen:** ${persons.map((p) => p.name).join(', ')}  ',
+          );
+          buf.writeln();
+        }
+        final activities = await db.loadActivitiesForStay(stay.uuid);
+        if (activities.isNotEmpty) {
+          buf.writeln('**Aktivitäten:**  ');
+          for (final a in activities) {
+            buf.writeln('- ${a.description}');
           }
-          final activities = await db.loadActivitiesForStay(stay.id!);
-          if (activities.isNotEmpty) {
-            buf.writeln('**Aktivitäten:**  ');
-            for (final a in activities) {
-              buf.writeln('- ${a.description}');
-            }
-            buf.writeln();
-          }
+          buf.writeln();
         }
 
         if (stay.notes.isNotEmpty) {
@@ -774,7 +768,6 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     }
 
     // ── Experiences ─────────────────────────────────────────────────
-    final uuid = place.uuid;
     if (uuid.isNotEmpty) {
       final experiences = await db.loadExperiencesForPlace(uuid);
       if (experiences.isNotEmpty) {
@@ -1059,7 +1052,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
             ),
             // ── Besuche ────────────────────────────────────────────────
             OutlinedButton.icon(
-              onPressed: widget.place.id == null
+              onPressed: widget.place.uuid.isEmpty
                   ? null
                   : () => Navigator.push(
                       context,
@@ -1077,7 +1070,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
             const SizedBox(height: 8),
             // ── Jetzt besuchen ─────────────────────────────────────────
             OutlinedButton.icon(
-              onPressed: widget.place.id == null ? null : _createManualVisit,
+              onPressed: widget.place.uuid.isEmpty ? null : _createManualVisit,
               icon: const Icon(Icons.add_location_alt),
               label: const Text('Jetzt besuchen'),
             ),
@@ -1196,10 +1189,12 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
             ),
             const SizedBox(height: 8),
             // ── Gruppe ─────────────────────────────────────────────────
-            DropdownButtonFormField<int?>(
-              initialValue: _groupId == null
+            DropdownButtonFormField<String?>(
+              initialValue: _groupUuid == null
                   ? null
-                  : (_groups.any((g) => g.id == _groupId) ? _groupId : null),
+                  : (_groups.any((g) => g.uuid == _groupUuid)
+                        ? _groupUuid
+                        : null),
               decoration: const InputDecoration(
                 labelText: 'Gruppe',
                 border: OutlineInputBorder(),
@@ -1211,7 +1206,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                 ),
                 ..._groups.map(
                   (g) => DropdownMenuItem(
-                    value: g.id,
+                    value: g.uuid,
                     child: Row(
                       children: [
                         Icon(
@@ -1226,7 +1221,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                   ),
                 ),
               ],
-              onChanged: (v) => setState(() => _groupId = v),
+              onChanged: (v) => setState(() => _groupUuid = v),
             ),
             const SizedBox(height: 12),
             // ── Aktionen ───────────────────────────────────────────────

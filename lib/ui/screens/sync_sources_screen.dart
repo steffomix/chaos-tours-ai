@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/sync_source.dart';
+import '../../models/sync_source_experience.dart';
 import '../../services/database_service.dart';
 import '../../services/sync_service.dart';
 
@@ -43,7 +44,7 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
     if (result != null) {
       final devId = await SyncService.instance.deviceId;
       await DatabaseService.instance.updateSyncSource(
-        result.copyWith(id: source.id),
+        result.copyWith(uuid: source.uuid),
         deviceId: devId,
       );
       await _load();
@@ -71,7 +72,7 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
     if (confirmed == true) {
       final devId = await SyncService.instance.deviceId;
       await DatabaseService.instance.softDeleteSyncSource(
-        source.id!,
+        source.uuid,
         deviceId: devId,
       );
       await _load();
@@ -303,6 +304,7 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
       'aktivitaeten': 'Aktivitäten',
       'sync_sources': 'Sync-Quellen',
       'place_experiences': 'Orts-Erfahrungen',
+      'sync_source_experiences': 'Quellen-Erfahrungen',
     };
 
     final saved = await showDialog<SyncSourceOptions>(
@@ -581,9 +583,75 @@ enum _SourceAction { sync, options, edit, delete }
 
 // ── Details sheet ─────────────────────────────────────────────────────────────
 
-class _SyncSourceDetailsSheet extends StatelessWidget {
+class _SyncSourceDetailsSheet extends StatefulWidget {
   final SyncSource source;
   const _SyncSourceDetailsSheet({required this.source});
+
+  @override
+  State<_SyncSourceDetailsSheet> createState() =>
+      _SyncSourceDetailsSheetState();
+}
+
+class _SyncSourceDetailsSheetState extends State<_SyncSourceDetailsSheet> {
+  List<SyncSourceExperience> _experiences = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExperiences();
+  }
+
+  Future<void> _loadExperiences() async {
+    final list = await DatabaseService.instance.loadExperiencesForSyncSource(
+      widget.source.uuid,
+    );
+    if (mounted) setState(() => _experiences = list);
+  }
+
+  Future<void> _addExperience() async {
+    final ctrl = TextEditingController();
+    final text = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Erfahrung hinzufügen'),
+        content: TextField(
+          controller: ctrl,
+          maxLines: 4,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Notiz, Erfahrung oder Bewertung…',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            child: const Text('Speichern'),
+          ),
+        ],
+      ),
+    );
+    if (text == null || text.isEmpty) return;
+    final devId = await SyncService.instance.deviceId;
+    await DatabaseService.instance.insertSyncSourceExperience(
+      SyncSourceExperience(syncSourceUuid: widget.source.uuid, text: text),
+      deviceId: devId,
+    );
+    await _loadExperiences();
+  }
+
+  Future<void> _deleteExperience(SyncSourceExperience exp) async {
+    final devId = await SyncService.instance.deviceId;
+    await DatabaseService.instance.softDeleteSyncSourceExperience(
+      exp.uuid,
+      deviceId: devId,
+    );
+    await _loadExperiences();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -596,21 +664,24 @@ class _SyncSourceDetailsSheet extends StatelessWidget {
         child: ListView(
           controller: scrollCtrl,
           children: [
-            Text(source.name, style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              widget.source.name,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: 8),
-            _row(Icons.sync, 'Sync-Adresse', source.syncUrl),
-            if (source.infoUrl.isNotEmpty)
+            _row(Icons.sync, 'Sync-Adresse', widget.source.syncUrl),
+            if (widget.source.infoUrl.isNotEmpty)
               InkWell(
-                onTap: () => launchUrl(Uri.parse(source.infoUrl)),
+                onTap: () => launchUrl(Uri.parse(widget.source.infoUrl)),
                 child: _row(
                   Icons.link,
                   'Info-URL',
-                  source.infoUrl,
+                  widget.source.infoUrl,
                   color: Colors.blue,
                 ),
               ),
-            if (source.description.isNotEmpty)
-              _row(Icons.notes, 'Beschreibung', source.description),
+            if (widget.source.description.isNotEmpty)
+              _row(Icons.notes, 'Beschreibung', widget.source.description),
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 8),
@@ -620,7 +691,7 @@ class _SyncSourceDetailsSheet extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             ...SyncSourceOptions.allTables.map((t) {
-              final opts = source.syncOptions.forTable(t);
+              final opts = widget.source.syncOptions.forTable(t);
               if (!opts.anyEnabled) return const SizedBox.shrink();
               final parts = [
                 if (opts.insert) 'Einfügen',
@@ -643,10 +714,57 @@ class _SyncSourceDetailsSheet extends StatelessWidget {
                 ),
               );
             }),
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Erfahrungen',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  tooltip: 'Erfahrung hinzufügen',
+                  onPressed: _addExperience,
+                ),
+              ],
+            ),
+            if (_experiences.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  'Noch keine Erfahrungen vorhanden.',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              )
+            else
+              ..._experiences.map(
+                (exp) => Card(
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  child: ListTile(
+                    title: Text(exp.text),
+                    subtitle: Text(
+                      _fmtDate(exp.createdAt),
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 20),
+                      onPressed: () => _deleteExperience(exp),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     );
+  }
+
+  String _fmtDate(int ms) {
+    final d = DateTime.fromMillisecondsSinceEpoch(ms);
+    return '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
   }
 
   Widget _row(IconData icon, String label, String value, {Color? color}) {

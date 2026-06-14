@@ -75,7 +75,7 @@ class GpsForegroundTaskHandler extends TaskHandler {
       FlutterForegroundTask.sendDataToMain({
         'cmd': FgTaskKeys.trackingStatus,
         'status': result.status.name,
-        'stay_id': result.currentStay?.id,
+        'stay_uuid': result.currentStay?.uuid,
         'place_name': result.currentPlace?.name,
         'address': result.currentStay?.address,
         'lat': position.latitude,

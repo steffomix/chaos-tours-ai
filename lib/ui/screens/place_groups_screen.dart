@@ -61,7 +61,7 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
       ),
     );
     if (confirmed == true) {
-      await DatabaseService.instance.deletePlaceGroup(group.id!);
+      await DatabaseService.instance.deletePlaceGroup(group.uuid);
       await _load();
     }
   }
@@ -182,7 +182,7 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
                 final name = nameCtrl.text.trim();
                 if (name.isEmpty) return;
                 final group = PlaceGroup(
-                  id: existing?.id,
+                  uuid: existing?.uuid,
                   name: name,
                   calendarId: calendarId,
                   includeNotes: includeNotes,

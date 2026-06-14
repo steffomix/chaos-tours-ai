@@ -40,7 +40,6 @@ async def push(
         if table is None:
             continue
         for row in rows:
-            row = {k: v for k, v in row.items() if k != "id"}
             uuid = row.get("uuid", "")
             if not uuid:
                 continue

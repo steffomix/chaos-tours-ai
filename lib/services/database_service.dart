@@ -14,6 +14,7 @@ import '../models/stay.dart';
 import '../models/stay_activity.dart';
 import '../models/stay_person.dart';
 import '../models/sync_source.dart';
+import '../models/sync_source_experience.dart';
 import '../models/tracking_point.dart';
 import 'sync_service.dart' show SyncOptions;
 
@@ -35,196 +36,16 @@ class DatabaseService {
     final path = join(dbPath, 'chaos_tours.db');
     return openDatabase(
       path,
-      version: 4,
+      version: 1,
       onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
       onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
     );
   }
 
-  // ── Schema helpers ───────────────────────────────────────────────────────
-
-  /// Adds the four sync columns to [table] if they are not yet present.
-  Future<void> _addSyncColumns(DatabaseExecutor db, String table) async {
-    final cols = await db.rawQuery('PRAGMA table_info($table)');
-    final existing = cols.map((c) => c['name'] as String).toSet();
-    if (!existing.contains('uuid')) {
-      await db.execute(
-        "ALTER TABLE $table ADD COLUMN uuid TEXT NOT NULL DEFAULT ''",
-      );
-    }
-    if (!existing.contains('updated_at')) {
-      await db.execute(
-        'ALTER TABLE $table ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0',
-      );
-    }
-    if (!existing.contains('deleted_at')) {
-      await db.execute('ALTER TABLE $table ADD COLUMN deleted_at INTEGER');
-    }
-    if (!existing.contains('device_id')) {
-      await db.execute(
-        "ALTER TABLE $table ADD COLUMN device_id TEXT NOT NULL DEFAULT ''",
-      );
-    }
-  }
-
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      // Add sync columns to all existing tables.
-      for (final table in [
-        'saved_places',
-        'place_groups',
-        'stays',
-        'persons',
-        'activities',
-        'stay_persons',
-        'stay_activities',
-        'aktivitaeten',
-      ]) {
-        await _addSyncColumns(db, table);
-      }
-
-      // Add origin columns to saved_places.
-      final cols = await db.rawQuery('PRAGMA table_info(saved_places)');
-      final existing = cols.map((c) => c['name'] as String).toSet();
-      if (!existing.contains('origin_type')) {
-        await db.execute(
-          'ALTER TABLE saved_places ADD COLUMN origin_type INTEGER NOT NULL DEFAULT 0',
-        );
-      }
-      if (!existing.contains('origin_source_uuid')) {
-        await db.execute(
-          'ALTER TABLE saved_places ADD COLUMN origin_source_uuid TEXT',
-        );
-      }
-
-      // Create new web_sources table.
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS web_sources (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          url TEXT NOT NULL,
-          notes TEXT NOT NULL DEFAULT '',
-          experience TEXT NOT NULL DEFAULT '',
-          api_key TEXT NOT NULL DEFAULT '',
-          uuid TEXT NOT NULL DEFAULT '',
-          updated_at INTEGER NOT NULL DEFAULT 0,
-          deleted_at INTEGER,
-          device_id TEXT NOT NULL DEFAULT ''
-        )
-      ''');
-    }
-    if (oldVersion < 3) {
-      // Create web_source_experiences table (kept for migration, no longer synced).
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS web_source_experiences (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          web_source_uuid TEXT NOT NULL,
-          text TEXT NOT NULL,
-          created_at INTEGER NOT NULL DEFAULT 0,
-          uuid TEXT NOT NULL DEFAULT '',
-          updated_at INTEGER NOT NULL DEFAULT 0,
-          deleted_at INTEGER,
-          device_id TEXT NOT NULL DEFAULT ''
-        )
-      ''');
-    }
-    if (oldVersion < 4) {
-      // Rename web_sources → sync_sources and add new columns.
-      await db.execute('ALTER TABLE web_sources RENAME TO sync_sources');
-      final scCols = await db.rawQuery('PRAGMA table_info(sync_sources)');
-      final scExisting = scCols.map((c) => c['name'] as String).toSet();
-      if (!scExisting.contains('sync_url')) {
-        // Copy 'url' into new 'sync_url' column.
-        await db.execute(
-          "ALTER TABLE sync_sources ADD COLUMN sync_url TEXT NOT NULL DEFAULT ''",
-        );
-        await db.execute('UPDATE sync_sources SET sync_url = url');
-      }
-      if (!scExisting.contains('info_url')) {
-        await db.execute(
-          "ALTER TABLE sync_sources ADD COLUMN info_url TEXT NOT NULL DEFAULT ''",
-        );
-      }
-      if (!scExisting.contains('description')) {
-        await db.execute(
-          "ALTER TABLE sync_sources ADD COLUMN description TEXT NOT NULL DEFAULT ''",
-        );
-      }
-      if (!scExisting.contains('sync_options')) {
-        await db.execute(
-          "ALTER TABLE sync_sources ADD COLUMN sync_options TEXT NOT NULL DEFAULT '{}'",
-        );
-      }
-
-      // Add website/email/phone to saved_places.
-      final spCols = await db.rawQuery('PRAGMA table_info(saved_places)');
-      final spExisting = spCols.map((c) => c['name'] as String).toSet();
-      if (!spExisting.contains('website')) {
-        await db.execute(
-          "ALTER TABLE saved_places ADD COLUMN website TEXT NOT NULL DEFAULT ''",
-        );
-      }
-      if (!spExisting.contains('email')) {
-        await db.execute(
-          "ALTER TABLE saved_places ADD COLUMN email TEXT NOT NULL DEFAULT ''",
-        );
-      }
-      if (!spExisting.contains('phone')) {
-        await db.execute(
-          "ALTER TABLE saved_places ADD COLUMN phone TEXT NOT NULL DEFAULT ''",
-        );
-      }
-
-      // Create place_experiences table.
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS place_experiences (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          saved_place_uuid TEXT NOT NULL,
-          text TEXT NOT NULL DEFAULT '',
-          rating_dangerous_friendly INTEGER NOT NULL DEFAULT 0,
-          rating_fraud_reliable INTEGER NOT NULL DEFAULT 0,
-          rating_dismissive_accommodation INTEGER NOT NULL DEFAULT 0,
-          rating_food INTEGER NOT NULL DEFAULT 0,
-          rating_equipment INTEGER NOT NULL DEFAULT 0,
-          rating_transport INTEGER NOT NULL DEFAULT 0,
-          created_at INTEGER NOT NULL DEFAULT 0,
-          uuid TEXT NOT NULL DEFAULT '',
-          updated_at INTEGER NOT NULL DEFAULT 0,
-          deleted_at INTEGER,
-          device_id TEXT NOT NULL DEFAULT ''
-        )
-      ''');
-    }
-  }
-
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
-      CREATE TABLE saved_places (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        lat REAL NOT NULL,
-        lng REAL NOT NULL,
-        radius REAL NOT NULL DEFAULT 50.0,
-        notes TEXT NOT NULL DEFAULT '',
-        group_id INTEGER,
-        created_at INTEGER NOT NULL DEFAULT 0,
-        interval_enabled INTEGER NOT NULL DEFAULT 0,
-        interval_days INTEGER,
-        uuid TEXT NOT NULL DEFAULT '',
-        updated_at INTEGER NOT NULL DEFAULT 0,
-        deleted_at INTEGER,
-        device_id TEXT NOT NULL DEFAULT '',
-        origin_type INTEGER NOT NULL DEFAULT 0,
-        origin_source_uuid TEXT,
-        website TEXT NOT NULL DEFAULT '',
-        email TEXT NOT NULL DEFAULT '',
-        phone TEXT NOT NULL DEFAULT ''
-      )
-    ''');
-    await db.execute('''
       CREATE TABLE place_groups (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         calendar_id TEXT,
         include_notes INTEGER NOT NULL DEFAULT 1,
@@ -232,16 +53,38 @@ class DatabaseService {
         include_activities INTEGER NOT NULL DEFAULT 1,
         is_auto_group INTEGER NOT NULL DEFAULT 0,
         place_type INTEGER NOT NULL DEFAULT 0,
-        uuid TEXT NOT NULL DEFAULT '',
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
         device_id TEXT NOT NULL DEFAULT ''
       )
     ''');
     await db.execute('''
+      CREATE TABLE saved_places (
+        uuid TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        lat REAL NOT NULL,
+        lng REAL NOT NULL,
+        radius REAL NOT NULL DEFAULT 50.0,
+        notes TEXT NOT NULL DEFAULT '',
+        group_uuid TEXT,
+        created_at INTEGER NOT NULL DEFAULT 0,
+        interval_enabled INTEGER NOT NULL DEFAULT 0,
+        interval_days INTEGER,
+        origin_type INTEGER NOT NULL DEFAULT 0,
+        origin_source_uuid TEXT,
+        website TEXT NOT NULL DEFAULT '',
+        email TEXT NOT NULL DEFAULT '',
+        phone TEXT NOT NULL DEFAULT '',
+        updated_at INTEGER NOT NULL DEFAULT 0,
+        deleted_at INTEGER,
+        device_id TEXT NOT NULL DEFAULT '',
+        FOREIGN KEY (group_uuid) REFERENCES place_groups(uuid) ON DELETE SET NULL
+      )
+    ''');
+    await db.execute('''
       CREATE TABLE stays (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        place_id INTEGER,
+        uuid TEXT PRIMARY KEY,
+        place_uuid TEXT,
         start_time INTEGER NOT NULL,
         end_time INTEGER,
         notes TEXT NOT NULL DEFAULT '',
@@ -249,19 +92,17 @@ class DatabaseService {
         address TEXT,
         status TEXT NOT NULL DEFAULT 'detecting',
         is_interval INTEGER NOT NULL DEFAULT 1,
-        uuid TEXT NOT NULL DEFAULT '',
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
         device_id TEXT NOT NULL DEFAULT '',
-        FOREIGN KEY (place_id) REFERENCES saved_places(id) ON DELETE SET NULL
+        FOREIGN KEY (place_uuid) REFERENCES saved_places(uuid) ON DELETE SET NULL
       )
     ''');
     await db.execute('''
       CREATE TABLE persons (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT '',
-        uuid TEXT NOT NULL DEFAULT '',
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
         device_id TEXT NOT NULL DEFAULT ''
@@ -269,9 +110,8 @@ class DatabaseService {
     ''');
     await db.execute('''
       CREATE TABLE activities (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid TEXT PRIMARY KEY,
         name TEXT NOT NULL,
-        uuid TEXT NOT NULL DEFAULT '',
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
         device_id TEXT NOT NULL DEFAULT ''
@@ -279,30 +119,28 @@ class DatabaseService {
     ''');
     await db.execute('''
       CREATE TABLE stay_persons (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        stay_id INTEGER NOT NULL,
-        person_id INTEGER,
+        uuid TEXT PRIMARY KEY,
+        stay_uuid TEXT NOT NULL,
+        person_uuid TEXT,
         name TEXT NOT NULL,
-        uuid TEXT NOT NULL DEFAULT '',
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
         device_id TEXT NOT NULL DEFAULT '',
-        FOREIGN KEY (stay_id) REFERENCES stays(id) ON DELETE CASCADE,
-        FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE SET NULL
+        FOREIGN KEY (stay_uuid) REFERENCES stays(uuid) ON DELETE CASCADE,
+        FOREIGN KEY (person_uuid) REFERENCES persons(uuid) ON DELETE SET NULL
       )
     ''');
     await db.execute('''
       CREATE TABLE stay_activities (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        stay_id INTEGER NOT NULL,
-        activity_id INTEGER,
+        uuid TEXT PRIMARY KEY,
+        stay_uuid TEXT NOT NULL,
+        activity_uuid TEXT,
         description TEXT NOT NULL,
-        uuid TEXT NOT NULL DEFAULT '',
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
         device_id TEXT NOT NULL DEFAULT '',
-        FOREIGN KEY (stay_id) REFERENCES stays(id) ON DELETE CASCADE,
-        FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE SET NULL
+        FOREIGN KEY (stay_uuid) REFERENCES stays(uuid) ON DELETE CASCADE,
+        FOREIGN KEY (activity_uuid) REFERENCES activities(uuid) ON DELETE SET NULL
       )
     ''');
     await db.execute('''
@@ -318,20 +156,19 @@ class DatabaseService {
     );
     await db.execute('''
       CREATE TABLE aktivitaeten (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         gps_interval_seconds INTEGER NOT NULL DEFAULT 15,
         stay_detection_seconds INTEGER NOT NULL DEFAULT 180,
         auto_place_seconds INTEGER NOT NULL DEFAULT 900,
         default_radius_meters REAL NOT NULL DEFAULT 50.0,
         auto_create_places INTEGER NOT NULL DEFAULT 1,
-        auto_place_group_id INTEGER,
-        default_place_group_id INTEGER,
+        auto_place_group_uuid TEXT,
+        default_place_group_uuid TEXT,
         timeline_history_days INTEGER NOT NULL DEFAULT 7,
         search_country TEXT NOT NULL DEFAULT '',
         scheduler_color_range INTEGER NOT NULL DEFAULT 14,
         scheduler_group_ids TEXT NOT NULL DEFAULT '',
-        uuid TEXT NOT NULL DEFAULT '',
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
         device_id TEXT NOT NULL DEFAULT ''
@@ -339,14 +176,13 @@ class DatabaseService {
     ''');
     await db.execute('''
       CREATE TABLE sync_sources (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         sync_url TEXT NOT NULL DEFAULT '',
         api_key TEXT NOT NULL DEFAULT '',
         info_url TEXT NOT NULL DEFAULT '',
         description TEXT NOT NULL DEFAULT '',
         sync_options TEXT NOT NULL DEFAULT '{}',
-        uuid TEXT NOT NULL DEFAULT '',
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
         device_id TEXT NOT NULL DEFAULT ''
@@ -354,7 +190,7 @@ class DatabaseService {
     ''');
     await db.execute('''
       CREATE TABLE place_experiences (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid TEXT PRIMARY KEY,
         saved_place_uuid TEXT NOT NULL,
         text TEXT NOT NULL DEFAULT '',
         rating_dangerous_friendly INTEGER NOT NULL DEFAULT 0,
@@ -364,7 +200,17 @@ class DatabaseService {
         rating_equipment INTEGER NOT NULL DEFAULT 0,
         rating_transport INTEGER NOT NULL DEFAULT 0,
         created_at INTEGER NOT NULL DEFAULT 0,
-        uuid TEXT NOT NULL DEFAULT '',
+        updated_at INTEGER NOT NULL DEFAULT 0,
+        deleted_at INTEGER,
+        device_id TEXT NOT NULL DEFAULT ''
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE sync_source_experiences (
+        uuid TEXT PRIMARY KEY,
+        sync_source_uuid TEXT NOT NULL,
+        text TEXT NOT NULL DEFAULT '',
+        created_at INTEGER NOT NULL DEFAULT 0,
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
         device_id TEXT NOT NULL DEFAULT ''
@@ -377,8 +223,8 @@ class DatabaseService {
   /// Generates a new UUID v4 string.
   static String generateUuid() => _uuid.v4();
 
-  /// Returns a map enriched with [uuid] (if blank), [updated_at], and
-  /// [device_id] (if provided).
+  /// Returns a map enriched with [updated_at] and [device_id].
+  /// If the map has no 'uuid' or an empty one, a new UUID is generated.
   Map<String, dynamic> _withSyncFields(
     Map<String, dynamic> map,
     String deviceId,
@@ -396,9 +242,15 @@ class DatabaseService {
 
   // ── SavedPlaces ──────────────────────────────────────────────────────────
 
-  Future<int> insertPlace(SavedPlace place, {String deviceId = ''}) async {
+  Future<String> insertPlace(SavedPlace place, {String deviceId = ''}) async {
     final db = await database;
-    return db.insert('saved_places', _withSyncFields(place.toMap(), deviceId));
+    final map = _withSyncFields(place.toMap(), deviceId);
+    await db.insert(
+      'saved_places',
+      map,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    return map['uuid'] as String;
   }
 
   Future<List<SavedPlace>> loadAllPlaces() async {
@@ -407,7 +259,7 @@ class DatabaseService {
       SELECT sp.*,
              COALESCE(pg.place_type, 0) AS place_type
       FROM saved_places sp
-      LEFT JOIN place_groups pg ON sp.group_id = pg.id
+      LEFT JOIN place_groups pg ON sp.group_uuid = pg.uuid
       WHERE sp.deleted_at IS NULL
     ''');
     return rows.map(SavedPlace.fromMap).toList();
@@ -418,35 +270,35 @@ class DatabaseService {
     await db.update(
       'saved_places',
       _withSyncFields(place.toMap(), deviceId),
-      where: 'id = ?',
-      whereArgs: [place.id],
+      where: 'uuid = ?',
+      whereArgs: [place.uuid],
     );
   }
 
-  Future<void> deletePlace(int id) async {
+  Future<void> deletePlace(String uuid) async {
     final db = await database;
-    await db.delete('saved_places', where: 'id = ?', whereArgs: [id]);
+    await db.delete('saved_places', where: 'uuid = ?', whereArgs: [uuid]);
   }
 
-  /// Returns the number of completed stays at [placeId].
-  Future<int> visitCountForPlace(int placeId) async {
+  /// Returns the number of completed stays at [placeUuid].
+  Future<int> visitCountForPlace(String placeUuid) async {
     final db = await database;
     final result = await db.rawQuery(
-      "SELECT COUNT(*) AS cnt FROM stays WHERE place_id = ? AND status = 'completed'",
-      [placeId],
+      "SELECT COUNT(*) AS cnt FROM stays WHERE place_uuid = ? AND status = 'completed'",
+      [placeUuid],
     );
     return (result.first['cnt'] as int?) ?? 0;
   }
 
-  /// Returns the start_time of the most recent completed stay at [placeId]
+  /// Returns the start_time of the most recent completed stay at [placeUuid]
   /// that counts toward the interval (is_interval = 1), or null.
-  Future<int?> lastVisitedAtForPlace(int placeId) async {
+  Future<int?> lastVisitedAtForPlace(String placeUuid) async {
     final db = await database;
     final rows = await db.query(
       'stays',
       columns: ['start_time'],
-      where: "place_id = ? AND status = 'completed' AND is_interval = 1",
-      whereArgs: [placeId],
+      where: "place_uuid = ? AND status = 'completed' AND is_interval = 1",
+      whereArgs: [placeUuid],
       orderBy: 'start_time DESC',
       limit: 1,
     );
@@ -454,13 +306,13 @@ class DatabaseService {
     return rows.first['start_time'] as int?;
   }
 
-  /// Returns the most recent completed [Stay] at [placeId], or null.
-  Future<Stay?> lastCompletedStayForPlace(int placeId) async {
+  /// Returns the most recent completed [Stay] at [placeUuid], or null.
+  Future<Stay?> lastCompletedStayForPlace(String placeUuid) async {
     final db = await database;
     final rows = await db.query(
       'stays',
-      where: "place_id = ? AND status = 'completed'",
-      whereArgs: [placeId],
+      where: "place_uuid = ? AND status = 'completed'",
+      whereArgs: [placeUuid],
       orderBy: 'start_time DESC',
       limit: 1,
     );
@@ -468,27 +320,33 @@ class DatabaseService {
     return Stay.fromMap(rows.first);
   }
 
-  /// Returns distinct person names that appeared in completed stays at [placeId].
-  Future<List<String>> loadDistinctPersonNamesForPlace(int placeId) async {
+  /// Returns distinct person names that appeared in completed stays at [placeUuid].
+  Future<List<String>> loadDistinctPersonNamesForPlace(String placeUuid) async {
     final db = await database;
     final rows = await db.rawQuery(
       '''
       SELECT DISTINCT sp.name
       FROM stay_persons sp
-      JOIN stays s ON s.id = sp.stay_id
-      WHERE s.place_id = ? AND s.status = 'completed'
+      JOIN stays s ON s.uuid = sp.stay_uuid
+      WHERE s.place_uuid = ? AND s.status = 'completed'
       ORDER BY sp.name ASC
       ''',
-      [placeId],
+      [placeUuid],
     );
     return rows.map((r) => r['name'] as String).toList();
   }
 
   // ── PlaceGroups ──────────────────────────────────────────────────────────
 
-  Future<int> insertPlaceGroup(PlaceGroup group) async {
+  Future<String> insertPlaceGroup(PlaceGroup group) async {
     final db = await database;
-    return db.insert('place_groups', group.toMap());
+    final map = _withSyncFields(group.toMap(), '');
+    await db.insert(
+      'place_groups',
+      map,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    return map['uuid'] as String;
   }
 
   Future<List<PlaceGroup>> loadAllPlaceGroups() async {
@@ -497,12 +355,12 @@ class DatabaseService {
     return rows.map(PlaceGroup.fromMap).toList();
   }
 
-  Future<PlaceGroup?> loadPlaceGroup(int id) async {
+  Future<PlaceGroup?> loadPlaceGroup(String uuid) async {
     final db = await database;
     final rows = await db.query(
       'place_groups',
-      where: 'id = ?',
-      whereArgs: [id],
+      where: 'uuid = ?',
+      whereArgs: [uuid],
     );
     if (rows.isEmpty) return null;
     return PlaceGroup.fromMap(rows.first);
@@ -512,22 +370,24 @@ class DatabaseService {
     final db = await database;
     await db.update(
       'place_groups',
-      group.toMap(),
-      where: 'id = ?',
-      whereArgs: [group.id],
+      _withSyncFields(group.toMap(), ''),
+      where: 'uuid = ?',
+      whereArgs: [group.uuid],
     );
   }
 
-  Future<void> deletePlaceGroup(int id) async {
+  Future<void> deletePlaceGroup(String uuid) async {
     final db = await database;
-    await db.delete('place_groups', where: 'id = ?', whereArgs: [id]);
+    await db.delete('place_groups', where: 'uuid = ?', whereArgs: [uuid]);
   }
 
   // ── Stays ────────────────────────────────────────────────────────────────
 
-  Future<int> insertStay(Stay stay) async {
+  Future<String> insertStay(Stay stay) async {
     final db = await database;
-    return db.insert('stays', stay.toMap());
+    final map = _withSyncFields(stay.toMap(), '');
+    await db.insert('stays', map, conflictAlgorithm: ConflictAlgorithm.replace);
+    return map['uuid'] as String;
   }
 
   Future<List<Stay>> loadAllStays() async {
@@ -569,12 +429,12 @@ class DatabaseService {
     return Stay.fromMap(rows.first);
   }
 
-  Future<List<Stay>> loadStaysForPlace(int placeId) async {
+  Future<List<Stay>> loadStaysForPlace(String placeUuid) async {
     final db = await database;
     final rows = await db.query(
       'stays',
-      where: 'place_id = ?',
-      whereArgs: [placeId],
+      where: 'place_uuid = ?',
+      whereArgs: [placeUuid],
       orderBy: 'start_time DESC',
     );
     return rows.map(Stay.fromMap).toList();
@@ -584,22 +444,28 @@ class DatabaseService {
     final db = await database;
     await db.update(
       'stays',
-      stay.toMap(),
-      where: 'id = ?',
-      whereArgs: [stay.id],
+      _withSyncFields(stay.toMap(), ''),
+      where: 'uuid = ?',
+      whereArgs: [stay.uuid],
     );
   }
 
-  Future<void> deleteStay(int id) async {
+  Future<void> deleteStay(String uuid) async {
     final db = await database;
-    await db.delete('stays', where: 'id = ?', whereArgs: [id]);
+    await db.delete('stays', where: 'uuid = ?', whereArgs: [uuid]);
   }
 
   // ── Persons ──────────────────────────────────────────────────────────────
 
-  Future<int> insertPerson(Person person) async {
+  Future<String> insertPerson(Person person) async {
     final db = await database;
-    return db.insert('persons', person.toMap());
+    final map = _withSyncFields(person.toMap(), '');
+    await db.insert(
+      'persons',
+      map,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    return map['uuid'] as String;
   }
 
   Future<List<Person>> loadAllPersons() async {
@@ -612,22 +478,28 @@ class DatabaseService {
     final db = await database;
     await db.update(
       'persons',
-      person.toMap(),
-      where: 'id = ?',
-      whereArgs: [person.id],
+      _withSyncFields(person.toMap(), ''),
+      where: 'uuid = ?',
+      whereArgs: [person.uuid],
     );
   }
 
-  Future<void> deletePerson(int id) async {
+  Future<void> deletePerson(String uuid) async {
     final db = await database;
-    await db.delete('persons', where: 'id = ?', whereArgs: [id]);
+    await db.delete('persons', where: 'uuid = ?', whereArgs: [uuid]);
   }
 
   // ── Activities ───────────────────────────────────────────────────────────
 
-  Future<int> insertActivity(Activity activity) async {
+  Future<String> insertActivity(Activity activity) async {
     final db = await database;
-    return db.insert('activities', activity.toMap());
+    final map = _withSyncFields(activity.toMap(), '');
+    await db.insert(
+      'activities',
+      map,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    return map['uuid'] as String;
   }
 
   Future<List<Activity>> loadAllActivities() async {
@@ -640,73 +512,89 @@ class DatabaseService {
     final db = await database;
     await db.update(
       'activities',
-      activity.toMap(),
-      where: 'id = ?',
-      whereArgs: [activity.id],
+      _withSyncFields(activity.toMap(), ''),
+      where: 'uuid = ?',
+      whereArgs: [activity.uuid],
     );
   }
 
-  Future<void> deleteActivity(int id) async {
+  Future<void> deleteActivity(String uuid) async {
     final db = await database;
-    await db.delete('activities', where: 'id = ?', whereArgs: [id]);
+    await db.delete('activities', where: 'uuid = ?', whereArgs: [uuid]);
   }
 
   // ── StayPersons ──────────────────────────────────────────────────────────
 
-  Future<int> insertStayPerson(StayPerson sp) async {
+  Future<String> insertStayPerson(StayPerson sp) async {
     final db = await database;
-    return db.insert('stay_persons', sp.toMap());
+    final map = _withSyncFields(sp.toMap(), '');
+    await db.insert(
+      'stay_persons',
+      map,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    return map['uuid'] as String;
   }
 
-  Future<List<StayPerson>> loadPersonsForStay(int stayId) async {
+  Future<List<StayPerson>> loadPersonsForStay(String stayUuid) async {
     final db = await database;
     final rows = await db.query(
       'stay_persons',
-      where: 'stay_id = ?',
-      whereArgs: [stayId],
+      where: 'stay_uuid = ?',
+      whereArgs: [stayUuid],
     );
     return rows.map(StayPerson.fromMap).toList();
   }
 
-  Future<void> deletePersonsForStay(int stayId) async {
+  Future<void> deletePersonsForStay(String stayUuid) async {
     final db = await database;
-    await db.delete('stay_persons', where: 'stay_id = ?', whereArgs: [stayId]);
+    await db.delete(
+      'stay_persons',
+      where: 'stay_uuid = ?',
+      whereArgs: [stayUuid],
+    );
   }
 
-  Future<void> deleteStayPerson(int id) async {
+  Future<void> deleteStayPerson(String uuid) async {
     final db = await database;
-    await db.delete('stay_persons', where: 'id = ?', whereArgs: [id]);
+    await db.delete('stay_persons', where: 'uuid = ?', whereArgs: [uuid]);
   }
 
   // ── StayActivities ───────────────────────────────────────────────────────
 
-  Future<int> insertStayActivity(StayActivity sa) async {
+  Future<String> insertStayActivity(StayActivity sa) async {
     final db = await database;
-    return db.insert('stay_activities', sa.toMap());
+    final map = _withSyncFields(sa.toMap(), '');
+    await db.insert(
+      'stay_activities',
+      map,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    return map['uuid'] as String;
   }
 
-  Future<List<StayActivity>> loadActivitiesForStay(int stayId) async {
+  Future<List<StayActivity>> loadActivitiesForStay(String stayUuid) async {
     final db = await database;
     final rows = await db.query(
       'stay_activities',
-      where: 'stay_id = ?',
-      whereArgs: [stayId],
+      where: 'stay_uuid = ?',
+      whereArgs: [stayUuid],
     );
     return rows.map(StayActivity.fromMap).toList();
   }
 
-  Future<void> deleteActivitiesForStay(int stayId) async {
+  Future<void> deleteActivitiesForStay(String stayUuid) async {
     final db = await database;
     await db.delete(
       'stay_activities',
-      where: 'stay_id = ?',
-      whereArgs: [stayId],
+      where: 'stay_uuid = ?',
+      whereArgs: [stayUuid],
     );
   }
 
-  Future<void> deleteStayActivity(int id) async {
+  Future<void> deleteStayActivity(String uuid) async {
     final db = await database;
-    await db.delete('stay_activities', where: 'id = ?', whereArgs: [id]);
+    await db.delete('stay_activities', where: 'uuid = ?', whereArgs: [uuid]);
   }
 
   // ── TrackingPoints ───────────────────────────────────────────────────────
@@ -752,23 +640,29 @@ class DatabaseService {
 
   // ── Aktivitaeten ─────────────────────────────────────────────────────────
 
-  Future<int> insertAktivitaet(Aktivitaet a) async {
+  Future<String> insertAktivitaet(Aktivitaet a) async {
     final db = await database;
-    return db.insert('aktivitaeten', a.toMap());
+    final map = _withSyncFields(a.toMap(), '');
+    await db.insert(
+      'aktivitaeten',
+      map,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    return map['uuid'] as String;
   }
 
   Future<List<Aktivitaet>> loadAllAktivitaeten() async {
     final db = await database;
-    final rows = await db.query('aktivitaeten', orderBy: 'id ASC');
+    final rows = await db.query('aktivitaeten', orderBy: 'name ASC');
     return rows.map(Aktivitaet.fromMap).toList();
   }
 
-  Future<Aktivitaet?> loadAktivitaet(int id) async {
+  Future<Aktivitaet?> loadAktivitaet(String uuid) async {
     final db = await database;
     final rows = await db.query(
       'aktivitaeten',
-      where: 'id = ?',
-      whereArgs: [id],
+      where: 'uuid = ?',
+      whereArgs: [uuid],
     );
     if (rows.isEmpty) return null;
     return Aktivitaet.fromMap(rows.first);
@@ -778,21 +672,20 @@ class DatabaseService {
     final db = await database;
     await db.update(
       'aktivitaeten',
-      a.toMap(),
-      where: 'id = ?',
-      whereArgs: [a.id],
+      _withSyncFields(a.toMap(), ''),
+      where: 'uuid = ?',
+      whereArgs: [a.uuid],
     );
   }
 
-  Future<void> deleteAktivitaet(int id) async {
+  Future<void> deleteAktivitaet(String uuid) async {
     final db = await database;
-    await db.delete('aktivitaeten', where: 'id = ?', whereArgs: [id]);
+    await db.delete('aktivitaeten', where: 'uuid = ?', whereArgs: [uuid]);
   }
 
   // ── Dump / Import ─────────────────────────────────────────────────────────
 
-  /// Generates a complete SQL dump of the database with CREATE TABLE IF NOT
-  /// EXISTS and INSERT OR REPLACE statements for every table.
+  /// Generates a complete SQL dump of the database.
   Future<String> generateDump() async {
     final db = await database;
     final buf = StringBuffer();
@@ -844,11 +737,9 @@ class DatabaseService {
   }
 
   /// Executes [sql] dump statements inside a transaction.
-  /// If [clearFirst] is true, all table data is deleted before importing.
   Future<void> importDump(String sql, {bool clearFirst = false}) async {
     final db = await database;
 
-    // Parse statements (split on ";\n" to avoid splitting inside string values)
     final statements = sql
         .split(RegExp(r';\s*\n'))
         .map((s) => s.trim())
@@ -876,14 +767,11 @@ class DatabaseService {
 
   // ── File-level DB operations ─────────────────────────────────────────────
 
-  /// Returns the absolute path to the SQLite database file.
   Future<String> getDatabaseFilePath() async {
     final dbPath = await getDatabasesPath();
     return join(dbPath, 'chaos_tours.db');
   }
 
-  /// Closes the current DB connection, replaces the file with [sourcePath],
-  /// and reopens the database.
   Future<void> importDatabaseFile(String sourcePath) async {
     if (_db != null) {
       await _db!.close();
@@ -894,7 +782,6 @@ class DatabaseService {
     _db = await _openDatabase();
   }
 
-  /// Deletes all rows from every user table without dropping the schema.
   Future<void> resetAllData() async {
     final db = await database;
     await db.transaction((txn) async {
@@ -911,12 +798,18 @@ class DatabaseService {
 
   // ── SyncSources ──────────────────────────────────────────────────────────
 
-  Future<int> insertSyncSource(
+  Future<String> insertSyncSource(
     SyncSource source, {
     String deviceId = '',
   }) async {
     final db = await database;
-    return db.insert('sync_sources', _withSyncFields(source.toMap(), deviceId));
+    final map = _withSyncFields(source.toMap(), deviceId);
+    await db.insert(
+      'sync_sources',
+      map,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    return map['uuid'] as String;
   }
 
   Future<List<SyncSource>> loadAllSyncSources() async {
@@ -937,12 +830,12 @@ class DatabaseService {
     await db.update(
       'sync_sources',
       _withSyncFields(source.toMap(), deviceId),
-      where: 'id = ?',
-      whereArgs: [source.id],
+      where: 'uuid = ?',
+      whereArgs: [source.uuid],
     );
   }
 
-  Future<void> softDeleteSyncSource(int id, {String deviceId = ''}) async {
+  Future<void> softDeleteSyncSource(String uuid, {String deviceId = ''}) async {
     final db = await database;
     await db.update(
       'sync_sources',
@@ -951,22 +844,25 @@ class DatabaseService {
         'updated_at': DateTime.now().millisecondsSinceEpoch,
         if (deviceId.isNotEmpty) 'device_id': deviceId,
       },
-      where: 'id = ?',
-      whereArgs: [id],
+      where: 'uuid = ?',
+      whereArgs: [uuid],
     );
   }
 
   // ── PlaceExperiences ─────────────────────────────────────────────────────
 
-  Future<int> insertPlaceExperience(
+  Future<String> insertPlaceExperience(
     PlaceExperience exp, {
     String deviceId = '',
   }) async {
     final db = await database;
-    return db.insert(
+    final map = _withSyncFields(exp.toMap(), deviceId);
+    await db.insert(
       'place_experiences',
-      _withSyncFields(exp.toMap(), deviceId),
+      map,
+      conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    return map['uuid'] as String;
   }
 
   Future<List<PlaceExperience>> loadExperiencesForPlace(
@@ -982,8 +878,6 @@ class DatabaseService {
     return rows.map(PlaceExperience.fromMap).toList();
   }
 
-  /// Returns the average ratings per saved_place_uuid for all places with
-  /// at least one experience. Map key = uuid, value = average of all 6 dimensions.
   Future<Map<String, double>> loadAverageRatingsForAllPlaces() async {
     final db = await database;
     final rows = await db.rawQuery('''
@@ -1011,7 +905,6 @@ class DatabaseService {
     };
   }
 
-  /// Returns per-dimension average ratings for a single place.
   Future<Map<String, double>> loadDimensionRatingsForPlace(
     String savedPlaceUuid,
   ) async {
@@ -1050,12 +943,15 @@ class DatabaseService {
     await db.update(
       'place_experiences',
       _withSyncFields(exp.toMap(), deviceId),
-      where: 'id = ?',
-      whereArgs: [exp.id],
+      where: 'uuid = ?',
+      whereArgs: [exp.uuid],
     );
   }
 
-  Future<void> softDeletePlaceExperience(int id, {String deviceId = ''}) async {
+  Future<void> softDeletePlaceExperience(
+    String uuid, {
+    String deviceId = '',
+  }) async {
     final db = await database;
     await db.update(
       'place_experiences',
@@ -1064,14 +960,59 @@ class DatabaseService {
         'updated_at': DateTime.now().millisecondsSinceEpoch,
         if (deviceId.isNotEmpty) 'device_id': deviceId,
       },
-      where: 'id = ?',
-      whereArgs: [id],
+      where: 'uuid = ?',
+      whereArgs: [uuid],
+    );
+  }
+
+  // ── SyncSourceExperiences ─────────────────────────────────────────────────
+
+  Future<String> insertSyncSourceExperience(
+    SyncSourceExperience exp, {
+    String deviceId = '',
+  }) async {
+    final db = await database;
+    final map = _withSyncFields(exp.toMap(), deviceId);
+    await db.insert(
+      'sync_source_experiences',
+      map,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    return map['uuid'] as String;
+  }
+
+  Future<List<SyncSourceExperience>> loadExperiencesForSyncSource(
+    String syncSourceUuid,
+  ) async {
+    final db = await database;
+    final rows = await db.query(
+      'sync_source_experiences',
+      where: 'sync_source_uuid = ? AND deleted_at IS NULL',
+      whereArgs: [syncSourceUuid],
+      orderBy: 'created_at DESC',
+    );
+    return rows.map(SyncSourceExperience.fromMap).toList();
+  }
+
+  Future<void> softDeleteSyncSourceExperience(
+    String uuid, {
+    String deviceId = '',
+  }) async {
+    final db = await database;
+    await db.update(
+      'sync_source_experiences',
+      {
+        'deleted_at': DateTime.now().millisecondsSinceEpoch,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+        if (deviceId.isNotEmpty) 'device_id': deviceId,
+      },
+      where: 'uuid = ?',
+      whereArgs: [uuid],
     );
   }
 
   // ── Sync queries ──────────────────────────────────────────────────────────
 
-  /// Returns all rows from [table] with updated_at > [since] (for push/pull).
   Future<List<Map<String, dynamic>>> loadChangedRows(
     String table,
     int since,
@@ -1080,8 +1021,6 @@ class DatabaseService {
     return db.query(table, where: 'updated_at > ?', whereArgs: [since]);
   }
 
-  /// Upserts a row by its uuid (used during pull from server).
-  /// [options] controls whether inserts, edits, and deletes are allowed.
   Future<void> upsertByUuid(
     String table,
     Map<String, dynamic> row, {
@@ -1100,39 +1039,42 @@ class DatabaseService {
 
     if (existing.isEmpty) {
       if (!options.allowInsert) return;
-      // Insert without the incoming integer id to avoid conflicts.
-      final toInsert = Map<String, dynamic>.from(row)..remove('id');
-      await db.insert(table, toInsert);
+      await db.insert(
+        table,
+        Map<String, dynamic>.from(row),
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
     } else {
       final localUpdatedAt = (existing.first['updated_at'] as int?) ?? 0;
       final remoteUpdatedAt = (row['updated_at'] as int?) ?? 0;
       if (remoteUpdatedAt > localUpdatedAt) {
-        // Check if this is a deletion (deleted_at being set).
         final isDelete =
             row['deleted_at'] != null && existing.first['deleted_at'] == null;
         if (isDelete && !options.allowDelete) return;
         if (!isDelete && !options.allowEdit) return;
-        final toUpdate = Map<String, dynamic>.from(row)..remove('id');
-        await db.update(table, toUpdate, where: 'uuid = ?', whereArgs: [uuid]);
+        await db.update(
+          table,
+          Map<String, dynamic>.from(row),
+          where: 'uuid = ?',
+          whereArgs: [uuid],
+        );
       }
     }
   }
 
   // ── ensureDefaultAktivitaet / ensureDefaultGroups ─────────────────────────
 
-  /// Ensures at least one Aktivitaet exists. Creates a default one if the
-  /// table is empty and returns its id.
-  Future<int> ensureDefaultAktivitaet({
+  Future<String> ensureDefaultAktivitaet({
     int gpsInterval = 15,
     int stayDetection = 180,
     int autoPlace = 900,
     double radius = 50.0,
     bool autoCreate = true,
-    int? autoPlaceGroupId,
-    int? defaultPlaceGroupId,
+    String? autoPlaceGroupUuid,
+    String? defaultPlaceGroupUuid,
   }) async {
     final all = await loadAllAktivitaeten();
-    if (all.isNotEmpty) return all.first.id!;
+    if (all.isNotEmpty) return all.first.uuid;
     return insertAktivitaet(
       Aktivitaet(
         name: 'Standard',
@@ -1141,30 +1083,27 @@ class DatabaseService {
         autoPlaceSeconds: autoPlace,
         defaultRadiusMeters: radius,
         autoCreatePlaces: autoCreate,
-        autoPlaceGroupId: autoPlaceGroupId,
-        defaultPlaceGroupId: defaultPlaceGroupId,
+        autoPlaceGroupUuid: autoPlaceGroupUuid,
+        defaultPlaceGroupUuid: defaultPlaceGroupUuid,
       ),
     );
   }
 
-  /// Creates default place groups on first install (when no groups exist yet).
-  /// Returns the IDs of the "Automatisch" group and the "Standard" group,
-  /// or null if groups already existed.
-  Future<({int autoGroupId, int defaultGroupId})?> ensureDefaultGroups() async {
+  Future<({String autoGroupUuid, String defaultGroupUuid})?>
+  ensureDefaultGroups() async {
     final existing = await loadAllPlaceGroups();
     if (existing.isNotEmpty) return null;
 
-    // Import PlaceType through the model layer.
-    final autoId = await insertPlaceGroup(
+    final autoUuid = await insertPlaceGroup(
       PlaceGroup(
         name: 'Automatisch',
         placeType: PlaceType.private,
         isAutoGroup: true,
       ),
     );
-    final defId = await insertPlaceGroup(
+    final defUuid = await insertPlaceGroup(
       PlaceGroup(name: 'Standard', placeType: PlaceType.public),
     );
-    return (autoGroupId: autoId, defaultGroupId: defId);
+    return (autoGroupUuid: autoUuid, defaultGroupUuid: defUuid);
   }
 }

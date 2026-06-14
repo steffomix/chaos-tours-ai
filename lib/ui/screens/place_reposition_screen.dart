@@ -132,13 +132,13 @@ class _PlaceRepositionScreenState extends State<PlaceRepositionScreen> {
                         point: LatLng(p.lat, p.lng),
                         radius: p.radius,
                         useRadiusInMeter: true,
-                        color: p.id == target.id
+                        color: p.uuid == target.uuid
                             ? p.placeType.fillColor.withValues(alpha: 0.65)
                             : p.placeType.fillColor,
-                        borderColor: p.id == target.id
+                        borderColor: p.uuid == target.uuid
                             ? Colors.orange
                             : p.placeType.dotColor,
-                        borderStrokeWidth: p.id == target.id ? 3 : 1.5,
+                        borderStrokeWidth: p.uuid == target.uuid ? 3 : 1.5,
                       ),
                     )
                     .toList(),

@@ -1,28 +1,29 @@
+import 'package:uuid/uuid.dart';
+
+const _uuid = Uuid();
+
 class Activity {
-  final int? id;
+  final String uuid;
   final String name;
 
   // ── Sync fields ──────────────────────────────────────────────────────────
-  final String uuid;
   final int updatedAt;
   final int? deletedAt;
   final String deviceId;
 
   Activity({
-    this.id,
-    required this.name,
     String? uuid,
+    required this.name,
     int? updatedAt,
     this.deletedAt,
     this.deviceId = '',
-  }) : uuid = uuid ?? '',
+  }) : uuid = uuid?.isNotEmpty == true ? uuid! : _uuid.v4(),
        updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch;
 
   factory Activity.fromMap(Map<String, dynamic> map) {
     return Activity(
-      id: map['id'] as int?,
+      uuid: map['uuid'] as String?,
       name: map['name'] as String,
-      uuid: (map['uuid'] as String?) ?? '',
       updatedAt:
           (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       deletedAt: map['deleted_at'] as int?,
@@ -32,9 +33,8 @@ class Activity {
 
   Map<String, dynamic> toMap() {
     return {
-      if (id != null) 'id': id,
-      'name': name,
       'uuid': uuid,
+      'name': name,
       'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
       'device_id': deviceId,
@@ -42,18 +42,16 @@ class Activity {
   }
 
   Activity copyWith({
-    int? id,
-    String? name,
     String? uuid,
+    String? name,
     int? updatedAt,
     int? deletedAt,
     bool clearDeletedAt = false,
     String? deviceId,
   }) {
     return Activity(
-      id: id ?? this.id,
-      name: name ?? this.name,
       uuid: uuid ?? this.uuid,
+      name: name ?? this.name,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
       deviceId: deviceId ?? this.deviceId,

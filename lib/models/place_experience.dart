@@ -1,7 +1,11 @@
+import 'package:uuid/uuid.dart';
+
+const _uuid = Uuid();
+
 /// A user experience / review entry linked to a [SavedPlace] by its UUID.
 /// Contains textual report and six rating dimensions (-9 to +9).
 class PlaceExperience {
-  final int? id;
+  final String uuid;
 
   /// UUID of the parent saved_place.
   final String savedPlaceUuid;
@@ -31,13 +35,12 @@ class PlaceExperience {
   final int createdAt;
 
   // ── Sync fields ──────────────────────────────────────────────────────────
-  final String uuid;
   final int updatedAt;
   final int? deletedAt;
   final String deviceId;
 
   PlaceExperience({
-    this.id,
+    String? uuid,
     required this.savedPlaceUuid,
     this.text = '',
     this.ratingDangerousFriendly = 0,
@@ -47,12 +50,11 @@ class PlaceExperience {
     this.ratingEquipment = 0,
     this.ratingTransport = 0,
     int? createdAt,
-    String? uuid,
     int? updatedAt,
     this.deletedAt,
     this.deviceId = '',
-  }) : createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch,
-       uuid = uuid ?? '',
+  }) : uuid = uuid?.isNotEmpty == true ? uuid! : _uuid.v4(),
+       createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch,
        updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch;
 
   /// Average rating across all six dimensions (−9.0 to +9.0).
@@ -67,7 +69,7 @@ class PlaceExperience {
 
   factory PlaceExperience.fromMap(Map<String, dynamic> map) {
     return PlaceExperience(
-      id: map['id'] as int?,
+      uuid: map['uuid'] as String?,
       savedPlaceUuid: (map['saved_place_uuid'] as String?) ?? '',
       text: (map['text'] as String?) ?? '',
       ratingDangerousFriendly: (map['rating_dangerous_friendly'] as int?) ?? 0,
@@ -79,7 +81,6 @@ class PlaceExperience {
       ratingTransport: (map['rating_transport'] as int?) ?? 0,
       createdAt:
           (map['created_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
-      uuid: (map['uuid'] as String?) ?? '',
       updatedAt:
           (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       deletedAt: map['deleted_at'] as int?,
@@ -89,7 +90,7 @@ class PlaceExperience {
 
   Map<String, dynamic> toMap() {
     return {
-      if (id != null) 'id': id,
+      'uuid': uuid,
       'saved_place_uuid': savedPlaceUuid,
       'text': text,
       'rating_dangerous_friendly': ratingDangerousFriendly,
@@ -99,7 +100,6 @@ class PlaceExperience {
       'rating_equipment': ratingEquipment,
       'rating_transport': ratingTransport,
       'created_at': createdAt,
-      'uuid': uuid,
       'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
       'device_id': deviceId,
@@ -107,7 +107,7 @@ class PlaceExperience {
   }
 
   PlaceExperience copyWith({
-    int? id,
+    String? uuid,
     String? savedPlaceUuid,
     String? text,
     int? ratingDangerousFriendly,
@@ -117,13 +117,12 @@ class PlaceExperience {
     int? ratingEquipment,
     int? ratingTransport,
     int? createdAt,
-    String? uuid,
     int? updatedAt,
     int? deletedAt,
     String? deviceId,
   }) {
     return PlaceExperience(
-      id: id ?? this.id,
+      uuid: uuid ?? this.uuid,
       savedPlaceUuid: savedPlaceUuid ?? this.savedPlaceUuid,
       text: text ?? this.text,
       ratingDangerousFriendly:
@@ -135,7 +134,6 @@ class PlaceExperience {
       ratingEquipment: ratingEquipment ?? this.ratingEquipment,
       ratingTransport: ratingTransport ?? this.ratingTransport,
       createdAt: createdAt ?? this.createdAt,
-      uuid: uuid ?? this.uuid,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
       deviceId: deviceId ?? this.deviceId,

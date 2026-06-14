@@ -15,27 +15,27 @@ void main() async {
   final s = SettingsService.instance;
   final newGroups = await DatabaseService.instance.ensureDefaultGroups();
   if (newGroups != null) {
-    s.autoPlaceGroupId ??= newGroups.autoGroupId;
-    s.defaultPlaceGroupId ??= newGroups.defaultGroupId;
+    s.autoPlaceGroupUuid ??= newGroups.autoGroupUuid;
+    s.defaultPlaceGroupUuid ??= newGroups.defaultGroupUuid;
   }
 
   // Ensure at least one Aktivitaet exists, then apply its settings.
-  final defaultId = await DatabaseService.instance.ensureDefaultAktivitaet(
+  final defaultUuid = await DatabaseService.instance.ensureDefaultAktivitaet(
     gpsInterval: s.gpsIntervalSeconds,
     stayDetection: s.stayDetectionSeconds,
     autoPlace: s.autoPlaceSeconds,
     radius: s.defaultRadiusMeters,
     autoCreate: s.autoCreatePlaces,
-    autoPlaceGroupId: s.autoPlaceGroupId,
-    defaultPlaceGroupId: s.defaultPlaceGroupId,
+    autoPlaceGroupUuid: s.autoPlaceGroupUuid,
+    defaultPlaceGroupUuid: s.defaultPlaceGroupUuid,
   );
-  final activeId = s.activeAktivitaetId ?? defaultId;
-  final aktiv = await DatabaseService.instance.loadAktivitaet(activeId);
+  final activeUuid = s.activeAktivitaetUuid ?? defaultUuid;
+  final aktiv = await DatabaseService.instance.loadAktivitaet(activeUuid);
   if (aktiv != null) {
     s.applyAktivitaet(aktiv);
   } else {
-    // Fallback: the stored id no longer exists – use/create the default.
-    s.activeAktivitaetId = defaultId;
+    // Fallback: the stored uuid no longer exists – use/create the default.
+    s.activeAktivitaetUuid = defaultUuid;
   }
 
   ForegroundServiceManager.init();
