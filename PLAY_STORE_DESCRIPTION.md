@@ -5,7 +5,7 @@
 
 ## Kurzbeschreibung (max. 80 Zeichen)
 ```
-Automatisches Bewegungsprotokoll – Orte, Personen & Aktivitäten
+Automatisches Bewegungsprotokoll – Orte, Personen, Fotos & Sync
 ```
 
 ---
@@ -56,6 +56,26 @@ Alle Aufenthalte chronologisch sortiert: Wann warst du wo? Wie lange? Mit wem? W
 Trage zu jedem Aufenthalt ein, wer dabei war und was du gemacht hast. Personen und Aktivitäten werden einmalig angelegt und können dann schnell zugeordnet werden.
 
 ──────────────────────────────────────
+📸 FOTOS & FOTOALBUM
+──────────────────────────────────────
+Füge Fotos direkt zu Orten oder einzelnen Aufenthalten hinzu. Das Fotoalbum zeigt alle Bilder übersichtlich nach Ort gruppiert. Fotos werden lokal gespeichert und können optional mit dem Sync-Server synchronisiert werden.
+
+──────────────────────────────────────
+⭐ ORTSERFAHRUNGEN & BEWERTUNGEN
+──────────────────────────────────────
+Hinterlasse zu jedem Ort einen Erfahrungsbericht und bewerte ihn in sechs Dimensionen: Freundlichkeit, Zuverlässigkeit, Unterkunft, Verpflegung, Equipment und Transport – jeweils auf einer Skala von −9 bis +9. So weißt du beim nächsten Besuch sofort, was dich erwartet.
+
+──────────────────────────────────────
+🔄 GERÄTEÜBERGREIFENDE SYNCHRONISATION
+──────────────────────────────────────
+Richte optional einen eigenen Sync-Server ein (FastAPI + PostgreSQL) und synchronisiere Orte, Aufenthalte, Fotos, Erfahrungen und mehr zwischen mehreren Geräten. Mehrere Sync-Quellen sind konfigurierbar; du entscheidest, welche Daten in welche Richtung fließen. Sync-Quellen können auch als externe Erfahrungs-Feeds abonniert werden.
+
+──────────────────────────────────────
+📬 TELEGRAM-BENACHRICHTIGUNGEN
+──────────────────────────────────────
+Lass dich per Telegram benachrichtigen, wenn du einen Ort betrittst oder verlässt. Verbinde einen oder mehrere Telegram-Bots mit einem Kanal oder Chat deiner Wahl.
+
+──────────────────────────────────────
 📆 KALENDERINTEGRATION
 ──────────────────────────────────────
 Optional: Aufenthalte werden automatisch als Einträge in deinen Gerätekalender übertragen – ideal als Nachweis für Arbeit, Steuern oder einfach als digitales Tagebuch.
@@ -63,18 +83,18 @@ Optional: Aufenthalte werden automatisch als Einträge in deinen Gerätekalender
 ──────────────────────────────────────
 🔒 DEINE DATEN GEHÖREN DIR
 ──────────────────────────────────────
-Alle Daten bleiben auf deinem Gerät. Kein Account, kein Cloud-Upload, kein Tracking durch Dritte. Du kannst deine Daten jederzeit als SQLite Datebank (database.db) exportieren, importieren oder löschen.
+Alle Daten bleiben auf deinem Gerät. Kein Account, kein Cloud-Upload, kein Tracking durch Dritte. Du kannst deine Daten jederzeit als SQLite-Datenbank (database.db) exportieren, importieren oder löschen. Der optionale Sync-Server ist vollständig self-hosted.
 
 ──────────────────────────────────────
 ⚙️ FLEXIBEL KONFIGURIERBAR
 ──────────────────────────────────────
-Passe die Erkennung an dein Verhalten an: GPS-Intervall, Erkennungsschwelle, Mindestaufenthaltsdauer und GPS-Glättung sind frei einstellbar. Mehrere Profile (z. B. „Reise“, „Alltag“) lassen sich schnell umschalten. Der Farbbereich für den Planer und der Gruppenfilter für Karte und Planer sind ebenfalls pro Profil speicherbar.
+Passe die Erkennung an dein Verhalten an: GPS-Intervall, Erkennungsschwelle, Mindestaufenthaltsdauer und GPS-Glättung sind frei einstellbar. Mehrere Profile (z. B. „Reise", „Alltag") lassen sich schnell umschalten. Der Farbbereich für den Planer und der Gruppenfilter für Karte und Planer sind ebenfalls pro Profil speicherbar.
 
 ──────────────────────────────────────
 IDEAL FÜR:
 ──────────────────────────────────────
 • Selbstständige und Freiberufler (Übersicht über Arbeitsorte)
-• Vielreisende (automatisches Reisetagebuch)
+• Vielreisende (automatisches Reisetagebuch mit Fotos und Bewertungen)
 • Menschen, die ihr Leben dokumentieren möchten
 • Alle, die wissen wollen, wo sie ihre Zeit verbringen
 
@@ -86,7 +106,7 @@ Chaos Tours – weil dein Leben mehr verdient als ein leeres Kalenderblatt.
 ## Schlagwörter / Tags (für ASO)
 
 ```
-GPS Tracker, Standortverlauf, Bewegungsprotokoll, Aufenthalte, Zeitprotokoll, Orte speichern, Kalenderintegration, Hintergrund GPS, Standorttagebuch, Reiseprotokoll, Besuchsplaner, Intervall, Erinnerung Orte
+GPS Tracker, Standortverlauf, Bewegungsprotokoll, Aufenthalte, Zeitprotokoll, Orte speichern, Kalenderintegration, Hintergrund GPS, Standorttagebuch, Reiseprotokoll, Besuchsplaner, Intervall, Erinnerung Orte, Fotos, Ortsbewertung, Sync, Telegram
 ```
 
 ---
@@ -103,7 +123,7 @@ GPS Tracker, Standortverlauf, Bewegungsprotokoll, Aufenthalte, Zeitprotokoll, Or
 
 ## Datenschutzhinweis für Play Store
 
-Die App erhebt GPS-Standortdaten zur Erkennung von Aufenthalten. Alle Daten werden ausschließlich lokal auf dem Gerät gespeichert. Es werden keine personenbezogenen Daten an Server übertragen. Anonyme Geocoding-Anfragen (Koordinaten → Adresse) werden an die öffentliche Nominatim-API von OpenStreetMap gesendet, ohne Nutzerbezug.
+Die App erhebt GPS-Standortdaten zur Erkennung von Aufenthalten. Alle Daten werden primär lokal auf dem Gerät gespeichert. Anonyme Geocoding-Anfragen (Koordinaten → Adresse) werden an die öffentliche Nominatim-API von OpenStreetMap gesendet, ohne Nutzerbezug. Wer den optionalen Self-Hosted-Sync-Server nutzt, überträgt Daten ausschließlich an den selbst betriebenen Server. Telegram-Benachrichtigungen werden über die Telegram Bot API gesendet.
 
 ---
 
@@ -115,5 +135,7 @@ Die App erhebt GPS-Standortdaten zur Erkennung von Aufenthalten. Alle Daten werd
 | 2 | **Karte** | „Alle deine Orte auf einen Blick" | OpenStreetMap mit farbigen Ortspins (grün/blau/rot), Live-GPS-Spur, aktueller Standortmarkierung |
 | 3 | **Zeitachse** | „Dein persönliches Bewegungsprotokoll" | Aufenthaltskarten mit Ortsname, Datum, Dauer, Personen-Tags und Aktivitäts-Tags |
 | 4 | **Orte** | „Bekannte Orte automatisch wiedererkennen" | Liste gespeicherter Orte mit Adresse, Besuchszähler, letztem Besuch und Ortstyp-Farbcodierung |
-| 5 | **Aufenthalt bearbeiten** | „Personen & Aktivitäten zuordnen" | Aufenthaltsdetail mit Notizenfeld, Personen-Chips und Aktivitäts-Chips |
-| 6 | **Einstellungen** | „Anpassbar an deinen Alltag" | Konfigurationsscreen mit GPS-Intervall, Erkennungsschwellen und Profilauswahl |
+| 5 | **Aufenthalt bearbeiten** | „Personen, Fotos & Aktivitäten zuordnen" | Aufenthaltsdetail mit Notizenfeld, Personen-Chips, Aktivitäts-Chips und Foto-Anhängen |
+| 6 | **Fotoalbum** | „Erinnerungen im Blick" | Galerie aller Fotos, nach Ort gruppiert |
+| 7 | **Planer** | „Kein Ort wird vergessen" | Planerliste mit farbiger Dringlichkeitsanzeige und verbleibenden Tagen |
+| 8 | **Einstellungen** | „Anpassbar an deinen Alltag" | Konfigurationsscreen mit GPS-Intervall, Erkennungsschwellen, Sync-Quellen und Profilauswahl |

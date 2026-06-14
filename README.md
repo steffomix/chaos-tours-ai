@@ -60,7 +60,24 @@ Jedem Aufenthalt können zugeordnet werden:
 - **Personen** (wer war dabei?)
 - **Aktivitäten** (was wurde getan?)
 - **Notizen** (freier Text)
+- **Fotos** (direkt am Aufenthalt oder am Ort)
 - **Kalendereinträge** (optionale Synchronisation mit dem Gerätekalender)
+
+### 📸 Fotos & Fotoalbum
+- Fotos können Orten und/oder einzelnen Aufenthalten zugeordnet werden
+- Fotoalbum-Screen mit nach Ort gruppierten Galerie-Ansichten
+- Fotos werden als Base64 in der SQLite-Datenbank gespeichert und mit dem Sync-Server synchronisiert
+
+### ⭐ Ortserfahrungen & Bewertungen
+- Zu jedem Ort können Erfahrungsberichte mit Freitext gespeichert werden
+- **6 Bewertungsdimensionen** auf einer Skala von −9 bis +9:
+  - Gefährlich ↔ Freundlich
+  - Betrügerisch ↔ Zuverlässig
+  - Abweisend ↔ Bietet Unterkunft
+  - Fordert ↔ Bietet Verpflegung
+  - Fordert ↔ Bietet Equipment
+  - Fordert ↔ Bietet Transport
+- Durchschnittsbewertung über alle Dimensionen berechnet
 
 ### 🔒 Datenschutz
 - Überlappende Orte bestimmen die effektive Privatsphärestufe
@@ -79,10 +96,24 @@ Jedem Aufenthalt können zugeordnet werden:
   - **Farbskala-Bereich** für den Planer (Standard: 14 Tage)
   - **Gruppenfilter** für Karte und Planer (einzelne Gruppen oder alle)
 
+### 🔄 Geräteübergreifende Synchronisation
+- Optionaler Self-Hosted **Sync-Server** (FastAPI + PostgreSQL)
+- Mehrere **Sync-Quellen** konfigurierbar (verschiedene Server oder Instanzen)
+- Delta-Sync: nur seit dem letzten Sync geänderte Datensätze werden übertragen
+- Feingranulare Kontrolle: je Sync-Quelle wählbar, welche Tabellen synchronisiert werden und ob Einfügen/Bearbeiten/Löschen erlaubt ist
+- Alle Tabellen synchronisierbar: Orte, Gruppen, Aufenthalte, Personen, Aktivitäten, Fotos, Erfahrungen, Kalender u. a.
+- **Erfahrungs-Feeds**: Sync-Quelle kann als externer Erfahrungs-Feed abonniert werden (nur Lesen)
+
+### 📬 Telegram-Benachrichtigungen
+- Aufenthalts-Benachrichtigungen per Telegram Bot an einen Kanal oder Chat senden
+- Mehrere **Telegram-Verbindungen** (Bot-Token + Chat-ID) konfigurierbar
+- Nachrichten werden bei Ankunft/Abfahrt automatisch gesendet oder bearbeitet
+
 ### 💾 Datenverwaltung
 - SQLite-Datenbank (lokal, kein Cloud-Zwang)
 - Export/Import der SQLite Datenbank via Sharing
 - Datenbankrücksetzung
+- Direktzugriff auf die PostgreSQL-Datenbank des Sync-Servers z. B. via LibreOffice Base
 
 ---
 
@@ -105,6 +136,8 @@ Jedem Aufenthalt können zugeordnet werden:
 | Geocoding | Nominatim (OpenStreetMap) |
 | Kalender | device_calendar |
 | Hintergrundservice | flutter_foreground_task |
+| Sync-Server | FastAPI + PostgreSQL (self-hosted) |
+| Messaging | Telegram Bot API |
 
 ---
 
@@ -114,7 +147,7 @@ Jedem Aufenthalt können zugeordnet werden:
 lib/
 ├── main.dart                  # Entry Point
 ├── app.dart                   # App-Konfiguration & Routing
-├── models/                    # Datenmodelle (Stay, SavedPlace, Person, …)
+├── models/                    # Datenmodelle (Stay, SavedPlace, Person, PlacePhoto, PlaceExperience, …)
 ├── services/
 │   ├── tracking_engine.dart   # State-Machine: Kern-Tracking-Logik
 │   ├── location_service.dart  # GPS-Stream
@@ -122,6 +155,8 @@ lib/
 │   ├── settings_service.dart  # SharedPreferences
 │   ├── calendar_service.dart  # Kalenderintegration
 │   ├── nominatim_service.dart # Reverse Geocoding
+│   ├── sync_service.dart      # Geräteübergreifende Synchronisation
+│   ├── telegram_service.dart  # Telegram-Benachrichtigungen
 │   └── foreground_service_handler.dart
 ├── ui/
 │   ├── screens/               # Hauptbildschirme (4 Tabs + Einstellungen)

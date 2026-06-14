@@ -169,11 +169,35 @@ sudo ufw reload
 
 Alle Endpunkte (außer `/health`) erfordern den Header `X-Api-Key: <KEY>` wenn `API_KEY` in `.env` gesetzt ist.
 
+## Synchronisierte Tabellen
+
+Der Server verwaltet folgende Tabellen, die per Delta-Sync übertragen werden können:
+
+| Tabelle | Inhalt |
+|---------|--------|
+| `saved_places` | Gespeicherte Orte |
+| `place_groups` | Ortsgruppen |
+| `stays` | Aufenthalte |
+| `persons` | Personen |
+| `activities` | Aktivitäten (Profile) |
+| `stay_persons` | Aufenthalt ↔ Person Zuordnungen |
+| `stay_activities` | Aufenthalt ↔ Aktivität Zuordnungen |
+| `aktivitaeten` | Freitext-Aktivitäten je Aufenthalt |
+| `sync_sources` | Sync-Quellen-Konfiguration |
+| `place_experiences` | Ortserfahrungen & Bewertungen |
+| `sync_source_experiences` | Erfahrungs-Feed-Zuordnungen |
+| `place_photos` | Fotos (Base64) für Orte und Aufenthalte |
+| `telegram_connections` | Telegram-Bot-Verbindungen |
+
 ## Sync-Optionen (Server-Seite)
 
 Der Server nimmt alle Daten an die der Client schickt (Push) und gibt alle geänderten Daten zurück (Pull). Welche Tabellen tatsächlich synchronisiert werden, wird auf dem Android-Gerät pro **Sync-Quelle** konfiguriert.
 
 **Standardmäßig** sendet die App nur `saved_places` (nur Einfügen). Weitere Tabellen und Optionen (Bearbeiten, Löschen) müssen in der App unter **Einstellungen → Sync-Quellen → Sync-Optionen** aktiviert werden.
+
+## Erfahrungs-Feeds
+
+Eine Sync-Quelle kann als **Erfahrungs-Feed** konfiguriert werden. Die App liest dann `place_experiences` von diesem Server (nur Lesen) und zeigt sie bei passenden Orten als externe Bewertungen an – ohne eigene Daten zu schreiben.
 
 ## LibreOffice / Direkt-Zugriff
 
