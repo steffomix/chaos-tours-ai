@@ -19,11 +19,19 @@ class TrackingResult {
   final SavedPlace? currentPlace;
   final String? notificationText;
 
+  /// All concurrently active stays at known places (≥1 when place radii overlap).
+  final List<Stay> allActiveStays;
+
+  /// Known places corresponding 1:1 with [allActiveStays].
+  final List<SavedPlace> allActivePlaces;
+
   const TrackingResult({
     required this.status,
     this.currentStay,
     this.currentPlace,
     this.notificationText,
+    this.allActiveStays = const [],
+    this.allActivePlaces = const [],
   });
 }
 
@@ -34,27 +42,44 @@ class TrackingResult {
 class TrackingEngine {
   TrackingStatus _status = TrackingStatus.idle;
   int _statusSince = DateTime.now().millisecondsSinceEpoch;
-  Stay? _currentStay;
-  SavedPlace? _currentPlace;
 
-  /// Effective privacy type at the current halt — may be higher than
-  /// [_currentPlace]'s own type when a more private place overlaps.
-  PlaceType? _effectivePlaceType;
+  /// Active stays at known places, keyed by [SavedPlace.uuid].
+  final Map<String, Stay> _activeStays = {};
+
+  /// Known places currently being tracked, keyed by [SavedPlace.uuid].
+  final Map<String, SavedPlace> _activePlaces = {};
+
+  /// Active stay at an unknown location (no associated [SavedPlace]).
+  Stay? _unknownStay;
 
   /// Load persisted state on service start.
   Future<void> initialize() async {
-    final active = await DatabaseService.instance.loadActiveStay();
-    if (active != null) {
-      _currentStay = active;
-      if (active.placeUuid != null) {
-        final places = await DatabaseService.instance.loadAllPlaces();
-        _currentPlace = places
-            .where((p) => p.uuid == active.placeUuid)
-            .firstOrNull;
+    final activeStays = await DatabaseService.instance.loadAllActiveStays();
+    if (activeStays.isNotEmpty) {
+      final places = await DatabaseService.instance.loadAllPlaces();
+      final placesById = {for (final p in places) p.uuid: p};
+      bool anyKnown = false;
+      for (final stay in activeStays) {
+        if (stay.placeUuid != null) {
+          final place = placesById[stay.placeUuid];
+          if (place != null) {
+            _activeStays[place.uuid] = stay;
+            _activePlaces[place.uuid] = place;
+            anyKnown = true;
+          }
+        } else {
+          // Keep only the most recent unknown stay.
+          if (_unknownStay == null ||
+              stay.startTime > _unknownStay!.startTime) {
+            _unknownStay = stay;
+          }
+        }
+      }
+      if (anyKnown) {
         _setStatus(TrackingStatus.haltAtKnown);
-      } else {
+      } else if (_unknownStay != null) {
         _setStatus(
-          active.status == StayStatus.detecting
+          _unknownStay!.status == StayStatus.detecting
               ? TrackingStatus.detectingHalt
               : TrackingStatus.haltAtUnknown,
         );
@@ -65,8 +90,22 @@ class TrackingEngine {
   }
 
   TrackingStatus get status => _status;
-  Stay? get currentStay => _currentStay;
-  SavedPlace? get currentPlace => _currentPlace;
+
+  /// Primary place for display: the overlapping place with the smallest radius
+  /// (most specific). Returns null when not at a known place.
+  SavedPlace? get currentPlace => _primaryPlace;
+
+  SavedPlace? get _primaryPlace => _activePlaces.values.isEmpty
+      ? null
+      : _activePlaces.values.reduce((a, b) => a.radius <= b.radius ? a : b);
+
+  /// Primary active stay for display (corresponds to [currentPlace]).
+  /// Falls back to [_unknownStay] when no known-place stays are active.
+  Stay? get currentStay {
+    final primary = _primaryPlace;
+    if (primary != null) return _activeStays[primary.uuid];
+    return _unknownStay;
+  }
 
   /// Process a new GPS point. Returns a [TrackingResult] describing the new state.
   Future<TrackingResult> onNewPoint(
@@ -139,10 +178,10 @@ class TrackingEngine {
         pts.isNotEmpty && GeoUtils.isCluster(pts, settings.defaultRadiusMeters);
 
     if (!shortWindowFull || !shortIsCluster) {
-      // Not yet confirmed as halt — but if we were halting, end the stay
+      // Not yet confirmed as halt — end all active stays if we were halting.
       if (_status == TrackingStatus.haltAtKnown ||
           _status == TrackingStatus.haltAtUnknown) {
-        await _endCurrentStay(timestamp);
+        await _endAllStays(timestamp);
       }
       if (shortIsCluster && !shortWindowFull) {
         _setStatus(TrackingStatus.detectingHalt);
@@ -155,58 +194,50 @@ class TrackingEngine {
     // Short window is a full cluster → confirmed halt
     final c = GeoUtils.centroid(pts);
 
-    // 5. Check known places — only public/private places trigger stays
+    // 5. Find ALL overlapping tracksStay places and manage per-place stays.
+    //    Each place is processed independently according to its own placeType.
+    //    secret/forbidden places are excluded by tracksStay == false and thus
+    //    never suppress tracking at overlapping public/private places.
     final places = await DatabaseService.instance.loadAllPlaces();
-    SavedPlace? nearestPlace;
+    final overlapping = <SavedPlace>[];
     for (final place in places) {
-      if (!place.placeType.tracksStay) continue; // secret/forbidden — skip
+      if (!place.placeType.tracksStay) continue;
       final dist = GeoUtils.distanceMeters(c.lat, c.lng, place.lat, place.lng);
       if (dist <= place.radius) {
-        nearestPlace = place;
-        break;
+        overlapping.add(place);
       }
     }
 
-    if (nearestPlace != null) {
-      // Compute effective privacy level across ALL overlapping places.
-      // A secret or forbidden overlay suppresses stay tracking & calendar;
-      // a private overlay on a public place suppresses only calendar.
-      PlaceType effectivePlaceType = nearestPlace.placeType;
-      for (final place in places) {
-        final dist = GeoUtils.distanceMeters(
-          c.lat,
-          c.lng,
-          place.lat,
-          place.lng,
-        );
-        if (dist <= place.radius &&
-            place.placeType.index > effectivePlaceType.index) {
-          effectivePlaceType = place.placeType;
+    if (overlapping.isNotEmpty) {
+      // End the unknown stay when we've arrived at known places.
+      if (_unknownStay != null) {
+        await _endUnknownStay(timestamp);
+      }
+
+      final overlappingUuids = overlapping.map((p) => p.uuid).toSet();
+
+      // End stays for places the centroid has left.
+      for (final uuid in _activeStays.keys.toList()) {
+        if (!overlappingUuids.contains(uuid)) {
+          await _endStay(uuid, timestamp);
         }
       }
-      _effectivePlaceType = effectivePlaceType;
 
-      final stayAllowed = effectivePlaceType.tracksStay;
+      // Start stays for newly overlapping places.
+      for (final place in overlapping) {
+        if (!_activeStays.containsKey(place.uuid)) {
+          await _startStay(
+            place: place,
+            startTime: shortWindow.first.timestamp,
+          );
+        }
+      }
 
-      // End stay if: switched to different place, OR privacy now suppresses stay.
-      if (_currentStay != null &&
-          (_currentStay!.placeUuid != nearestPlace.uuid || !stayAllowed)) {
-        await _endCurrentStay(timestamp);
-      }
-      if (_currentStay == null && stayAllowed) {
-        // Start a new stay anchored at the earliest point in the short window.
-        await _startStay(
-          placeUuid: nearestPlace.uuid,
-          startTime: shortWindow.first.timestamp,
-          effectivePlaceType: effectivePlaceType,
-        );
-      }
       _setStatus(TrackingStatus.haltAtKnown);
-      _currentPlace = nearestPlace;
       return _result();
     }
 
-    // No known place — check long window
+    // No known tracksStay place — check long window for unknown stay.
     final longWindowStart = timestamp - settings.autoPlaceSeconds * 1000;
     // Load with margin so full-window check is accurate
     final longWindowRaw = await DatabaseService.instance
@@ -228,8 +259,12 @@ class TrackingEngine {
         GeoUtils.isCluster(longPts, settings.defaultRadiusMeters * 2);
 
     if (longIsCluster && longWindowFull) {
+      // End any lingering known-place stays before switching to unknown.
+      if (_activeStays.isNotEmpty) {
+        await _endAllKnownStays(timestamp);
+      }
       // Halt at unknown place — only start a stay once
-      if (_currentStay == null) {
+      if (_unknownStay == null) {
         final longC = GeoUtils.centroid(longPts);
         await _startUnknownStay(
           startTime: longWindow.first.timestamp,
@@ -237,50 +272,43 @@ class TrackingEngine {
           centroidLng: longC.lng,
         );
       }
-      _setStatus(TrackingStatus.haltAtUnknown);
-      _currentPlace = null;
+      // After _startUnknownStay with auto-create the stay ends up in
+      // _activeStays, so prefer haltAtKnown in that case.
+      _setStatus(
+        _activeStays.isNotEmpty
+            ? TrackingStatus.haltAtKnown
+            : TrackingStatus.haltAtUnknown,
+      );
     } else {
       // Short window clustered, no known place, long window not complete
       if (_status == TrackingStatus.haltAtKnown ||
           _status == TrackingStatus.haltAtUnknown) {
-        await _endCurrentStay(timestamp);
+        await _endAllStays(timestamp);
       }
       _setStatus(TrackingStatus.detectingHalt);
-      _currentPlace = null;
     }
 
     return _result();
   }
 
   Future<void> _startStay({
-    required String? placeUuid,
+    required SavedPlace place,
     required int startTime,
-    PlaceType effectivePlaceType = PlaceType.public,
   }) async {
     final stay = Stay(
-      placeUuid: placeUuid,
+      placeUuid: place.uuid,
       startTime: startTime,
       status: StayStatus.active,
     );
     final stayUuid = await DatabaseService.instance.insertStay(stay);
-    _currentStay = stay.copyWith(uuid: stayUuid);
+    final persisted = stay.copyWith(uuid: stayUuid);
+    _activeStays[place.uuid] = persisted;
+    _activePlaces[place.uuid] = place;
 
-    // Create arrival calendar and telegramevent — only if effective privacy allows it.
-    if (placeUuid != null && effectivePlaceType.syncEnabled) {
-      final places = await DatabaseService.instance.loadAllPlaces();
-      final place = places.where((p) => p.uuid == placeUuid).firstOrNull;
-      if (place != null) {
-        await _createArrivalCalendarEvent(
-          _currentStay!,
-          place.name,
-          place.groupUuid,
-        );
-        await _createArrivalTelegramMessage(
-          _currentStay!,
-          place.name,
-          place.groupUuid,
-        );
-      }
+    // Trigger arrival events only for syncEnabled places (public).
+    if (place.placeType.syncEnabled) {
+      await _createArrivalCalendarEvent(place.uuid);
+      await _createArrivalTelegramMessage(place.uuid);
     }
   }
 
@@ -297,26 +325,36 @@ class TrackingEngine {
       centroidLng,
     );
 
-    String? autoPlaceName;
     if (settings.autoCreatePlaces) {
       final now = DateTime.fromMillisecondsSinceEpoch(startTime);
       final datePart =
           '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
       final timePart =
           '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-      autoPlaceName = address != null
+      final autoPlaceName = address != null
           ? '$address ($datePart $timePart)'
           : '$datePart $timePart';
 
-      // Create the auto-place
+      // Create the auto-place and its stay, then register as a known-place stay
+      // so subsequent ticks find it via _activeStays.
       final place = SavedPlace(
         name: autoPlaceName,
         lat: centroidLat,
         lng: centroidLng,
         radius: settings.defaultRadiusMeters,
         groupUuid: settings.autoPlaceGroupUuid,
+        originType: PlaceOriginType.auto,
       );
       final placeUuid = await DatabaseService.instance.insertPlace(place);
+      final placePersisted = SavedPlace(
+        uuid: placeUuid,
+        name: autoPlaceName,
+        lat: centroidLat,
+        lng: centroidLng,
+        radius: settings.defaultRadiusMeters,
+        groupUuid: settings.autoPlaceGroupUuid,
+        originType: PlaceOriginType.auto,
+      );
 
       final stay = Stay(
         placeUuid: placeUuid,
@@ -325,72 +363,68 @@ class TrackingEngine {
         status: StayStatus.active,
       );
       final stayUuid = await DatabaseService.instance.insertStay(stay);
-      _currentStay = stay.copyWith(uuid: stayUuid);
+      final persistedStay = stay.copyWith(uuid: stayUuid);
 
-      // Create arrival calendar event for auto-created place
+      _activeStays[placeUuid] = persistedStay;
+      _activePlaces[placeUuid] = placePersisted;
+
+      // Arrival events for auto-created place if its group allows sync.
       final autoGroupUuid = settings.autoPlaceGroupUuid;
       if (autoGroupUuid != null) {
         final autoGroup = await DatabaseService.instance.loadPlaceGroup(
           autoGroupUuid,
         );
         if (autoGroup != null && autoGroup.placeType.syncEnabled) {
-          await _createArrivalCalendarEvent(
-            _currentStay!,
-            autoPlaceName,
-            autoGroupUuid,
-          );
-          await _createArrivalTelegramMessage(
-            _currentStay!,
-            autoPlaceName,
-            autoGroupUuid,
-          );
+          await _createArrivalCalendarEvent(placeUuid);
+          await _createArrivalTelegramMessage(placeUuid);
         }
       }
       return;
     }
 
-    // No auto-create — just record the stay without a place
+    // No auto-create — record the stay without a place.
     final stay = Stay(
       startTime: startTime,
       address: address,
       status: StayStatus.active,
     );
     final stayUuid = await DatabaseService.instance.insertStay(stay);
-    _currentStay = stay.copyWith(uuid: stayUuid);
+    _unknownStay = stay.copyWith(uuid: stayUuid);
   }
 
-  /// Creates a preliminary "arrival" calendar event for [stay] and persists
-  /// the returned event ID back to the database.
-  Future<void> _createArrivalCalendarEvent(
-    Stay stay,
-    String? placeName,
-    String? groupUuid,
-  ) async {
+  /// Creates a preliminary "arrival" calendar event for the stay at [placeUuid].
+  Future<void> _createArrivalCalendarEvent(String placeUuid) async {
+    final stay = _activeStays[placeUuid];
+    final place = _activePlaces[placeUuid];
+    if (stay == null || place == null) return;
     if (!SettingsService.instance.calendarEnabled) return;
-    if (groupUuid == null) return;
-    final group = await DatabaseService.instance.loadPlaceGroup(groupUuid);
+    if (place.groupUuid == null) return;
+    final group = await DatabaseService.instance.loadPlaceGroup(
+      place.groupUuid!,
+    );
     if (group == null || group.calendarId == null) return;
 
     final eventId = await CalendarService.instance.createArrivalEvent(
       stay,
       group,
-      placeName,
+      place.name,
     );
     if (eventId != null) {
       final updated = stay.copyWith(calendarEventId: eventId);
       await DatabaseService.instance.updateStay(updated);
-      _currentStay = updated;
+      _activeStays[placeUuid] = updated;
     }
   }
 
-  /// Sends an arrival Telegram message for [stay] and persists the message ID.
-  Future<void> _createArrivalTelegramMessage(
-    Stay stay,
-    String? placeName,
-    String? groupUuid,
-  ) async {
-    if (groupUuid == null) return;
-    final group = await DatabaseService.instance.loadPlaceGroup(groupUuid);
+  /// Sends an arrival Telegram message for the stay at [placeUuid].
+  Future<void> _createArrivalTelegramMessage(String placeUuid) async {
+    final stay = _activeStays[placeUuid];
+    final place = _activePlaces[placeUuid];
+    if (stay == null || place == null) return;
+    if (place.groupUuid == null) return;
+    final group = await DatabaseService.instance.loadPlaceGroup(
+      place.groupUuid!,
+    );
     if (group == null || group.telegramConnectionUuid == null) return;
     final conn = await DatabaseService.instance.loadTelegramConnection(
       group.telegramConnectionUuid!,
@@ -402,41 +436,36 @@ class TrackingEngine {
       (m) => '\\${m[0]}',
     );
 
-    final title = placeName ?? stay.address ?? 'Unbekannter Ort';
     final d = DateTime.fromMillisecondsSinceEpoch(stay.startTime);
     final fmtTime =
         '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
-    final text = '\u{1F4CD} *${esc(title)}*\nAnkunft: ${esc(fmtTime)}';
+    final text = '\u{1F4CD} *${esc(place.name)}*\nAnkunft: ${esc(fmtTime)}';
 
     final result = await TelegramService.instance.sendMessage(conn, text);
     if (result.success && result.messageId != null) {
       final updated = stay.copyWith(telegramMessageId: result.messageId);
       await DatabaseService.instance.updateStay(updated);
-      _currentStay = updated;
+      _activeStays[placeUuid] = updated;
     }
   }
 
-  Future<void> _endCurrentStay(int endTime) async {
-    final stay = _currentStay;
-    if (stay == null) return;
+  /// Ends the active stay for a single known place and runs calendar/telegram sync.
+  Future<void> _endStay(String placeUuid, int endTime) async {
+    final stay = _activeStays[placeUuid];
+    final place = _activePlaces[placeUuid];
+    if (stay == null || place == null) return;
+
     final ended = stay.copyWith(endTime: endTime, status: StayStatus.completed);
     await DatabaseService.instance.updateStay(ended);
 
-    // Calendar sync: update the existing arrival event, or create a new one
-    // if it was never created or has been deleted in the meantime.
-    final place = _currentPlace;
-    // Use effective privacy level for calendar decisions — a more private
-    // overlapping place may have suppressed calendar sync.
-    final calendarType = _effectivePlaceType ?? place?.placeType;
-    if (place != null &&
+    // Calendar sync — only for syncEnabled (public) places.
+    if (place.placeType.syncEnabled &&
         SettingsService.instance.calendarEnabled &&
-        (calendarType?.syncEnabled ?? false) &&
         place.groupUuid != null) {
       final group = await DatabaseService.instance.loadPlaceGroup(
         place.groupUuid!,
       );
       if (group != null) {
-        // Load persons & activities for the full description
         final persons = await DatabaseService.instance.loadPersonsForStay(
           ended.uuid,
         );
@@ -446,7 +475,6 @@ class TrackingEngine {
 
         bool updated = false;
         if (ended.calendarEventId != null) {
-          // Try to update the existing arrival event
           updated = await CalendarService.instance.updateStayEvent(
             ended,
             group,
@@ -458,7 +486,6 @@ class TrackingEngine {
           );
         }
         if (!updated) {
-          // Arrival event missing or deleted — create a fresh completed event
           final eventId = await CalendarService.instance.createStayEvent(
             ended,
             group,
@@ -477,9 +504,9 @@ class TrackingEngine {
       }
     }
 
-    // Telegram sync: edit the arrival message with departure details, or send
-    // a new departure message if no arrival message was recorded.
-    if (place != null && place.groupUuid != null) {
+    // Telegram sync — fires for any place with a telegram-connected group,
+    // editing the arrival message or sending a new departure message.
+    if (place.groupUuid != null) {
       final group = await DatabaseService.instance.loadPlaceGroup(
         place.groupUuid!,
       );
@@ -556,26 +583,44 @@ class TrackingEngine {
       }
     }
 
-    _currentStay = null;
-    _currentPlace = null;
-    _effectivePlaceType = null;
+    _activeStays.remove(placeUuid);
+    _activePlaces.remove(placeUuid);
+  }
+
+  /// Ends the active stay at an unknown location (no calendar/telegram).
+  Future<void> _endUnknownStay(int endTime) async {
+    final stay = _unknownStay;
+    if (stay == null) return;
+    final ended = stay.copyWith(endTime: endTime, status: StayStatus.completed);
+    await DatabaseService.instance.updateStay(ended);
+    _unknownStay = null;
+  }
+
+  /// Ends all active known-place stays.
+  Future<void> _endAllKnownStays(int endTime) async {
+    for (final uuid in _activeStays.keys.toList()) {
+      await _endStay(uuid, endTime);
+    }
+  }
+
+  /// Ends all active stays (known places + unknown stay).
+  Future<void> _endAllStays(int endTime) async {
+    await _endAllKnownStays(endTime);
+    await _endUnknownStay(endTime);
   }
 
   /// Call when tracking is disabled to cleanly end any active stay.
   Future<void> stopTracking() async {
-    if (_currentStay != null) {
-      await _endCurrentStay(DateTime.now().millisecondsSinceEpoch);
-    }
+    await _endAllStays(DateTime.now().millisecondsSinceEpoch);
     _setStatus(TrackingStatus.idle);
   }
 
-  /// Immediately ends the current stay (as if the user left) but keeps the
-  /// engine running so the next GPS tick can start a new stay right away.
-  /// After this call the status is reset to [TrackingStatus.moving] so that
-  /// the state machine re-evaluates on the next point.
+  /// Immediately ends all current stays (as if the user left) but keeps the
+  /// engine running so the next GPS tick can start new stays right away.
+  /// After this call the status is reset to [TrackingStatus.moving].
   Future<void> forceEndCurrentStay() async {
-    if (_currentStay == null) return;
-    await _endCurrentStay(DateTime.now().millisecondsSinceEpoch);
+    if (_activeStays.isEmpty && _unknownStay == null) return;
+    await _endAllStays(DateTime.now().millisecondsSinceEpoch);
     _setStatus(TrackingStatus.moving);
   }
 
@@ -597,18 +642,23 @@ class TrackingEngine {
         s.length <= max ? s : '${s.substring(0, max - 1)}\u2026';
 
     final now = DateTime.now().millisecondsSinceEpoch;
+    final primary = currentPlace;
+    final primaryStay = currentStay;
     String notifText;
     switch (_status) {
       case TrackingStatus.haltAtKnown:
-        final name = trunc(_currentPlace?.name ?? 'Bekannter Ort', 22);
-        final dur = _currentStay != null
-            ? fmtDur(Duration(milliseconds: now - _currentStay!.startTime))
+        final name = trunc(primary?.name ?? 'Bekannter Ort', 22);
+        final dur = primaryStay != null
+            ? fmtDur(Duration(milliseconds: now - primaryStay.startTime))
             : null;
-        notifText = dur != null ? '$name · $dur' : name;
+        final extra = _activeStays.length > 1
+            ? ' (+${_activeStays.length - 1})'
+            : '';
+        notifText = dur != null ? '$name$extra · $dur' : '$name$extra';
       case TrackingStatus.haltAtUnknown:
-        final label = trunc(_currentStay?.address ?? 'Unbekannter Ort', 22);
-        final dur = _currentStay != null
-            ? fmtDur(Duration(milliseconds: now - _currentStay!.startTime))
+        final label = trunc(_unknownStay?.address ?? 'Unbekannter Ort', 22);
+        final dur = _unknownStay != null
+            ? fmtDur(Duration(milliseconds: now - _unknownStay!.startTime))
             : null;
         notifText = dur != null ? 'Halten: $label · $dur' : 'Halten: $label';
       case TrackingStatus.detectingHalt:
@@ -623,9 +673,11 @@ class TrackingEngine {
     }
     return TrackingResult(
       status: _status,
-      currentStay: _currentStay,
-      currentPlace: _currentPlace,
+      currentStay: primaryStay,
+      currentPlace: primary,
       notificationText: notifText,
+      allActiveStays: _activeStays.values.toList(),
+      allActivePlaces: _activePlaces.values.toList(),
     );
   }
 }

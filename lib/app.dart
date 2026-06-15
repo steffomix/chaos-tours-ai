@@ -23,25 +23,6 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
-  int _currentIndex = 0;
-
-  late final List<Widget> _screens = [
-    const HomeScreen(),
-    const MapScreen(),
-    const PlacesScreen(),
-    const TimelineScreen(),
-    const PhotoAlbumScreen(),
-  ];
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  void _onTabSelected(int i) {
-    setState(() => _currentIndex = i);
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -62,34 +43,63 @@ class _AppState extends State<App> {
         '/sync-sources': (_) => const SyncSourcesScreen(),
         '/telegram-connections': (_) => const TelegramConnectionsScreen(),
       },
-      home: Scaffold(
-        body: IndexedStack(index: _currentIndex, children: _screens),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _currentIndex,
-          onDestinationSelected: _onTabSelected,
-          destinations: [
-            NavigationDestination(
-              icon: const Icon(Icons.home),
-              label: AppLocalizations.of(context)!.navHome,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.map),
-              label: AppLocalizations.of(context)!.navMap,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.place),
-              label: AppLocalizations.of(context)!.navPlaces,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.timeline),
-              label: AppLocalizations.of(context)!.navVisits,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.photo_library_outlined),
-              label: AppLocalizations.of(context)!.navPhotos,
-            ),
-          ],
-        ),
+      home: const _AppHome(),
+    );
+  }
+}
+
+class _AppHome extends StatefulWidget {
+  const _AppHome();
+
+  @override
+  State<_AppHome> createState() => _AppHomeState();
+}
+
+class _AppHomeState extends State<_AppHome> {
+  int _currentIndex = 0;
+
+  final List<Widget> _screens = [
+    const HomeScreen(),
+    const MapScreen(),
+    const PlacesScreen(),
+    const TimelineScreen(),
+    const PhotoAlbumScreen(),
+  ];
+
+  void _onTabSelected(int i) {
+    setState(() => _currentIndex = i);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Scaffold(
+      body: IndexedStack(index: _currentIndex, children: _screens),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: _onTabSelected,
+        destinations: [
+          NavigationDestination(
+            icon: const Icon(Icons.home),
+            label: l10n.navHome,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.map),
+            label: l10n.navMap,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.place),
+            label: l10n.navPlaces,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.timeline),
+            label: l10n.navVisits,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.photo_library_outlined),
+            label: l10n.navPhotos,
+          ),
+        ],
       ),
     );
   }

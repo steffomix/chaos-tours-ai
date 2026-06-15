@@ -471,6 +471,17 @@ class DatabaseService {
     return Stay.fromMap(rows.first);
   }
 
+  /// Returns ALL non-completed stays (used for multi-place state restore on init).
+  Future<List<Stay>> loadAllActiveStays() async {
+    final db = await database;
+    final rows = await db.query(
+      'stays',
+      where: "status != 'completed'",
+      orderBy: 'start_time DESC',
+    );
+    return rows.map(Stay.fromMap).toList();
+  }
+
   Future<List<Stay>> loadStaysForPlace(String placeUuid) async {
     final db = await database;
     final rows = await db.query(
