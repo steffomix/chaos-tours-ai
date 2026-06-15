@@ -265,8 +265,8 @@ class TrackingEngine {
     final stayUuid = await DatabaseService.instance.insertStay(stay);
     _currentStay = stay.copyWith(uuid: stayUuid);
 
-    // Create arrival calendar event — only if effective privacy allows it.
-    if (placeUuid != null && effectivePlaceType.syncsCalendar) {
+    // Create arrival calendar and telegramevent — only if effective privacy allows it.
+    if (placeUuid != null && effectivePlaceType.syncEnabled) {
       final places = await DatabaseService.instance.loadAllPlaces();
       final place = places.where((p) => p.uuid == placeUuid).firstOrNull;
       if (place != null) {
@@ -333,7 +333,7 @@ class TrackingEngine {
         final autoGroup = await DatabaseService.instance.loadPlaceGroup(
           autoGroupUuid,
         );
-        if (autoGroup != null && autoGroup.placeType.syncsCalendar) {
+        if (autoGroup != null && autoGroup.placeType.syncEnabled) {
           await _createArrivalCalendarEvent(
             _currentStay!,
             autoPlaceName,
@@ -430,7 +430,7 @@ class TrackingEngine {
     final calendarType = _effectivePlaceType ?? place?.placeType;
     if (place != null &&
         SettingsService.instance.calendarEnabled &&
-        (calendarType?.syncsCalendar ?? false) &&
+        (calendarType?.syncEnabled ?? false) &&
         place.groupUuid != null) {
       final group = await DatabaseService.instance.loadPlaceGroup(
         place.groupUuid!,

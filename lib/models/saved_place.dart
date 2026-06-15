@@ -67,8 +67,8 @@ extension PlaceTypeExtension on PlaceType {
   bool get notifiesOnArrival =>
       this == PlaceType.public || this == PlaceType.private;
 
-  /// Whether a completed stay is written to the calendar.
-  bool get syncsCalendar => this == PlaceType.public;
+  /// Whether a completed stay is written to the calendar or telegram.
+  bool get syncEnabled => this == PlaceType.public;
 }
 
 /// How a SavedPlace was created / obtained.
