@@ -202,4 +202,4 @@ Alle Daten werden **ausschließlich lokal** auf dem Gerät gespeichert. Es finde
 
 ## Lizenz
 
-Dieses Projekt steht unter der [MIT License](LICENSE).
+Dieses Projekt steht unter der [AGPL License](LICENSE).
