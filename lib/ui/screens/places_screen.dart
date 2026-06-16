@@ -10,6 +10,7 @@ import '../../models/saved_place.dart';
 import '../../models/stay.dart';
 import '../../services/database_service.dart';
 import '../../services/foreground_service_handler.dart';
+import '../../services/settings_service.dart';
 import '../../services/location_service.dart';
 import '../../utils/geo_utils.dart';
 import '../../utils/place_creation_helper.dart';
@@ -98,6 +99,14 @@ class _PlacesScreenState extends State<PlacesScreen> {
 
   List<({SavedPlace place, double? distance})> get _filtered {
     var list = _places;
+    final groupFilter = SettingsService.instance.schedulerGroupUuidList;
+    if (groupFilter.isNotEmpty) {
+      list = list
+          .where(
+            (p) => p.groupUuid != null && groupFilter.contains(p.groupUuid),
+          )
+          .toList();
+    }
     if (_intervalOnly) {
       list = list.where((p) => p.intervalEnabled).toList();
     }

@@ -165,6 +165,115 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const Divider(),
+          // ── Verwaltung ───────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(
+              l10n.sectionManagement,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.folder),
+            title: Text(l10n.placeGroups),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.pushNamed(context, '/place-groups'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.people),
+            title: Text(l10n.persons),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.pushNamed(context, '/persons'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.work_outline),
+            title: Text(l10n.activities),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.pushNamed(context, '/activities'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.storage),
+            title: Text(l10n.databaseDump),
+            subtitle: Text(l10n.databaseDumpSubtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.pushNamed(context, '/database-dump'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.public),
+            title: Text(l10n.syncSources),
+            subtitle: Text(l10n.syncSourcesSubtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.pushNamed(context, '/sync-sources'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.send),
+            title: Text(l10n.telegramConnections),
+            subtitle: Text(l10n.telegramConnectionsSubtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.pushNamed(context, '/telegram-connections'),
+          ),
+          const Divider(),
+          // ── Adresssuche ───────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(
+              l10n.sectionAddressSearch,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.flag_outlined),
+            title: Text(l10n.defaultCountry),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: _searchCountryCtrl,
+                  decoration: InputDecoration(
+                    hintText: l10n.defaultCountryHint,
+                    isDense: true,
+                  ),
+                  onChanged: (v) => _searchCountry = v,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  l10n.defaultCountrySubtitle,
+                  style: const TextStyle(fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          const Divider(),
+          // ── Planer ──────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(
+              l10n.sectionPlanner,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          ListTile(
+            title: Text(l10n.colorRange(_schedulerColorRange)),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Slider(
+                  value: _schedulerColorRange.toDouble(),
+                  min: 1,
+                  max: 90,
+                  divisions: 89,
+                  label: '$_schedulerColorRange',
+                  onChanged: (v) =>
+                      setState(() => _schedulerColorRange = v.round()),
+                ),
+                Text(
+                  l10n.colorRangeHint(_schedulerColorRange),
+                  style: const TextStyle(fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          const Divider(),
           // ── Tracking Settings ─────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -172,6 +281,87 @@ class _SettingsScreenState extends State<SettingsScreen> {
               l10n.sectionTracking,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
+          ),
+          SwitchListTile(
+            title: Text(l10n.autoCreatePlaces),
+            subtitle: Text(l10n.autoCreatePlacesSubtitle),
+            value: _autoCreatePlaces,
+            onChanged: (v) => setState(() => _autoCreatePlaces = v),
+          ),
+          if (_autoCreatePlaces)
+            ListTile(
+              title: Text(l10n.autoPlaceGroup),
+              trailing: DropdownButton<String?>(
+                value: _autoPlaceGroupUuid == null
+                    ? null
+                    : (_groups.any((g) => g.uuid == _autoPlaceGroupUuid)
+                          ? _autoPlaceGroupUuid
+                          : null),
+                hint: Text(l10n.none),
+                items: [
+                  DropdownMenuItem(value: null, child: Text(l10n.none)),
+                  ..._groups.map(
+                    (g) => DropdownMenuItem(value: g.uuid, child: Text(g.name)),
+                  ),
+                ],
+                onChanged: (v) => setState(() => _autoPlaceGroupUuid = v),
+              ),
+            ),
+          ListTile(
+            title: Text(l10n.defaultPlaceGroup),
+            subtitle: Text(l10n.defaultPlaceGroupSubtitle),
+            trailing: DropdownButton<String?>(
+              value: _defaultPlaceGroupUuid == null
+                  ? null
+                  : (_groups.any((g) => g.uuid == _defaultPlaceGroupUuid)
+                        ? _defaultPlaceGroupUuid
+                        : null),
+              hint: Text(l10n.none),
+              items: [
+                DropdownMenuItem(value: null, child: Text(l10n.none)),
+                ..._groups.map(
+                  (g) => DropdownMenuItem(value: g.uuid, child: Text(g.name)),
+                ),
+              ],
+              onChanged: (v) => setState(() => _defaultPlaceGroupUuid = v),
+            ),
+          ),
+          ListTile(
+            title: Text(l10n.shownGroups),
+            subtitle: _groups.isEmpty
+                ? Text(l10n.noGroupsAvailable)
+                : Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      FilterChip(
+                        label: Text(l10n.all),
+                        selected: _schedulerGroupIds.isEmpty,
+                        onSelected: (_) =>
+                            setState(() => _schedulerGroupIds.clear()),
+                      ),
+                      ..._groups.map(
+                        (g) => FilterChip(
+                          avatar: Icon(
+                            g.placeType.icon,
+                            size: 14,
+                            color: g.placeType.dotColor,
+                          ),
+                          label: Text(g.name),
+                          selected: _schedulerGroupIds.contains(g.uuid),
+                          onSelected: (selected) {
+                            setState(() {
+                              if (selected) {
+                                _schedulerGroupIds.add(g.uuid);
+                              } else {
+                                _schedulerGroupIds.remove(g.uuid);
+                              }
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
           ),
           ListTile(
             title: Text(l10n.gpsInterval(_gpsInterval)),
@@ -255,50 +445,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: (v) => setState(() => _defaultRadius = v),
             ),
           ),
-          SwitchListTile(
-            title: Text(l10n.autoCreatePlaces),
-            subtitle: Text(l10n.autoCreatePlacesSubtitle),
-            value: _autoCreatePlaces,
-            onChanged: (v) => setState(() => _autoCreatePlaces = v),
-          ),
-          if (_autoCreatePlaces)
-            ListTile(
-              title: Text(l10n.autoPlaceGroup),
-              trailing: DropdownButton<String?>(
-                value: _autoPlaceGroupUuid == null
-                    ? null
-                    : (_groups.any((g) => g.uuid == _autoPlaceGroupUuid)
-                          ? _autoPlaceGroupUuid
-                          : null),
-                hint: Text(l10n.none),
-                items: [
-                  DropdownMenuItem(value: null, child: Text(l10n.none)),
-                  ..._groups.map(
-                    (g) => DropdownMenuItem(value: g.uuid, child: Text(g.name)),
-                  ),
-                ],
-                onChanged: (v) => setState(() => _autoPlaceGroupUuid = v),
-              ),
-            ),
-          ListTile(
-            title: Text(l10n.defaultPlaceGroup),
-            subtitle: Text(l10n.defaultPlaceGroupSubtitle),
-            trailing: DropdownButton<String?>(
-              value: _defaultPlaceGroupUuid == null
-                  ? null
-                  : (_groups.any((g) => g.uuid == _defaultPlaceGroupUuid)
-                        ? _defaultPlaceGroupUuid
-                        : null),
-              hint: Text(l10n.none),
-              items: [
-                DropdownMenuItem(value: null, child: Text(l10n.none)),
-                ..._groups.map(
-                  (g) => DropdownMenuItem(value: g.uuid, child: Text(g.name)),
-                ),
-              ],
-              onChanged: (v) => setState(() => _defaultPlaceGroupUuid = v),
-            ),
-          ),
           const Divider(),
           // ── Kartendarstellung ─────────────────────────────────────────
           Padding(
@@ -354,152 +500,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
-          ),
-          const Divider(),
-          // ── Planer ──────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(
-              l10n.sectionPlanner,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          ListTile(
-            title: Text(l10n.colorRange(_schedulerColorRange)),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Slider(
-                  value: _schedulerColorRange.toDouble(),
-                  min: 1,
-                  max: 90,
-                  divisions: 89,
-                  label: '$_schedulerColorRange',
-                  onChanged: (v) =>
-                      setState(() => _schedulerColorRange = v.round()),
-                ),
-                Text(
-                  l10n.colorRangeHint(_schedulerColorRange),
-                  style: const TextStyle(fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-          ListTile(
-            title: Text(l10n.shownGroups),
-            subtitle: _groups.isEmpty
-                ? Text(l10n.noGroupsAvailable)
-                : Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    children: [
-                      FilterChip(
-                        label: Text(l10n.all),
-                        selected: _schedulerGroupIds.isEmpty,
-                        onSelected: (_) =>
-                            setState(() => _schedulerGroupIds.clear()),
-                      ),
-                      ..._groups.map(
-                        (g) => FilterChip(
-                          avatar: Icon(
-                            g.placeType.icon,
-                            size: 14,
-                            color: g.placeType.dotColor,
-                          ),
-                          label: Text(g.name),
-                          selected: _schedulerGroupIds.contains(g.uuid),
-                          onSelected: (selected) {
-                            setState(() {
-                              if (selected) {
-                                _schedulerGroupIds.add(g.uuid);
-                              } else {
-                                _schedulerGroupIds.remove(g.uuid);
-                              }
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
-          const Divider(),
-          // ── Adresssuche ───────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(
-              l10n.sectionAddressSearch,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.flag_outlined),
-            title: Text(l10n.defaultCountry),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: _searchCountryCtrl,
-                  decoration: InputDecoration(
-                    hintText: l10n.defaultCountryHint,
-                    isDense: true,
-                  ),
-                  onChanged: (v) => _searchCountry = v,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.defaultCountrySubtitle,
-                  style: const TextStyle(fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-          const Divider(),
-          // ── Verwaltung ───────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(
-              l10n.sectionManagement,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.folder),
-            title: Text(l10n.placeGroups),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, '/place-groups'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.people),
-            title: Text(l10n.persons),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, '/persons'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.work_outline),
-            title: Text(l10n.activities),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, '/activities'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.storage),
-            title: Text(l10n.databaseDump),
-            subtitle: Text(l10n.databaseDumpSubtitle),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, '/database-dump'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.public),
-            title: Text(l10n.syncSources),
-            subtitle: Text(l10n.syncSourcesSubtitle),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, '/sync-sources'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.send),
-            title: Text(l10n.telegramConnections),
-            subtitle: Text(l10n.telegramConnectionsSubtitle),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, '/telegram-connections'),
           ),
           const Divider(),
           // ── Berechtigungen ───────────────────────────────────────────
