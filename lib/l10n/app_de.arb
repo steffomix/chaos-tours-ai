@@ -1803,6 +1803,56 @@
   "@importWaiting": {
     "description": "Import waiting for shared file"
   },
+  "syncFromFileNow": "Zusammenführen",
+  "@syncFromFileNow": {
+    "description": "Merge / sync-from-file button label"
+  },
+  "syncFromFileTitle": "Datenbank zusammenführen?",
+  "@syncFromFileTitle": {
+    "description": "Merge database dialog title"
+  },
+  "syncFromFileContent": "Die empfangene Datenbank wird mit der aktuellen zusammengeführt. Neuere Einträge überschreiben ältere (Last-Write-Wins). Bestehende Daten bleiben erhalten.\n\nFortfahren?",
+  "@syncFromFileContent": {
+    "description": "Merge database dialog content"
+  },
+  "syncFromFileSuccess": "Datenbank zusammengeführt ({count} Einträge verarbeitet)",
+  "@syncFromFileSuccess": {
+    "description": "Merge success message",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "syncFromFileFailed": "Zusammenführen fehlgeschlagen: {error}",
+  "@syncFromFileFailed": {
+    "description": "Merge failed message",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "syncFromFileModeTitle": "Sync-Umfang wählen",
+  "@syncFromFileModeTitle": {
+    "description": "Sync mode selection dialog title"
+  },
+  "syncFromFileModeDescription": "Sollen alle Tabellen vollständig zusammengeführt werden, oder möchtest du einzelne Tabellen und Operationen auswählen?",
+  "@syncFromFileModeDescription": {
+    "description": "Sync mode selection dialog description"
+  },
+  "syncFromFileModeAll": "Alles zusammenführen",
+  "@syncFromFileModeAll": {
+    "description": "Sync all tables button"
+  },
+  "syncFromFileModeCustom": "Auswählen …",
+  "@syncFromFileModeCustom": {
+    "description": "Custom sync options button"
+  },
+  "placePhotos": "Fotos",
+  "@placePhotos": {
+    "description": "Place photos table label"
+  },
   "resetTitle": "Datenbank zurücksetzen",
   "@resetTitle": {
     "description": "Reset database section title"

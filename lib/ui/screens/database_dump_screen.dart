@@ -6,6 +6,9 @@ import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus, XFile;
 
 import '../../services/database_service.dart';
+import '../../models/sync_source.dart';
+
+enum _SyncMode { all, custom }
 
 class DatabaseDumpScreen extends StatefulWidget {
   const DatabaseDumpScreen({super.key});
@@ -21,6 +24,7 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
 
   bool _exporting = false;
   bool _importing = false;
+  bool _syncing = false;
   bool _resetting = false;
 
   // Last received shared file path
@@ -114,15 +118,225 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
       await DatabaseService.instance.importDatabaseFile(path);
       if (mounted) {
         setState(() => _pendingImportPath = null);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.importSuccess)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.importSuccess)));
       }
     } catch (e) {
       _showError(l10n.importFailed(e.toString()));
     } finally {
       setState(() => _importing = false);
     }
+  }
+
+  // ── Sync from file ────────────────────────────────────────────────────────
+
+  Future<void> _syncDatabase() async {
+    final path = _pendingImportPath;
+    if (path == null) return;
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+
+    // Step 1: Choose sync mode
+    final mode = await showDialog<_SyncMode>(
+      context: context,
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
+        return AlertDialog(
+          title: Text(l10n.syncFromFileModeTitle),
+          content: Text(l10n.syncFromFileModeDescription),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, _SyncMode.custom),
+              child: Text(l10n.syncFromFileModeCustom),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, _SyncMode.all),
+              child: Text(l10n.syncFromFileModeAll),
+            ),
+          ],
+        );
+      },
+    );
+    if (mode == null) return;
+
+    // Step 2: If custom, show per-table options
+    SyncSourceOptions? opts;
+    if (mode == _SyncMode.custom) {
+      opts = await _showSyncOptionsDialog();
+      if (opts == null) return;
+    }
+
+    // Step 3: Run sync
+    setState(() => _syncing = true);
+    try {
+      final count = await DatabaseService.instance.syncFromDatabaseFile(
+        path,
+        options: opts,
+      );
+      if (mounted) {
+        setState(() => _pendingImportPath = null);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.syncFromFileSuccess(count))),
+        );
+      }
+    } catch (e) {
+      _showError(l10n.syncFromFileFailed(e.toString()));
+    } finally {
+      setState(() => _syncing = false);
+    }
+  }
+
+  /// Shows the per-table sync options dialog. Returns null if cancelled.
+  /// Pre-selects all tables/operations enabled so the user only deselects.
+  Future<SyncSourceOptions?> _showSyncOptionsDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+
+    // Start with all tables and all operations enabled.
+    var opts = SyncSourceOptions(
+      tables: {
+        for (final t in SyncSourceOptions.allTables)
+          t: const SyncTableOptions(insert: true, update: true, delete: true),
+      },
+    );
+
+    final labels = {
+      'place_groups': l10n.placeGroups,
+      'saved_places': l10n.tabPlaces,
+      'persons': l10n.persons,
+      'activities': l10n.activities,
+      'stays': l10n.visitsTitle,
+      'stay_persons': l10n.stayPersons,
+      'stay_activities': l10n.stayActivities,
+      'aktivitaeten': l10n.sectionActivity,
+      'sync_sources': l10n.syncSources,
+      'place_experiences': l10n.placeExperiences,
+      'sync_source_experiences': l10n.sourceExperiences,
+      'place_photos': l10n.placePhotos,
+    };
+
+    return showDialog<SyncSourceOptions>(
+      context: context,
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
+        return StatefulBuilder(
+          builder: (ctx, setDlgState) => AlertDialog(
+            title: Text(l10n.syncOptionsTitle),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.syncOptionsWarning,
+                    style: const TextStyle(fontSize: 12, color: Colors.orange),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const SizedBox(width: 130),
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            l10n.insert,
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            l10n.edit,
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            l10n.delete,
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: SyncSourceOptions.allTables.map((table) {
+                          final tableOpts = opts.forTable(table);
+                          return Row(
+                            children: [
+                              SizedBox(
+                                width: 130,
+                                child: Text(
+                                  labels[table] ?? table,
+                                  style: const TextStyle(fontSize: 12),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Expanded(
+                                child: Checkbox(
+                                  value: tableOpts.insert,
+                                  onChanged: (v) => setDlgState(() {
+                                    opts = opts.copyWithTable(
+                                      table,
+                                      tableOpts.copyWith(insert: v ?? false),
+                                    );
+                                  }),
+                                ),
+                              ),
+                              Expanded(
+                                child: Checkbox(
+                                  value: tableOpts.update,
+                                  onChanged: (v) => setDlgState(() {
+                                    opts = opts.copyWithTable(
+                                      table,
+                                      tableOpts.copyWith(update: v ?? false),
+                                    );
+                                  }),
+                                ),
+                              ),
+                              Expanded(
+                                child: Checkbox(
+                                  value: tableOpts.delete,
+                                  onChanged: (v) => setDlgState(() {
+                                    opts = opts.copyWithTable(
+                                      table,
+                                      tableOpts.copyWith(delete: v ?? false),
+                                    );
+                                  }),
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(l10n.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, opts),
+                child: Text(l10n.syncFromFileNow),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   // ── Reset ─────────────────────────────────────────────────────────────────
@@ -141,10 +355,7 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(
-              l10n.reset,
-              style: const TextStyle(color: Colors.red),
-            ),
+            child: Text(l10n.reset, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -155,9 +366,9 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
     try {
       await DatabaseService.instance.resetAllData();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.resetSuccess)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.resetSuccess)));
       }
     } catch (e) {
       _showError(l10n.resetFailed(e.toString()));
@@ -185,7 +396,10 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
           controller: _tabCtrl,
           tabs: [
             Tab(icon: const Icon(Icons.upload_file), text: l10n.tabExport),
-            Tab(icon: const Icon(Icons.download_for_offline), text: l10n.tabImport),
+            Tab(
+              icon: const Icon(Icons.download_for_offline),
+              text: l10n.tabImport,
+            ),
             Tab(icon: const Icon(Icons.delete_forever), text: l10n.tabReset),
           ],
         ),
@@ -216,10 +430,7 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
-          Text(
-            l10n.exportDescription,
-            textAlign: TextAlign.center,
-          ),
+          Text(l10n.exportDescription, textAlign: TextAlign.center),
           const Spacer(),
           FilledButton.icon(
             onPressed: _exporting ? null : _exportDatabase,
@@ -263,10 +474,7 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
           ),
           const SizedBox(height: 12),
           if (!hasFile) ...[
-            Text(
-              l10n.importHowTo,
-              textAlign: TextAlign.center,
-            ),
+            Text(l10n.importHowTo, textAlign: TextAlign.center),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
@@ -331,12 +539,30 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
             ),
           ],
           const Spacer(),
-          if (hasFile)
+          if (hasFile) ...[
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.teal.shade700,
+              ),
+              onPressed: (_syncing || _importing) ? null : _syncDatabase,
+              icon: _syncing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.merge_type),
+              label: Text(l10n.syncFromFileNow),
+            ),
+            const SizedBox(height: 8),
             FilledButton.icon(
               style: FilledButton.styleFrom(
                 backgroundColor: Colors.orange.shade700,
               ),
-              onPressed: _importing ? null : _importDatabase,
+              onPressed: (_importing || _syncing) ? null : _importDatabase,
               icon: _importing
                   ? const SizedBox(
                       width: 18,
@@ -348,8 +574,8 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
                     )
                   : const Icon(Icons.download_for_offline),
               label: Text(l10n.importNow),
-            )
-          else
+            ),
+          ] else
             OutlinedButton.icon(
               onPressed: null,
               icon: const Icon(Icons.hourglass_empty),
@@ -360,6 +586,7 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
       ),
     );
   }
+
   Widget _buildResetTab() {
     final l10n = AppLocalizations.of(context)!;
     return Padding(
@@ -376,10 +603,7 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
-          Text(
-            l10n.resetDescription,
-            textAlign: TextAlign.center,
-          ),
+          Text(l10n.resetDescription, textAlign: TextAlign.center),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(12),

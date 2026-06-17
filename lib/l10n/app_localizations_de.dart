@@ -1286,6 +1286,42 @@ class AppLocalizationsDe extends AppLocalizations {
   String get importWaiting => 'Warte auf geteilte Datei …';
 
   @override
+  String get syncFromFileNow => 'Zusammenführen';
+
+  @override
+  String get syncFromFileTitle => 'Datenbank zusammenführen?';
+
+  @override
+  String get syncFromFileContent =>
+      'Die empfangene Datenbank wird mit der aktuellen zusammengeführt. Neuere Einträge überschreiben ältere (Last-Write-Wins). Bestehende Daten bleiben erhalten.\n\nFortfahren?';
+
+  @override
+  String syncFromFileSuccess(int count) {
+    return 'Datenbank zusammengeführt ($count Einträge verarbeitet)';
+  }
+
+  @override
+  String syncFromFileFailed(String error) {
+    return 'Zusammenführen fehlgeschlagen: $error';
+  }
+
+  @override
+  String get syncFromFileModeTitle => 'Sync-Umfang wählen';
+
+  @override
+  String get syncFromFileModeDescription =>
+      'Sollen alle Tabellen vollständig zusammengeführt werden, oder möchtest du einzelne Tabellen und Operationen auswählen?';
+
+  @override
+  String get syncFromFileModeAll => 'Alles zusammenführen';
+
+  @override
+  String get syncFromFileModeCustom => 'Auswählen …';
+
+  @override
+  String get placePhotos => 'Fotos';
+
+  @override
   String get resetTitle => 'Datenbank zurücksetzen';
 
   @override

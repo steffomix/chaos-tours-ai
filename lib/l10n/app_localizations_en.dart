@@ -1282,6 +1282,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importWaiting => 'Waiting for shared file…';
 
   @override
+  String get syncFromFileNow => 'Merge';
+
+  @override
+  String get syncFromFileTitle => 'Merge databases?';
+
+  @override
+  String get syncFromFileContent =>
+      'The received database will be merged into the current one. Newer entries overwrite older ones (last-write-wins). Existing data is preserved.\n\nProceed?';
+
+  @override
+  String syncFromFileSuccess(int count) {
+    return 'Databases merged ($count entries processed)';
+  }
+
+  @override
+  String syncFromFileFailed(String error) {
+    return 'Merge failed: $error';
+  }
+
+  @override
+  String get syncFromFileModeTitle => 'Choose sync scope';
+
+  @override
+  String get syncFromFileModeDescription =>
+      'Do you want to merge all tables completely, or select individual tables and operations?';
+
+  @override
+  String get syncFromFileModeAll => 'Merge everything';
+
+  @override
+  String get syncFromFileModeCustom => 'Customize…';
+
+  @override
+  String get placePhotos => 'Photos';
+
+  @override
   String get resetTitle => 'Reset database';
 
   @override

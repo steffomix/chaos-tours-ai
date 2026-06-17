@@ -769,6 +769,56 @@
   "importOverwriteWarning": "All existing data will be overwritten.",
   "importNow": "Import now",
   "importWaiting": "Waiting for shared file…",
+  "syncFromFileNow": "Merge",
+  "@syncFromFileNow": {
+    "description": "Merge / sync-from-file button label"
+  },
+  "syncFromFileTitle": "Merge databases?",
+  "@syncFromFileTitle": {
+    "description": "Merge database dialog title"
+  },
+  "syncFromFileContent": "The received database will be merged into the current one. Newer entries overwrite older ones (last-write-wins). Existing data is preserved.\n\nProceed?",
+  "@syncFromFileContent": {
+    "description": "Merge database dialog content"
+  },
+  "syncFromFileSuccess": "Databases merged ({count} entries processed)",
+  "@syncFromFileSuccess": {
+    "description": "Merge success message",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "syncFromFileFailed": "Merge failed: {error}",
+  "@syncFromFileFailed": {
+    "description": "Merge failed message",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "syncFromFileModeTitle": "Choose sync scope",
+  "@syncFromFileModeTitle": {
+    "description": "Sync mode selection dialog title"
+  },
+  "syncFromFileModeDescription": "Do you want to merge all tables completely, or select individual tables and operations?",
+  "@syncFromFileModeDescription": {
+    "description": "Sync mode selection dialog description"
+  },
+  "syncFromFileModeAll": "Merge everything",
+  "@syncFromFileModeAll": {
+    "description": "Sync all tables button"
+  },
+  "syncFromFileModeCustom": "Customize…",
+  "@syncFromFileModeCustom": {
+    "description": "Custom sync options button"
+  },
+  "placePhotos": "Photos",
+  "@placePhotos": {
+    "description": "Place photos table label"
+  },
   "resetTitle": "Reset database",
   "resetDescription": "All data will be permanently deleted. The database structure will be preserved.",
   "resetIrreversibleWarning": "This action cannot be undone.",

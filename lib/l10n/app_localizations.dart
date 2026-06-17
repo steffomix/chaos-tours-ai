@@ -2378,6 +2378,66 @@ abstract class AppLocalizations {
   /// **'Warte auf geteilte Datei …'**
   String get importWaiting;
 
+  /// Merge / sync-from-file button label
+  ///
+  /// In de, this message translates to:
+  /// **'Zusammenführen'**
+  String get syncFromFileNow;
+
+  /// Merge database dialog title
+  ///
+  /// In de, this message translates to:
+  /// **'Datenbank zusammenführen?'**
+  String get syncFromFileTitle;
+
+  /// Merge database dialog content
+  ///
+  /// In de, this message translates to:
+  /// **'Die empfangene Datenbank wird mit der aktuellen zusammengeführt. Neuere Einträge überschreiben ältere (Last-Write-Wins). Bestehende Daten bleiben erhalten.\n\nFortfahren?'**
+  String get syncFromFileContent;
+
+  /// Merge success message
+  ///
+  /// In de, this message translates to:
+  /// **'Datenbank zusammengeführt ({count} Einträge verarbeitet)'**
+  String syncFromFileSuccess(int count);
+
+  /// Merge failed message
+  ///
+  /// In de, this message translates to:
+  /// **'Zusammenführen fehlgeschlagen: {error}'**
+  String syncFromFileFailed(String error);
+
+  /// Sync mode selection dialog title
+  ///
+  /// In de, this message translates to:
+  /// **'Sync-Umfang wählen'**
+  String get syncFromFileModeTitle;
+
+  /// Sync mode selection dialog description
+  ///
+  /// In de, this message translates to:
+  /// **'Sollen alle Tabellen vollständig zusammengeführt werden, oder möchtest du einzelne Tabellen und Operationen auswählen?'**
+  String get syncFromFileModeDescription;
+
+  /// Sync all tables button
+  ///
+  /// In de, this message translates to:
+  /// **'Alles zusammenführen'**
+  String get syncFromFileModeAll;
+
+  /// Custom sync options button
+  ///
+  /// In de, this message translates to:
+  /// **'Auswählen …'**
+  String get syncFromFileModeCustom;
+
+  /// Place photos table label
+  ///
+  /// In de, this message translates to:
+  /// **'Fotos'**
+  String get placePhotos;
+
   /// Reset database section title
   ///
   /// In de, this message translates to:

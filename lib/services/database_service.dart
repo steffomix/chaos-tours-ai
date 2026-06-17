@@ -835,6 +835,55 @@ class DatabaseService {
     _db = await _openDatabase();
   }
 
+  /// Opens [sourcePath] as a separate read-only SQLite database and merges all
+  /// rows from every sync table into the local database using last-write-wins
+  /// semantics (identical to the server sync pull).
+  ///
+  /// When [options] is null every table is merged with full insert/update/delete
+  /// permissions. Pass a [SyncSourceOptions] to restrict which tables and
+  /// operations are applied.
+  ///
+  /// Returns the total number of rows processed.
+  Future<int> syncFromDatabaseFile(
+    String sourcePath, {
+    SyncSourceOptions? options,
+  }) async {
+    final sourceDb = await openDatabase(sourcePath, readOnly: true);
+    int count = 0;
+    try {
+      for (final table in SyncSourceOptions.allTables) {
+        final tableOpts = options?.forTable(table);
+        // If options are specified and nothing is enabled for this table, skip.
+        if (tableOpts != null && !tableOpts.anyEnabled) continue;
+
+        final tableCheck = await sourceDb.rawQuery(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+          [table],
+        );
+        if (tableCheck.isEmpty) continue;
+        final rows = await sourceDb.query(table);
+        for (final row in rows) {
+          final syncOpts = tableOpts == null
+              ? SyncOptions.all
+              : SyncOptions(
+                  allowInsert: tableOpts.insert,
+                  allowEdit: tableOpts.update,
+                  allowDelete: tableOpts.delete,
+                );
+          await upsertByUuid(
+            table,
+            Map<String, dynamic>.from(row),
+            options: syncOpts,
+          );
+          count++;
+        }
+      }
+    } finally {
+      await sourceDb.close();
+    }
+    return count;
+  }
+
   Future<void> resetAllData() async {
     final db = await database;
     await db.transaction((txn) async {
