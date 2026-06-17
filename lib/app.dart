@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 
 import 'ui/screens/activities_screen.dart';

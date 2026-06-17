@@ -22,7 +22,8 @@ class ExperienceFilterState {
     this.maxDistanceKm = 100.0,
   });
 
-  bool get isActive => requireExperiences || minAvgRating > -9.0;
+  bool get isActive =>
+      requireExperiences || minAvgRating != 0.0 || distanceEnabled;
 
   ExperienceFilterState copyWith({
     bool? requireExperiences,

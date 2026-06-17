@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../models/saved_place.dart';

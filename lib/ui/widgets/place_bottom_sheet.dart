@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart'
     as shared_preferences;
 import 'package:url_launcher/url_launcher.dart';
@@ -1141,6 +1142,78 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               },
             ),
             const SizedBox(height: 8),
+            // ── Besuchs-Intervall ──────────────────────────────────────
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Besuchs-Intervall'),
+              subtitle: const Text(
+                'Regelmäßige Erinnerung, diesen Ort zu besuchen',
+              ),
+              value: _intervalEnabled,
+              onChanged: (v) => setState(() => _intervalEnabled = v),
+            ),
+            if (_intervalEnabled) ...[
+              const SizedBox(height: 4),
+              TextFormField(
+                controller: _intervalDaysCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Intervall (Tage)',
+                  hintText: 'z. B. 14',
+                  border: OutlineInputBorder(),
+                  suffixText: 'Tage',
+                ),
+                onChanged: (v) {},
+              ),
+            ],
+            const SizedBox(height: 12),
+            // ── Gruppe ─────────────────────────────────────────────────
+            DropdownButtonFormField<String?>(
+              initialValue: _groupUuid == null
+                  ? null
+                  : (_groups.any((g) => g.uuid == _groupUuid)
+                        ? _groupUuid
+                        : null),
+              decoration: const InputDecoration(
+                labelText: 'Gruppe',
+                border: OutlineInputBorder(),
+              ),
+              items: [
+                const DropdownMenuItem(
+                  value: null,
+                  child: Text('Keine Gruppe'),
+                ),
+                ..._groups.map(
+                  (g) => DropdownMenuItem(
+                    value: g.uuid,
+                    child: Row(
+                      children: [
+                        Icon(
+                          g.placeType.icon,
+                          size: 16,
+                          color: g.placeType.dotColor,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(g.name),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+              onChanged: (v) => setState(() => _groupUuid = v),
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.folder),
+              title: Text("Ortsgruppen verwalten"),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.pushNamed(context, '/place-groups').then((_) {
+                  if (mounted) _loadGroups();
+                });
+              },
+            ),
+            const SizedBox(height: 12),
             // ── Survival-Erfahrungen ─────────────────────────────────────
             ExpansionTile(
               tilePadding: EdgeInsets.zero,
@@ -1152,12 +1225,26 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               children: [_buildExperiencesSection()],
             ),
             const SizedBox(height: 12),
+            // ── Fotos ──────────────────────────────────────────────────
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Fotos'),
+              children: [
+                PlacePhotosSection(
+                  placeUuid: widget.place.uuid,
+                  deviceId: widget.place.deviceId,
+                  completedStays: _completedStays,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
             // ── HR Statistik ─────────────────────────────────────────────────
             Row(
               children: <Widget>[
                 Expanded(child: Divider()),
                 Text(
-                  "Besuche, Intervall & Statistik",
+                  "Informationen & Statistik",
                   style: TextStyle(color: Colors.grey),
                 ),
                 Expanded(child: Divider()),
@@ -1265,31 +1352,6 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               ),
             ],
             const SizedBox(height: 4),
-            // ── Besuchs-Intervall ──────────────────────────────────────
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Besuchs-Intervall'),
-              subtitle: const Text(
-                'Regelmäßige Erinnerung, diesen Ort zu besuchen',
-              ),
-              value: _intervalEnabled,
-              onChanged: (v) => setState(() => _intervalEnabled = v),
-            ),
-            if (_intervalEnabled) ...[
-              const SizedBox(height: 4),
-              TextFormField(
-                controller: _intervalDaysCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Intervall (Tage)',
-                  hintText: 'z. B. 14',
-                  border: OutlineInputBorder(),
-                  suffixText: 'Tage',
-                ),
-                onChanged: (v) {},
-              ),
-            ],
-            const SizedBox(height: 12),
             // ── HR GPS Einstellungen ─────────────────────────────────────────────────
             Row(
               children: <Widget>[
@@ -1342,18 +1404,6 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               label: const Text('Position auf Karte ändern'),
             ),
             const SizedBox(height: 12),
-            // ── HR System ─────────────────────────────────────────────────
-            Row(
-              children: <Widget>[
-                Expanded(child: Divider()),
-                Text(
-                  "Systemeinstellungen",
-                  style: TextStyle(color: Colors.grey),
-                ),
-                Expanded(child: Divider()),
-              ],
-            ),
-            const SizedBox(height: 12),
             Text('Radius: ${_radius.toStringAsFixed(0)} m'),
             Slider(
               value: _radius,
@@ -1362,56 +1412,6 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               divisions: 49,
               label: '${_radius.toStringAsFixed(0)} m',
               onChanged: (v) => setState(() => _radius = v),
-            ),
-            const SizedBox(height: 8),
-            // ── Gruppe ─────────────────────────────────────────────────
-            DropdownButtonFormField<String?>(
-              initialValue: _groupUuid == null
-                  ? null
-                  : (_groups.any((g) => g.uuid == _groupUuid)
-                        ? _groupUuid
-                        : null),
-              decoration: const InputDecoration(
-                labelText: 'Gruppe',
-                border: OutlineInputBorder(),
-              ),
-              items: [
-                const DropdownMenuItem(
-                  value: null,
-                  child: Text('Keine Gruppe'),
-                ),
-                ..._groups.map(
-                  (g) => DropdownMenuItem(
-                    value: g.uuid,
-                    child: Row(
-                      children: [
-                        Icon(
-                          g.placeType.icon,
-                          size: 16,
-                          color: g.placeType.dotColor,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(g.name),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-              onChanged: (v) => setState(() => _groupUuid = v),
-            ),
-            const SizedBox(height: 12),
-            // ── Fotos ──────────────────────────────────────────────────
-            ExpansionTile(
-              tilePadding: EdgeInsets.zero,
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Fotos'),
-              children: [
-                PlacePhotosSection(
-                  placeUuid: widget.place.uuid,
-                  deviceId: widget.place.deviceId,
-                  completedStays: _completedStays,
-                ),
-              ],
             ),
             const SizedBox(height: 12),
             // ── Aktionen ───────────────────────────────────────────────
