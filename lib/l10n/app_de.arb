@@ -1855,5 +1855,130 @@
         "type": "String"
       }
     }
+  },
+  "newPlaceTitle": "Neuer Ort",
+  "@newPlaceTitle": {
+    "description": "New place dialog title"
+  },
+  "placeEditTitle": "Ort bearbeiten",
+  "@placeEditTitle": {
+    "description": "Edit place bottom sheet title"
+  },
+  "placeOriginAuto": "Automatisch erstellt",
+  "@placeOriginAuto": {
+    "description": "Place origin: automatically created"
+  },
+  "placeOriginImported": "Importiert",
+  "@placeOriginImported": {
+    "description": "Place origin: imported"
+  },
+  "managePlaceGroups": "Ortsgruppen verwalten",
+  "@managePlaceGroups": {
+    "description": "Manage place groups list tile label"
+  },
+  "visitIntervalSubtitle": "Regelmäßige Erinnerung, diesen Ort zu besuchen",
+  "@visitIntervalSubtitle": {
+    "description": "Visit interval switch subtitle"
+  },
+  "infoAndStats": "Informationen & Statistik",
+  "@infoAndStats": {
+    "description": "Info and statistics section divider label"
+  },
+  "neverVisited": "Noch nicht besucht",
+  "@neverVisited": {
+    "description": "Place never visited label"
+  },
+  "lastVisitedAt": "· zuletzt {date}",
+  "@lastVisitedAt": {
+    "description": "Last visited at label",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "placeCreatedAt": "Erstellt: {date}",
+  "@placeCreatedAt": {
+    "description": "Place created at label",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "showVisits": "Besuche anzeigen",
+  "@showVisits": {
+    "description": "Show visits button label"
+  },
+  "showVisitsCount": "Besuche anzeigen ({count})",
+  "@showVisitsCount": {
+    "description": "Show visits button label with count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "copyReportHint": "Kopiert einen vollständigen Bericht des Ortes einschließlich aller Besuche und Survival-Erfahrungen im Markdown Format in die Zwischenablage.",
+  "@copyReportHint": {
+    "description": "Copy report hint text"
+  },
+  "gpsSettings": "GPS Einstellungen",
+  "@gpsSettings": {
+    "description": "GPS settings section divider label"
+  },
+  "telegramSent": "Bericht an Telegram gesendet",
+  "@telegramSent": {
+    "description": "Report sent to Telegram snackbar"
+  },
+  "telegramError": "Fehler: {error}",
+  "@telegramError": {
+    "description": "Telegram error message",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "createVisitTitle": "Besuch erstellen",
+  "@createVisitTitle": {
+    "description": "Create visit sheet title"
+  },
+  "noVisitsRecorded": "Noch keine Besuche aufgezeichnet.",
+  "@noVisitsRecorded": {
+    "description": "No visits recorded yet label"
+  },
+  "statFirstVisit": "Erster Besuch",
+  "@statFirstVisit": {
+    "description": "Statistics: first visit label"
+  },
+  "statLastVisit": "Letzter Besuch",
+  "@statLastVisit": {
+    "description": "Statistics: last visit label"
+  },
+  "statShortest": "Kürzester Besuch",
+  "@statShortest": {
+    "description": "Statistics: shortest visit label"
+  },
+  "statLongest": "Längster Besuch",
+  "@statLongest": {
+    "description": "Statistics: longest visit label"
+  },
+  "statAverage": "Durchschnitt",
+  "@statAverage": {
+    "description": "Statistics: average label"
+  },
+  "statMedian": "Median",
+  "@statMedian": {
+    "description": "Statistics: median label"
+  },
+  "openLabel": "{label} öffnen",
+  "@openLabel": {
+    "description": "Open {label} tooltip",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
   }
 }

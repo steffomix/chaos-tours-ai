@@ -118,6 +118,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlg) {
+          final ctxL10n = AppLocalizations.of(ctx)!;
           Widget ratingRow(
             String label,
             int value,
@@ -163,8 +164,8 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
           return AlertDialog(
             title: Text(
               existing == null
-                  ? 'Erfahrung hinzufügen'
-                  : 'Erfahrung bearbeiten',
+                  ? ctxL10n.addOrEditExperienceTitle
+                  : ctxL10n.editExperienceTitle,
             ),
             content: SingleChildScrollView(
               child: Column(
@@ -173,45 +174,41 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                 children: [
                   TextField(
                     controller: textCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Bericht (optional)',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: ctxL10n.reportOptional,
+                      border: const OutlineInputBorder(),
                     ),
                     maxLines: 4,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Bewertungen (−9 bis +9):',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                  Text(
+                    ctxL10n.ratingsLabel,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 4),
                   ratingRow(
-                    'Gefährlich ↔ Freundlich',
+                    ctxL10n.ratingDangerFriendly,
                     rDangerFriendly,
                     (v) => rDangerFriendly = v,
                   ),
                   ratingRow(
-                    'Betrügerisch ↔ Zuverlässig',
+                    ctxL10n.ratingFraudReliable,
                     rFraudReliable,
                     (v) => rFraudReliable = v,
                   ),
                   ratingRow(
-                    'Abweisend ↔ Bietet Unterkunft',
+                    ctxL10n.ratingDismissiveAccommodation,
                     rDismissiveAccommodation,
                     (v) => rDismissiveAccommodation = v,
                   ),
+                  ratingRow(ctxL10n.ratingFood, rFood, (v) => rFood = v),
                   ratingRow(
-                    'Fordert ↔ Bietet Verpflegung',
-                    rFood,
-                    (v) => rFood = v,
-                  ),
-                  ratingRow(
-                    'Fordert ↔ Bietet Equipment',
+                    ctxL10n.ratingEquipment,
                     rEquipment,
                     (v) => rEquipment = v,
                   ),
                   ratingRow(
-                    'Fordert ↔ Bietet Transport',
+                    ctxL10n.ratingTransport,
                     rTransport,
                     (v) => rTransport = v,
                   ),
@@ -221,11 +218,11 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Abbrechen'),
+                child: Text(ctxL10n.cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Speichern'),
+                child: Text(ctxL10n.save),
               ),
             ],
           );
@@ -270,20 +267,23 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
   Future<void> _deleteExperience(PlaceExperience exp) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Erfahrung löschen?'),
-        content: const Text('Dieser Eintrag wird unwiderruflich gelöscht.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Abbrechen'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Löschen'),
-          ),
-        ],
-      ),
+      builder: (_) {
+        final ctxL10n = AppLocalizations.of(context)!;
+        return AlertDialog(
+          title: Text(ctxL10n.experienceDeleteTitle),
+          content: Text(ctxL10n.experienceDeleteContent),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(ctxL10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(ctxL10n.delete),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed != true) return;
     final devId = await _getDeviceId();
@@ -305,11 +305,11 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (_experiences.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
-              'Noch keine Erfahrungsberichte vorhanden.',
-              style: TextStyle(fontSize: 13),
+              AppLocalizations.of(context)!.noExperiencesYet,
+              style: const TextStyle(fontSize: 13),
             ),
           ),
         ..._experiences.map((exp) {
@@ -338,7 +338,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.edit, size: 18),
-                        tooltip: 'Bearbeiten',
+                        tooltip: AppLocalizations.of(context)!.edit,
                         visualDensity: VisualDensity.compact,
                         onPressed: () => _addOrEditExperience(exp),
                       ),
@@ -348,7 +348,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                           size: 18,
                           color: Colors.red,
                         ),
-                        tooltip: 'Löschen',
+                        tooltip: AppLocalizations.of(context)!.delete,
                         visualDensity: VisualDensity.compact,
                         onPressed: () => _deleteExperience(exp),
                       ),
@@ -381,7 +381,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               ? null
               : () => _addOrEditExperience(),
           icon: const Icon(Icons.add),
-          label: const Text('Erfahrung hinzufügen'),
+          label: Text(AppLocalizations.of(context)!.addOrEditExperienceTitle),
         ),
       ],
     );
@@ -500,7 +500,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Besuch erstellen',
+                    AppLocalizations.of(ctx)!.createVisitTitle,
                     style: Theme.of(ctx).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 4),
@@ -514,7 +514,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.play_circle_outline),
-                    title: const Text('Beginn'),
+                    title: Text(AppLocalizations.of(ctx)!.begin),
                     subtitle: Text(fmtDt(startDt)),
                     trailing: const Icon(Icons.edit, size: 18),
                     onTap: () async {
@@ -525,7 +525,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.stop_circle_outlined),
-                    title: const Text('Ende'),
+                    title: Text(AppLocalizations.of(ctx)!.end),
                     subtitle: Text(fmtDt(endDt)),
                     trailing: const Icon(Icons.edit, size: 18),
                     onTap: () async {
@@ -536,7 +536,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                   const SizedBox(height: 16),
                   FilledButton.icon(
                     icon: const Icon(Icons.check),
-                    label: const Text('Besuch speichern'),
+                    label: Text(AppLocalizations.of(ctx)!.saveVisit),
                     onPressed: () async {
                       final stay = Stay(
                         placeUuid: widget.place.uuid,
@@ -584,20 +584,26 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
   Future<void> _delete() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Ort löschen?'),
-        content: Text('„${widget.place.name}" wirklich löschen?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Löschen', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+      builder: (ctx) {
+        final ctxL10n = AppLocalizations.of(ctx)!;
+        return AlertDialog(
+          title: Text(ctxL10n.placeDeleteTitle),
+          content: Text(ctxL10n.placeDeleteContent(widget.place.name)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(ctxL10n.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(
+                ctxL10n.delete,
+                style: const TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed != true) return;
     await DatabaseService.instance.deletePlace(widget.place.uuid);
@@ -645,9 +651,9 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     final text =
         '${widget.place.lat.toStringAsFixed(6)}, ${widget.place.lng.toStringAsFixed(6)}';
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('GPS-Koordinaten kopiert')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.gpsCopied)),
+    );
   }
 
   Future<void> _repositionPlace() async {
@@ -825,7 +831,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     await Clipboard.setData(ClipboardData(text: buf.toString()));
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bericht in Zwischenablage kopiert')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.reportCopied)),
       );
     }
   }
@@ -898,20 +904,23 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     // Show confirmation dialog before sending
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('An Telegram senden?'),
-        content: Text('Bericht für „${place.name}" an „${conn.name}" senden?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Senden'),
-          ),
-        ],
-      ),
+      builder: (ctx) {
+        final ctxL10n = AppLocalizations.of(ctx)!;
+        return AlertDialog(
+          title: Text(ctxL10n.telegramSendTitle),
+          content: Text(ctxL10n.telegramSendContent(place.name, conn.name)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(ctxL10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(ctxL10n.send),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed != true || !mounted) return;
 
@@ -921,12 +930,13 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     );
 
     if (mounted) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             result.success
-                ? 'Bericht an Telegram gesendet'
-                : 'Fehler: ${result.errorMessage}',
+                ? l10n.telegramSent
+                : l10n.telegramError(result.errorMessage ?? ''),
           ),
           backgroundColor: result.success ? null : Colors.red,
         ),
@@ -942,9 +952,9 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
       );
     }
     if (_completedStays.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.only(bottom: 8),
-        child: Text('Noch keine Besuche aufgezeichnet.'),
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(AppLocalizations.of(context)!.noVisitsRecorded),
       );
     }
 
@@ -969,17 +979,35 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _statRow('Erster Besuch', fmtDt(first.startTime)),
-          _statRow('Letzter Besuch', fmtDt(last.startTime)),
-          _statRow('Kürzester Besuch', _fmtDuration(shortest)),
-          _statRow('Längster Besuch', _fmtDuration(longest)),
-          _statRow('Durchschnitt', _fmtDuration(avgDuration)),
-          _statRow('Median', _fmtDuration(median)),
+          _statRow(
+            AppLocalizations.of(context)!.statFirstVisit,
+            fmtDt(first.startTime),
+          ),
+          _statRow(
+            AppLocalizations.of(context)!.statLastVisit,
+            fmtDt(last.startTime),
+          ),
+          _statRow(
+            AppLocalizations.of(context)!.statShortest,
+            _fmtDuration(shortest),
+          ),
+          _statRow(
+            AppLocalizations.of(context)!.statLongest,
+            _fmtDuration(longest),
+          ),
+          _statRow(
+            AppLocalizations.of(context)!.statAverage,
+            _fmtDuration(avgDuration),
+          ),
+          _statRow(
+            AppLocalizations.of(context)!.statMedian,
+            _fmtDuration(median),
+          ),
           if (_distinctPersonNames.isNotEmpty) ...[
             const SizedBox(height: 4),
-            const Text(
-              'Personen:',
-              style: TextStyle(fontWeight: FontWeight.w500),
+            Text(
+              AppLocalizations.of(context)!.persons,
+              style: const TextStyle(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 4),
             Wrap(
@@ -1045,14 +1073,14 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Ort bearbeiten',
+                    AppLocalizations.of(context)!.placeEditTitle,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
                 Icon(Icons.arrow_right_alt),
                 IconButton(
                   icon: const Icon(Icons.map_outlined),
-                  tooltip: 'In Google Maps öffnen',
+                  tooltip: AppLocalizations.of(context)!.openInGoogleMaps,
                   onPressed: _openInMaps,
                 ),
               ],
@@ -1071,8 +1099,8 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                     ),
                     label: Text(
                       widget.place.originType == PlaceOriginType.auto
-                          ? 'Automatisch erstellt'
-                          : 'Importiert',
+                          ? AppLocalizations.of(context)!.placeOriginAuto
+                          : AppLocalizations.of(context)!.placeOriginImported,
                       style: const TextStyle(fontSize: 11),
                     ),
                     padding: EdgeInsets.zero,
@@ -1084,18 +1112,18 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
             // ── Name ───────────────────────────────────────────────────
             TextField(
               controller: _nameCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.name,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
             // ── Notiz ──────────────────────────────────────────────────
             TextField(
               controller: _notesCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Notiz',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.noteName,
+                border: const OutlineInputBorder(),
               ),
               maxLines: 3,
             ),
@@ -1103,7 +1131,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
             // ── Website / Email / Telefon ──────────────────────────────
             _ContactField(
               controller: _websiteCtrl,
-              labelText: 'Website',
+              labelText: AppLocalizations.of(context)!.website,
               icon: Icons.language,
               keyboardType: TextInputType.url,
               onLaunch: () async {
@@ -1118,7 +1146,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
             const SizedBox(height: 8),
             _ContactField(
               controller: _emailCtrl,
-              labelText: 'E-Mail',
+              labelText: AppLocalizations.of(context)!.email,
               icon: Icons.email_outlined,
               keyboardType: TextInputType.emailAddress,
               onLaunch: () async {
@@ -1131,7 +1159,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
             const SizedBox(height: 8),
             _ContactField(
               controller: _phoneCtrl,
-              labelText: 'Telefon',
+              labelText: AppLocalizations.of(context)!.phone,
               icon: Icons.phone_outlined,
               keyboardType: TextInputType.phone,
               onLaunch: () async {
@@ -1145,9 +1173,9 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
             // ── Besuchs-Intervall ──────────────────────────────────────
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Besuchs-Intervall'),
-              subtitle: const Text(
-                'Regelmäßige Erinnerung, diesen Ort zu besuchen',
+              title: Text(AppLocalizations.of(context)!.visitInterval),
+              subtitle: Text(
+                AppLocalizations.of(context)!.visitIntervalSubtitle,
               ),
               value: _intervalEnabled,
               onChanged: (v) => setState(() => _intervalEnabled = v),
@@ -1157,11 +1185,11 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               TextFormField(
                 controller: _intervalDaysCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Intervall (Tage)',
-                  hintText: 'z. B. 14',
-                  border: OutlineInputBorder(),
-                  suffixText: 'Tage',
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.intervalDaysLabel,
+                  hintText: AppLocalizations.of(context)!.intervalDaysHint,
+                  border: const OutlineInputBorder(),
+                  suffixText: AppLocalizations.of(context)!.intervalDaysSuffix,
                 ),
                 onChanged: (v) {},
               ),
@@ -1174,14 +1202,14 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                   : (_groups.any((g) => g.uuid == _groupUuid)
                         ? _groupUuid
                         : null),
-              decoration: const InputDecoration(
-                labelText: 'Gruppe',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.group,
+                border: const OutlineInputBorder(),
               ),
               items: [
-                const DropdownMenuItem(
+                DropdownMenuItem(
                   value: null,
-                  child: Text('Keine Gruppe'),
+                  child: Text(AppLocalizations.of(context)!.noGroup),
                 ),
                 ..._groups.map(
                   (g) => DropdownMenuItem(
@@ -1205,7 +1233,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
 
             ListTile(
               leading: const Icon(Icons.folder),
-              title: Text("Ortsgruppen verwalten"),
+              title: Text(AppLocalizations.of(context)!.managePlaceGroups),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
                 Navigator.pushNamed(context, '/place-groups').then((_) {
@@ -1218,7 +1246,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
             ExpansionTile(
               tilePadding: EdgeInsets.zero,
               leading: const Icon(Icons.night_shelter),
-              title: const Text('Survival-Erfahrungen'),
+              title: Text(AppLocalizations.of(context)!.survivalExperiences),
               onExpansionChanged: (expanded) {
                 if (expanded && !_experiencesLoaded) _loadExperiences();
               },
@@ -1229,7 +1257,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
             ExpansionTile(
               tilePadding: EdgeInsets.zero,
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Fotos'),
+              title: Text(AppLocalizations.of(context)!.photos),
               children: [
                 PlacePhotosSection(
                   placeUuid: widget.place.uuid,
@@ -1244,8 +1272,8 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               children: <Widget>[
                 Expanded(child: Divider()),
                 Text(
-                  "Informationen & Statistik",
-                  style: TextStyle(color: Colors.grey),
+                  AppLocalizations.of(context)!.infoAndStats,
+                  style: const TextStyle(color: Colors.grey),
                 ),
                 Expanded(child: Divider()),
               ],
@@ -1258,15 +1286,23 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                 const SizedBox(width: 4),
                 Text(
                   _visitCount == 0
-                      ? 'Noch nicht besucht'
-                      : '$_visitCount Besuch${_visitCount == 1 ? '' : 'e'}',
+                      ? AppLocalizations.of(context)!.neverVisited
+                      : (_visitCount == 1
+                            ? AppLocalizations.of(
+                                context,
+                              )!.visitCount(_visitCount)
+                            : AppLocalizations.of(
+                                context,
+                              )!.visitCountPlural(_visitCount)),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 if (_lastVisitedAt != null) ...[
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      '· zuletzt ${_formatDate(_lastVisitedAt!)}',
+                      AppLocalizations.of(
+                        context,
+                      )!.lastVisitedAt(_formatDate(_lastVisitedAt!)),
                       style: Theme.of(context).textTheme.bodySmall,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1283,7 +1319,9 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'Erstellt: ${_formatDate(widget.place.createdAt)}',
+                  AppLocalizations.of(
+                    context,
+                  )!.placeCreatedAt(_formatDate(widget.place.createdAt)),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -1293,7 +1331,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
             ExpansionTile(
               tilePadding: EdgeInsets.zero,
               leading: const Icon(Icons.bar_chart),
-              title: const Text('Statistik'),
+              title: Text(AppLocalizations.of(context)!.statistics),
               onExpansionChanged: (expanded) {
                 if (expanded && !_statsLoaded) _loadStatistics();
               },
@@ -1312,8 +1350,10 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               icon: const Icon(Icons.history),
               label: Text(
                 _visitCount == 0
-                    ? 'Besuche anzeigen'
-                    : 'Besuche anzeigen ($_visitCount)',
+                    ? AppLocalizations.of(context)!.showVisits
+                    : AppLocalizations.of(
+                        context,
+                      )!.showVisitsCount(_visitCount),
               ),
             ),
             const SizedBox(height: 8),
@@ -1321,20 +1361,20 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
             OutlinedButton.icon(
               onPressed: widget.place.uuid.isEmpty ? null : _createManualVisit,
               icon: const Icon(Icons.add_location_alt),
-              label: const Text('Jetzt besuchen'),
+              label: Text(AppLocalizations.of(context)!.visitNow),
             ),
             const SizedBox(height: 8),
             // ── Bericht kopieren ───────────────────────────────────────
             OutlinedButton.icon(
               onPressed: _copyReport,
               icon: const Icon(Icons.copy_all),
-              label: const Text('Vollständigen Bericht kopieren'),
+              label: Text(AppLocalizations.of(context)!.copyFullReport),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 4),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
               child: Text(
-                'Kopiert einen vollständigen Bericht des Ortes einschließlich aller Besuche und Survival-Erfahrungen im Markdown Format in die Zwischenablage.',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                AppLocalizations.of(context)!.copyReportHint,
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ),
             // ── Bericht an Telegram ────────────────────────────────────
@@ -1348,7 +1388,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               OutlinedButton.icon(
                 onPressed: _sendToTelegram,
                 icon: const Icon(Icons.send),
-                label: const Text('Bericht an Telegram senden'),
+                label: Text(AppLocalizations.of(context)!.sendReportToTelegram),
               ),
             ],
             const SizedBox(height: 4),
@@ -1356,7 +1396,10 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
             Row(
               children: <Widget>[
                 Expanded(child: Divider()),
-                Text("GPS Einstellungen", style: TextStyle(color: Colors.grey)),
+                Text(
+                  AppLocalizations.of(context)!.gpsSettings,
+                  style: const TextStyle(color: Colors.grey),
+                ),
                 Expanded(child: Divider()),
               ],
             ),
@@ -1401,10 +1444,12 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
             OutlinedButton.icon(
               onPressed: _repositionPlace,
               icon: const Icon(Icons.edit_location_alt),
-              label: const Text('Position auf Karte ändern'),
+              label: Text(AppLocalizations.of(context)!.changePositionOnMap),
             ),
             const SizedBox(height: 12),
-            Text('Radius: ${_radius.toStringAsFixed(0)} m'),
+            Text(
+              AppLocalizations.of(context)!.radius(_radius.toStringAsFixed(0)),
+            ),
             Slider(
               value: _radius,
               min: 10,
@@ -1421,9 +1466,9 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                   child: OutlinedButton.icon(
                     onPressed: _delete,
                     icon: const Icon(Icons.delete, color: Colors.red),
-                    label: const Text(
-                      'Löschen',
-                      style: TextStyle(color: Colors.red),
+                    label: Text(
+                      AppLocalizations.of(context)!.delete,
+                      style: const TextStyle(color: Colors.red),
                     ),
                   ),
                 ),
@@ -1432,7 +1477,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                   child: FilledButton.icon(
                     onPressed: _save,
                     icon: const Icon(Icons.save),
-                    label: const Text('Speichern'),
+                    label: Text(AppLocalizations.of(context)!.save),
                   ),
                 ),
               ],
@@ -1471,7 +1516,7 @@ class _ContactField extends StatelessWidget {
         prefixIcon: Icon(icon),
         suffixIcon: IconButton(
           icon: const Icon(Icons.open_in_new),
-          tooltip: '$labelText öffnen',
+          tooltip: AppLocalizations.of(context)!.openLabel(labelText),
           onPressed: onLaunch,
         ),
       ),

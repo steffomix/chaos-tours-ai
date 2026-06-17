@@ -1321,4 +1321,90 @@ class AppLocalizationsEn extends AppLocalizations {
   String trackingStatusHaltUnknownAddress(String address) {
     return 'Staying: $address';
   }
+
+  @override
+  String get newPlaceTitle => 'New place';
+
+  @override
+  String get placeEditTitle => 'Edit place';
+
+  @override
+  String get placeOriginAuto => 'Auto-created';
+
+  @override
+  String get placeOriginImported => 'Imported';
+
+  @override
+  String get managePlaceGroups => 'Manage place groups';
+
+  @override
+  String get visitIntervalSubtitle => 'Regular reminder to visit this place';
+
+  @override
+  String get infoAndStats => 'Information & Statistics';
+
+  @override
+  String get neverVisited => 'Never visited';
+
+  @override
+  String lastVisitedAt(String date) {
+    return '· last: $date';
+  }
+
+  @override
+  String placeCreatedAt(String date) {
+    return 'Created: $date';
+  }
+
+  @override
+  String get showVisits => 'Show visits';
+
+  @override
+  String showVisitsCount(int count) {
+    return 'Show visits ($count)';
+  }
+
+  @override
+  String get copyReportHint =>
+      'Copies a full report of the place including all visits and survival experiences in Markdown format to the clipboard.';
+
+  @override
+  String get gpsSettings => 'GPS Settings';
+
+  @override
+  String get telegramSent => 'Report sent to Telegram';
+
+  @override
+  String telegramError(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get createVisitTitle => 'Create visit';
+
+  @override
+  String get noVisitsRecorded => 'No visits recorded yet.';
+
+  @override
+  String get statFirstVisit => 'First visit';
+
+  @override
+  String get statLastVisit => 'Last visit';
+
+  @override
+  String get statShortest => 'Shortest visit';
+
+  @override
+  String get statLongest => 'Longest visit';
+
+  @override
+  String get statAverage => 'Average';
+
+  @override
+  String get statMedian => 'Median';
+
+  @override
+  String openLabel(String label) {
+    return 'Open $label';
+  }
 }

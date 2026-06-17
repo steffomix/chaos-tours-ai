@@ -2449,6 +2449,156 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Halten: {address}'**
   String trackingStatusHaltUnknownAddress(String address);
+
+  /// New place dialog title
+  ///
+  /// In de, this message translates to:
+  /// **'Neuer Ort'**
+  String get newPlaceTitle;
+
+  /// Edit place bottom sheet title
+  ///
+  /// In de, this message translates to:
+  /// **'Ort bearbeiten'**
+  String get placeEditTitle;
+
+  /// Place origin: automatically created
+  ///
+  /// In de, this message translates to:
+  /// **'Automatisch erstellt'**
+  String get placeOriginAuto;
+
+  /// Place origin: imported
+  ///
+  /// In de, this message translates to:
+  /// **'Importiert'**
+  String get placeOriginImported;
+
+  /// Manage place groups list tile label
+  ///
+  /// In de, this message translates to:
+  /// **'Ortsgruppen verwalten'**
+  String get managePlaceGroups;
+
+  /// Visit interval switch subtitle
+  ///
+  /// In de, this message translates to:
+  /// **'Regelmäßige Erinnerung, diesen Ort zu besuchen'**
+  String get visitIntervalSubtitle;
+
+  /// Info and statistics section divider label
+  ///
+  /// In de, this message translates to:
+  /// **'Informationen & Statistik'**
+  String get infoAndStats;
+
+  /// Place never visited label
+  ///
+  /// In de, this message translates to:
+  /// **'Noch nicht besucht'**
+  String get neverVisited;
+
+  /// Last visited at label
+  ///
+  /// In de, this message translates to:
+  /// **'· zuletzt {date}'**
+  String lastVisitedAt(String date);
+
+  /// Place created at label
+  ///
+  /// In de, this message translates to:
+  /// **'Erstellt: {date}'**
+  String placeCreatedAt(String date);
+
+  /// Show visits button label
+  ///
+  /// In de, this message translates to:
+  /// **'Besuche anzeigen'**
+  String get showVisits;
+
+  /// Show visits button label with count
+  ///
+  /// In de, this message translates to:
+  /// **'Besuche anzeigen ({count})'**
+  String showVisitsCount(int count);
+
+  /// Copy report hint text
+  ///
+  /// In de, this message translates to:
+  /// **'Kopiert einen vollständigen Bericht des Ortes einschließlich aller Besuche und Survival-Erfahrungen im Markdown Format in die Zwischenablage.'**
+  String get copyReportHint;
+
+  /// GPS settings section divider label
+  ///
+  /// In de, this message translates to:
+  /// **'GPS Einstellungen'**
+  String get gpsSettings;
+
+  /// Report sent to Telegram snackbar
+  ///
+  /// In de, this message translates to:
+  /// **'Bericht an Telegram gesendet'**
+  String get telegramSent;
+
+  /// Telegram error message
+  ///
+  /// In de, this message translates to:
+  /// **'Fehler: {error}'**
+  String telegramError(String error);
+
+  /// Create visit sheet title
+  ///
+  /// In de, this message translates to:
+  /// **'Besuch erstellen'**
+  String get createVisitTitle;
+
+  /// No visits recorded yet label
+  ///
+  /// In de, this message translates to:
+  /// **'Noch keine Besuche aufgezeichnet.'**
+  String get noVisitsRecorded;
+
+  /// Statistics: first visit label
+  ///
+  /// In de, this message translates to:
+  /// **'Erster Besuch'**
+  String get statFirstVisit;
+
+  /// Statistics: last visit label
+  ///
+  /// In de, this message translates to:
+  /// **'Letzter Besuch'**
+  String get statLastVisit;
+
+  /// Statistics: shortest visit label
+  ///
+  /// In de, this message translates to:
+  /// **'Kürzester Besuch'**
+  String get statShortest;
+
+  /// Statistics: longest visit label
+  ///
+  /// In de, this message translates to:
+  /// **'Längster Besuch'**
+  String get statLongest;
+
+  /// Statistics: average label
+  ///
+  /// In de, this message translates to:
+  /// **'Durchschnitt'**
+  String get statAverage;
+
+  /// Statistics: median label
+  ///
+  /// In de, this message translates to:
+  /// **'Median'**
+  String get statMedian;
+
+  /// Open {label} tooltip
+  ///
+  /// In de, this message translates to:
+  /// **'{label} öffnen'**
+  String openLabel(String label);
 }
 
 class _AppLocalizationsDelegate

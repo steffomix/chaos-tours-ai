@@ -780,5 +780,65 @@
   "trackingActiveTooltip": "Tracking active",
   "trackingInactiveTooltip": "Tracking inactive",
   "trackingNotificationText": "Automatic tracking active",
-  "trackingStatusHaltUnknownAddress": "Staying: {address}"
+  "trackingStatusHaltUnknownAddress": "Staying: {address}",
+  "newPlaceTitle": "New place",
+  "placeEditTitle": "Edit place",
+  "placeOriginAuto": "Auto-created",
+  "placeOriginImported": "Imported",
+  "managePlaceGroups": "Manage place groups",
+  "visitIntervalSubtitle": "Regular reminder to visit this place",
+  "infoAndStats": "Information & Statistics",
+  "neverVisited": "Never visited",
+  "lastVisitedAt": "· last: {date}",
+  "@lastVisitedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "placeCreatedAt": "Created: {date}",
+  "@placeCreatedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "showVisits": "Show visits",
+  "showVisitsCount": "Show visits ({count})",
+  "@showVisitsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "copyReportHint": "Copies a full report of the place including all visits and survival experiences in Markdown format to the clipboard.",
+  "gpsSettings": "GPS Settings",
+  "telegramSent": "Report sent to Telegram",
+  "telegramError": "Error: {error}",
+  "@telegramError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "createVisitTitle": "Create visit",
+  "noVisitsRecorded": "No visits recorded yet.",
+  "statFirstVisit": "First visit",
+  "statLastVisit": "Last visit",
+  "statShortest": "Shortest visit",
+  "statLongest": "Longest visit",
+  "statAverage": "Average",
+  "statMedian": "Median",
+  "openLabel": "Open {label}",
+  "@openLabel": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  }
 }

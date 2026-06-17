@@ -18,24 +18,27 @@ Future<void> createPlaceFromLongPress(
   final nameController = TextEditingController();
   final confirmed = await showDialog<bool>(
     context: context,
-    builder: (ctx) => AlertDialog(
-      title: const Text('Neuer Ort'),
-      content: TextField(
-        controller: nameController,
-        decoration: const InputDecoration(labelText: 'Name'),
-        autofocus: true,
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Abbrechen'),
+    builder: (ctx) {
+      final ctxL10n = AppLocalizations.of(ctx)!;
+      return AlertDialog(
+        title: Text(ctxL10n.newPlaceTitle),
+        content: TextField(
+          controller: nameController,
+          decoration: InputDecoration(labelText: ctxL10n.name),
+          autofocus: true,
         ),
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('Speichern'),
-        ),
-      ],
-    ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(ctxL10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(ctxL10n.save),
+          ),
+        ],
+      );
+    },
   );
   if (confirmed != true) return;
   final name = nameController.text.trim();

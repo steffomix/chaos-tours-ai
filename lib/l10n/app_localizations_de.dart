@@ -1326,4 +1326,91 @@ class AppLocalizationsDe extends AppLocalizations {
   String trackingStatusHaltUnknownAddress(String address) {
     return 'Halten: $address';
   }
+
+  @override
+  String get newPlaceTitle => 'Neuer Ort';
+
+  @override
+  String get placeEditTitle => 'Ort bearbeiten';
+
+  @override
+  String get placeOriginAuto => 'Automatisch erstellt';
+
+  @override
+  String get placeOriginImported => 'Importiert';
+
+  @override
+  String get managePlaceGroups => 'Ortsgruppen verwalten';
+
+  @override
+  String get visitIntervalSubtitle =>
+      'Regelmäßige Erinnerung, diesen Ort zu besuchen';
+
+  @override
+  String get infoAndStats => 'Informationen & Statistik';
+
+  @override
+  String get neverVisited => 'Noch nicht besucht';
+
+  @override
+  String lastVisitedAt(String date) {
+    return '· zuletzt $date';
+  }
+
+  @override
+  String placeCreatedAt(String date) {
+    return 'Erstellt: $date';
+  }
+
+  @override
+  String get showVisits => 'Besuche anzeigen';
+
+  @override
+  String showVisitsCount(int count) {
+    return 'Besuche anzeigen ($count)';
+  }
+
+  @override
+  String get copyReportHint =>
+      'Kopiert einen vollständigen Bericht des Ortes einschließlich aller Besuche und Survival-Erfahrungen im Markdown Format in die Zwischenablage.';
+
+  @override
+  String get gpsSettings => 'GPS Einstellungen';
+
+  @override
+  String get telegramSent => 'Bericht an Telegram gesendet';
+
+  @override
+  String telegramError(String error) {
+    return 'Fehler: $error';
+  }
+
+  @override
+  String get createVisitTitle => 'Besuch erstellen';
+
+  @override
+  String get noVisitsRecorded => 'Noch keine Besuche aufgezeichnet.';
+
+  @override
+  String get statFirstVisit => 'Erster Besuch';
+
+  @override
+  String get statLastVisit => 'Letzter Besuch';
+
+  @override
+  String get statShortest => 'Kürzester Besuch';
+
+  @override
+  String get statLongest => 'Längster Besuch';
+
+  @override
+  String get statAverage => 'Durchschnitt';
+
+  @override
+  String get statMedian => 'Median';
+
+  @override
+  String openLabel(String label) {
+    return '$label öffnen';
+  }
 }
