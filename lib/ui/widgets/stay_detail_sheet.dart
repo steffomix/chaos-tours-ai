@@ -386,20 +386,33 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                   // ── Header ───────────────────────────────────────────
                   Row(
                     children: [
-                      Text(
-                        l10n.editStay,
-                        style: Theme.of(context).textTheme.titleLarge,
+                      Flexible(
+                        child: Text(
+                          l10n.editStay,
+                          style: Theme.of(context).textTheme.titleLarge,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: 8),
                       if (_place != null)
-                        Flexible(
+                        Icon(
+                          Icons.arrow_right_alt,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      if (_place != null)
+                        Tooltip(
+                          message: l10n.openPlaceSettings,
                           child: TextButton.icon(
                             onPressed: _openPlaceSheet,
-                            icon: const Icon(Icons.edit_location_alt, size: 16),
-                            label: Text(
-                              _place!.name,
-                              overflow: TextOverflow.ellipsis,
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
+                            icon: const Icon(Icons.edit_location_alt, size: 24),
+                            label: const SizedBox.shrink(),
                           ),
                         ),
                     ],

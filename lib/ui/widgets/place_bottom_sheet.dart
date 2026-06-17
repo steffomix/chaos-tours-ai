@@ -1048,6 +1048,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
+                Icon(Icons.arrow_right_alt),
                 IconButton(
                   icon: const Icon(Icons.map_outlined),
                   tooltip: 'In Google Maps öffnen',

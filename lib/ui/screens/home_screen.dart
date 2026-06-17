@@ -21,7 +21,8 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   AppLocalizations? _l10n;
 
   // Active Aktivitaet
@@ -29,9 +30,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Tracking state
   bool _trackingEnabled = false;
+
+  // Pulse animation for GPS button when tracking is off
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
   Stay? _activeStay;
   SavedPlace? _activeStayPlace;
   String _trackingStatusText = '';
+  bool _endingStay = false;
 
   // Recent visits
   List<Stay> _recentStays = [];
@@ -40,6 +46,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 0.5, end: 2.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
     // Do NOT trust the persisted flag alone — the service may have been killed.
     // Resolve the actual service state asynchronously and correct if needed.
     _checkActualTrackingState();
@@ -65,11 +78,17 @@ class _HomeScreenState extends State<HomeScreen> {
             ? (_l10n?.trackingRunning ?? '')
             : (_l10n?.trackingDisabled ?? '');
       });
+      if (serviceRunning) {
+        _pulseController.stop();
+      } else {
+        _pulseController.repeat(reverse: true);
+      }
     }
   }
 
   @override
   void dispose() {
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -84,10 +103,15 @@ class _HomeScreenState extends State<HomeScreen> {
       String text;
       switch (statusName) {
         case 'haltAtKnown':
-          text = _l10n?.trackingStatusHaltKnown(_cutText(placeName) ?? (_l10n?.unknownPlace ?? '')) ?? '';
+          text =
+              _l10n?.trackingStatusHaltKnown(
+                _cutText(placeName) ?? (_l10n?.unknownPlace ?? ''),
+              ) ??
+              '';
         case 'haltAtUnknown':
           text = address != null
-              ? (_l10n?.trackingStatusHaltUnknownAddress(_cutText(address)!) ?? '')
+              ? (_l10n?.trackingStatusHaltUnknownAddress(_cutText(address)!) ??
+                    '')
               : (_l10n?.trackingStatusHalt ?? '');
         case 'detectingHalt':
           text = _l10n?.trackingStatusDetecting ?? '';
@@ -211,11 +235,17 @@ class _HomeScreenState extends State<HomeScreen> {
           ? (_l10n?.trackingCollecting ?? '')
           : (_l10n?.trackingDisabled ?? '');
     });
+    if (value) {
+      _pulseController.stop();
+    } else {
+      _pulseController.repeat(reverse: true);
+    }
     SettingsService.instance.trackingEnabled = value;
 
     if (value) {
       final result = await ForegroundServiceManager.startService(
-        notificationText: _l10n?.trackingNotificationText ?? 'Automatisches Tracking aktiv',
+        notificationText:
+            _l10n?.trackingNotificationText ?? 'Automatisches Tracking aktiv',
       );
       if (result is ServiceRequestFailure) {
         debugPrint('[Tracking] startService FAILED: ${result.error}');
@@ -274,7 +304,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final l10n = _l10n!;
     // Refresh status text if it's empty (first build after init)
     if (_trackingStatusText.isEmpty) {
-      _trackingStatusText = _trackingEnabled ? l10n.trackingRunning : l10n.trackingDisabled;
+      _trackingStatusText = _trackingEnabled
+          ? l10n.trackingRunning
+          : l10n.trackingDisabled;
     }
     return FocusDetector(
       onFocusGained: () {
@@ -295,15 +327,26 @@ class _HomeScreenState extends State<HomeScreen> {
         appBar: AppBar(
           title: Text(l10n.appTitle),
           actions: [
-            IconButton(
-              icon: Icon(
-                _trackingEnabled ? Icons.my_location : Icons.location_disabled,
-                color: _trackingEnabled
-                    ? Theme.of(context).colorScheme.primary
-                    : null,
+            AnimatedBuilder(
+              animation: _pulseAnimation,
+              builder: (context, child) {
+                final scale = _trackingEnabled ? 1.0 : _pulseAnimation.value;
+                return Transform.scale(scale: scale, child: child);
+              },
+              child: IconButton(
+                icon: Icon(
+                  _trackingEnabled
+                      ? Icons.my_location
+                      : Icons.location_disabled,
+                  color: _trackingEnabled
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.error,
+                ),
+                tooltip: _trackingEnabled
+                    ? l10n.trackingActiveTooltip
+                    : l10n.trackingInactiveTooltip,
+                onPressed: _confirmToggleTracking,
               ),
-              tooltip: _trackingEnabled ? l10n.trackingActiveTooltip : l10n.trackingInactiveTooltip,
-              onPressed: _confirmToggleTracking,
             ),
           ],
         ),
@@ -463,34 +506,46 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(40),
                   ),
-                  icon: const Icon(Icons.call_split, size: 18),
-                  label: Text(l10n.endStayNow),
-                  onPressed: () async {
-                    final confirmed = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: Text(l10n.endStayTitle),
-                        content: Text(l10n.endStayContent),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx, false),
-                            child: Text(l10n.cancel),
-                          ),
-                          FilledButton(
-                            onPressed: () => Navigator.pop(ctx, true),
-                            child: Text(l10n.end),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (confirmed != true) return;
-                    ForegroundServiceManager.sendForceEndStay();
-                    await Future<void>.delayed(
-                      const Duration(milliseconds: 300),
-                    );
-                    _loadActiveStay();
-                    _loadRecentStays();
-                  },
+                  icon: _endingStay
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.call_split, size: 18),
+                  label: Text(
+                    _endingStay ? l10n.endStayEnding : l10n.endStayNow,
+                  ),
+                  onPressed: _endingStay
+                      ? null
+                      : () async {
+                          final confirmed = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: Text(l10n.endStayTitle),
+                              content: Text(l10n.endStayContent),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, false),
+                                  child: Text(l10n.cancel),
+                                ),
+                                FilledButton(
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  child: Text(l10n.end),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirmed != true) return;
+                          setState(() => _endingStay = true);
+                          ForegroundServiceManager.sendForceEndStay();
+                          await Future<void>.delayed(
+                            const Duration(milliseconds: 300),
+                          );
+                          await _loadActiveStay();
+                          await _loadRecentStays();
+                          if (mounted) setState(() => _endingStay = false);
+                        },
                 ),
               ),
             ],

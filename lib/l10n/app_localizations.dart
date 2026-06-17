@@ -392,6 +392,12 @@ abstract class AppLocalizations {
   /// **'Beenden'**
   String get endStayButton;
 
+  /// Button label while end-stay is in progress
+  ///
+  /// In de, this message translates to:
+  /// **'Aufenthalt wird beendet…'**
+  String get endStayEnding;
+
   /// No visits recorded yet
   ///
   /// In de, this message translates to:
@@ -2029,6 +2035,12 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Aufenthalt bearbeiten'**
   String get editStay;
+
+  /// Tooltip/hint for opening place settings
+  ///
+  /// In de, this message translates to:
+  /// **'Ort-Einstellungen öffnen'**
+  String get openPlaceSettings;
 
   /// Begin/start label
   ///

@@ -105,16 +105,6 @@ class ExperienceFilterPanel extends StatelessWidget {
                   l10n.experienceFilter,
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () => onChanged(
-                    filter.copyWith(
-                      minAvgRating: 0.0,
-                      requireExperiences: false,
-                    ),
-                  ),
-                  child: Text(l10n.resetFilter),
-                ),
               ],
             ),
             Row(
@@ -155,6 +145,19 @@ class ExperienceFilterPanel extends StatelessWidget {
                     textAlign: TextAlign.right,
                     style: TextStyle(color: colorScheme.primary),
                   ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                FilledButton(
+                  onPressed: () => onChanged(
+                    filter.copyWith(
+                      minAvgRating: 0.0,
+                      requireExperiences: false,
+                    ),
+                  ),
+                  child: Text(l10n.resetFilter),
                 ),
               ],
             ),

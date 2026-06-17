@@ -165,6 +165,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get endStayButton => 'Beenden';
 
   @override
+  String get endStayEnding => 'Aufenthalt wird beendet…';
+
+  @override
   String get noVisitsYet => 'Noch keine Besuche aufgezeichnet.';
 
   @override
@@ -1100,6 +1103,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get editStay => 'Aufenthalt bearbeiten';
+
+  @override
+  String get openPlaceSettings => 'Ort-Einstellungen öffnen';
 
   @override
   String get begin => 'Beginn';

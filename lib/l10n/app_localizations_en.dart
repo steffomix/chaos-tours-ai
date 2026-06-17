@@ -165,6 +165,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get endStayButton => 'End';
 
   @override
+  String get endStayEnding => 'Ending stay…';
+
+  @override
   String get noVisitsYet => 'No visits recorded yet.';
 
   @override
@@ -1095,6 +1098,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editStay => 'Edit stay';
+
+  @override
+  String get openPlaceSettings => 'Open place settings';
 
   @override
   String get begin => 'Start';

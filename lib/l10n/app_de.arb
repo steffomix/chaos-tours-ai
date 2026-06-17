@@ -219,6 +219,10 @@
   "@endStayButton": {
     "description": "End stay button"
   },
+  "endStayEnding": "Aufenthalt wird beendet…",
+  "@endStayEnding": {
+    "description": "Button label while end-stay is in progress"
+  },
   "noVisitsYet": "Noch keine Besuche aufgezeichnet.",
   "@noVisitsYet": {
     "description": "No visits recorded yet"
@@ -1552,6 +1556,10 @@
   "editStay": "Aufenthalt bearbeiten",
   "@editStay": {
     "description": "Edit stay sheet title"
+  },
+  "openPlaceSettings": "Ort-Einstellungen öffnen",
+  "@openPlaceSettings": {
+    "description": "Tooltip/hint for opening place settings"
   },
   "begin": "Beginn",
   "@begin": {
