@@ -313,7 +313,7 @@
       }
     }
   },
-  "gpsIntervalHint": "Hinweis: Änderungen werden erst nach Neustart des Trackings wirksam.",
+  "gpsIntervalHint": "Hinweis: Änderungen des Intervalls erforderdern einen vollständigen Neustart der App inklusive des Hintergrund Tracking.",
   "@gpsIntervalHint": {
     "description": "GPS interval hint"
   },

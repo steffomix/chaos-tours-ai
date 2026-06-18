@@ -136,7 +136,9 @@ class ForegroundServiceManager {
         playSound: false,
       ),
       foregroundTaskOptions: ForegroundTaskOptions(
-        eventAction: ForegroundTaskEventAction.repeat(15000),
+        eventAction: ForegroundTaskEventAction.repeat(
+          SettingsService.instance.gpsIntervalSeconds * 1000,
+        ),
         allowWifiLock: false,
       ),
     );
