@@ -88,6 +88,13 @@ class DatabaseService {
         FOREIGN KEY (group_uuid) REFERENCES place_groups(uuid) ON DELETE SET NULL
       )
     ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_place_lat ON saved_places(lat)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_place_lng ON saved_places(lng)',
+    );
+
     await db.execute('''
       CREATE TABLE stays (
         uuid TEXT PRIMARY KEY,
@@ -106,6 +113,10 @@ class DatabaseService {
         FOREIGN KEY (place_uuid) REFERENCES saved_places(uuid) ON DELETE SET NULL
       )
     ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_stays_status ON stays(status)',
+    );
+
     await db.execute('''
       CREATE TABLE persons (
         uuid TEXT PRIMARY KEY,
@@ -138,6 +149,10 @@ class DatabaseService {
         FOREIGN KEY (person_uuid) REFERENCES persons(uuid) ON DELETE SET NULL
       )
     ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_stay_persons_stay_uuid ON stay_persons(stay_uuid)',
+    );
+
     await db.execute('''
       CREATE TABLE stay_activities (
         uuid TEXT PRIMARY KEY,
@@ -151,6 +166,10 @@ class DatabaseService {
         FOREIGN KEY (activity_uuid) REFERENCES activities(uuid) ON DELETE SET NULL
       )
     ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_stay_activities_stay_uuid ON stay_activities(stay_uuid)',
+    );
+
     await db.execute('''
       CREATE TABLE tracking_points (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -162,6 +181,7 @@ class DatabaseService {
     await db.execute(
       'CREATE INDEX idx_tracking_points_ts ON tracking_points(timestamp)',
     );
+
     await db.execute('''
       CREATE TABLE aktivitaeten (
         uuid TEXT PRIMARY KEY,
@@ -213,6 +233,10 @@ class DatabaseService {
         device_id TEXT NOT NULL DEFAULT ''
       )
     ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_place_experiences_saved_place_uuid ON place_experiences(saved_place_uuid)',
+    );
+
     await db.execute('''
       CREATE TABLE sync_source_experiences (
         uuid TEXT PRIMARY KEY,
@@ -224,6 +248,10 @@ class DatabaseService {
         device_id TEXT NOT NULL DEFAULT ''
       )
     ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_sync_source_experiences_sync_source_uuid ON sync_source_experiences(sync_source_uuid)',
+    );
+
     await db.execute('''
       CREATE TABLE IF NOT EXISTS place_photos (
         uuid TEXT PRIMARY KEY,
@@ -246,6 +274,7 @@ class DatabaseService {
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_place_photos_stay ON place_photos(stay_uuid)',
     );
+
     await db.execute('''
       CREATE TABLE IF NOT EXISTS telegram_connections (
         uuid TEXT PRIMARY KEY,
