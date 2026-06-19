@@ -182,15 +182,16 @@ class ForegroundServiceManager {
 
   // ── Listeners ────────────────────────────────────────────────────────────
 
-  static final Map<void Function(Map), void Function(Object)>
+  static final Map<void Function(Map<dynamic, dynamic>), void Function(Object)>
   _dataCallbackWrappers = {};
 
   static void addDataListener(void Function(Map<dynamic, dynamic>) callback) {
     // Guard against duplicate registration for the same callback.
     if (_dataCallbackWrappers.containsKey(callback)) return;
-    final wrapper = (Object data) {
+    void wrapper(Object data) {
       if (data is Map) callback(data);
-    };
+    }
+
     _dataCallbackWrappers[callback] = wrapper;
     FlutterForegroundTask.addTaskDataCallback(wrapper);
   }

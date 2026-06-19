@@ -240,7 +240,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gpsIntervalHint =>
-      'Note: Changes take effect after restarting tracking.';
+      'Note: Changes of the GPS interval require a complete restart of the App including the Background Tracking.';
 
   @override
   String gpsSmoothing(String value) {

@@ -272,7 +272,7 @@ class _SectionHeader extends StatelessWidget {
               ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
-          if (trailing != null) trailing!,
+          ?trailing,
         ],
       ),
     );

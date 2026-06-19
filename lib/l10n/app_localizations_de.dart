@@ -242,7 +242,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get gpsIntervalHint =>
-      'Hinweis: Änderungen werden erst nach Neustart des Trackings wirksam.';
+      'Hinweis: Änderungen des Intervalls erforderdern einen vollständigen Neustart der App inklusive des Hintergrund Tracking.';
 
   @override
   String gpsSmoothing(String value) {

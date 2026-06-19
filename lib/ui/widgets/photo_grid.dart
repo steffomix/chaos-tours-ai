@@ -68,11 +68,12 @@ class _PhotoGridState extends State<PhotoGrid> {
     } else {
       photos = await DatabaseService.instance.loadAllPhotos();
     }
-    if (mounted)
+    if (mounted) {
       setState(() {
         _photos = photos;
         _loading = false;
       });
+    }
   }
 
   Future<void> _addPhoto() async {

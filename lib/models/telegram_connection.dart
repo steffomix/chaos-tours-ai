@@ -88,7 +88,7 @@ class TelegramConnection {
 
   /// Returns a clickable Telegram URL for [chatId].
   /// Numeric IDs cannot be opened directly via URL, so we show the raw ID for
-  /// those; usernames become https://t.me/<username>.
+  /// those; usernames become https://t.me/username.
   String? get telegramUrl {
     final id = chatId.trim();
     if (id.isEmpty) return null;

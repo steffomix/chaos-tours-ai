@@ -573,8 +573,9 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
         .join(', ');
     final total = opts.tables.values.where((o) => o.anyEnabled).length;
     if (total == 0) return AppLocalizations.of(context)!.noSyncOptions;
-    if (total > 3)
+    if (total > 3) {
       return '$active … (${AppLocalizations.of(context)!.tablesActive(total)})';
+    }
     return active;
   }
 

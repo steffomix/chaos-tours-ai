@@ -544,7 +544,7 @@ class TrackingEngine {
           );
           buf.writeln('Dauer: ${esc(fmtDur(duration))}');
           buf.writeln(
-            '[Google Maps](http://maps\.google\.com/?q=${place.lat.toStringAsFixed(6)},${place.lng.toStringAsFixed(6)})',
+            '[Google Maps](http://maps.google.com/?q=${place.lat.toStringAsFixed(6)},${place.lng.toStringAsFixed(6)})',
           );
           if (persons.isNotEmpty) {
             buf.writeln(

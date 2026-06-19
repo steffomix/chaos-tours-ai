@@ -203,7 +203,7 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  void _onMapTap(TapPosition _, LatLng __) {
+  void _onMapTap(TapPosition _, LatLng _) {
     final hit = _hitNotifier.value;
     if (hit == null || hit.hitValues.isEmpty) return;
     if (hit.hitValues.length == 1) {
@@ -603,8 +603,9 @@ class _AddressSearchSheetState extends State<_AddressSearchSheet> {
       setState(() {
         _searching = false;
         _results = results;
-        if (results.isEmpty)
+        if (results.isEmpty) {
           _error = AppLocalizations.of(context)!.noResultsFound;
+        }
       });
     }
   }
@@ -705,7 +706,7 @@ class _AddressSearchSheetState extends State<_AddressSearchSheet> {
               child: ListView.separated(
                 shrinkWrap: true,
                 itemCount: _results.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (ctx, i) {
                   final r = _results[i];
                   return ListTile(

@@ -1139,8 +1139,9 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                 if (raw.isEmpty) return;
                 final url = raw.startsWith('http') ? raw : 'https://$raw';
                 final uri = Uri.tryParse(url);
-                if (uri != null)
+                if (uri != null) {
                   await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
               },
             ),
             const SizedBox(height: 8),

@@ -531,7 +531,9 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                   FilledButton.icon(
                     onPressed: () async {
                       await _save();
-                      if (mounted) Navigator.pop(context);
+                      if (mounted) {
+                        Navigator.pop(context);
+                      }
                     },
                     icon: const Icon(Icons.save),
                     label: Text(l10n.save),

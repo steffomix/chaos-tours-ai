@@ -521,7 +521,7 @@ abstract class AppLocalizations {
   /// GPS interval hint
   ///
   /// In de, this message translates to:
-  /// **'Hinweis: Änderungen werden erst nach Neustart des Trackings wirksam.'**
+  /// **'Hinweis: Änderungen des Intervalls erforderdern einen vollständigen Neustart der App inklusive des Hintergrund Tracking.'**
   String get gpsIntervalHint;
 
   /// GPS smoothing setting

@@ -308,8 +308,9 @@ class _PlacesScreenState extends State<PlacesScreen> {
             heroTag: 'places_location',
             onPressed: () {
               final pos = _currentPos;
-              if (pos != null)
+              if (pos != null) {
                 _mapController.move(LatLng(pos.lat, pos.lng), 14);
+              }
             },
             tooltip: l10n.toCurrentPosition,
             child: const Icon(Icons.my_location),
