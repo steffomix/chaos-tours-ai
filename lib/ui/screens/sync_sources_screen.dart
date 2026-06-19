@@ -34,7 +34,7 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
   Future<void> _add() async {
     final result = await _showEditDialog(null);
     if (result != null) {
-      final devId = await SyncService.instance.deviceId;
+      final devId = SyncService.instance.deviceId;
       await DatabaseService.instance.insertSyncSource(result, deviceId: devId);
       await _load();
     }
@@ -43,7 +43,7 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
   Future<void> _edit(SyncSource source) async {
     final result = await _showEditDialog(source);
     if (result != null) {
-      final devId = await SyncService.instance.deviceId;
+      final devId =  SyncService.instance.deviceId;
       await DatabaseService.instance.updateSyncSource(
         result.copyWith(uuid: source.uuid),
         deviceId: devId,
@@ -72,7 +72,7 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
       ),
     );
     if (confirmed == true) {
-      final devId = await SyncService.instance.deviceId;
+      final devId = SyncService.instance.deviceId;
       await DatabaseService.instance.softDeleteSyncSource(
         source.uuid,
         deviceId: devId,
@@ -427,7 +427,7 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
     );
 
     if (saved != null) {
-      final devId = await SyncService.instance.deviceId;
+      final devId = SyncService.instance.deviceId;
       await DatabaseService.instance.updateSyncSource(
         source.copyWith(syncOptions: saved),
         deviceId: devId,
@@ -646,7 +646,7 @@ class _SyncSourceDetailsSheetState extends State<_SyncSourceDetailsSheet> {
       ),
     );
     if (text == null || text.isEmpty) return;
-    final devId = await SyncService.instance.deviceId;
+    final devId = SyncService.instance.deviceId;
     await DatabaseService.instance.insertSyncSourceExperience(
       SyncSourceExperience(syncSourceUuid: widget.source.uuid, text: text),
       deviceId: devId,
@@ -655,7 +655,7 @@ class _SyncSourceDetailsSheetState extends State<_SyncSourceDetailsSheet> {
   }
 
   Future<void> _deleteExperience(SyncSourceExperience exp) async {
-    final devId = await SyncService.instance.deviceId;
+    final devId = SyncService.instance.deviceId;
     await DatabaseService.instance.softDeleteSyncSourceExperience(
       exp.uuid,
       deviceId: devId,

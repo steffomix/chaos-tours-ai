@@ -52,13 +52,11 @@ class SyncService {
   SyncService._();
   static final SyncService instance = SyncService._();
 
-  SettingsService get _settings => SettingsService.instance;
-
-  Future<int> get lastSyncMs async => _settings.lastSyncMs;
-  Future<void> _setLastSyncMs(int ms) async => _settings.lastSyncMs = ms;
+  int get lastSyncMs => SettingsService.instance.lastSyncMs;
+  void _setLastSyncMs(int ms) async => SettingsService.instance.lastSyncMs = ms;
 
   /// Returns the persistent device ID from [SettingsService].
-  Future<String> get deviceId async => _settings.deviceId;
+  String get deviceId => SettingsService.instance.deviceId;
 
   // ── Main sync entry points ─────────────────────────────────────────────────
 
@@ -80,7 +78,7 @@ class SyncService {
     }
 
     if (results.isNotEmpty) {
-      await _setLastSyncMs(DateTime.now().millisecondsSinceEpoch);
+      _setLastSyncMs(DateTime.now().millisecondsSinceEpoch);
     }
     return results;
   }
@@ -88,7 +86,7 @@ class SyncService {
   /// Syncs with a single [SyncSource].
   Future<SyncResult> syncWithSource(SyncSource source) async {
     final result = await _syncWithSource(source);
-    await _setLastSyncMs(DateTime.now().millisecondsSinceEpoch);
+    _setLastSyncMs(DateTime.now().millisecondsSinceEpoch);
     return result;
   }
 
@@ -96,8 +94,8 @@ class SyncService {
 
   Future<SyncResult> _syncWithSource(SyncSource source) async {
     try {
-      final devId = await deviceId;
-      final since = await lastSyncMs;
+      final devId = deviceId;
+      final since = lastSyncMs;
 
       // Determine which tables participate (any option enabled).
       final activeTables = SyncSourceOptions.allTables
@@ -110,7 +108,7 @@ class SyncService {
 
       // ── 1. Pull changes from server ─────────────────────────────────────
       final pullUri = Uri.parse(
-        '${source.syncUrl}/sync/pull?since=$since&device_id=$devId',
+        '${source.syncUrl}/sync/pull?since=$since&device_id=$deviceId',
       );
       final pullResp = await http
           .get(pullUri, headers: _headers(source.apiKey))
@@ -148,7 +146,7 @@ class SyncService {
       for (final table in activeTables) {
         final rows = await DatabaseService.instance.loadChangedRows(
           table,
-          since,
+          lastSyncMs,
         );
         if (rows.isNotEmpty) {
           pushPayload[table] = rows;
