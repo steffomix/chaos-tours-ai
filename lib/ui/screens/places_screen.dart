@@ -49,8 +49,14 @@ class _PlacesScreenState extends State<PlacesScreen> {
   @override
   void initState() {
     super.initState();
-    _loadPlaces();
-    _loadCurrentPosition();
+    final s = SettingsService.instance;
+    _expFilter = ExperienceFilterState(
+      requireExperiences: s.filterRequireExperiences,
+      minAvgRating: s.filterMinAvgRating,
+      distanceEnabled: s.filterDistanceEnabled,
+      maxDistanceKm: s.filterMaxDistanceKm,
+    );
+    _loadCurrentPosition().then((_) => _loadPlaces());
   }
 
   @override
@@ -60,8 +66,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
   }
 
   void _onServiceData(Object data) {
-    _loadPlaces();
-    _loadCurrentPosition();
+    _loadCurrentPosition().then((_) => _loadPlaces());
   }
 
   Future<void> _loadCurrentPosition() async {
@@ -74,7 +79,22 @@ class _PlacesScreenState extends State<PlacesScreen> {
   }
 
   Future<void> _loadPlaces() async {
-    final places = await DatabaseService.instance.loadAllPlaces();
+    final pos = _currentPos;
+    final List<SavedPlace> places;
+    if (_expFilter.distanceEnabled && pos != null) {
+      final maxM = _expFilter.maxDistanceKm * 1000;
+      final latDelta = maxM / 111000;
+      final lngDelta =
+          maxM / (111000 * cos(pos.lat * pi / 180).abs().clamp(0.001, 1.0));
+      places = await DatabaseService.instance.loadPlacesWithinBounds(
+        minLat: pos.lat - latDelta,
+        maxLat: pos.lat + latDelta,
+        minLng: pos.lng - lngDelta,
+        maxLng: pos.lng + lngDelta,
+      );
+    } else {
+      places = await DatabaseService.instance.loadAllPlaces();
+    }
     final counts = <String, int>{};
     final stays = <String, Stay?>{};
     for (final p in places) {
@@ -134,22 +154,10 @@ class _PlacesScreenState extends State<PlacesScreen> {
     final pos = _currentPos;
     List<({SavedPlace place, double? distance})> result;
     if (_expFilter.distanceEnabled && pos != null) {
-      // Bounding-box pre-filter.
       final maxM = _expFilter.maxDistanceKm * 1000;
-      final latDelta = maxM / 111000;
-      final lngDelta =
-          maxM / (111000 * cos(pos.lat * pi / 180).abs().clamp(0.001, 1.0));
 
-      final candidates = list
-          .where(
-            (p) =>
-                (p.lat - pos.lat).abs() <= latDelta &&
-                (p.lng - pos.lng).abs() <= lngDelta,
-          )
-          .toList();
-
-      // Haversine exact distance.
-      result = candidates
+      // Haversine exact distance (bounding-box pre-filter is done in the DB).
+      result = list
           .map((p) {
             final d = GeoUtils.distanceMeters(pos.lat, pos.lng, p.lat, p.lng);
             return (place: p, distance: d);
@@ -394,7 +402,15 @@ class _PlacesScreenState extends State<PlacesScreen> {
               if (_filterPanelOpen)
                 ExperienceFilterPanel(
                   filter: _expFilter,
-                  onChanged: (f) => setState(() => _expFilter = f),
+                  onChanged: (f) {
+                    setState(() => _expFilter = f);
+                    final s = SettingsService.instance;
+                    s.filterRequireExperiences = f.requireExperiences;
+                    s.filterMinAvgRating = f.minAvgRating;
+                    s.filterDistanceEnabled = f.distanceEnabled;
+                    s.filterMaxDistanceKm = f.maxDistanceKm;
+                    _loadPlaces();
+                  },
                 ),
               TabBar(
                 tabs: [

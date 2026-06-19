@@ -25,6 +25,11 @@ class SettingsService {
   static const String _keySearchCountry = 'search_country';
   static const String _keySchedulerColorRange = 'scheduler_color_range';
   static const String _keySchedulerGroupIds = 'scheduler_group_ids';
+  static const String _keyFilterRequireExperiences =
+      'filter_require_experiences';
+  static const String _keyFilterMinAvgRating = 'filter_min_avg_rating';
+  static const String _keyFilterDistanceEnabled = 'filter_distance_enabled';
+  static const String _keyFilterMaxDistanceKm = 'filter_max_distance_km';
 
   SharedPreferences? _prefs;
 
@@ -145,6 +150,24 @@ class SettingsService {
         .where((s) => s.isNotEmpty)
         .toList();
   }
+
+  // ── Experience / distance filter ────────────────────────────────────────
+
+  bool get filterRequireExperiences =>
+      _p.getBool(_keyFilterRequireExperiences) ?? false;
+  set filterRequireExperiences(bool v) =>
+      _p.setBool(_keyFilterRequireExperiences, v);
+
+  double get filterMinAvgRating => _p.getDouble(_keyFilterMinAvgRating) ?? 0.0;
+  set filterMinAvgRating(double v) => _p.setDouble(_keyFilterMinAvgRating, v);
+
+  bool get filterDistanceEnabled =>
+      _p.getBool(_keyFilterDistanceEnabled) ?? false;
+  set filterDistanceEnabled(bool v) => _p.setBool(_keyFilterDistanceEnabled, v);
+
+  double get filterMaxDistanceKm =>
+      _p.getDouble(_keyFilterMaxDistanceKm) ?? 100.0;
+  set filterMaxDistanceKm(double v) => _p.setDouble(_keyFilterMaxDistanceKm, v);
 
   // ── Aktivitaet binding ───────────────────────────────────────────────────
 

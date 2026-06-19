@@ -59,6 +59,13 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
+    final s = SettingsService.instance;
+    _expFilter = ExperienceFilterState(
+      requireExperiences: s.filterRequireExperiences,
+      minAvgRating: s.filterMinAvgRating,
+      distanceEnabled: s.filterDistanceEnabled,
+      maxDistanceKm: s.filterMaxDistanceKm,
+    );
     _loadPlaces();
     _loadTrackingPoints();
     // Move map to current location once the map controller is ready.
@@ -66,7 +73,30 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _loadPlaces() async {
-    final allPlaces = await DatabaseService.instance.loadAllPlaces();
+    // Update current position for distance filter.
+    try {
+      final pos = await LocationService.instance.getCurrentPosition();
+      if (pos != null && mounted) {
+        _currentPos = (lat: pos.latitude, lng: pos.longitude);
+      }
+    } catch (_) {}
+
+    final pos = _currentPos;
+    final List<SavedPlace> allPlaces;
+    if (_expFilter.distanceEnabled && pos != null) {
+      final maxM = _expFilter.maxDistanceKm * 1000;
+      final latDelta = maxM / 111000;
+      final lngDelta =
+          maxM / (111000 * cos(pos.lat * pi / 180).abs().clamp(0.001, 1.0));
+      allPlaces = await DatabaseService.instance.loadPlacesWithinBounds(
+        minLat: pos.lat - latDelta,
+        maxLat: pos.lat + latDelta,
+        minLng: pos.lng - lngDelta,
+        maxLng: pos.lng + lngDelta,
+      );
+    } else {
+      allPlaces = await DatabaseService.instance.loadAllPlaces();
+    }
     final avgRatings = await DatabaseService.instance
         .loadAverageRatingsForAllPlaces();
     final groupFilter = SettingsService.instance.schedulerGroupUuidList;
@@ -77,14 +107,6 @@ class _MapScreenState extends State<MapScreen> {
                 (p) => p.groupUuid != null && groupFilter.contains(p.groupUuid),
               )
               .toList();
-
-    // Update current position for distance filter.
-    try {
-      final pos = await LocationService.instance.getCurrentPosition();
-      if (pos != null && mounted) {
-        _currentPos = (lat: pos.latitude, lng: pos.longitude);
-      }
-    } catch (_) {}
 
     if (mounted) {
       setState(() {
@@ -110,17 +132,15 @@ class _MapScreenState extends State<MapScreen> {
       }).toList();
     }
 
-    // Distance filter (bounding box pre-filter + Haversine).
+    // Distance filter (Haversine exact; bounding-box pre-filter is done in the DB).
     if (_expFilter.distanceEnabled && pos != null) {
       final maxM = _expFilter.maxDistanceKm * 1000;
-      final latDelta = maxM / 111000;
-      final lngDelta =
-          maxM / (111000 * cos(pos.lat * pi / 180).abs().clamp(0.001, 1.0));
-      filtered = filtered.where((p) {
-        if ((p.lat - pos.lat).abs() > latDelta) return false;
-        if ((p.lng - pos.lng).abs() > lngDelta) return false;
-        return GeoUtils.distanceMeters(pos.lat, pos.lng, p.lat, p.lng) <= maxM;
-      }).toList();
+      filtered = filtered
+          .where(
+            (p) =>
+                GeoUtils.distanceMeters(pos.lat, pos.lng, p.lat, p.lng) <= maxM,
+          )
+          .toList();
     }
 
     return filtered;
@@ -324,6 +344,11 @@ class _MapScreenState extends State<MapScreen> {
                     _expFilter = f;
                     _places = _applyFilter(_places);
                   });
+                  final s = SettingsService.instance;
+                  s.filterRequireExperiences = f.requireExperiences;
+                  s.filterMinAvgRating = f.minAvgRating;
+                  s.filterDistanceEnabled = f.distanceEnabled;
+                  s.filterMaxDistanceKm = f.maxDistanceKm;
                   _loadPlaces();
                 },
               ),

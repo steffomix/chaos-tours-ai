@@ -336,6 +336,31 @@ class DatabaseService {
     return rows.map(SavedPlace.fromMap).toList();
   }
 
+  /// Returns all non-deleted places whose coordinates fall within the given
+  /// bounding box. Indexes on lat/lng make this significantly faster than a
+  /// full-table scan when the dataset is large.
+  Future<List<SavedPlace>> loadPlacesWithinBounds({
+    required double minLat,
+    required double maxLat,
+    required double minLng,
+    required double maxLng,
+  }) async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      '''
+      SELECT sp.*,
+             COALESCE(pg.place_type, 0) AS place_type
+      FROM saved_places sp
+      LEFT JOIN place_groups pg ON sp.group_uuid = pg.uuid
+      WHERE sp.deleted_at IS NULL
+        AND sp.lat BETWEEN ? AND ?
+        AND sp.lng BETWEEN ? AND ?
+    ''',
+      [minLat, maxLat, minLng, maxLng],
+    );
+    return rows.map(SavedPlace.fromMap).toList();
+  }
+
   Future<void> updatePlace(SavedPlace place, {String deviceId = ''}) async {
     final db = await database;
     await db.update(
