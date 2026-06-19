@@ -1,5 +1,6 @@
 import 'package:uuid/uuid.dart';
 
+import '../services/settings_service.dart';
 import 'saved_place.dart';
 
 const _uuid = Uuid();
@@ -32,9 +33,12 @@ class PlaceGroup {
     this.placeType = PlaceType.public,
     int? updatedAt,
     this.deletedAt,
-    this.deviceId = '',
+    String? deviceId,
   }) : uuid = uuid?.isNotEmpty == true ? uuid! : _uuid.v4(),
-       updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch;
+       updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch,
+       deviceId = deviceId?.isNotEmpty == true
+           ? deviceId!
+           : SettingsService.instance.deviceId;
 
   factory PlaceGroup.fromMap(Map<String, dynamic> map) {
     final typeIndex = (map['place_type'] as int?) ?? 0;
@@ -52,7 +56,8 @@ class PlaceGroup {
       updatedAt:
           (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       deletedAt: map['deleted_at'] as int?,
-      deviceId: (map['device_id'] as String?) ?? '',
+      deviceId:
+          (map['device_id'] as String?) ?? SettingsService.instance.deviceId,
     );
   }
 

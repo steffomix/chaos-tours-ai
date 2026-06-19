@@ -1,5 +1,7 @@
 import 'package:uuid/uuid.dart';
 
+import '../services/settings_service.dart';
+
 const _uuid = Uuid();
 
 /// A Telegram bot connection used to send place reports to a chat or channel.
@@ -32,9 +34,12 @@ class TelegramConnection {
     required this.botToken,
     int? updatedAt,
     this.deletedAt,
-    this.deviceId = '',
+    String? deviceId,
   }) : uuid = uuid?.isNotEmpty == true ? uuid! : _uuid.v4(),
-       updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch;
+       updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch,
+       deviceId = deviceId?.isNotEmpty == true
+           ? deviceId!
+           : SettingsService.instance.deviceId;
 
   factory TelegramConnection.fromMap(Map<String, dynamic> map) {
     return TelegramConnection(
@@ -46,7 +51,8 @@ class TelegramConnection {
       updatedAt:
           (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       deletedAt: map['deleted_at'] as int?,
-      deviceId: (map['device_id'] as String?) ?? '',
+      deviceId:
+          (map['device_id'] as String?) ?? SettingsService.instance.deviceId,
     );
   }
 

@@ -1,10 +1,10 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/sync_source.dart';
 import 'database_service.dart';
+import 'settings_service.dart';
 
 /// Legacy single-table sync options (used by [DatabaseService.upsertByUuid]).
 class SyncOptions {
@@ -52,30 +52,13 @@ class SyncService {
   SyncService._();
   static final SyncService instance = SyncService._();
 
-  static const _keyLastSyncMs = 'sync_last_ms';
-  static const _keyDeviceId = 'sync_device_id';
+  SettingsService get _settings => SettingsService.instance;
 
-  SharedPreferences? _prefs;
+  Future<int> get lastSyncMs async => _settings.lastSyncMs;
+  Future<void> _setLastSyncMs(int ms) async => _settings.lastSyncMs = ms;
 
-  Future<SharedPreferences> get _p async {
-    _prefs ??= await SharedPreferences.getInstance();
-    return _prefs!;
-  }
-
-  Future<int> get lastSyncMs async => (await _p).getInt(_keyLastSyncMs) ?? 0;
-  Future<void> _setLastSyncMs(int ms) async =>
-      (await _p).setInt(_keyLastSyncMs, ms);
-
-  /// Returns the persistent device ID, creating one on first call.
-  Future<String> get deviceId async {
-    final p = await _p;
-    var id = p.getString(_keyDeviceId);
-    if (id == null || id.isEmpty) {
-      id = DatabaseService.generateUuid();
-      await p.setString(_keyDeviceId, id);
-    }
-    return id;
-  }
+  /// Returns the persistent device ID from [SettingsService].
+  Future<String> get deviceId async => _settings.deviceId;
 
   // ── Main sync entry points ─────────────────────────────────────────────────
 

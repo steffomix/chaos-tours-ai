@@ -21,7 +21,7 @@ class NominatimService {
   NominatimService._();
   static final NominatimService instance = NominatimService._();
   static final String _userAgent =
-      "ChaosTours/1.0 (user_${SettingsService.instance.appUserUuid})";
+      "ChaosTours/1.0 (user_${SettingsService.instance.deviceId})";
   static const Duration _timeout = Duration(seconds: 10);
 
   /// Reverse geocode [lat]/[lng] and return a human-readable address string,

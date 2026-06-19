@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
+import '../services/settings_service.dart';
+
 const _uuid = Uuid();
 
 /// Type of a saved place — determines behaviour and map appearance.
@@ -148,7 +150,7 @@ class SavedPlace {
     this.intervalDays,
     int? updatedAt,
     this.deletedAt,
-    this.deviceId = '',
+    String? deviceId,
     this.originType = PlaceOriginType.self,
     this.originSourceUuid,
     this.website = '',
@@ -156,7 +158,10 @@ class SavedPlace {
     this.phone = '',
   }) : uuid = uuid?.isNotEmpty == true ? uuid! : _uuid.v4(),
        createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch,
-       updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch;
+       updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch,
+       deviceId = deviceId?.isNotEmpty == true
+           ? deviceId!
+           : SettingsService.instance.deviceId;
 
   factory SavedPlace.fromMap(Map<String, dynamic> map) {
     final typeIndex = (map['place_type'] as int?) ?? 0;
@@ -178,7 +183,8 @@ class SavedPlace {
       updatedAt:
           (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       deletedAt: map['deleted_at'] as int?,
-      deviceId: (map['device_id'] as String?) ?? '',
+      deviceId:
+          (map['device_id'] as String?) ?? SettingsService.instance.deviceId,
       originType: PlaceOriginType
           .values[originIndex.clamp(0, PlaceOriginType.values.length - 1)],
       originSourceUuid: map['origin_source_uuid'] as String?,

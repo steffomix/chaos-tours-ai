@@ -32,7 +32,8 @@ class SettingsService {
   static const String _keyFilterMinAvgRating = 'filter_min_avg_rating';
   static const String _keyFilterDistanceEnabled = 'filter_distance_enabled';
   static const String _keyFilterMaxDistanceKm = 'filter_max_distance_km';
-  static const String _keyAppUserUuid = 'app_user_uuid';
+  static const String _keyLastSyncMs = 'sync_last_ms';
+  static const String _keyDeviceId = 'device_id';
 
   SharedPreferences? _prefs;
 
@@ -53,14 +54,20 @@ class SettingsService {
 
   /// UUID to identify this app installation for OpenStreetMap user agent.
   /// Otherwise OSM may block requests from the app if all app users share the same user agent.
-  String get appUserUuid {
-    String? uuid = _p.getString(_keyAppUserUuid);
+  String get deviceId {
+    String? uuid = _p.getString(_keyDeviceId);
     if (uuid == null) {
       uuid = _uuid.v4();
-      _p.setString(_keyAppUserUuid, uuid);
+      _p.setString(_keyDeviceId, uuid);
     }
     return uuid;
   }
+
+  set deviceId(String v) => _p.setString(_keyDeviceId, v);
+
+  /// Timestamp of the last successful sync in milliseconds since epoch (0 = never).
+  int get lastSyncMs => _p.getInt(_keyLastSyncMs) ?? 0;
+  set lastSyncMs(int v) => _p.setInt(_keyLastSyncMs, v);
 
   /// GPS sampling interval in seconds (default: 15).
   int get gpsIntervalSeconds => _p.getInt(_keyGpsInterval) ?? 15;
@@ -210,7 +217,12 @@ class SettingsService {
     searchCountry = a.searchCountry;
     schedulerColorRange = a.schedulerColorRange;
     schedulerGroupIds = a.schedulerGroupIds;
+    filterRequireExperiences = a.filterRequireExperiences;
+    filterMinAvgRating = a.filterMinAvgRating;
+    filterDistanceEnabled = a.filterDistanceEnabled;
+    filterMaxDistanceKm = a.filterMaxDistanceKm;
     activeAktivitaetUuid = a.uuid;
+    deviceId = a.deviceId;
   }
 
   /// Builds an [Aktivitaet] snapshot of the current SharedPreferences values.
@@ -232,6 +244,11 @@ class SettingsService {
       searchCountry: searchCountry,
       schedulerColorRange: schedulerColorRange,
       schedulerGroupIds: schedulerGroupIds,
+      filterRequireExperiences: filterRequireExperiences,
+      filterMinAvgRating: filterMinAvgRating,
+      filterDistanceEnabled: filterDistanceEnabled,
+      filterMaxDistanceKm: filterMaxDistanceKm,
+      deviceId: deviceId,
     );
   }
 }

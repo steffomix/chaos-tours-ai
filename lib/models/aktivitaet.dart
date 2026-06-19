@@ -1,5 +1,7 @@
 import 'package:uuid/uuid.dart';
 
+import '../services/settings_service.dart';
+
 const _uuid = Uuid();
 
 /// A named settings profile. At most one is "active" at a time;
@@ -34,6 +36,12 @@ class Aktivitaet {
   /// Empty string means "all groups".
   final String schedulerGroupIds;
 
+  // ── Experience / distance filter ─────────────────────────────────────────
+  final bool filterRequireExperiences;
+  final double filterMinAvgRating;
+  final bool filterDistanceEnabled;
+  final double filterMaxDistanceKm;
+
   // ── Sync fields ──────────────────────────────────────────────────────────
   final int updatedAt;
   final int? deletedAt;
@@ -53,11 +61,18 @@ class Aktivitaet {
     this.searchCountry = '',
     this.schedulerColorRange = 14,
     this.schedulerGroupIds = '',
+    this.filterRequireExperiences = false,
+    this.filterMinAvgRating = 0.0,
+    this.filterDistanceEnabled = false,
+    this.filterMaxDistanceKm = 100.0,
     int? updatedAt,
     this.deletedAt,
-    this.deviceId = '',
+    String? deviceId,
   }) : uuid = uuid?.isNotEmpty == true ? uuid! : _uuid.v4(),
-       updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch;
+       updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch,
+       deviceId = deviceId?.isNotEmpty == true
+           ? deviceId!
+           : SettingsService.instance.deviceId;
 
   factory Aktivitaet.fromMap(Map<String, dynamic> map) {
     return Aktivitaet(
@@ -75,10 +90,18 @@ class Aktivitaet {
       searchCountry: map['search_country'] as String? ?? '',
       schedulerColorRange: map['scheduler_color_range'] as int? ?? 14,
       schedulerGroupIds: map['scheduler_group_ids'] as String? ?? '',
+      filterRequireExperiences:
+          (map['filter_require_experiences'] as int? ?? 0) == 1,
+      filterMinAvgRating:
+          (map['filter_min_avg_rating'] as num?)?.toDouble() ?? 0.0,
+      filterDistanceEnabled: (map['filter_distance_enabled'] as int? ?? 0) == 1,
+      filterMaxDistanceKm:
+          (map['filter_max_distance_km'] as num?)?.toDouble() ?? 100.0,
       updatedAt:
           (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       deletedAt: map['deleted_at'] as int?,
-      deviceId: (map['device_id'] as String?) ?? '',
+      deviceId:
+          (map['device_id'] as String?) ?? SettingsService.instance.deviceId,
     );
   }
 
@@ -99,6 +122,10 @@ class Aktivitaet {
       'search_country': searchCountry,
       'scheduler_color_range': schedulerColorRange,
       'scheduler_group_ids': schedulerGroupIds,
+      'filter_require_experiences': filterRequireExperiences ? 1 : 0,
+      'filter_min_avg_rating': filterMinAvgRating,
+      'filter_distance_enabled': filterDistanceEnabled ? 1 : 0,
+      'filter_max_distance_km': filterMaxDistanceKm,
       'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
       'device_id': deviceId,
@@ -121,6 +148,10 @@ class Aktivitaet {
     String? searchCountry,
     int? schedulerColorRange,
     String? schedulerGroupIds,
+    bool? filterRequireExperiences,
+    double? filterMinAvgRating,
+    bool? filterDistanceEnabled,
+    double? filterMaxDistanceKm,
     int? updatedAt,
     int? deletedAt,
     bool clearDeletedAt = false,
@@ -144,6 +175,12 @@ class Aktivitaet {
       searchCountry: searchCountry ?? this.searchCountry,
       schedulerColorRange: schedulerColorRange ?? this.schedulerColorRange,
       schedulerGroupIds: schedulerGroupIds ?? this.schedulerGroupIds,
+      filterRequireExperiences:
+          filterRequireExperiences ?? this.filterRequireExperiences,
+      filterMinAvgRating: filterMinAvgRating ?? this.filterMinAvgRating,
+      filterDistanceEnabled:
+          filterDistanceEnabled ?? this.filterDistanceEnabled,
+      filterMaxDistanceKm: filterMaxDistanceKm ?? this.filterMaxDistanceKm,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
       deviceId: deviceId ?? this.deviceId,

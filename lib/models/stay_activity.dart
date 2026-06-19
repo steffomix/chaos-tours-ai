@@ -1,5 +1,7 @@
 import 'package:uuid/uuid.dart';
 
+import '../services/settings_service.dart';
+
 const _uuid = Uuid();
 
 class StayActivity {
@@ -20,9 +22,12 @@ class StayActivity {
     required this.description,
     int? updatedAt,
     this.deletedAt,
-    this.deviceId = '',
+    String? deviceId,
   }) : uuid = uuid?.isNotEmpty == true ? uuid! : _uuid.v4(),
-       updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch;
+       updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch,
+       deviceId = deviceId?.isNotEmpty == true
+           ? deviceId!
+           : SettingsService.instance.deviceId;
 
   factory StayActivity.fromMap(Map<String, dynamic> map) {
     return StayActivity(
@@ -33,7 +38,8 @@ class StayActivity {
       updatedAt:
           (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       deletedAt: map['deleted_at'] as int?,
-      deviceId: (map['device_id'] as String?) ?? '',
+      deviceId:
+          (map['device_id'] as String?) ?? SettingsService.instance.deviceId,
     );
   }
 

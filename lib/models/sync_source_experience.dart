@@ -1,5 +1,7 @@
 import 'package:uuid/uuid.dart';
 
+import '../services/settings_service.dart';
+
 const _uuid = Uuid();
 
 /// A user experience / note linked to a [SyncSource] by its UUID.
@@ -27,10 +29,13 @@ class SyncSourceExperience {
     int? createdAt,
     int? updatedAt,
     this.deletedAt,
-    this.deviceId = '',
+    String? deviceId,
   }) : uuid = uuid?.isNotEmpty == true ? uuid! : _uuid.v4(),
        createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch,
-       updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch;
+       updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch,
+       deviceId = deviceId?.isNotEmpty == true
+           ? deviceId!
+           : SettingsService.instance.deviceId;
 
   factory SyncSourceExperience.fromMap(Map<String, dynamic> map) {
     return SyncSourceExperience(
@@ -42,7 +47,8 @@ class SyncSourceExperience {
       updatedAt:
           (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       deletedAt: map['deleted_at'] as int?,
-      deviceId: (map['device_id'] as String?) ?? '',
+      deviceId:
+          (map['device_id'] as String?) ?? SettingsService.instance.deviceId,
     );
   }
 

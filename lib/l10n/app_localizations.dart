@@ -506,6 +506,18 @@ abstract class AppLocalizations {
   /// **'Wechseln / Neu erstellen'**
   String get tooltipSwitchCreate;
 
+  /// No description provided for @deviceId.
+  ///
+  /// In de, this message translates to:
+  /// **'Geräte ID'**
+  String get deviceId;
+
+  /// No description provided for @deviceIdDescription.
+  ///
+  /// In de, this message translates to:
+  /// **'Diese ID hilft Ihnen dabei, importierte oder synchronisierte Inhalte von Ihren eigenen zu unterscheiden. Sie können frei eine eigene ID eintragen oder die automatisch generierte ID mit einem Namen versehen. Bitte beachten Sie jedoch, dass nicht geprüft wird, ob diese ID bereits anderweitig verwendet wird.'**
+  String get deviceIdDescription;
+
   /// Tracking section header
   ///
   /// In de, this message translates to:

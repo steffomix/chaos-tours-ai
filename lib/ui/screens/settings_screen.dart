@@ -16,6 +16,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  late String _deviceId;
   late int _gpsInterval;
   late int _stayDetection;
   late int _autoPlaceTime;
@@ -29,6 +30,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _timelineHistoryDays;
   late String _searchCountry;
   final TextEditingController _searchCountryCtrl = TextEditingController();
+  final TextEditingController _deviceIdCtrl = TextEditingController();
   late int _schedulerColorRange;
   Set<String> _schedulerGroupIds = {};
   List<PlaceGroup> _groups = [];
@@ -42,6 +44,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
     _searchCountryCtrl.dispose();
+    _deviceIdCtrl.dispose();
     super.dispose();
   }
 
@@ -49,6 +52,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     final s = SettingsService.instance;
+    _deviceId = s.deviceId;
     _gpsInterval = s.gpsIntervalSeconds;
     _stayDetection = s.stayDetectionSeconds;
     _autoPlaceTime = s.autoPlaceSeconds;
@@ -88,6 +92,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _saveAll() async {
     final s = SettingsService.instance;
+    s.deviceId = _deviceId;
     s.gpsIntervalSeconds = _gpsInterval;
     s.stayDetectionSeconds = _stayDetection;
     s.autoPlaceSeconds = _autoPlaceTime;
@@ -211,6 +216,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: Text(l10n.telegramConnectionsSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.pushNamed(context, '/telegram-connections'),
+          ),
+          // ── Device ID ───────────────────────────────────────────────
+          ListTile(
+            leading: const Icon(Icons.card_membership),
+            title: Text(l10n.deviceId),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: _deviceIdCtrl..text = _deviceId,
+                  decoration: InputDecoration(
+                    hintText: _deviceId,
+                    isDense: true,
+                  ),
+                  onChanged: (v) => _deviceIdCtrl.text = v,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  l10n.deviceIdDescription,
+                  style: const TextStyle(fontSize: 11),
+                ),
+              ],
+            ),
           ),
           const Divider(),
           // ── Adresssuche ───────────────────────────────────────────────
