@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'settings_service.dart';
+
 /// A single result from a Nominatim forward-geocoding search.
 class NominatimResult {
   final String displayName;
@@ -18,8 +20,8 @@ class NominatimResult {
 class NominatimService {
   NominatimService._();
   static final NominatimService instance = NominatimService._();
-
-  static const String _userAgent = 'ChaosToursAI/1.0';
+  static final String _userAgent =
+      "ChaosTours/1.0 (user_${SettingsService.instance.appUserUuid})";
   static const Duration _timeout = Duration(seconds: 10);
 
   /// Reverse geocode [lat]/[lng] and return a human-readable address string,

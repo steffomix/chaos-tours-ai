@@ -1,10 +1,12 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 import '../models/aktivitaet.dart';
 
 class SettingsService {
   SettingsService._();
   static final SettingsService instance = SettingsService._();
+  static const _uuid = Uuid();
 
   static const String _keyGpsInterval = 'gps_interval_seconds';
   static const String _keyStayDetection = 'stay_detection_seconds';
@@ -30,6 +32,7 @@ class SettingsService {
   static const String _keyFilterMinAvgRating = 'filter_min_avg_rating';
   static const String _keyFilterDistanceEnabled = 'filter_distance_enabled';
   static const String _keyFilterMaxDistanceKm = 'filter_max_distance_km';
+  static const String _keyAppUserUuid = 'app_user_uuid';
 
   SharedPreferences? _prefs;
 
@@ -46,6 +49,17 @@ class SettingsService {
   SharedPreferences get _p {
     assert(_prefs != null, 'SettingsService.init() must be called before use');
     return _prefs!;
+  }
+
+  /// UUID to identify this app installation for OpenStreetMap user agent.
+  /// Otherwise OSM may block requests from the app if all app users share the same user agent.
+  String get appUserUuid {
+    String? uuid = _p.getString(_keyAppUserUuid);
+    if (uuid == null) {
+      uuid = _uuid.v4();
+      _p.setString(_keyAppUserUuid, uuid);
+    }
+    return uuid;
   }
 
   /// GPS sampling interval in seconds (default: 15).
