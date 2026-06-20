@@ -46,11 +46,41 @@ class _TimelineScreenState extends State<TimelineScreen> {
   final MapController _mapController = MapController();
   LatLng? _lastKnownPosition;
 
+  // Chunk loading
+  static const int _kChunkSize = 20;
+  int _displayedStays = _kChunkSize;
+  int _displayedScheduler = _kChunkSize;
+  final ScrollController _staysScrollCtrl = ScrollController();
+  final ScrollController _schedulerScrollCtrl = ScrollController();
+
   @override
   void initState() {
     super.initState();
+    _staysScrollCtrl.addListener(_onStaysScroll);
+    _schedulerScrollCtrl.addListener(_onSchedulerScroll);
     _load();
     _loadLastPosition();
+  }
+
+  void _onStaysScroll() {
+    if (!_staysScrollCtrl.hasClients) return;
+    final pos = _staysScrollCtrl.position;
+    if (pos.pixels >= pos.maxScrollExtent - 300) {
+      final total = _filteredStays.length;
+      if (_displayedStays < total) {
+        setState(() {
+          _displayedStays = (_displayedStays + _kChunkSize).clamp(0, total);
+        });
+      }
+    }
+  }
+
+  void _onSchedulerScroll() {
+    if (!_schedulerScrollCtrl.hasClients) return;
+    final pos = _schedulerScrollCtrl.position;
+    if (pos.pixels >= pos.maxScrollExtent - 300) {
+      setState(() => _displayedScheduler += _kChunkSize);
+    }
   }
 
   void _onServiceData(Object data) {
@@ -61,6 +91,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
   @override
   void dispose() {
     ForegroundServiceManager.removeDataListener(_onServiceData);
+    _staysScrollCtrl.dispose();
+    _schedulerScrollCtrl.dispose();
     _searchCtrl.dispose();
     super.dispose();
   }
@@ -115,6 +147,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
             stays[i].uuid: activityLists[i],
         };
         _lastVisitByPlace = lastVisits;
+        _displayedStays = _kChunkSize;
+        _displayedScheduler = _kChunkSize;
       });
     }
   }
@@ -167,7 +201,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
       initialDateRange: _filterRange,
     );
     if (range != null && mounted) {
-      setState(() => _filterRange = range);
+      setState(() {
+        _filterRange = range;
+        _displayedStays = _kChunkSize;
+      });
     }
   }
 
@@ -198,7 +235,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     hintText: AppLocalizations.of(context)!.searchStaysHint,
                     border: InputBorder.none,
                   ),
-                  onChanged: (v) => setState(() => _searchQuery = v),
+                  onChanged: (v) => setState(() {
+                    _searchQuery = v;
+                    _displayedStays = _kChunkSize;
+                  }),
                 )
               : Text(AppLocalizations.of(context)!.visitsTitle),
           actions: [
@@ -210,6 +250,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                   _searchActive = false;
                   _searchQuery = '';
                   _searchCtrl.clear();
+                  _displayedStays = _kChunkSize;
                 }),
               )
             else ...[
@@ -238,6 +279,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                   onPressed: () => setState(() {
                     _filterRange = null;
                     _filterPlaceUuid = null;
+                    _displayedStays = _kChunkSize;
                   }),
                   tooltip: AppLocalizations.of(context)!.resetFilter,
                 ),
@@ -290,9 +332,12 @@ class _TimelineScreenState extends State<TimelineScreen> {
       );
     }
 
-    // Group by date
+    final visibleStays = filtered.take(_displayedStays).toList();
+    final hasMore = filtered.length > _displayedStays;
+
+    // Group visible stays by date
     final grouped = <String, List<Stay>>{};
-    for (final s in filtered) {
+    for (final s in visibleStays) {
       final dt = s.startDateTime;
       final key =
           '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
@@ -300,49 +345,51 @@ class _TimelineScreenState extends State<TimelineScreen> {
     }
     final dates = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
+    // Build flat item list: alternating date headers (String) and stays (Stay)
+    final List<Object> items = [];
+    for (final date in dates) {
+      items.add(date);
+      items.addAll(grouped[date]!);
+    }
+
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView.builder(
-        itemCount: dates.fold<int>(
-          0,
-          (acc, d) => acc + 1 + (grouped[d]?.length ?? 0),
-        ),
+        controller: _staysScrollCtrl,
+        itemCount: items.length + (hasMore ? 1 : 0),
         itemBuilder: (ctx, index) {
-          int offset = 0;
-          for (final date in dates) {
-            if (index == offset) {
-              // Date header
-              final parts = date.split('-');
-              final dt = DateTime(
-                int.parse(parts[0]),
-                int.parse(parts[1]),
-                int.parse(parts[2]),
-              );
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: Text(
-                  '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}',
-                  style: Theme.of(ctx).textTheme.labelLarge?.copyWith(
-                    color: Theme.of(ctx).colorScheme.primary,
-                  ),
-                ),
-              );
-            }
-            offset++;
-            final staysForDate = grouped[date]!;
-            if (index < offset + staysForDate.length) {
-              final stay = staysForDate[index - offset];
-              return StayCard(
-                stay: stay,
-                place: _placeForStay(stay),
-                persons: _personsByStay[stay.uuid] ?? [],
-                activities: _activitiesByStay[stay.uuid] ?? [],
-                onUpdated: _load,
-              );
-            }
-            offset += staysForDate.length;
+          if (index == items.length) {
+            return const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: CircularProgressIndicator()),
+            );
           }
-          return const SizedBox.shrink();
+          final item = items[index];
+          if (item is String) {
+            final parts = item.split('-');
+            final dt = DateTime(
+              int.parse(parts[0]),
+              int.parse(parts[1]),
+              int.parse(parts[2]),
+            );
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Text(
+                '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}',
+                style: Theme.of(ctx).textTheme.labelLarge?.copyWith(
+                  color: Theme.of(ctx).colorScheme.primary,
+                ),
+              ),
+            );
+          }
+          final stay = item as Stay;
+          return StayCard(
+            stay: stay,
+            place: _placeForStay(stay),
+            persons: _personsByStay[stay.uuid] ?? [],
+            activities: _activitiesByStay[stay.uuid] ?? [],
+            onUpdated: _load,
+          );
         },
       ),
     );
@@ -524,12 +571,22 @@ class _TimelineScreenState extends State<TimelineScreen> {
       return (place: p, daysRemaining: daysRemaining);
     }).toList()..sort((a, b) => a.daysRemaining.compareTo(b.daysRemaining));
 
+    final visibleEntries = entries.take(_displayedScheduler).toList();
+    final hasMore = entries.length > _displayedScheduler;
+
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView.builder(
-        itemCount: entries.length,
+        controller: _schedulerScrollCtrl,
+        itemCount: visibleEntries.length + (hasMore ? 1 : 0),
         itemBuilder: (ctx, i) {
-          final entry = entries[i];
+          if (i == visibleEntries.length) {
+            return const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          final entry = visibleEntries[i];
           final place = entry.place;
           final days = entry.daysRemaining;
           final color = _urgencyColor(days, colorRange);
@@ -665,7 +722,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
             title: Text(AppLocalizations.of(ctx)!.allPlaces),
             selected: _filterPlaceUuid == null,
             onTap: () {
-              setState(() => _filterPlaceUuid = null);
+              setState(() {
+                _filterPlaceUuid = null;
+                _displayedStays = _kChunkSize;
+              });
               Navigator.pop(ctx);
             },
           ),
@@ -675,7 +735,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
               title: Text(p.name),
               selected: _filterPlaceUuid == p.uuid,
               onTap: () {
-                setState(() => _filterPlaceUuid = p.uuid);
+                setState(() {
+                  _filterPlaceUuid = p.uuid;
+                  _displayedStays = _kChunkSize;
+                });
                 Navigator.pop(ctx);
               },
             ),

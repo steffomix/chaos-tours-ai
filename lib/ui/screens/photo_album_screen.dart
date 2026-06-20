@@ -24,10 +24,31 @@ class _PhotoAlbumScreenState extends State<PhotoAlbumScreen> {
   Map<String, Stay> _staysByUuid = {};
   bool _loading = true;
 
+  // Chunk loading
+  static const int _kChunkSize = 20;
+  int _displayedGroups = _kChunkSize;
+  int _totalGroupCount = 0;
+  final ScrollController _albumScrollCtrl = ScrollController();
+
   @override
   void initState() {
     super.initState();
+    _albumScrollCtrl.addListener(_onAlbumScroll);
     _load();
+  }
+
+  void _onAlbumScroll() {
+    if (!_albumScrollCtrl.hasClients) return;
+    final pos = _albumScrollCtrl.position;
+    if (pos.pixels >= pos.maxScrollExtent - 300 &&
+        _displayedGroups < _totalGroupCount) {
+      setState(() {
+        _displayedGroups = (_displayedGroups + _kChunkSize).clamp(
+          0,
+          _totalGroupCount,
+        );
+      });
+    }
   }
 
   Future<void> _load() async {
@@ -40,12 +61,25 @@ class _PhotoAlbumScreenState extends State<PhotoAlbumScreen> {
     final places = results[1] as List<SavedPlace>;
     final stays = results[2] as List<Stay>;
 
+    // Compute group count for scroll listener guard
+    final staysByUuid = {for (final s in stays) s.uuid: s};
+    final groupKeys = <String?>{};
+    for (final photo in photos) {
+      String? pUuid = photo.placeUuid;
+      if (pUuid == null && photo.stayUuid != null) {
+        pUuid = staysByUuid[photo.stayUuid]?.placeUuid;
+      }
+      groupKeys.add(pUuid);
+    }
+
     if (mounted) {
       setState(() {
         _allPhotos = photos;
         _placesByUuid = {for (final p in places) p.uuid: p};
-        _staysByUuid = {for (final s in stays) s.uuid: s};
+        _staysByUuid = staysByUuid;
         _loading = false;
+        _displayedGroups = _kChunkSize;
+        _totalGroupCount = groupKeys.length;
       });
     }
   }
@@ -61,6 +95,12 @@ class _PhotoAlbumScreenState extends State<PhotoAlbumScreen> {
       (map[pUuid] ??= []).add(photo);
     }
     return map;
+  }
+
+  @override
+  void dispose() {
+    _albumScrollCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -117,8 +157,17 @@ class _PhotoAlbumScreenState extends State<PhotoAlbumScreen> {
       });
 
     return ListView.builder(
-      itemCount: sortedKeys.length,
+      controller: _albumScrollCtrl,
+      itemCount:
+          sortedKeys.length.clamp(0, _displayedGroups) +
+          (_displayedGroups < sortedKeys.length ? 1 : 0),
       itemBuilder: (context, index) {
+        if (index == sortedKeys.length.clamp(0, _displayedGroups)) {
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
         final placeUuid = sortedKeys[index];
         final photos = grouped[placeUuid]!;
         final placeName = placeUuid != null

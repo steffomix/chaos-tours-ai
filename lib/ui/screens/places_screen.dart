@@ -46,9 +46,15 @@ class _PlacesScreenState extends State<PlacesScreen> {
   // Distance
   ({double lat, double lng})? _currentPos;
 
+  // Chunk loading
+  static const int _kChunkSize = 20;
+  int _displayedPlaces = _kChunkSize;
+  final ScrollController _placesScrollCtrl = ScrollController();
+
   @override
   void initState() {
     super.initState();
+    _placesScrollCtrl.addListener(_onPlacesScroll);
     final s = SettingsService.instance;
     _expFilter = ExperienceFilterState(
       requireExperiences: s.filterRequireExperiences,
@@ -59,9 +65,23 @@ class _PlacesScreenState extends State<PlacesScreen> {
     _loadCurrentPosition().then((_) => _loadPlaces());
   }
 
+  void _onPlacesScroll() {
+    if (!_placesScrollCtrl.hasClients) return;
+    final pos = _placesScrollCtrl.position;
+    if (pos.pixels >= pos.maxScrollExtent - 300) {
+      final total = _filtered.length;
+      if (_displayedPlaces < total) {
+        setState(() {
+          _displayedPlaces = (_displayedPlaces + _kChunkSize).clamp(0, total);
+        });
+      }
+    }
+  }
+
   @override
   void dispose() {
     ForegroundServiceManager.removeDataListener(_onServiceData);
+    _placesScrollCtrl.dispose();
     _searchCtrl.dispose();
     super.dispose();
   }
@@ -114,6 +134,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
         _visitCounts = counts;
         _lastStay = stays;
         _avgRatings = avgRatings;
+        _displayedPlaces = _kChunkSize;
       });
     }
   }
@@ -240,11 +261,23 @@ class _PlacesScreenState extends State<PlacesScreen> {
         ),
       );
     }
+    final visibleCount = _displayedPlaces.clamp(0, filtered.length);
+    final hasMore = visibleCount < filtered.length;
     return RefreshIndicator(
-      onRefresh: _loadPlaces,
+      onRefresh: () async {
+        setState(() => _displayedPlaces = _kChunkSize);
+        await _loadPlaces();
+      },
       child: ListView.builder(
-        itemCount: filtered.length,
+        controller: _placesScrollCtrl,
+        itemCount: visibleCount + (hasMore ? 1 : 0),
         itemBuilder: (ctx, i) {
+          if (i == visibleCount) {
+            return const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
           final item = filtered[i];
           final place = item.place;
           final count = _visitCounts[place.uuid] ?? 0;
@@ -354,7 +387,10 @@ class _PlacesScreenState extends State<PlacesScreen> {
                     hintText: l10n.searchPlaces,
                     border: InputBorder.none,
                   ),
-                  onChanged: (v) => setState(() => _searchQuery = v),
+                  onChanged: (v) => setState(() {
+                    _searchQuery = v;
+                    _displayedPlaces = _kChunkSize;
+                  }),
                 )
               : Text(l10n.placesTitle),
           actions: [
@@ -366,6 +402,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
                   _searchActive = false;
                   _searchQuery = '';
                   _searchCtrl.clear();
+                  _displayedPlaces = _kChunkSize;
                 }),
               )
             else ...[
@@ -377,7 +414,10 @@ class _PlacesScreenState extends State<PlacesScreen> {
                 tooltip: _intervalOnly
                     ? l10n.showAllPlaces
                     : l10n.showIntervalOnly,
-                onPressed: () => setState(() => _intervalOnly = !_intervalOnly),
+                onPressed: () => setState(() {
+                  _intervalOnly = !_intervalOnly;
+                  _displayedPlaces = _kChunkSize;
+                }),
               ),
               IconButton(
                 icon: Badge(
@@ -404,7 +444,10 @@ class _PlacesScreenState extends State<PlacesScreen> {
                 ExperienceFilterPanel(
                   filter: _expFilter,
                   onChanged: (f) {
-                    setState(() => _expFilter = f);
+                    setState(() {
+                      _expFilter = f;
+                      _displayedPlaces = _kChunkSize;
+                    });
                     final s = SettingsService.instance;
                     s.filterRequireExperiences = f.requireExperiences;
                     s.filterMinAvgRating = f.minAvgRating;
