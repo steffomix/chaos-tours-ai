@@ -61,6 +61,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
 
   @override
   void dispose() {
+    ForegroundServiceManager.removeDataListener(_onServiceData);
     _searchCtrl.dispose();
     super.dispose();
   }

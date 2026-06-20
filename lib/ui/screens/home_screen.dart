@@ -93,6 +93,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
+    ForegroundServiceManager.removeDataListener(_onServiceData);
     _pulseController.dispose();
     super.dispose();
   }

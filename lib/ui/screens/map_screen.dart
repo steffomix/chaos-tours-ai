@@ -72,6 +72,12 @@ class _MapScreenState extends State<MapScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _goToCurrentLocation());
   }
 
+  @override
+  void dispose() {
+    ForegroundServiceManager.removeDataListener(_onServiceData);
+    super.dispose();
+  }
+
   Future<void> _loadPlaces() async {
     // Update current position for distance filter.
     try {

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
+import 'package:focus_detector/focus_detector.dart';
 
 import '../../models/saved_place.dart';
 import '../../models/stay.dart';
 import '../../models/stay_activity.dart';
 import '../../models/stay_person.dart';
 import '../../services/database_service.dart';
+import '../../services/foreground_service_handler.dart';
 import '../widgets/stay_card.dart';
 
 /// Displays all completed stays recorded at a given [SavedPlace].
@@ -27,6 +29,16 @@ class _PlaceVisitsScreenState extends State<PlaceVisitsScreen> {
   @override
   void initState() {
     super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    ForegroundServiceManager.removeDataListener(_onServiceData);
+    super.dispose();
+  }
+
+  void _onServiceData(Map<dynamic, dynamic> data) {
     _load();
   }
 
@@ -69,33 +81,42 @@ class _PlaceVisitsScreenState extends State<PlaceVisitsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.placeVisitsTitle(widget.place.name)),
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
-        ],
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _stays.isEmpty
-          ? Center(child: Text(l10n.noVisitsYet, textAlign: TextAlign.center))
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: ListView.builder(
-                itemCount: _stays.length,
-                itemBuilder: (ctx, i) {
-                  final stay = _stays[i];
-                  return StayCard(
-                    stay: stay,
-                    place: widget.place,
-                    persons: _personsByStay[stay.uuid] ?? [],
-                    activities: _activitiesByStay[stay.uuid] ?? [],
-                    onUpdated: _load,
-                  );
-                },
+
+    return FocusDetector(
+      onFocusGained: () {
+        ForegroundServiceManager.addDataListener(_onServiceData);
+        _load();
+      },
+      onFocusLost: () =>
+          ForegroundServiceManager.removeDataListener(_onServiceData),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.placeVisitsTitle(widget.place.name)),
+          actions: [
+            IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
+          ],
+        ),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _stays.isEmpty
+            ? Center(child: Text(l10n.noVisitsYet, textAlign: TextAlign.center))
+            : RefreshIndicator(
+                onRefresh: _load,
+                child: ListView.builder(
+                  itemCount: _stays.length,
+                  itemBuilder: (ctx, i) {
+                    final stay = _stays[i];
+                    return StayCard(
+                      stay: stay,
+                      place: widget.place,
+                      persons: _personsByStay[stay.uuid] ?? [],
+                      activities: _activitiesByStay[stay.uuid] ?? [],
+                      onUpdated: _load,
+                    );
+                  },
+                ),
               ),
-            ),
+      ),
     );
   }
 }
