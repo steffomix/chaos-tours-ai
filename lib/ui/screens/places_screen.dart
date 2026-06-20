@@ -91,7 +91,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
   }
 
   void _onServiceData(Object data) {
-    _loadCurrentPosition().then((_) => _loadPlaces());
+    _loadCurrentPosition().then((_) => _loadPlaces(silent: true));
   }
 
   Future<void> _loadCurrentPosition() async {
@@ -104,8 +104,8 @@ class _PlacesScreenState extends State<PlacesScreen> {
   }
 
   /// Reload both map data and list (first page).
-  Future<void> _loadPlaces() async {
-    await Future.wait([_loadMapData(), _reloadList()]);
+  Future<void> _loadPlaces({bool silent = false}) async {
+    await Future.wait([_loadMapData(), _reloadList(silent: silent)]);
   }
 
   /// Loads all places for the map tab (bounding-box limited in distance mode).
@@ -137,22 +137,28 @@ class _PlacesScreenState extends State<PlacesScreen> {
   }
 
   /// Resets the list and loads the first chunk from the DB.
-  Future<void> _reloadList() async {
-    setState(() {
-      _listItems = [];
-      _visitCounts = {};
-      _lastStay = {};
-      _listHasMore = false;
-      _listLoading = true;
-    });
-    await _loadNextListChunk();
+  /// When [silent] is true the existing items remain visible and no spinner
+  /// is shown — the data is replaced quietly once the first page arrives.
+  Future<void> _reloadList({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _listItems = [];
+        _visitCounts = {};
+        _lastStay = {};
+        _listHasMore = false;
+        _listLoading = true;
+      });
+    }
+    await _loadNextListChunk(silent: silent);
   }
 
   /// Loads the next page and appends it to [_listItems].
-  Future<void> _loadNextListChunk() async {
-    if (_listLoading && _listItems.isNotEmpty) return;
+  /// When [silent] is true, offset is always 0 and the result replaces
+  /// the existing list without touching [_listLoading].
+  Future<void> _loadNextListChunk({bool silent = false}) async {
+    if (!silent && _listLoading && _listItems.isNotEmpty) return;
     if (!mounted) return;
-    setState(() => _listLoading = true);
+    if (!silent) setState(() => _listLoading = true);
 
     try {
       if (_isDistanceMode) {
@@ -226,12 +232,12 @@ class _PlacesScreenState extends State<PlacesScreen> {
             _visitCounts = counts;
             _lastStay = stays;
             _listHasMore = false;
-            _listLoading = false;
+            if (!silent) _listLoading = false;
           });
         }
       } else {
         // Normal mode: proper DB LIMIT/OFFSET pagination.
-        final offset = _listItems.length;
+        final offset = silent ? 0 : _listItems.length;
         final q = _searchQuery.isNotEmpty ? _searchQuery.toLowerCase() : null;
         final placeTypeIndices = q != null
             ? PlaceType.values
@@ -268,14 +274,14 @@ class _PlacesScreenState extends State<PlacesScreen> {
         if (mounted) {
           setState(() {
             _listItems = [
-              ..._listItems,
+              if (!silent) ..._listItems,
               ...page.map((p) => (place: p, distance: null)),
             ];
             _visitCounts = counts;
             _lastStay = stays;
             _avgRatings = {..._avgRatings, ...pageRatings};
             _listHasMore = page.length == _kChunkSize;
-            _listLoading = false;
+            if (!silent) _listLoading = false;
           });
         }
       }
@@ -463,7 +469,8 @@ class _PlacesScreenState extends State<PlacesScreen> {
     return FocusDetector(
       onFocusGained: () {
         ForegroundServiceManager.addDataListener(_onServiceData);
-        _loadPlaces().then((_) {
+        final silent = _listItems.isNotEmpty;
+        _loadPlaces(silent: silent).then((_) {
           if (mounted) setState(() {});
         });
       },

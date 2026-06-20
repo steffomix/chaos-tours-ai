@@ -92,7 +92,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   void _onServiceData(Object data) {
-    _load();
+    _load(silent: true);
     _loadLastPosition();
   }
 
@@ -114,7 +114,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   /// Loads all shared / map data, then resets and reloads both paginated lists.
-  Future<void> _load() async {
+  Future<void> _load({bool silent = false}) async {
     final results = await Future.wait([
       DatabaseService.instance.loadCompletedStays(),
       DatabaseService.instance.loadAllPlaces(),
@@ -142,30 +142,37 @@ class _TimelineScreenState extends State<TimelineScreen> {
         _lastVisitByPlace = lastVisits;
       });
     }
-    await Future.wait([_reloadList(), _reloadScheduler()]);
+    await Future.wait([
+      _reloadList(silent: silent),
+      _reloadScheduler(silent: silent),
+    ]);
   }
 
   // ── Besuche list ─────────────────────────────────────────────────────────
 
   /// Resets the stay list and loads the first page from the DB.
-  Future<void> _reloadList() async {
+  /// When [silent] is true the existing items remain visible and no spinner
+  /// is shown — the data is replaced quietly once the first page arrives.
+  Future<void> _reloadList({bool silent = false}) async {
     if (!mounted) return;
-    setState(() {
-      _listStays = [];
-      _listPersonsByStay = {};
-      _listActivitiesByStay = {};
-      _listHasMore = false;
-      _listLoading = true;
-    });
-    await _loadNextListChunk();
+    if (!silent) {
+      setState(() {
+        _listStays = [];
+        _listPersonsByStay = {};
+        _listActivitiesByStay = {};
+        _listHasMore = false;
+        _listLoading = true;
+      });
+    }
+    await _loadNextListChunk(silent: silent);
   }
 
-  Future<void> _loadNextListChunk() async {
-    if (_listLoading && _listStays.isNotEmpty) return;
+  Future<void> _loadNextListChunk({bool silent = false}) async {
+    if (!silent && _listLoading && _listStays.isNotEmpty) return;
     if (!mounted) return;
-    setState(() => _listLoading = true);
+    if (!silent) setState(() => _listLoading = true);
     try {
-      final offset = _listStays.length;
+      final offset = silent ? 0 : _listStays.length;
       final page = await DatabaseService.instance.loadCompletedStaysPaged(
         limit: _kChunkSize,
         offset: offset,
@@ -187,51 +194,61 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
       if (mounted) {
         setState(() {
-          _listStays = [..._listStays, ...page];
+          if (silent) {
+            _listStays = page;
+            _listPersonsByStay = {};
+            _listActivitiesByStay = {};
+          } else {
+            _listStays = [..._listStays, ...page];
+          }
           for (var i = 0; i < page.length; i++) {
             _listPersonsByStay[page[i].uuid] = personLists[i];
             _listActivitiesByStay[page[i].uuid] = activityLists[i];
           }
           _listHasMore = page.length == _kChunkSize;
-          _listLoading = false;
+          if (!silent) _listLoading = false;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _listLoading = false);
+      if (mounted && !silent) setState(() => _listLoading = false);
     }
   }
 
   // ── Planer scheduler ──────────────────────────────────────────────────────
 
-  Future<void> _reloadScheduler() async {
+  /// When [silent] is true the existing items remain visible and no spinner
+  /// is shown — the data is replaced quietly once the first page arrives.
+  Future<void> _reloadScheduler({bool silent = false}) async {
     if (!mounted) return;
-    setState(() {
-      _schedulerItems = [];
-      _schedulerHasMore = false;
-      _schedulerLoading = true;
-    });
-    await _loadNextSchedulerChunk();
+    if (!silent) {
+      setState(() {
+        _schedulerItems = [];
+        _schedulerHasMore = false;
+        _schedulerLoading = true;
+      });
+    }
+    await _loadNextSchedulerChunk(silent: silent);
   }
 
-  Future<void> _loadNextSchedulerChunk() async {
-    if (_schedulerLoading && _schedulerItems.isNotEmpty) return;
+  Future<void> _loadNextSchedulerChunk({bool silent = false}) async {
+    if (!silent && _schedulerLoading && _schedulerItems.isNotEmpty) return;
     if (!mounted) return;
-    setState(() => _schedulerLoading = true);
+    if (!silent) setState(() => _schedulerLoading = true);
     try {
       final page = await DatabaseService.instance.loadSchedulerPlacesPaged(
         limit: _kChunkSize,
-        offset: _schedulerItems.length,
+        offset: silent ? 0 : _schedulerItems.length,
         groupFilter: SettingsService.instance.schedulerGroupUuidList,
       );
       if (mounted) {
         setState(() {
-          _schedulerItems = [..._schedulerItems, ...page];
+          _schedulerItems = silent ? page : [..._schedulerItems, ...page];
           _schedulerHasMore = page.length == _kChunkSize;
-          _schedulerLoading = false;
+          if (!silent) _schedulerLoading = false;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _schedulerLoading = false);
+      if (mounted && !silent) setState(() => _schedulerLoading = false);
     }
   }
 
@@ -275,15 +292,15 @@ class _TimelineScreenState extends State<TimelineScreen> {
     return FocusDetector(
       onFocusGained: () {
         ForegroundServiceManager.addDataListener(_onServiceData);
-        _load().then((_) {
-          // After loading, also refresh the last known position in case it changed.
+        final silent = _listStays.isNotEmpty || _schedulerItems.isNotEmpty;
+        _load(silent: silent).then((_) {
           if (mounted) {
             setState(() {
               _loadLastPosition();
             });
           }
         });
-        setState(() {}); // Refresh to show tracking points if enabled.
+        setState(() {});
       },
       onFocusLost: () =>
           ForegroundServiceManager.removeDataListener(_onServiceData),

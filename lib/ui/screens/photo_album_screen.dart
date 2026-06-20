@@ -51,34 +51,37 @@ class _PhotoAlbumScreenState extends State<PhotoAlbumScreen> {
     super.dispose();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _groups = [];
-      _groupsHasMore = false;
-      _groupsLoading = true;
-      _photoCache.clear();
-    });
-    await _loadNextGroupChunk();
+  Future<void> _load({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _groups = [];
+        _groupsHasMore = false;
+        _groupsLoading = true;
+        _photoCache.clear();
+      });
+    }
+    await _loadNextGroupChunk(silent: silent);
   }
 
-  Future<void> _loadNextGroupChunk() async {
-    if (_groupsLoading && _groups.isNotEmpty) return;
+  Future<void> _loadNextGroupChunk({bool silent = false}) async {
+    if (!silent && _groupsLoading && _groups.isNotEmpty) return;
     if (!mounted) return;
-    setState(() => _groupsLoading = true);
+    if (!silent) setState(() => _groupsLoading = true);
     try {
       final page = await DatabaseService.instance.loadPhotoGroupsPaged(
         limit: _kChunkSize,
-        offset: _groups.length,
+        offset: silent ? 0 : _groups.length,
       );
       if (mounted) {
         setState(() {
-          _groups = [..._groups, ...page];
+          _groups = silent ? page : [..._groups, ...page];
           _groupsHasMore = page.length == _kChunkSize;
-          _groupsLoading = false;
+          if (!silent) _groupsLoading = false;
+          if (silent) _photoCache.clear();
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _groupsLoading = false);
+      if (mounted && !silent) setState(() => _groupsLoading = false);
     }
   }
 
@@ -98,7 +101,8 @@ class _PhotoAlbumScreenState extends State<PhotoAlbumScreen> {
     final l10n = AppLocalizations.of(context)!;
     return FocusDetector(
       onFocusGained: () {
-        _load();
+        final silent = _groups.isNotEmpty;
+        _load(silent: silent);
       },
       child: Scaffold(
         appBar: AppBar(title: Text(l10n.photoAlbumTitle)),
