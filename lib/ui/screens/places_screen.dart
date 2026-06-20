@@ -25,10 +25,16 @@ class PlacesScreen extends StatefulWidget {
 }
 
 class _PlacesScreenState extends State<PlacesScreen> {
-  List<SavedPlace> _places = [];
+  // ── Map data (loaded in full) ────────────────────────────────────────────
+  List<SavedPlace> _mapPlaces = [];
+  Map<String, double> _avgRatings = {};
+
+  // ── List data (DB-paginated, accumulated) ────────────────────────────────
+  List<({SavedPlace place, double? distance})> _listItems = [];
   Map<String, int> _visitCounts = {};
   Map<String, Stay?> _lastStay = {};
-  Map<String, double> _avgRatings = {};
+  bool _listHasMore = false;
+  bool _listLoading = false;
 
   // Search
   bool _searchActive = false;
@@ -46,10 +52,11 @@ class _PlacesScreenState extends State<PlacesScreen> {
   // Distance
   ({double lat, double lng})? _currentPos;
 
-  // Chunk loading
+  // Pagination
   static const int _kChunkSize = 20;
-  int _displayedPlaces = _kChunkSize;
   final ScrollController _placesScrollCtrl = ScrollController();
+
+  bool get _isDistanceMode => _expFilter.distanceEnabled && _currentPos != null;
 
   @override
   void initState() {
@@ -68,13 +75,10 @@ class _PlacesScreenState extends State<PlacesScreen> {
   void _onPlacesScroll() {
     if (!_placesScrollCtrl.hasClients) return;
     final pos = _placesScrollCtrl.position;
-    if (pos.pixels >= pos.maxScrollExtent - 300) {
-      final total = _filtered.length;
-      if (_displayedPlaces < total) {
-        setState(() {
-          _displayedPlaces = (_displayedPlaces + _kChunkSize).clamp(0, total);
-        });
-      }
+    if (pos.pixels >= pos.maxScrollExtent - 300 &&
+        _listHasMore &&
+        !_listLoading) {
+      _loadNextListChunk();
     }
   }
 
@@ -99,7 +103,13 @@ class _PlacesScreenState extends State<PlacesScreen> {
     } catch (_) {}
   }
 
+  /// Reload both map data and list (first page).
   Future<void> _loadPlaces() async {
+    await Future.wait([_loadMapData(), _reloadList()]);
+  }
+
+  /// Loads all places for the map tab (bounding-box limited in distance mode).
+  Future<void> _loadMapData() async {
     final pos = _currentPos;
     final List<SavedPlace> places;
     if (_expFilter.distanceEnabled && pos != null) {
@@ -116,90 +126,162 @@ class _PlacesScreenState extends State<PlacesScreen> {
     } else {
       places = await DatabaseService.instance.loadAllPlaces();
     }
-    final counts = <String, int>{};
-    final stays = <String, Stay?>{};
-    for (final p in places) {
-      counts[p.uuid] = await DatabaseService.instance.visitCountForPlace(
-        p.uuid,
-      );
-      stays[p.uuid] = await DatabaseService.instance.lastCompletedStayForPlace(
-        p.uuid,
-      );
-    }
     final avgRatings = await DatabaseService.instance
         .loadAverageRatingsForAllPlaces();
     if (mounted) {
       setState(() {
-        _places = places;
-        _visitCounts = counts;
-        _lastStay = stays;
+        _mapPlaces = places;
         _avgRatings = avgRatings;
-        _displayedPlaces = _kChunkSize;
       });
     }
   }
 
-  List<({SavedPlace place, double? distance})> get _filtered {
-    var list = _places;
-    final groupFilter = SettingsService.instance.schedulerGroupUuidList;
-    if (groupFilter.isNotEmpty) {
-      list = list
-          .where(
-            (p) => p.groupUuid != null && groupFilter.contains(p.groupUuid),
-          )
-          .toList();
-    }
-    if (_intervalOnly) {
-      list = list.where((p) => p.intervalEnabled).toList();
-    }
-    if (_searchQuery.isNotEmpty) {
-      final q = _searchQuery.toLowerCase();
-      list = list.where((p) {
-        if (p.name.toLowerCase().contains(q)) return true;
-        if (p.notes.toLowerCase().contains(q)) return true;
-        if (p.placeType.label.toLowerCase().contains(q)) return true;
-        return false;
-      }).toList();
-    }
+  /// Resets the list and loads the first chunk from the DB.
+  Future<void> _reloadList() async {
+    setState(() {
+      _listItems = [];
+      _visitCounts = {};
+      _lastStay = {};
+      _listHasMore = false;
+      _listLoading = true;
+    });
+    await _loadNextListChunk();
+  }
 
-    // Apply experience filter.
-    if (_expFilter.isActive) {
-      list = list.where((p) {
-        if (p.uuid.isEmpty) return !_expFilter.requireExperiences;
-        final avg = _avgRatings[p.uuid];
-        if (avg == null) return !_expFilter.requireExperiences;
-        return avg >= _expFilter.minAvgRating;
-      }).toList();
+  /// Loads the next page and appends it to [_listItems].
+  Future<void> _loadNextListChunk() async {
+    if (_listLoading && _listItems.isNotEmpty) return;
+    if (!mounted) return;
+    setState(() => _listLoading = true);
+
+    try {
+      if (_isDistanceMode) {
+        // Distance mode: use bounding-box prefiltered _mapPlaces, sort in Dart.
+        // Whole set is already bounded by the bounding box — show everything.
+        final pos = _currentPos!;
+        final maxM = _expFilter.maxDistanceKm * 1000;
+        final groupFilter = SettingsService.instance.schedulerGroupUuidList;
+        var list = _mapPlaces;
+        if (groupFilter.isNotEmpty) {
+          list = list
+              .where(
+                (p) => p.groupUuid != null && groupFilter.contains(p.groupUuid),
+              )
+              .toList();
+        }
+        if (_intervalOnly) list = list.where((p) => p.intervalEnabled).toList();
+        if (_searchQuery.isNotEmpty) {
+          final q = _searchQuery.toLowerCase();
+          list = list.where((p) {
+            if (p.name.toLowerCase().contains(q)) return true;
+            if (p.notes.toLowerCase().contains(q)) return true;
+            if (p.placeType.label.toLowerCase().contains(q)) return true;
+            return false;
+          }).toList();
+        }
+        if (_expFilter.isActive) {
+          list = list.where((p) {
+            final avg = _avgRatings[p.uuid];
+            if (avg == null) return !_expFilter.requireExperiences;
+            return avg >= _expFilter.minAvgRating;
+          }).toList();
+        }
+        var result =
+            list
+                .map((p) {
+                  final d = GeoUtils.distanceMeters(
+                    pos.lat,
+                    pos.lng,
+                    p.lat,
+                    p.lng,
+                  );
+                  return (place: p, distance: d);
+                })
+                .where((e) => e.distance <= maxM)
+                .toList()
+              ..sort((a, b) {
+                final distCmp = a.distance.compareTo(b.distance);
+                if (distCmp != 0) return distCmp;
+                final rA = _avgRatings[a.place.uuid] ?? 0;
+                final rB = _avgRatings[b.place.uuid] ?? 0;
+                return rB.compareTo(rA);
+              });
+
+        // Load visit metadata for newly-visible items.
+        final newPlaces = result.map((e) => e.place).toList();
+        final counts = <String, int>{..._visitCounts};
+        final stays = <String, Stay?>{..._lastStay};
+        for (final p in newPlaces) {
+          if (!counts.containsKey(p.uuid)) {
+            counts[p.uuid] = await DatabaseService.instance.visitCountForPlace(
+              p.uuid,
+            );
+            stays[p.uuid] = await DatabaseService.instance
+                .lastCompletedStayForPlace(p.uuid);
+          }
+        }
+        if (mounted) {
+          setState(() {
+            _listItems = result;
+            _visitCounts = counts;
+            _lastStay = stays;
+            _listHasMore = false;
+            _listLoading = false;
+          });
+        }
+      } else {
+        // Normal mode: proper DB LIMIT/OFFSET pagination.
+        final offset = _listItems.length;
+        final q = _searchQuery.isNotEmpty ? _searchQuery.toLowerCase() : null;
+        final placeTypeIndices = q != null
+            ? PlaceType.values
+                  .where((t) => t.label.toLowerCase().contains(q))
+                  .map((t) => t.index)
+                  .toList()
+            : <int>[];
+
+        final page = await DatabaseService.instance.loadPlacesPaged(
+          limit: _kChunkSize,
+          offset: offset,
+          search: q,
+          intervalOnly: _intervalOnly,
+          groupFilter: SettingsService.instance.schedulerGroupUuidList,
+          requireExperiences: _expFilter.requireExperiences,
+          minAvgRating: _expFilter.isActive ? _expFilter.minAvgRating : null,
+          placeTypeIndices: placeTypeIndices,
+        );
+
+        // Load visit metadata for this page.
+        final counts = <String, int>{..._visitCounts};
+        final stays = <String, Stay?>{..._lastStay};
+        for (final p in page) {
+          counts[p.uuid] = await DatabaseService.instance.visitCountForPlace(
+            p.uuid,
+          );
+          stays[p.uuid] = await DatabaseService.instance
+              .lastCompletedStayForPlace(p.uuid);
+        }
+        // Load ratings for just this page's places.
+        final pageRatings = await DatabaseService.instance
+            .loadAverageRatingsForPlaces(page.map((p) => p.uuid).toList());
+
+        if (mounted) {
+          setState(() {
+            _listItems = [
+              ..._listItems,
+              ...page.map((p) => (place: p, distance: null)),
+            ];
+            _visitCounts = counts;
+            _lastStay = stays;
+            _avgRatings = {..._avgRatings, ...pageRatings};
+            _listHasMore = page.length == _kChunkSize;
+            _listLoading = false;
+          });
+        }
+      }
+    } catch (_) {
+      if (mounted) setState(() => _listLoading = false);
     }
-
-    // Compute distances.
-    final pos = _currentPos;
-    List<({SavedPlace place, double? distance})> result;
-    if (_expFilter.distanceEnabled && pos != null) {
-      final maxM = _expFilter.maxDistanceKm * 1000;
-
-      // Haversine exact distance (bounding-box pre-filter is done in the DB).
-      result = list
-          .map((p) {
-            final d = GeoUtils.distanceMeters(pos.lat, pos.lng, p.lat, p.lng);
-            return (place: p, distance: d);
-          })
-          .where((e) => e.distance <= maxM)
-          .toList();
-
-      // Sort: distance first, then average rating descending.
-      result.sort((a, b) {
-        final distCmp = a.distance!.compareTo(b.distance!);
-        if (distCmp != 0) return distCmp;
-        final rA = _avgRatings[a.place.uuid] ?? 0;
-        final rB = _avgRatings[b.place.uuid] ?? 0;
-        return rB.compareTo(rA);
-      });
-    } else {
-      result = list.map((p) => (place: p, distance: null)).toList();
-    }
-
-    return result;
   }
 
   String _fmtDate(int ms) {
@@ -249,9 +331,9 @@ class _PlacesScreenState extends State<PlacesScreen> {
     }
   }
 
-  Widget _buildList(List<({SavedPlace place, double? distance})> filtered) {
+  Widget _buildList() {
     final l10n = AppLocalizations.of(context)!;
-    if (filtered.isEmpty) {
+    if (!_listLoading && _listItems.isEmpty) {
       return Center(
         child: Text(
           _searchQuery.isNotEmpty || _expFilter.isActive
@@ -261,33 +343,26 @@ class _PlacesScreenState extends State<PlacesScreen> {
         ),
       );
     }
-    final visibleCount = _displayedPlaces.clamp(0, filtered.length);
-    final hasMore = visibleCount < filtered.length;
     return RefreshIndicator(
-      onRefresh: () async {
-        setState(() => _displayedPlaces = _kChunkSize);
-        await _loadPlaces();
-      },
+      onRefresh: _loadPlaces,
       child: ListView.builder(
         controller: _placesScrollCtrl,
-        itemCount: visibleCount + (hasMore ? 1 : 0),
+        itemCount: _listItems.length + (_listHasMore || _listLoading ? 1 : 0),
         itemBuilder: (ctx, i) {
-          if (i == visibleCount) {
+          if (i == _listItems.length) {
             return const Padding(
               padding: EdgeInsets.all(16),
               child: Center(child: CircularProgressIndicator()),
             );
           }
-          final item = filtered[i];
+          final item = _listItems[i];
           final place = item.place;
-          final count = _visitCounts[place.uuid] ?? 0;
-          final stay = _lastStay[place.uuid];
           return _PlaceCard(
             place: place,
-            count: count,
-            lastStay: stay,
+            count: _visitCounts[place.uuid] ?? 0,
+            lastStay: _lastStay[place.uuid],
             distance: item.distance,
-            avgRating: place.uuid.isNotEmpty ? _avgRatings[place.uuid] : null,
+            avgRating: _avgRatings[place.uuid],
             fmtDate: _fmtDate,
             fmtTime: _fmtTime,
             fmtDuration: _fmtDuration,
@@ -299,9 +374,29 @@ class _PlacesScreenState extends State<PlacesScreen> {
     );
   }
 
-  Widget _buildMap(List<({SavedPlace place, double? distance})> filtered) {
+  Widget _buildMap() {
     final l10n = AppLocalizations.of(context)!;
-    final places = filtered.map((e) => e.place).toList();
+    // Map always shows the full (map) dataset with Dart-side filtering.
+    var list = _mapPlaces;
+    final groupFilter = SettingsService.instance.schedulerGroupUuidList;
+    if (groupFilter.isNotEmpty) {
+      list = list
+          .where(
+            (p) => p.groupUuid != null && groupFilter.contains(p.groupUuid),
+          )
+          .toList();
+    }
+    if (_intervalOnly) list = list.where((p) => p.intervalEnabled).toList();
+    if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      list = list.where((p) {
+        if (p.name.toLowerCase().contains(q)) return true;
+        if (p.notes.toLowerCase().contains(q)) return true;
+        if (p.placeType.label.toLowerCase().contains(q)) return true;
+        return false;
+      }).toList();
+    }
+    final places = list;
     final markers = places.map((p) {
       final color = _ratingColor(_avgRatings[p.uuid]);
       return Marker(
@@ -365,14 +460,11 @@ class _PlacesScreenState extends State<PlacesScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final filtered = _filtered;
     return FocusDetector(
       onFocusGained: () {
         ForegroundServiceManager.addDataListener(_onServiceData);
         _loadPlaces().then((_) {
-          if (mounted) {
-            setState(() {}); // Refresh to show tracking points if enabled.
-          }
+          if (mounted) setState(() {});
         });
       },
       onFocusLost: () =>
@@ -389,7 +481,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
                   ),
                   onChanged: (v) => setState(() {
                     _searchQuery = v;
-                    _displayedPlaces = _kChunkSize;
+                    _reloadList();
                   }),
                 )
               : Text(l10n.placesTitle),
@@ -398,12 +490,14 @@ class _PlacesScreenState extends State<PlacesScreen> {
               IconButton(
                 icon: const Icon(Icons.close),
                 tooltip: l10n.closeSearch,
-                onPressed: () => setState(() {
-                  _searchActive = false;
-                  _searchQuery = '';
-                  _searchCtrl.clear();
-                  _displayedPlaces = _kChunkSize;
-                }),
+                onPressed: () {
+                  setState(() {
+                    _searchActive = false;
+                    _searchQuery = '';
+                    _searchCtrl.clear();
+                  });
+                  _reloadList();
+                },
               )
             else ...[
               IconButton(
@@ -414,10 +508,10 @@ class _PlacesScreenState extends State<PlacesScreen> {
                 tooltip: _intervalOnly
                     ? l10n.showAllPlaces
                     : l10n.showIntervalOnly,
-                onPressed: () => setState(() {
-                  _intervalOnly = !_intervalOnly;
-                  _displayedPlaces = _kChunkSize;
-                }),
+                onPressed: () {
+                  setState(() => _intervalOnly = !_intervalOnly);
+                  _reloadList();
+                },
               ),
               IconButton(
                 icon: Badge(
@@ -444,10 +538,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
                 ExperienceFilterPanel(
                   filter: _expFilter,
                   onChanged: (f) {
-                    setState(() {
-                      _expFilter = f;
-                      _displayedPlaces = _kChunkSize;
-                    });
+                    setState(() => _expFilter = f);
                     final s = SettingsService.instance;
                     s.filterRequireExperiences = f.requireExperiences;
                     s.filterMinAvgRating = f.minAvgRating;
@@ -463,9 +554,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
                 ],
               ),
               Expanded(
-                child: TabBarView(
-                  children: [_buildList(filtered), _buildMap(filtered)],
-                ),
+                child: TabBarView(children: [_buildList(), _buildMap()]),
               ),
             ],
           ),

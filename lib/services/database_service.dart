@@ -1431,4 +1431,409 @@ class DatabaseService {
     );
     return (autoGroupUuid: autoUuid, defaultGroupUuid: defUuid);
   }
+
+  // ── Paginated queries ────────────────────────────────────────────────────
+
+  /// Loads a page of non-deleted places for the list view with all filters
+  /// applied at the SQL level. [placeTypeIndices] are the [PlaceType.index]
+  /// values whose labels match the current search query.
+  Future<List<SavedPlace>> loadPlacesPaged({
+    required int limit,
+    required int offset,
+    String? search,
+    bool intervalOnly = false,
+    List<String> groupFilter = const [],
+    bool requireExperiences = false,
+    double? minAvgRating,
+    List<int> placeTypeIndices = const [],
+  }) async {
+    final db = await database;
+    final where = <String>['sp.deleted_at IS NULL'];
+    final args = <dynamic>[];
+
+    if (intervalOnly) where.add('sp.interval_enabled = 1');
+
+    if (groupFilter.isNotEmpty) {
+      final ph = groupFilter.map((_) => '?').join(',');
+      where.add('sp.group_uuid IN ($ph)');
+      args.addAll(groupFilter);
+    }
+
+    if (search != null && search.isNotEmpty) {
+      final s = '%$search%';
+      final conds = <String>['sp.name LIKE ?', 'sp.notes LIKE ?'];
+      args.addAll([s, s]);
+      if (placeTypeIndices.isNotEmpty) {
+        final ph = placeTypeIndices.map((_) => '?').join(',');
+        conds.add('COALESCE(pg.place_type, 0) IN ($ph)');
+        args.addAll(placeTypeIndices);
+      }
+      where.add('(${conds.join(' OR ')})');
+    }
+
+    String avgJoin = '';
+    if (minAvgRating != null) {
+      avgJoin = '''
+        LEFT JOIN (
+          SELECT saved_place_uuid,
+                 (AVG(rating_dangerous_friendly) + AVG(rating_fraud_reliable) +
+                  AVG(rating_dismissive_accommodation) + AVG(rating_food) +
+                  AVG(rating_equipment) + AVG(rating_transport)) / 6.0 AS avg_rating
+          FROM place_experiences WHERE deleted_at IS NULL
+          GROUP BY saved_place_uuid
+        ) pe ON pe.saved_place_uuid = sp.uuid
+      ''';
+      if (requireExperiences) {
+        where.add('(pe.avg_rating IS NOT NULL AND pe.avg_rating >= ?)');
+      } else {
+        where.add('COALESCE(pe.avg_rating, 999) >= ?');
+      }
+      args.add(minAvgRating);
+    }
+
+    args.addAll([limit, offset]);
+    final rows = await db.rawQuery('''
+      SELECT sp.*, COALESCE(pg.place_type, 0) AS place_type
+      FROM saved_places sp
+      LEFT JOIN place_groups pg ON sp.group_uuid = pg.uuid
+      $avgJoin
+      WHERE ${where.join(' AND ')}
+      ORDER BY sp.name ASC
+      LIMIT ? OFFSET ?
+    ''', args);
+    return rows.map(SavedPlace.fromMap).toList();
+  }
+
+  /// Returns the total count matching the same filters as [loadPlacesPaged].
+  Future<int> countPlaces({
+    String? search,
+    bool intervalOnly = false,
+    List<String> groupFilter = const [],
+    bool requireExperiences = false,
+    double? minAvgRating,
+    List<int> placeTypeIndices = const [],
+  }) async {
+    final db = await database;
+    final where = <String>['sp.deleted_at IS NULL'];
+    final args = <dynamic>[];
+
+    if (intervalOnly) where.add('sp.interval_enabled = 1');
+
+    if (groupFilter.isNotEmpty) {
+      final ph = groupFilter.map((_) => '?').join(',');
+      where.add('sp.group_uuid IN ($ph)');
+      args.addAll(groupFilter);
+    }
+
+    if (search != null && search.isNotEmpty) {
+      final s = '%$search%';
+      final conds = <String>['sp.name LIKE ?', 'sp.notes LIKE ?'];
+      args.addAll([s, s]);
+      if (placeTypeIndices.isNotEmpty) {
+        final ph = placeTypeIndices.map((_) => '?').join(',');
+        conds.add('COALESCE(pg.place_type, 0) IN ($ph)');
+        args.addAll(placeTypeIndices);
+      }
+      where.add('(${conds.join(' OR ')})');
+    }
+
+    String avgJoin = '';
+    if (minAvgRating != null) {
+      avgJoin = '''
+        LEFT JOIN (
+          SELECT saved_place_uuid,
+                 (AVG(rating_dangerous_friendly) + AVG(rating_fraud_reliable) +
+                  AVG(rating_dismissive_accommodation) + AVG(rating_food) +
+                  AVG(rating_equipment) + AVG(rating_transport)) / 6.0 AS avg_rating
+          FROM place_experiences WHERE deleted_at IS NULL
+          GROUP BY saved_place_uuid
+        ) pe ON pe.saved_place_uuid = sp.uuid
+      ''';
+      if (requireExperiences) {
+        where.add('(pe.avg_rating IS NOT NULL AND pe.avg_rating >= ?)');
+      } else {
+        where.add('COALESCE(pe.avg_rating, 999) >= ?');
+      }
+      args.add(minAvgRating);
+    }
+
+    final result = await db.rawQuery('''
+      SELECT COUNT(*) AS cnt
+      FROM saved_places sp
+      LEFT JOIN place_groups pg ON sp.group_uuid = pg.uuid
+      $avgJoin
+      WHERE ${where.join(' AND ')}
+    ''', args);
+    return (result.first['cnt'] as int?) ?? 0;
+  }
+
+  /// Loads a page of completed stays with all filters applied at the SQL level.
+  /// When [search] is set, the query joins stay_persons and stay_activities and
+  /// uses DISTINCT to avoid duplicate rows.
+  Future<List<Stay>> loadCompletedStaysPaged({
+    required int limit,
+    required int offset,
+    String? search,
+    int? fromMs,
+    int? toMs,
+    String? placeUuid,
+  }) async {
+    final db = await database;
+    final where = <String>["s.status = 'completed'"];
+    final args = <dynamic>[];
+
+    if (fromMs != null) {
+      where.add('s.start_time >= ?');
+      args.add(fromMs);
+    }
+    if (toMs != null) {
+      where.add('s.start_time <= ?');
+      args.add(toMs);
+    }
+    if (placeUuid != null) {
+      where.add('s.place_uuid = ?');
+      args.add(placeUuid);
+    }
+
+    String joins = '';
+    if (search != null && search.isNotEmpty) {
+      final s = '%$search%';
+      joins = '''
+        LEFT JOIN saved_places sp ON s.place_uuid = sp.uuid
+        LEFT JOIN stay_persons spn ON s.uuid = spn.stay_uuid AND spn.deleted_at IS NULL
+        LEFT JOIN stay_activities sa ON s.uuid = sa.stay_uuid AND sa.deleted_at IS NULL
+      ''';
+      where.add(
+        '(sp.name LIKE ? OR s.address LIKE ? OR s.notes LIKE ? OR spn.name LIKE ? OR sa.description LIKE ?)',
+      );
+      args.addAll([s, s, s, s, s]);
+    }
+
+    args.addAll([limit, offset]);
+    final rows = await db.rawQuery('''
+      SELECT DISTINCT s.*
+      FROM stays s
+      $joins
+      WHERE ${where.join(' AND ')}
+      ORDER BY s.start_time DESC
+      LIMIT ? OFFSET ?
+    ''', args);
+    return rows.map(Stay.fromMap).toList();
+  }
+
+  /// Returns the total count matching the same filters as [loadCompletedStaysPaged].
+  Future<int> countCompletedStays({
+    String? search,
+    int? fromMs,
+    int? toMs,
+    String? placeUuid,
+  }) async {
+    final db = await database;
+    final where = <String>["s.status = 'completed'"];
+    final args = <dynamic>[];
+
+    if (fromMs != null) {
+      where.add('s.start_time >= ?');
+      args.add(fromMs);
+    }
+    if (toMs != null) {
+      where.add('s.start_time <= ?');
+      args.add(toMs);
+    }
+    if (placeUuid != null) {
+      where.add('s.place_uuid = ?');
+      args.add(placeUuid);
+    }
+
+    String joins = '';
+    if (search != null && search.isNotEmpty) {
+      final s = '%$search%';
+      joins = '''
+        LEFT JOIN saved_places sp ON s.place_uuid = sp.uuid
+        LEFT JOIN stay_persons spn ON s.uuid = spn.stay_uuid AND spn.deleted_at IS NULL
+        LEFT JOIN stay_activities sa ON s.uuid = sa.stay_uuid AND sa.deleted_at IS NULL
+      ''';
+      where.add(
+        '(sp.name LIKE ? OR s.address LIKE ? OR s.notes LIKE ? OR spn.name LIKE ? OR sa.description LIKE ?)',
+      );
+      args.addAll([s, s, s, s, s]);
+    }
+
+    final result = await db.rawQuery('''
+      SELECT COUNT(DISTINCT s.uuid) AS cnt
+      FROM stays s
+      $joins
+      WHERE ${where.join(' AND ')}
+    ''', args);
+    return (result.first['cnt'] as int?) ?? 0;
+  }
+
+  /// Loads a page of interval-enabled places for the scheduler, sorted by
+  /// urgency (days_remaining ASC) computed entirely in SQL.
+  Future<List<({SavedPlace place, int daysRemaining})>>
+  loadSchedulerPlacesPaged({
+    required int limit,
+    required int offset,
+    List<String> groupFilter = const [],
+  }) async {
+    final db = await database;
+    final where = <String>['sp.deleted_at IS NULL', 'sp.interval_enabled = 1'];
+    final args = <dynamic>[];
+
+    if (groupFilter.isNotEmpty) {
+      final ph = groupFilter.map((_) => '?').join(',');
+      where.add('sp.group_uuid IN ($ph)');
+      args.addAll(groupFilter);
+    }
+
+    args.addAll([limit, offset]);
+    final rows = await db.rawQuery('''
+      SELECT sp.*,
+             COALESCE(pg.place_type, 0) AS place_type,
+             CASE
+               WHEN lv.last_visit_ms IS NULL THEN 0
+               ELSE COALESCE(sp.interval_days, 0)
+                    - CAST((unixepoch('now') * 1000 - lv.last_visit_ms) / 86400000 AS INTEGER)
+             END AS days_remaining_val
+      FROM saved_places sp
+      LEFT JOIN place_groups pg ON sp.group_uuid = pg.uuid
+      LEFT JOIN (
+        SELECT place_uuid, MAX(start_time) AS last_visit_ms
+        FROM stays
+        WHERE status = 'completed' AND is_interval = 1
+        GROUP BY place_uuid
+      ) lv ON lv.place_uuid = sp.uuid
+      WHERE ${where.join(' AND ')}
+      ORDER BY days_remaining_val ASC
+      LIMIT ? OFFSET ?
+    ''', args);
+
+    return rows.map((r) {
+      final place = SavedPlace.fromMap(r);
+      final days = (r['days_remaining_val'] as int?) ?? 0;
+      return (place: place, daysRemaining: days);
+    }).toList();
+  }
+
+  /// Returns the total count of interval-enabled places matching [groupFilter].
+  Future<int> countSchedulerPlaces({
+    List<String> groupFilter = const [],
+  }) async {
+    final db = await database;
+    final where = <String>['sp.deleted_at IS NULL', 'sp.interval_enabled = 1'];
+    final args = <dynamic>[];
+
+    if (groupFilter.isNotEmpty) {
+      final ph = groupFilter.map((_) => '?').join(',');
+      where.add('sp.group_uuid IN ($ph)');
+      args.addAll(groupFilter);
+    }
+
+    final result = await db.rawQuery('''
+      SELECT COUNT(*) AS cnt
+      FROM saved_places sp
+      WHERE ${where.join(' AND ')}
+    ''', args);
+    return (result.first['cnt'] as int?) ?? 0;
+  }
+
+  /// Returns distinct photo groups (effective place UUID + photo count + place
+  /// name), sorted alphabetically by place name. The null group contains photos
+  /// not linked to any place.
+  Future<List<({String? placeUuid, int photoCount, String? placeName})>>
+  loadPhotoGroupsPaged({required int limit, required int offset}) async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      '''
+      SELECT sub.eff_uuid, COUNT(*) AS photo_count, sp.name AS place_name
+      FROM (
+        SELECT COALESCE(pp.place_uuid, s.place_uuid) AS eff_uuid, pp.uuid AS photo_uuid
+        FROM place_photos pp
+        LEFT JOIN stays s ON pp.stay_uuid = s.uuid AND s.deleted_at IS NULL
+        WHERE pp.deleted_at IS NULL
+      ) sub
+      LEFT JOIN saved_places sp ON sub.eff_uuid = sp.uuid
+      GROUP BY sub.eff_uuid
+      ORDER BY CASE WHEN sp.name IS NULL THEN 1 ELSE 0 END, sp.name ASC
+      LIMIT ? OFFSET ?
+    ''',
+      [limit, offset],
+    );
+    return rows.map((r) {
+      return (
+        placeUuid: r['eff_uuid'] as String?,
+        photoCount: (r['photo_count'] as int?) ?? 0,
+        placeName: r['place_name'] as String?,
+      );
+    }).toList();
+  }
+
+  /// Returns the total number of distinct photo groups.
+  Future<int> countPhotoGroups() async {
+    final db = await database;
+    final result = await db.rawQuery('''
+      SELECT COUNT(*) AS cnt FROM (
+        SELECT COALESCE(pp.place_uuid, s.place_uuid) AS eff_uuid
+        FROM place_photos pp
+        LEFT JOIN stays s ON pp.stay_uuid = s.uuid AND s.deleted_at IS NULL
+        WHERE pp.deleted_at IS NULL
+        GROUP BY eff_uuid
+      )
+    ''');
+    return (result.first['cnt'] as int?) ?? 0;
+  }
+
+  /// All non-deleted photos whose effective place matches [placeUuid].
+  /// Pass null to get photos not linked to any place.
+  Future<List<PlacePhoto>> loadPhotosForEffectivePlace(
+    String? placeUuid,
+  ) async {
+    final db = await database;
+    if (placeUuid != null) {
+      final rows = await db.rawQuery(
+        '''
+        SELECT pp.* FROM place_photos pp
+        LEFT JOIN stays s ON pp.stay_uuid = s.uuid AND s.deleted_at IS NULL
+        WHERE pp.deleted_at IS NULL
+          AND COALESCE(pp.place_uuid, s.place_uuid) = ?
+        ORDER BY pp.taken_at DESC
+      ''',
+        [placeUuid],
+      );
+      return rows.map(PlacePhoto.fromMap).toList();
+    } else {
+      final rows = await db.rawQuery('''
+        SELECT pp.* FROM place_photos pp
+        LEFT JOIN stays s ON pp.stay_uuid = s.uuid AND s.deleted_at IS NULL
+        WHERE pp.deleted_at IS NULL
+          AND pp.place_uuid IS NULL
+          AND (pp.stay_uuid IS NULL OR s.place_uuid IS NULL)
+        ORDER BY pp.taken_at DESC
+      ''');
+      return rows.map(PlacePhoto.fromMap).toList();
+    }
+  }
+
+  /// Average ratings for a specific set of place UUIDs (used when rendering a
+  /// page of places without loading ratings for the entire table).
+  Future<Map<String, double>> loadAverageRatingsForPlaces(
+    List<String> uuids,
+  ) async {
+    if (uuids.isEmpty) return {};
+    final db = await database;
+    final ph = uuids.map((_) => '?').join(',');
+    final rows = await db.rawQuery('''
+      SELECT saved_place_uuid,
+             (AVG(rating_dangerous_friendly) + AVG(rating_fraud_reliable) +
+              AVG(rating_dismissive_accommodation) + AVG(rating_food) +
+              AVG(rating_equipment) + AVG(rating_transport)) / 6.0 AS avg_rating
+      FROM place_experiences
+      WHERE deleted_at IS NULL AND saved_place_uuid IN ($ph)
+      GROUP BY saved_place_uuid
+    ''', uuids);
+    return {
+      for (final r in rows)
+        r['saved_place_uuid'] as String: (r['avg_rating'] as num).toDouble(),
+    };
+  }
 }

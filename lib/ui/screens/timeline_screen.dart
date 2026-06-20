@@ -26,12 +26,23 @@ class TimelineScreen extends StatefulWidget {
 }
 
 class _TimelineScreenState extends State<TimelineScreen> {
+  // ── Map / shared data (loaded in full) ───────────────────────────────────
   List<Stay> _stays = [];
   List<SavedPlace> _places = [];
   List<PlaceGroup> _groups = [];
-  Map<String, List<StayPerson>> _personsByStay = {};
-  Map<String, List<StayActivity>> _activitiesByStay = {};
-  Map<String, int?> _lastVisitByPlace = {}; // placeUuid -> lastVisit ms
+  Map<String, int?> _lastVisitByPlace = {};
+
+  // ── Besuche list (DB-paginated, accumulated) ─────────────────────────────
+  List<Stay> _listStays = [];
+  Map<String, List<StayPerson>> _listPersonsByStay = {};
+  Map<String, List<StayActivity>> _listActivitiesByStay = {};
+  bool _listHasMore = false;
+  bool _listLoading = false;
+
+  // ── Planer scheduler (DB-paginated, accumulated) ──────────────────────────
+  List<({SavedPlace place, int daysRemaining})> _schedulerItems = [];
+  bool _schedulerHasMore = false;
+  bool _schedulerLoading = false;
 
   // Filter state
   DateTimeRange? _filterRange;
@@ -46,10 +57,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
   final MapController _mapController = MapController();
   LatLng? _lastKnownPosition;
 
-  // Chunk loading
+  // Pagination
   static const int _kChunkSize = 20;
-  int _displayedStays = _kChunkSize;
-  int _displayedScheduler = _kChunkSize;
   final ScrollController _staysScrollCtrl = ScrollController();
   final ScrollController _schedulerScrollCtrl = ScrollController();
 
@@ -65,21 +74,20 @@ class _TimelineScreenState extends State<TimelineScreen> {
   void _onStaysScroll() {
     if (!_staysScrollCtrl.hasClients) return;
     final pos = _staysScrollCtrl.position;
-    if (pos.pixels >= pos.maxScrollExtent - 300) {
-      final total = _filteredStays.length;
-      if (_displayedStays < total) {
-        setState(() {
-          _displayedStays = (_displayedStays + _kChunkSize).clamp(0, total);
-        });
-      }
+    if (pos.pixels >= pos.maxScrollExtent - 300 &&
+        _listHasMore &&
+        !_listLoading) {
+      _loadNextListChunk();
     }
   }
 
   void _onSchedulerScroll() {
     if (!_schedulerScrollCtrl.hasClients) return;
     final pos = _schedulerScrollCtrl.position;
-    if (pos.pixels >= pos.maxScrollExtent - 300) {
-      setState(() => _displayedScheduler += _kChunkSize);
+    if (pos.pixels >= pos.maxScrollExtent - 300 &&
+        _schedulerHasMore &&
+        !_schedulerLoading) {
+      _loadNextSchedulerChunk();
     }
   }
 
@@ -98,7 +106,6 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   Future<void> _loadLastPosition() async {
-    // Use most recent tracking point as last known position
     final pts = await DatabaseService.instance.loadTrackingPointsSince(0);
     if (pts.isNotEmpty && mounted) {
       final last = pts.last;
@@ -106,6 +113,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
     }
   }
 
+  /// Loads all shared / map data, then resets and reloads both paginated lists.
   Future<void> _load() async {
     final results = await Future.wait([
       DatabaseService.instance.loadCompletedStays(),
@@ -117,15 +125,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
     final places = results[1] as List<SavedPlace>;
     final groups = results[2] as List<PlaceGroup>;
 
-    // Load relations for all stays
-    final personLists = await Future.wait(
-      stays.map((s) => DatabaseService.instance.loadPersonsForStay(s.uuid)),
-    );
-    final activityLists = await Future.wait(
-      stays.map((s) => DatabaseService.instance.loadActivitiesForStay(s.uuid)),
-    );
-
-    // Load last-visit timestamps for interval-enabled places
+    // last-visit timestamps for interval-enabled places (for map coloring)
     final intervalPlaces = places.where((p) => p.intervalEnabled);
     final lastVisits = <String, int?>{};
     for (final p in intervalPlaces) {
@@ -139,19 +139,103 @@ class _TimelineScreenState extends State<TimelineScreen> {
         _stays = stays;
         _places = places;
         _groups = groups;
-        _personsByStay = {
-          for (var i = 0; i < stays.length; i++) stays[i].uuid: personLists[i],
-        };
-        _activitiesByStay = {
-          for (var i = 0; i < stays.length; i++)
-            stays[i].uuid: activityLists[i],
-        };
         _lastVisitByPlace = lastVisits;
-        _displayedStays = _kChunkSize;
-        _displayedScheduler = _kChunkSize;
       });
     }
+    await Future.wait([_reloadList(), _reloadScheduler()]);
   }
+
+  // ── Besuche list ─────────────────────────────────────────────────────────
+
+  /// Resets the stay list and loads the first page from the DB.
+  Future<void> _reloadList() async {
+    if (!mounted) return;
+    setState(() {
+      _listStays = [];
+      _listPersonsByStay = {};
+      _listActivitiesByStay = {};
+      _listHasMore = false;
+      _listLoading = true;
+    });
+    await _loadNextListChunk();
+  }
+
+  Future<void> _loadNextListChunk() async {
+    if (_listLoading && _listStays.isNotEmpty) return;
+    if (!mounted) return;
+    setState(() => _listLoading = true);
+    try {
+      final offset = _listStays.length;
+      final page = await DatabaseService.instance.loadCompletedStaysPaged(
+        limit: _kChunkSize,
+        offset: offset,
+        search: _searchQuery.isNotEmpty ? _searchQuery : null,
+        fromMs: _filterRange?.start.millisecondsSinceEpoch,
+        toMs: _filterRange?.end
+            .add(const Duration(days: 1))
+            .millisecondsSinceEpoch,
+        placeUuid: _filterPlaceUuid,
+      );
+
+      // Load persons + activities for this page only.
+      final personLists = await Future.wait(
+        page.map((s) => DatabaseService.instance.loadPersonsForStay(s.uuid)),
+      );
+      final activityLists = await Future.wait(
+        page.map((s) => DatabaseService.instance.loadActivitiesForStay(s.uuid)),
+      );
+
+      if (mounted) {
+        setState(() {
+          _listStays = [..._listStays, ...page];
+          for (var i = 0; i < page.length; i++) {
+            _listPersonsByStay[page[i].uuid] = personLists[i];
+            _listActivitiesByStay[page[i].uuid] = activityLists[i];
+          }
+          _listHasMore = page.length == _kChunkSize;
+          _listLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _listLoading = false);
+    }
+  }
+
+  // ── Planer scheduler ──────────────────────────────────────────────────────
+
+  Future<void> _reloadScheduler() async {
+    if (!mounted) return;
+    setState(() {
+      _schedulerItems = [];
+      _schedulerHasMore = false;
+      _schedulerLoading = true;
+    });
+    await _loadNextSchedulerChunk();
+  }
+
+  Future<void> _loadNextSchedulerChunk() async {
+    if (_schedulerLoading && _schedulerItems.isNotEmpty) return;
+    if (!mounted) return;
+    setState(() => _schedulerLoading = true);
+    try {
+      final page = await DatabaseService.instance.loadSchedulerPlacesPaged(
+        limit: _kChunkSize,
+        offset: _schedulerItems.length,
+        groupFilter: SettingsService.instance.schedulerGroupUuidList,
+      );
+      if (mounted) {
+        setState(() {
+          _schedulerItems = [..._schedulerItems, ...page];
+          _schedulerHasMore = page.length == _kChunkSize;
+          _schedulerLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _schedulerLoading = false);
+    }
+  }
+
+  // ── Map filtered stays (Dart-side, for map polyline) ──────────────────────
 
   List<Stay> get _filteredStays {
     return _stays.where((s) {
@@ -163,26 +247,6 @@ class _TimelineScreenState extends State<TimelineScreen> {
       }
       if (_filterPlaceUuid != null && s.placeUuid != _filterPlaceUuid) {
         return false;
-      }
-      if (_searchQuery.isNotEmpty) {
-        final q = _searchQuery.toLowerCase();
-        final place = _placeForStay(s);
-        final placeName = place?.name.toLowerCase() ?? '';
-        final address = s.address?.toLowerCase() ?? '';
-        final notes = s.notes.toLowerCase();
-        final persons = (_personsByStay[s.uuid] ?? [])
-            .map((p) => p.name.toLowerCase())
-            .join(' ');
-        final activities = (_activitiesByStay[s.uuid] ?? [])
-            .map((a) => a.description.toLowerCase())
-            .join(' ');
-        if (!placeName.contains(q) &&
-            !address.contains(q) &&
-            !notes.contains(q) &&
-            !persons.contains(q) &&
-            !activities.contains(q)) {
-          return false;
-        }
       }
       return true;
     }).toList();
@@ -201,10 +265,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
       initialDateRange: _filterRange,
     );
     if (range != null && mounted) {
-      setState(() {
-        _filterRange = range;
-        _displayedStays = _kChunkSize;
-      });
+      setState(() => _filterRange = range);
+      _reloadList();
     }
   }
 
@@ -235,10 +297,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     hintText: AppLocalizations.of(context)!.searchStaysHint,
                     border: InputBorder.none,
                   ),
-                  onChanged: (v) => setState(() {
-                    _searchQuery = v;
-                    _displayedStays = _kChunkSize;
-                  }),
+                  onChanged: (v) {
+                    setState(() => _searchQuery = v);
+                    _reloadList();
+                  },
                 )
               : Text(AppLocalizations.of(context)!.visitsTitle),
           actions: [
@@ -246,12 +308,14 @@ class _TimelineScreenState extends State<TimelineScreen> {
               IconButton(
                 icon: const Icon(Icons.close),
                 tooltip: AppLocalizations.of(context)!.closeSearch,
-                onPressed: () => setState(() {
-                  _searchActive = false;
-                  _searchQuery = '';
-                  _searchCtrl.clear();
-                  _displayedStays = _kChunkSize;
-                }),
+                onPressed: () {
+                  setState(() {
+                    _searchActive = false;
+                    _searchQuery = '';
+                    _searchCtrl.clear();
+                  });
+                  _reloadList();
+                },
               )
             else ...[
               // Filter by date
@@ -276,11 +340,13 @@ class _TimelineScreenState extends State<TimelineScreen> {
               if (_filterRange != null || _filterPlaceUuid != null)
                 IconButton(
                   icon: const Icon(Icons.clear),
-                  onPressed: () => setState(() {
-                    _filterRange = null;
-                    _filterPlaceUuid = null;
-                    _displayedStays = _kChunkSize;
-                  }),
+                  onPressed: () {
+                    setState(() {
+                      _filterRange = null;
+                      _filterPlaceUuid = null;
+                    });
+                    _reloadList();
+                  },
                   tooltip: AppLocalizations.of(context)!.resetFilter,
                 ),
               IconButton(
@@ -325,19 +391,15 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
   Widget _buildList() {
     final l10n = AppLocalizations.of(context)!;
-    final filtered = _filteredStays;
-    if (filtered.isEmpty) {
+    if (!_listLoading && _listStays.isEmpty) {
       return Center(
         child: Text(l10n.noStaysFound, textAlign: TextAlign.center),
       );
     }
 
-    final visibleStays = filtered.take(_displayedStays).toList();
-    final hasMore = filtered.length > _displayedStays;
-
-    // Group visible stays by date
+    // Group accumulated stays by date.
     final grouped = <String, List<Stay>>{};
-    for (final s in visibleStays) {
+    for (final s in _listStays) {
       final dt = s.startDateTime;
       final key =
           '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
@@ -345,7 +407,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
     }
     final dates = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
-    // Build flat item list: alternating date headers (String) and stays (Stay)
+    // Flat list: date headers (String) + stays (Stay).
     final List<Object> items = [];
     for (final date in dates) {
       items.add(date);
@@ -356,7 +418,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
       onRefresh: _load,
       child: ListView.builder(
         controller: _staysScrollCtrl,
-        itemCount: items.length + (hasMore ? 1 : 0),
+        itemCount: items.length + (_listHasMore || _listLoading ? 1 : 0),
         itemBuilder: (ctx, index) {
           if (index == items.length) {
             return const Padding(
@@ -386,8 +448,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
           return StayCard(
             stay: stay,
             place: _placeForStay(stay),
-            persons: _personsByStay[stay.uuid] ?? [],
-            activities: _activitiesByStay[stay.uuid] ?? [],
+            persons: _listPersonsByStay[stay.uuid] ?? [],
+            activities: _listActivitiesByStay[stay.uuid] ?? [],
             onUpdated: _load,
           );
         },
@@ -525,23 +587,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   Widget _buildScheduler() {
-    final settings = SettingsService.instance;
-    final colorRange = settings.schedulerColorRange;
-    final groupFilter = settings.schedulerGroupUuidList;
+    final colorRange = SettingsService.instance.schedulerColorRange;
 
-    // Filter to interval-enabled places
-    var schedulerPlaces = _places.where((p) => p.intervalEnabled).toList();
-
-    // Apply group filter
-    if (groupFilter.isNotEmpty) {
-      schedulerPlaces = schedulerPlaces
-          .where(
-            (p) => p.groupUuid != null && groupFilter.contains(p.groupUuid),
-          )
-          .toList();
-    }
-
-    if (schedulerPlaces.isEmpty) {
+    if (!_schedulerLoading && _schedulerItems.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -553,40 +601,21 @@ class _TimelineScreenState extends State<TimelineScreen> {
       );
     }
 
-    // Calculate days-remaining for each place
-    final now = DateTime.now();
-    final entries = schedulerPlaces.map((p) {
-      final lastMs = _lastVisitByPlace[p.uuid];
-      int daysRemaining;
-      if (lastMs == null) {
-        // Never visited → due today
-        daysRemaining = 0;
-      } else {
-        final daysSince = now
-            .difference(DateTime.fromMillisecondsSinceEpoch(lastMs))
-            .inDays;
-        final interval = p.intervalDays ?? 0;
-        daysRemaining = interval - daysSince;
-      }
-      return (place: p, daysRemaining: daysRemaining);
-    }).toList()..sort((a, b) => a.daysRemaining.compareTo(b.daysRemaining));
-
-    final visibleEntries = entries.take(_displayedScheduler).toList();
-    final hasMore = entries.length > _displayedScheduler;
-
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView.builder(
         controller: _schedulerScrollCtrl,
-        itemCount: visibleEntries.length + (hasMore ? 1 : 0),
+        itemCount:
+            _schedulerItems.length +
+            (_schedulerHasMore || _schedulerLoading ? 1 : 0),
         itemBuilder: (ctx, i) {
-          if (i == visibleEntries.length) {
+          if (i == _schedulerItems.length) {
             return const Padding(
               padding: EdgeInsets.all(16),
               child: Center(child: CircularProgressIndicator()),
             );
           }
-          final entry = visibleEntries[i];
+          final entry = _schedulerItems[i];
           final place = entry.place;
           final days = entry.daysRemaining;
           final color = _urgencyColor(days, colorRange);
@@ -626,7 +655,6 @@ class _TimelineScreenState extends State<TimelineScreen> {
                 padding: const EdgeInsets.all(12),
                 child: Row(
                   children: [
-                    // Urgency indicator
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -724,8 +752,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
             onTap: () {
               setState(() {
                 _filterPlaceUuid = null;
-                _displayedStays = _kChunkSize;
               });
+              _reloadList();
               Navigator.pop(ctx);
             },
           ),
@@ -737,8 +765,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
               onTap: () {
                 setState(() {
                   _filterPlaceUuid = p.uuid;
-                  _displayedStays = _kChunkSize;
                 });
+                _reloadList();
                 Navigator.pop(ctx);
               },
             ),

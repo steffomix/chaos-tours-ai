@@ -6,8 +6,6 @@ import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:focus_detector/focus_detector.dart';
 
 import '../../models/place_photo.dart';
-import '../../models/saved_place.dart';
-import '../../models/stay.dart';
 import '../../services/database_service.dart';
 
 /// Global photo album — shows all photos grouped by place.
@@ -19,15 +17,15 @@ class PhotoAlbumScreen extends StatefulWidget {
 }
 
 class _PhotoAlbumScreenState extends State<PhotoAlbumScreen> {
-  List<PlacePhoto> _allPhotos = [];
-  Map<String, SavedPlace> _placesByUuid = {};
-  Map<String, Stay> _staysByUuid = {};
-  bool _loading = true;
+  // ── Group metadata (DB-paginated, accumulated) ───────────────────────────
+  List<({String? placeUuid, int photoCount, String? placeName})> _groups = [];
+  bool _groupsHasMore = false;
+  bool _groupsLoading = false;
 
-  // Chunk loading
+  // ── Photo cache: keyed by placeUuid or '' for the null group ─────────────
+  final Map<String, List<PlacePhoto>> _photoCache = {};
+
   static const int _kChunkSize = 20;
-  int _displayedGroups = _kChunkSize;
-  int _totalGroupCount = 0;
   final ScrollController _albumScrollCtrl = ScrollController();
 
   @override
@@ -41,66 +39,58 @@ class _PhotoAlbumScreenState extends State<PhotoAlbumScreen> {
     if (!_albumScrollCtrl.hasClients) return;
     final pos = _albumScrollCtrl.position;
     if (pos.pixels >= pos.maxScrollExtent - 300 &&
-        _displayedGroups < _totalGroupCount) {
-      setState(() {
-        _displayedGroups = (_displayedGroups + _kChunkSize).clamp(
-          0,
-          _totalGroupCount,
-        );
-      });
+        _groupsHasMore &&
+        !_groupsLoading) {
+      _loadNextGroupChunk();
     }
-  }
-
-  Future<void> _load() async {
-    final results = await Future.wait([
-      DatabaseService.instance.loadAllPhotos(),
-      DatabaseService.instance.loadAllPlaces(),
-      DatabaseService.instance.loadAllStays(),
-    ]);
-    final photos = results[0] as List<PlacePhoto>;
-    final places = results[1] as List<SavedPlace>;
-    final stays = results[2] as List<Stay>;
-
-    // Compute group count for scroll listener guard
-    final staysByUuid = {for (final s in stays) s.uuid: s};
-    final groupKeys = <String?>{};
-    for (final photo in photos) {
-      String? pUuid = photo.placeUuid;
-      if (pUuid == null && photo.stayUuid != null) {
-        pUuid = staysByUuid[photo.stayUuid]?.placeUuid;
-      }
-      groupKeys.add(pUuid);
-    }
-
-    if (mounted) {
-      setState(() {
-        _allPhotos = photos;
-        _placesByUuid = {for (final p in places) p.uuid: p};
-        _staysByUuid = staysByUuid;
-        _loading = false;
-        _displayedGroups = _kChunkSize;
-        _totalGroupCount = groupKeys.length;
-      });
-    }
-  }
-
-  /// Groups photos by their effective place (direct or via stay).
-  Map<String?, List<PlacePhoto>> _grouped() {
-    final map = <String?, List<PlacePhoto>>{};
-    for (final photo in _allPhotos) {
-      String? pUuid = photo.placeUuid;
-      if (pUuid == null && photo.stayUuid != null) {
-        pUuid = _staysByUuid[photo.stayUuid]?.placeUuid;
-      }
-      (map[pUuid] ??= []).add(photo);
-    }
-    return map;
   }
 
   @override
   void dispose() {
     _albumScrollCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _groups = [];
+      _groupsHasMore = false;
+      _groupsLoading = true;
+      _photoCache.clear();
+    });
+    await _loadNextGroupChunk();
+  }
+
+  Future<void> _loadNextGroupChunk() async {
+    if (_groupsLoading && _groups.isNotEmpty) return;
+    if (!mounted) return;
+    setState(() => _groupsLoading = true);
+    try {
+      final page = await DatabaseService.instance.loadPhotoGroupsPaged(
+        limit: _kChunkSize,
+        offset: _groups.length,
+      );
+      if (mounted) {
+        setState(() {
+          _groups = [..._groups, ...page];
+          _groupsHasMore = page.length == _kChunkSize;
+          _groupsLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _groupsLoading = false);
+    }
+  }
+
+  /// Returns (and caches) the photos for a group identified by [placeUuid].
+  Future<List<PlacePhoto>> _photosForGroup(String? placeUuid) async {
+    final key = placeUuid ?? '';
+    if (_photoCache.containsKey(key)) return _photoCache[key]!;
+    final photos = await DatabaseService.instance.loadPhotosForEffectivePlace(
+      placeUuid,
+    );
+    _photoCache[key] = photos;
+    return photos;
   }
 
   @override
@@ -112,9 +102,9 @@ class _PhotoAlbumScreenState extends State<PhotoAlbumScreen> {
       },
       child: Scaffold(
         appBar: AppBar(title: Text(l10n.photoAlbumTitle)),
-        body: _loading
+        body: _groupsLoading && _groups.isEmpty
             ? const Center(child: CircularProgressIndicator())
-            : _allPhotos.isEmpty
+            : !_groupsLoading && _groups.isEmpty
             ? Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -144,39 +134,25 @@ class _PhotoAlbumScreenState extends State<PhotoAlbumScreen> {
   }
 
   Widget _buildGroupedList(AppLocalizations l10n) {
-    final grouped = _grouped();
-    // Sort: known places first (by name), then unknown
-    final sortedKeys = grouped.keys.toList()
-      ..sort((a, b) {
-        if (a == null && b == null) return 0;
-        if (a == null) return 1;
-        if (b == null) return -1;
-        final nameA = _placesByUuid[a]?.name ?? '';
-        final nameB = _placesByUuid[b]?.name ?? '';
-        return nameA.compareTo(nameB);
-      });
-
     return ListView.builder(
       controller: _albumScrollCtrl,
-      itemCount:
-          sortedKeys.length.clamp(0, _displayedGroups) +
-          (_displayedGroups < sortedKeys.length ? 1 : 0),
+      itemCount: _groups.length + (_groupsHasMore || _groupsLoading ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index == sortedKeys.length.clamp(0, _displayedGroups)) {
+        if (index == _groups.length) {
           return const Padding(
             padding: EdgeInsets.all(16),
             child: Center(child: CircularProgressIndicator()),
           );
         }
-        final placeUuid = sortedKeys[index];
-        final photos = grouped[placeUuid]!;
-        final placeName = placeUuid != null
-            ? (_placesByUuid[placeUuid]?.name ?? l10n.unknownPlace)
-            : l10n.withoutPlace;
-        return _PlacePhotoGroup(
+        final group = _groups[index];
+        final placeName = group.placeName ?? l10n.withoutPlace;
+        return _LazyPlacePhotoGroup(
+          key: ValueKey(group.placeUuid),
+          placeUuid: group.placeUuid,
           placeName: placeName,
-          photos: photos,
-          onTap: (photoIndex) => _openViewer(photos, photoIndex),
+          photoCount: group.photoCount,
+          loadPhotos: () => _photosForGroup(group.placeUuid),
+          onViewerOpen: (photos, idx) => _openViewer(photos, idx),
         );
       },
     );
@@ -195,19 +171,42 @@ class _PhotoAlbumScreenState extends State<PhotoAlbumScreen> {
   }
 }
 
-class _PlacePhotoGroup extends StatelessWidget {
+/// A photo group row that loads its photos lazily via [loadPhotos].
+class _LazyPlacePhotoGroup extends StatefulWidget {
+  final String? placeUuid;
   final String placeName;
-  final List<PlacePhoto> photos;
-  final void Function(int index) onTap;
+  final int photoCount;
+  final Future<List<PlacePhoto>> Function() loadPhotos;
+  final void Function(List<PlacePhoto> photos, int index) onViewerOpen;
 
-  const _PlacePhotoGroup({
+  const _LazyPlacePhotoGroup({
+    super.key,
+    required this.placeUuid,
     required this.placeName,
-    required this.photos,
-    required this.onTap,
+    required this.photoCount,
+    required this.loadPhotos,
+    required this.onViewerOpen,
   });
 
   @override
+  State<_LazyPlacePhotoGroup> createState() => _LazyPlacePhotoGroupState();
+}
+
+class _LazyPlacePhotoGroupState extends State<_LazyPlacePhotoGroup> {
+  List<PlacePhoto>? _photos;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.loadPhotos().then((photos) {
+      if (mounted) setState(() => _photos = photos);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final photos = _photos;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -219,18 +218,16 @@ class _PlacePhotoGroup extends StatelessWidget {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  placeName,
+                  widget.placeName,
                   style: Theme.of(
                     context,
                   ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
               Text(
-                photos.length == 1
-                    ? AppLocalizations.of(context)!.photoCount(photos.length)
-                    : AppLocalizations.of(
-                        context,
-                      )!.photoCountPlural(photos.length),
+                widget.photoCount == 1
+                    ? l10n.photoCount(widget.photoCount)
+                    : l10n.photoCountPlural(widget.photoCount),
                 style: Theme.of(
                   context,
                 ).textTheme.bodySmall?.copyWith(color: Colors.grey),
@@ -240,33 +237,35 @@ class _PlacePhotoGroup extends StatelessWidget {
         ),
         SizedBox(
           height: 120,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            itemCount: photos.length,
-            itemBuilder: (context, index) {
-              Uint8List? bytes;
-              try {
-                bytes = base64Decode(photos[index].photoData);
-              } catch (_) {}
-              return GestureDetector(
-                onTap: () => onTap(index),
-                child: Container(
-                  width: 110,
-                  margin: const EdgeInsets.only(right: 6),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: bytes != null
-                        ? Image.memory(bytes, fit: BoxFit.cover)
-                        : Container(
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.broken_image),
-                          ),
-                  ),
+          child: photos == null
+              ? const Center(child: CircularProgressIndicator())
+              : ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  itemCount: photos.length,
+                  itemBuilder: (context, index) {
+                    Uint8List? bytes;
+                    try {
+                      bytes = base64Decode(photos[index].photoData);
+                    } catch (_) {}
+                    return GestureDetector(
+                      onTap: () => widget.onViewerOpen(photos, index),
+                      child: Container(
+                        width: 110,
+                        margin: const EdgeInsets.only(right: 6),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: bytes != null
+                              ? Image.memory(bytes, fit: BoxFit.cover)
+                              : Container(
+                                  color: Colors.grey[300],
+                                  child: const Icon(Icons.broken_image),
+                                ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
         ),
         const SizedBox(height: 8),
         const Divider(height: 1),
