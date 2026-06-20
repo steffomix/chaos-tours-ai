@@ -37,7 +37,8 @@ class _HomeScreenState extends State<HomeScreen>
   Stay? _activeStay;
   SavedPlace? _activeStayPlace;
   String _trackingStatusText = '';
-  bool _endingStay = false;
+  // ending stay takes a while so we wait more than one interval to be safe
+  int _endingStay = 0;
 
   // Recent visits
   List<Stay> _recentStays = [];
@@ -56,9 +57,13 @@ class _HomeScreenState extends State<HomeScreen>
     // Do NOT trust the persisted flag alone — the service may have been killed.
     // Resolve the actual service state asynchronously and correct if needed.
     _checkActualTrackingState();
-    _loadActiveStay();
     _loadCurrentAktivitaet();
-    _loadRecentStays();
+    _relaodStays();
+  }
+
+  Future<void> _relaodStays() async {
+    await _loadActiveStay();
+    await _loadRecentStays();
   }
 
   Future<void> _checkActualTrackingState() async {
@@ -120,9 +125,13 @@ class _HomeScreenState extends State<HomeScreen>
         default:
           text = _l10n?.trackingActive ?? '';
       }
-      _loadActiveStay(build: false);
-      _loadRecentStays(build: false);
-      if (mounted) setState(() => _trackingStatusText = text);
+      _relaodStays();
+      if (mounted) {
+        setState(() {
+          _trackingStatusText = text;
+          _endingStay--;
+        });
+      }
     }
   }
 
@@ -132,11 +141,11 @@ class _HomeScreenState extends State<HomeScreen>
     return '${text.substring(0, maxLength)}…';
   }
 
-  Future<void> _loadRecentStays({bool build = true}) async {
+  Future<void> _loadRecentStays() async {
     final stays = await DatabaseService.instance.loadRecentCompletedStays();
     final allPlaces = await DatabaseService.instance.loadAllPlaces();
     final byUuid = {for (final p in allPlaces) p.uuid: p};
-    if (mounted && build) {
+    if (mounted) {
       setState(() {
         _recentStays = stays;
         _placesByUuid = byUuid;
@@ -151,14 +160,14 @@ class _HomeScreenState extends State<HomeScreen>
     if (mounted) setState(() => _currentAktivitaet = a);
   }
 
-  Future<void> _loadActiveStay({bool build = true}) async {
+  Future<void> _loadActiveStay() async {
     final stay = await DatabaseService.instance.loadActiveStay();
     SavedPlace? place;
     if (stay?.placeUuid != null) {
       final places = await DatabaseService.instance.loadAllPlaces();
       place = places.where((p) => p.uuid == stay!.placeUuid).firstOrNull;
     }
-    if (mounted && build) {
+    if (mounted) {
       setState(() {
         _activeStay = stay;
         _activeStayPlace = place;
@@ -506,7 +515,7 @@ class _HomeScreenState extends State<HomeScreen>
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(40),
                   ),
-                  icon: _endingStay
+                  icon: _endingStay > 0
                       ? const SizedBox(
                           width: 18,
                           height: 18,
@@ -514,9 +523,9 @@ class _HomeScreenState extends State<HomeScreen>
                         )
                       : const Icon(Icons.call_split, size: 18),
                   label: Text(
-                    _endingStay ? l10n.endStayEnding : l10n.endStayNow,
+                    _endingStay > 0 ? l10n.endStayEnding : l10n.endStayNow,
                   ),
-                  onPressed: _endingStay
+                  onPressed: _endingStay > 0
                       ? null
                       : () async {
                           final confirmed = await showDialog<bool>(
@@ -537,14 +546,13 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                           );
                           if (confirmed != true) return;
-                          setState(() => _endingStay = true);
+                          setState(() => _endingStay = 2);
                           ForegroundServiceManager.sendForceEndStay();
                           await Future<void>.delayed(
                             const Duration(milliseconds: 300),
                           );
                           await _loadActiveStay();
                           await _loadRecentStays();
-                          if (mounted) setState(() => _endingStay = false);
                         },
                 ),
               ),

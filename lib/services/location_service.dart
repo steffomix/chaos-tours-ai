@@ -14,14 +14,6 @@ class LocationService {
   static final LocationService instance = LocationService._();
   static RecentGPSPoint? lastPoint;
 
-  static const LocationSettings _settings = LocationSettings(
-    accuracy: LocationAccuracy.high,
-    distanceFilter: 5, // metres between updates
-  );
-
-  Stream<Position> get positionStream =>
-      Geolocator.getPositionStream(locationSettings: _settings);
-
   Future<Position?> getCurrentPosition() async {
     final interval = SettingsService.instance.gpsIntervalSeconds * 1000;
     if (lastPoint != null &&
