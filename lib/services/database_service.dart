@@ -19,6 +19,7 @@ import '../models/sync_source_experience.dart';
 import '../models/telegram_connection.dart';
 import '../models/tracking_point.dart';
 import 'sync_service.dart' show SyncOptions;
+import 'settings_service.dart';
 
 class DatabaseService {
   DatabaseService._();
@@ -443,13 +444,18 @@ class DatabaseService {
     String deviceId,
   ) {
     final now = DateTime.now().millisecondsSinceEpoch;
+    final effectiveDeviceId = deviceId.isNotEmpty
+        ? deviceId
+        : ((map['device_id'] as String?)?.isNotEmpty == true
+              ? map['device_id'] as String
+              : SettingsService.instance.deviceId);
     return {
       ...map,
       'uuid': (map['uuid'] as String?)?.isNotEmpty == true
           ? map['uuid']
           : generateUuid(),
       'updated_at': now,
-      'device_id': deviceId,
+      'device_id': effectiveDeviceId,
     };
   }
 

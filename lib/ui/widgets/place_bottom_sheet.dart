@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
-import 'package:shared_preferences/shared_preferences.dart'
-    as shared_preferences;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/place_experience.dart';
@@ -93,16 +91,6 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
         _experiencesLoaded = true;
       });
     }
-  }
-
-  Future<String> _getDeviceId() async {
-    final prefs = await shared_preferences.SharedPreferences.getInstance();
-    var id = prefs.getString('sync_device_id') ?? '';
-    if (id.isEmpty) {
-      id = DatabaseService.generateUuid();
-      await prefs.setString('sync_device_id', id);
-    }
-    return id;
   }
 
   Future<void> _addOrEditExperience([PlaceExperience? existing]) async {
@@ -237,7 +225,6 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     );
 
     if (saved != true) return;
-    final devId = await _getDeviceId();
     if (existing == null) {
       await DatabaseService.instance.insertPlaceExperience(
         PlaceExperience(
@@ -251,7 +238,6 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
           ratingTransport: rTransport,
           ratingMedicine: rMedicine,
         ),
-        deviceId: devId,
       );
     } else {
       await DatabaseService.instance.updatePlaceExperience(
@@ -266,7 +252,6 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
           ratingMedicine: rMedicine,
           updatedAt: DateTime.now().millisecondsSinceEpoch,
         ),
-        deviceId: devId,
       );
     }
     await _loadExperiences();
@@ -294,11 +279,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
       },
     );
     if (confirmed != true) return;
-    final devId = await _getDeviceId();
-    await DatabaseService.instance.softDeletePlaceExperience(
-      exp.uuid,
-      deviceId: devId,
-    );
+    await DatabaseService.instance.softDeletePlaceExperience(exp.uuid);
     await _loadExperiences();
   }
 
