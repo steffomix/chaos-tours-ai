@@ -726,9 +726,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _createNewAktivitaet() async {
+    final l10n = AppLocalizations.of(context)!;
     final nameCtrl = TextEditingController(
-      text: 'Aktivität ${_aktivitaeten.length + 1}',
+      text: '${l10n.sectionActivity} ${_aktivitaeten.length + 1}',
     );
+    final deviceIdCtrl = TextEditingController(text: _deviceId);
     // Offer to copy from an existing one as template.
     Aktivitaet template = _activeAktivitaet ?? Aktivitaet(name: '');
 
@@ -737,13 +739,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (ctx) {
         final l10n = AppLocalizations.of(ctx)!;
         return AlertDialog(
-          title: Text(l10n.newActivityLabel),
+          //title: Text(l10n.newActivityLabel),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameCtrl,
-                decoration: InputDecoration(labelText: l10n.name),
+                decoration: InputDecoration(labelText: l10n.newActivityLabel),
                 autofocus: true,
               ),
               if (_aktivitaeten.isNotEmpty) ...[
@@ -768,6 +770,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ],
+
+              TextField(
+                controller: deviceIdCtrl,
+                decoration: InputDecoration(labelText: l10n.deviceId),
+              ),
             ],
           ),
           actions: [
@@ -786,13 +793,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (confirmed != true) return;
     final name = nameCtrl.text.trim();
-    if (name.isEmpty) return;
+    final deviceId = deviceIdCtrl.text.trim();
+    if (name.isEmpty || deviceId.isEmpty) return;
 
-    final newA = template.copyWith(name: name, uuid: '');
+    final newA = template.copyWith(name: name, uuid: '', deviceId: deviceId);
     final id = await DatabaseService.instance.insertAktivitaet(newA);
     final created = await DatabaseService.instance.loadAktivitaet(id);
     if (created != null) await _switchAktivitaet(created);
     await _loadAktivitaeten();
+    await _loadGroups();
   }
 
   Future<void> _renameAktivitaet(Aktivitaet a) async {
