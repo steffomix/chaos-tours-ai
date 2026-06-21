@@ -137,7 +137,16 @@ class ExperienceFilterPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(children: [const SizedBox(width: 8), Text(l10n.minAvgRating)]),
+        Row(
+          children: [
+            const SizedBox(width: 8),
+            filter.useSpecificRating
+                ? Text(l10n.minSpecialRating)
+                : filter.useMedian
+                ? Text(l10n.minMedianRating)
+                : Text(l10n.minAvgRating),
+          ],
+        ),
         Row(
           children: [
             Expanded(
@@ -264,13 +273,13 @@ class ExperienceFilterPanel extends StatelessWidget {
                   onChanged: (v) =>
                       onChanged(filter.copyWith(requireExperiences: v)),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   l10n.activateExperienceFilter,
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ],
             ),
-            if (filter.requireExperiences) _ratingSliderRow(context, filter),
             // Sub-filter options are only shown when experience filter active.
             if (filter.requireExperiences) ...[
               // ── Specific sub-filter toggle ─────────────────────────────
@@ -281,6 +290,7 @@ class ExperienceFilterPanel extends StatelessWidget {
                     onChanged: (v) =>
                         onChanged(filter.copyWith(useSpecificRating: v)),
                   ),
+                  const SizedBox(width: 8),
                   Text(
                     l10n.filterModeSpecific,
                     style: const TextStyle(fontWeight: FontWeight.w600),
@@ -326,6 +336,7 @@ class ExperienceFilterPanel extends StatelessWidget {
                 ),
               ],
             ],
+            if (filter.requireExperiences) _ratingSliderRow(context, filter),
             if (filter.requireExperiences)
               Row(
                 children: [

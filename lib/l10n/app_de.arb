@@ -1499,6 +1499,14 @@
   "@minAvgRating": {
     "description": "Min average rating label"
   },
+  "minMedianRating": "Min. x̃ Bewertung:",
+  "@minMedianRating": {
+    "description": "Min median rating label"
+  },
+  "minSpecialRating": "Min. Bewertung:",
+  "@minSpecialRating": {
+    "description": "Min selected rating rating label"
+  },
   "ratingMetricAverage": "Durchschnitt",
   "@ratingMetricAverage": {
     "description": "Rating metric: average"
@@ -1671,7 +1679,7 @@
   "@ratingTransport": {
     "description": "Rating: demands to provides transport"
   },
-  "ratingMedicine": "Fordert ↔ Bietet Medizin/Erstversorgung",
+  "ratingMedicine": "Fordert ↔ Bietet Medizinische Versorgung",
   "@ratingMedicine": {
     "description": "Rating: demands to provides medical care"
   },

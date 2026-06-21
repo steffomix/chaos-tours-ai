@@ -1059,7 +1059,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activateExperienceFilter => 'Experience filter';
 
   @override
-  String get minAvgRating => 'Min. avg rating:';
+  String get minAvgRating => 'Min. ∅ rating:';
+
+  @override
+  String get minMedianRating => 'Min. x̃ rating:';
+
+  @override
+  String get minSpecialRating => 'Min. rating:';
 
   @override
   String get ratingMetricAverage => 'Average';

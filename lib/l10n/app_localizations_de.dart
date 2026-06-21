@@ -1067,6 +1067,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get minAvgRating => 'Min. ⌀ Bewertung:';
 
   @override
+  String get minMedianRating => 'Min. x̃ Bewertung:';
+
+  @override
+  String get minSpecialRating => 'Min. Bewertung:';
+
+  @override
   String get ratingMetricAverage => 'Durchschnitt';
 
   @override
@@ -1198,7 +1204,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get ratingTransport => 'Fordert ↔ Bietet Transport';
 
   @override
-  String get ratingMedicine => 'Fordert ↔ Bietet Medizin/Erstversorgung';
+  String get ratingMedicine => 'Fordert ↔ Bietet Medizinische Versorgung';
 
   @override
   String get filterModeGeneral => 'Allgemeiner Filter';

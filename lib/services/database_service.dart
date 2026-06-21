@@ -2031,6 +2031,7 @@ class DatabaseService {
     }
   }
 
+  /*
   /// Average ratings for a specific set of place UUIDs.
   /// Uses the pre-computed [experience_rating_average] column.
   Future<Map<String, double>> loadAverageRatingsForPlaces(
@@ -2049,4 +2050,5 @@ class DatabaseService {
         r['uuid'] as String: (r['experience_rating_average'] as num).toDouble(),
     };
   }
+  */
 }

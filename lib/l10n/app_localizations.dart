@@ -1958,6 +1958,18 @@ abstract class AppLocalizations {
   /// **'Min. ⌀ Bewertung:'**
   String get minAvgRating;
 
+  /// Min median rating label
+  ///
+  /// In de, this message translates to:
+  /// **'Min. x̃ Bewertung:'**
+  String get minMedianRating;
+
+  /// Min selected rating rating label
+  ///
+  /// In de, this message translates to:
+  /// **'Min. Bewertung:'**
+  String get minSpecialRating;
+
   /// Rating metric: average
   ///
   /// In de, this message translates to:
@@ -2219,7 +2231,7 @@ abstract class AppLocalizations {
   /// Rating: demands to provides medical care
   ///
   /// In de, this message translates to:
-  /// **'Fordert ↔ Bietet Medizin/Erstversorgung'**
+  /// **'Fordert ↔ Bietet Medizinische Versorgung'**
   String get ratingMedicine;
 
   /// General experience filter mode label
