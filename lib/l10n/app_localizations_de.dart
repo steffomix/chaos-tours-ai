@@ -1201,6 +1201,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get ratingTransport => 'Fordert ↔ Bietet Transport';
 
   @override
+  String get ratingMedicine => 'Fordert ↔ Bietet Medizin/Erstversorgung';
+
+  @override
   String get noExperiencesYet => 'Noch keine Erfahrungsberichte vorhanden.';
 
   @override

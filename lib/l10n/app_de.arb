@@ -1675,6 +1675,10 @@
   "@ratingTransport": {
     "description": "Rating: demands to provides transport"
   },
+  "ratingMedicine": "Fordert ↔ Bietet Medizin/Erstversorgung",
+  "@ratingMedicine": {
+    "description": "Rating: demands to provides medical care"
+  },
   "noExperiencesYet": "Noch keine Erfahrungsberichte vorhanden.",
   "@noExperiencesYet": {
     "description": "No experiences yet"

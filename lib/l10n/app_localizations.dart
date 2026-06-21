@@ -2222,6 +2222,12 @@ abstract class AppLocalizations {
   /// **'Fordert ↔ Bietet Transport'**
   String get ratingTransport;
 
+  /// Rating: demands to provides medical care
+  ///
+  /// In de, this message translates to:
+  /// **'Fordert ↔ Bietet Medizin/Erstversorgung'**
+  String get ratingMedicine;
+
   /// No experiences yet
   ///
   /// In de, this message translates to:

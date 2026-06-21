@@ -1198,6 +1198,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ratingTransport => 'Demands ↔ Provides transport';
 
   @override
+  String get ratingMedicine => 'Demands ↔ Provides medical care';
+
+  @override
   String get noExperiencesYet => 'No experience reports yet.';
 
   @override

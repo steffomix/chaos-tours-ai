@@ -5,7 +5,7 @@ import '../services/settings_service.dart';
 const _uuid = Uuid();
 
 /// A user experience / review entry linked to a [SavedPlace] by its UUID.
-/// Contains textual report and six rating dimensions (-9 to +9).
+/// Contains textual report and seven rating dimensions (-9 to +9).
 class PlaceExperience {
   final String uuid;
 
@@ -33,6 +33,9 @@ class PlaceExperience {
   /// Fordert (−9) über Teilt (0) bis Bietet Transportmöglichkeiten (+9).
   final int ratingTransport;
 
+  /// Fordert (−9) über Teilt (0) bis Bietet Medizin/Erstversorgung (+9).
+  final int ratingMedicine;
+
   /// When this entry was created (ms since epoch).
   final int createdAt;
 
@@ -51,6 +54,7 @@ class PlaceExperience {
     this.ratingFood = 0,
     this.ratingEquipment = 0,
     this.ratingTransport = 0,
+    this.ratingMedicine = 0,
     int? createdAt,
     int? updatedAt,
     this.deletedAt,
@@ -62,15 +66,16 @@ class PlaceExperience {
            ? deviceId!
            : SettingsService.instance.deviceId;
 
-  /// Average rating across all six dimensions (−9.0 to +9.0).
+  /// Average rating across all seven dimensions (−9.0 to +9.0).
   double get averageRating =>
       (ratingDangerousFriendly +
           ratingFraudReliable +
           ratingDismissiveAccommodation +
           ratingFood +
           ratingEquipment +
-          ratingTransport) /
-      6.0;
+          ratingTransport +
+          ratingMedicine) /
+      7.0;
 
   factory PlaceExperience.fromMap(Map<String, dynamic> map) {
     return PlaceExperience(
@@ -84,6 +89,7 @@ class PlaceExperience {
       ratingFood: (map['rating_food'] as int?) ?? 0,
       ratingEquipment: (map['rating_equipment'] as int?) ?? 0,
       ratingTransport: (map['rating_transport'] as int?) ?? 0,
+      ratingMedicine: (map['rating_medicine'] as int?) ?? 0,
       createdAt:
           (map['created_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       updatedAt:
@@ -105,6 +111,7 @@ class PlaceExperience {
       'rating_food': ratingFood,
       'rating_equipment': ratingEquipment,
       'rating_transport': ratingTransport,
+      'rating_medicine': ratingMedicine,
       'created_at': createdAt,
       'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -122,6 +129,7 @@ class PlaceExperience {
     int? ratingFood,
     int? ratingEquipment,
     int? ratingTransport,
+    int? ratingMedicine,
     int? createdAt,
     int? updatedAt,
     int? deletedAt,
@@ -139,6 +147,7 @@ class PlaceExperience {
       ratingFood: ratingFood ?? this.ratingFood,
       ratingEquipment: ratingEquipment ?? this.ratingEquipment,
       ratingTransport: ratingTransport ?? this.ratingTransport,
+      ratingMedicine: ratingMedicine ?? this.ratingMedicine,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,

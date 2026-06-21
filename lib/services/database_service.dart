@@ -234,6 +234,7 @@ class DatabaseService {
         rating_food INTEGER NOT NULL DEFAULT 0,
         rating_equipment INTEGER NOT NULL DEFAULT 0,
         rating_transport INTEGER NOT NULL DEFAULT 0,
+        rating_medicine INTEGER NOT NULL DEFAULT 0,
         created_at INTEGER NOT NULL DEFAULT 0,
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
@@ -260,7 +261,8 @@ class DatabaseService {
               SELECT CASE WHEN COUNT(*) = 0 THEN NULL
                 ELSE (AVG(rating_dangerous_friendly) + AVG(rating_fraud_reliable) +
                       AVG(rating_dismissive_accommodation) + AVG(rating_food) +
-                      AVG(rating_equipment) + AVG(rating_transport)) / 6.0
+                      AVG(rating_equipment) + AVG(rating_transport) +
+                      AVG(rating_medicine)) / 7.0
               END
               FROM place_experiences
               WHERE saved_place_uuid = NEW.saved_place_uuid AND deleted_at IS NULL
@@ -275,7 +277,8 @@ class DatabaseService {
                     FROM (
                       SELECT (rating_dangerous_friendly + rating_fraud_reliable +
                               rating_dismissive_accommodation + rating_food +
-                              rating_equipment + rating_transport) / 6.0 AS val
+                              rating_equipment + rating_transport +
+                              rating_medicine) / 7.0 AS val
                       FROM place_experiences
                       WHERE saved_place_uuid = NEW.saved_place_uuid AND deleted_at IS NULL
                     )
@@ -299,7 +302,8 @@ class DatabaseService {
               SELECT CASE WHEN COUNT(*) = 0 THEN NULL
                 ELSE (AVG(rating_dangerous_friendly) + AVG(rating_fraud_reliable) +
                       AVG(rating_dismissive_accommodation) + AVG(rating_food) +
-                      AVG(rating_equipment) + AVG(rating_transport)) / 6.0
+                      AVG(rating_equipment) + AVG(rating_transport) +
+                      AVG(rating_medicine)) / 7.0
               END
               FROM place_experiences
               WHERE saved_place_uuid = NEW.saved_place_uuid AND deleted_at IS NULL
@@ -314,7 +318,8 @@ class DatabaseService {
                     FROM (
                       SELECT (rating_dangerous_friendly + rating_fraud_reliable +
                               rating_dismissive_accommodation + rating_food +
-                              rating_equipment + rating_transport) / 6.0 AS val
+                              rating_equipment + rating_transport +
+                              rating_medicine) / 7.0 AS val
                       FROM place_experiences
                       WHERE saved_place_uuid = NEW.saved_place_uuid AND deleted_at IS NULL
                     )
@@ -338,7 +343,8 @@ class DatabaseService {
               SELECT CASE WHEN COUNT(*) = 0 THEN NULL
                 ELSE (AVG(rating_dangerous_friendly) + AVG(rating_fraud_reliable) +
                       AVG(rating_dismissive_accommodation) + AVG(rating_food) +
-                      AVG(rating_equipment) + AVG(rating_transport)) / 6.0
+                      AVG(rating_equipment) + AVG(rating_transport) +
+                      AVG(rating_medicine)) / 7.0
               END
               FROM place_experiences
               WHERE saved_place_uuid = OLD.saved_place_uuid AND deleted_at IS NULL
@@ -353,7 +359,8 @@ class DatabaseService {
                     FROM (
                       SELECT (rating_dangerous_friendly + rating_fraud_reliable +
                               rating_dismissive_accommodation + rating_food +
-                              rating_equipment + rating_transport) / 6.0 AS val
+                              rating_equipment + rating_transport +
+                              rating_medicine) / 7.0 AS val
                       FROM place_experiences
                       WHERE saved_place_uuid = OLD.saved_place_uuid AND deleted_at IS NULL
                     )
@@ -1261,7 +1268,8 @@ class DatabaseService {
         SELECT CASE WHEN COUNT(*) = 0 THEN NULL
           ELSE (AVG(rating_dangerous_friendly) + AVG(rating_fraud_reliable) +
                 AVG(rating_dismissive_accommodation) + AVG(rating_food) +
-                AVG(rating_equipment) + AVG(rating_transport)) / 6.0
+                AVG(rating_equipment) + AVG(rating_transport) +
+                AVG(rating_medicine)) / 7.0
         END
         FROM place_experiences
         WHERE saved_place_uuid = saved_places.uuid AND deleted_at IS NULL
@@ -1286,7 +1294,8 @@ class DatabaseService {
                 FROM (
                   SELECT (rating_dangerous_friendly + rating_fraud_reliable +
                           rating_dismissive_accommodation + rating_food +
-                          rating_equipment + rating_transport) / 6.0 AS val
+                          rating_equipment + rating_transport +
+                          rating_medicine) / 7.0 AS val
                   FROM place_experiences
                   WHERE saved_place_uuid = ? AND deleted_at IS NULL
                 )
@@ -1315,7 +1324,8 @@ class DatabaseService {
         AVG(rating_dismissive_accommodation) AS r3,
         AVG(rating_food) AS r4,
         AVG(rating_equipment) AS r5,
-        AVG(rating_transport) AS r6
+        AVG(rating_transport) AS r6,
+        AVG(rating_medicine) AS r7
       FROM place_experiences
       WHERE saved_place_uuid = ? AND deleted_at IS NULL
     ''',
@@ -1330,6 +1340,7 @@ class DatabaseService {
       'food': ((r['r4'] as num?) ?? 0).toDouble(),
       'equipment': ((r['r5'] as num?) ?? 0).toDouble(),
       'transport': ((r['r6'] as num?) ?? 0).toDouble(),
+      'medicine': ((r['r7'] as num?) ?? 0).toDouble(),
     };
   }
 

@@ -719,6 +719,7 @@
   "ratingFood": "Demands ↔ Provides food",
   "ratingEquipment": "Demands ↔ Provides equipment",
   "ratingTransport": "Demands ↔ Provides transport",
+  "ratingMedicine": "Demands ↔ Provides medical care",
   "noExperiencesYet": "No experience reports yet.",
   "survivalExperiences": "Survival experiences",
   "statistics": "Statistics",

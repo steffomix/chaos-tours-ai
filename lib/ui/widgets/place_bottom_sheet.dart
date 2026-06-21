@@ -113,6 +113,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     var rFood = existing?.ratingFood ?? 0;
     var rEquipment = existing?.ratingEquipment ?? 0;
     var rTransport = existing?.ratingTransport ?? 0;
+    var rMedicine = existing?.ratingMedicine ?? 0;
 
     final saved = await showDialog<bool>(
       context: context,
@@ -212,6 +213,11 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                     rTransport,
                     (v) => rTransport = v,
                   ),
+                  ratingRow(
+                    ctxL10n.ratingMedicine,
+                    rMedicine,
+                    (v) => rMedicine = v,
+                  ),
                 ],
               ),
             ),
@@ -243,6 +249,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
           ratingFood: rFood,
           ratingEquipment: rEquipment,
           ratingTransport: rTransport,
+          ratingMedicine: rMedicine,
         ),
         deviceId: devId,
       );
@@ -256,6 +263,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
           ratingFood: rFood,
           ratingEquipment: rEquipment,
           ratingTransport: rTransport,
+          ratingMedicine: rMedicine,
           updatedAt: DateTime.now().millisecondsSinceEpoch,
         ),
         deviceId: devId,
@@ -368,6 +376,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                       _ratingChip('Verpfl', exp.ratingFood),
                       _ratingChip('Equip', exp.ratingEquipment),
                       _ratingChip('Trans', exp.ratingTransport),
+                      _ratingChip('Med', exp.ratingMedicine),
                     ],
                   ),
                 ],
@@ -819,6 +828,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
           buf.writeln(
             '| Fordert ↔ Bietet Transport | ${exp.ratingTransport} |',
           );
+          buf.writeln('| Fordert ↔ Bietet Medizin | ${exp.ratingMedicine} |');
           if (exp.text.isNotEmpty) {
             buf.writeln();
             buf.writeln('> ${exp.text}');
