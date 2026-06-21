@@ -84,6 +84,8 @@ class Aktivitaet {
     return Aktivitaet(
       uuid: map['uuid'] as String?,
       name: map['name'] as String,
+      deviceId:
+          (map['device_id'] as String?) ?? SettingsService.instance.deviceId,
       gpsIntervalSeconds: map['gps_interval_seconds'] as int? ?? 15,
       stayDetectionSeconds: map['stay_detection_seconds'] as int? ?? 180,
       autoPlaceSeconds: map['auto_place_seconds'] as int? ?? 900,
@@ -111,8 +113,6 @@ class Aktivitaet {
       updatedAt:
           (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       deletedAt: map['deleted_at'] as int?,
-      deviceId:
-          (map['device_id'] as String?) ?? SettingsService.instance.deviceId,
     );
   }
 
@@ -120,6 +120,7 @@ class Aktivitaet {
     return {
       'uuid': uuid,
       'name': name,
+      'device_id': deviceId,
       'gps_interval_seconds': gpsIntervalSeconds,
       'stay_detection_seconds': stayDetectionSeconds,
       'auto_place_seconds': autoPlaceSeconds,
@@ -139,7 +140,6 @@ class Aktivitaet {
       'filter_max_distance_km': filterMaxDistanceKm,
       'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
-      'device_id': deviceId,
       'filter_use_median': filterUseMedian ? 1 : 0,
       'filter_use_specific_rating': filterUseSpecificRating ? 1 : 0,
       'filter_specific_rating_field': filterSpecificRatingField,
@@ -149,6 +149,7 @@ class Aktivitaet {
   Aktivitaet copyWith({
     String? uuid,
     String? name,
+    String? deviceId,
     int? gpsIntervalSeconds,
     int? stayDetectionSeconds,
     int? autoPlaceSeconds,
@@ -169,7 +170,6 @@ class Aktivitaet {
     int? updatedAt,
     int? deletedAt,
     bool clearDeletedAt = false,
-    String? deviceId,
     bool? filterUseMedian,
     bool? filterUseSpecificRating,
     String? filterSpecificRatingField,
@@ -177,6 +177,7 @@ class Aktivitaet {
     return Aktivitaet(
       uuid: uuid ?? this.uuid,
       name: name ?? this.name,
+      deviceId: deviceId ?? this.deviceId,
       gpsIntervalSeconds: gpsIntervalSeconds ?? this.gpsIntervalSeconds,
       stayDetectionSeconds: stayDetectionSeconds ?? this.stayDetectionSeconds,
       autoPlaceSeconds: autoPlaceSeconds ?? this.autoPlaceSeconds,
@@ -200,7 +201,6 @@ class Aktivitaet {
       filterMaxDistanceKm: filterMaxDistanceKm ?? this.filterMaxDistanceKm,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
-      deviceId: deviceId ?? this.deviceId,
       filterUseMedian: filterUseMedian ?? this.filterUseMedian,
       filterUseSpecificRating:
           filterUseSpecificRating ?? this.filterUseSpecificRating,

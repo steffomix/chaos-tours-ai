@@ -188,6 +188,7 @@ class DatabaseService {
       CREATE TABLE aktivitaeten (
         uuid TEXT PRIMARY KEY,
         name TEXT NOT NULL,
+        device_id TEXT NOT NULL,
         gps_interval_seconds INTEGER NOT NULL DEFAULT 15,
         stay_detection_seconds INTEGER NOT NULL DEFAULT 180,
         auto_place_seconds INTEGER NOT NULL DEFAULT 900,
@@ -207,8 +208,7 @@ class DatabaseService {
         scheduler_color_range INTEGER NOT NULL DEFAULT 14,
         scheduler_group_ids TEXT NOT NULL DEFAULT '',
         updated_at INTEGER NOT NULL DEFAULT 0,
-        deleted_at INTEGER,
-        device_id TEXT NOT NULL DEFAULT ''
+        deleted_at INTEGER
       )
     ''');
     await db.execute('''
@@ -891,7 +891,7 @@ class DatabaseService {
 
   Future<String> insertAktivitaet(Aktivitaet a) async {
     final db = await database;
-    final map = _withSyncFields(a.toMap(), '');
+    final map = _withSyncFields(a.toMap(), a.deviceId);
     await db.insert(
       'aktivitaeten',
       map,
@@ -921,7 +921,7 @@ class DatabaseService {
     final db = await database;
     await db.update(
       'aktivitaeten',
-      _withSyncFields(a.toMap(), ''),
+      _withSyncFields(a.toMap(), a.deviceId),
       where: 'uuid = ?',
       whereArgs: [a.uuid],
     );
@@ -1590,7 +1590,6 @@ class DatabaseService {
     if (all.isNotEmpty) return all.first.uuid;
     return insertAktivitaet(
       Aktivitaet(
-        deviceId: _uuid.v4(),
         name: 'Standard',
         gpsIntervalSeconds: gpsInterval,
         stayDetectionSeconds: stayDetection,

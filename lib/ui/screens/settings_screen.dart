@@ -809,7 +809,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final name = nameCtrl.text.trim();
     if (name.isEmpty) return;
 
-    final newA = template.copyWith(name: name);
+    final newA = template.copyWith(name: name, uuid: '');
     final id = await DatabaseService.instance.insertAktivitaet(newA);
     final created = await DatabaseService.instance.loadAktivitaet(id);
     if (created != null) await _switchAktivitaet(created);
