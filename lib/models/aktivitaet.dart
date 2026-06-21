@@ -41,6 +41,9 @@ class Aktivitaet {
   final double filterMinAvgRating;
   final bool filterDistanceEnabled;
   final double filterMaxDistanceKm;
+  final bool filterUseMedian;
+  final bool filterUseSpecificRating;
+  final String filterSpecificRatingField;
 
   // ── Sync fields ──────────────────────────────────────────────────────────
   final int updatedAt;
@@ -65,6 +68,9 @@ class Aktivitaet {
     this.filterMinAvgRating = 0.0,
     this.filterDistanceEnabled = false,
     this.filterMaxDistanceKm = 100.0,
+    this.filterUseMedian = false,
+    this.filterUseSpecificRating = false,
+    this.filterSpecificRatingField = '',
     int? updatedAt,
     this.deletedAt,
     String? deviceId,
@@ -97,6 +103,11 @@ class Aktivitaet {
       filterDistanceEnabled: (map['filter_distance_enabled'] as int? ?? 0) == 1,
       filterMaxDistanceKm:
           (map['filter_max_distance_km'] as num?)?.toDouble() ?? 100.0,
+      filterUseMedian: (map['filter_use_median'] as int? ?? 0) == 1,
+      filterUseSpecificRating:
+          (map['filter_use_specific_rating'] as int? ?? 0) == 1,
+      filterSpecificRatingField:
+          map['filter_specific_rating_field'] as String? ?? '',
       updatedAt:
           (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       deletedAt: map['deleted_at'] as int?,
@@ -129,6 +140,9 @@ class Aktivitaet {
       'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
       'device_id': deviceId,
+      'filter_use_median': filterUseMedian ? 1 : 0,
+      'filter_use_specific_rating': filterUseSpecificRating ? 1 : 0,
+      'filter_specific_rating_field': filterSpecificRatingField,
     };
   }
 
@@ -156,6 +170,9 @@ class Aktivitaet {
     int? deletedAt,
     bool clearDeletedAt = false,
     String? deviceId,
+    bool? filterUseMedian,
+    bool? filterUseSpecificRating,
+    String? filterSpecificRatingField,
   }) {
     return Aktivitaet(
       uuid: uuid ?? this.uuid,
@@ -184,6 +201,11 @@ class Aktivitaet {
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
       deviceId: deviceId ?? this.deviceId,
+      filterUseMedian: filterUseMedian ?? this.filterUseMedian,
+      filterUseSpecificRating:
+          filterUseSpecificRating ?? this.filterUseSpecificRating,
+      filterSpecificRatingField:
+          filterSpecificRatingField ?? this.filterSpecificRatingField,
     );
   }
 }

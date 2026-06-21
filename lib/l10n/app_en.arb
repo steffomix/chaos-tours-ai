@@ -672,12 +672,11 @@
       }
     }
   },
-  "experienceFilter": "Experience filter",
   "resetFilter2": "Reset",
-  "activateExperienceFilter": "Activate experience filter",
+  "activateExperienceFilter": "Experience filter",
   "minAvgRating": "Min. avg rating:",
   "ratingMetricAverage": "Average",
-  "ratingMetricMedian": "Median",
+  "ratingMetricMedian": "x̃",
   "camera": "Camera",
   "fromGallery": "From gallery",
   "noPhotosGrid": "No photos yet",
@@ -892,7 +891,7 @@
   "statShortest": "Shortest visit",
   "statLongest": "Longest visit",
   "statAverage": "Average",
-  "statMedian": "Median",
+  "statMedian": "x̃",
   "openLabel": "Open {label}",
   "@openLabel": {
     "placeholders": {

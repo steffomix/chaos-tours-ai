@@ -769,6 +769,7 @@ class _PlaceCardState extends State<_PlaceCard> {
     }
 
     final fields = SpecificRatingField.values;
+    final selectedField = widget.filter.specificRatingField;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -785,7 +786,12 @@ class _PlaceCardState extends State<_PlaceCard> {
         const Divider(height: 4, thickness: 0.5),
         // Per-dimension rows (lazy-loaded).
         for (final f in fields)
-          tableRow(f.label(l10n), _avg(f.extractFrom), _median(f.extractFrom)),
+          tableRow(
+            f.label(l10n),
+            _avg(f.extractFrom),
+            _median(f.extractFrom),
+            bold: selectedField == f,
+          ),
       ],
     );
   }

@@ -1058,13 +1058,10 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get experienceFilter => 'Erfahrungs-Filter';
-
-  @override
   String get resetFilter2 => 'Zurücksetzen';
 
   @override
-  String get activateExperienceFilter => 'Erfahrungsfilter aktivieren';
+  String get activateExperienceFilter => 'Erfahrungsfilter';
 
   @override
   String get minAvgRating => 'Min. ⌀ Bewertung:';
@@ -1073,7 +1070,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get ratingMetricAverage => 'Durchschnitt';
 
   @override
-  String get ratingMetricMedian => 'Median';
+  String get ratingMetricMedian => 'x̃';
 
   @override
   String get camera => 'Kamera';
@@ -1474,7 +1471,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get statAverage => 'Durchschnitt';
 
   @override
-  String get statMedian => 'Median';
+  String get statMedian => 'x̃';
 
   @override
   String openLabel(String label) {

@@ -1487,17 +1487,13 @@
       }
     }
   },
-  "experienceFilter": "Erfahrungs-Filter",
-  "@experienceFilter": {
-    "description": "Experience filter label"
-  },
   "resetFilter2": "Zurücksetzen",
   "@resetFilter2": {
     "description": "Reset filter button in experience panel"
   },
-  "activateExperienceFilter": "Erfahrungsfilter aktivieren",
+  "activateExperienceFilter": "Erfahrungsfilter",
   "@activateExperienceFilter": {
-    "description": "Activate experience filter checkbox"
+    "description": "Experience filter switch"
   },
   "minAvgRating": "Min. ⌀ Bewertung:",
   "@minAvgRating": {
@@ -1507,7 +1503,7 @@
   "@ratingMetricAverage": {
     "description": "Rating metric: average"
   },
-  "ratingMetricMedian": "Median",
+  "ratingMetricMedian": "x̃",
   "@ratingMetricMedian": {
     "description": "Rating metric: median"
   },
@@ -2052,7 +2048,7 @@
   "@statAverage": {
     "description": "Statistics: average label"
   },
-  "statMedian": "Median",
+  "statMedian": "x̃",
   "@statMedian": {
     "description": "Statistics: median label"
   },

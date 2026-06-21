@@ -198,6 +198,8 @@ class DatabaseService {
         filter_distance_enabled INTEGER NOT NULL DEFAULT 0,
         filter_max_distance_km REAL NOT NULL DEFAULT 100.0,
         filter_use_median INTEGER NOT NULL DEFAULT 0,
+        filter_use_specific_rating INTEGER NOT NULL DEFAULT 0,
+        filter_specific_rating_field TEXT NOT NULL DEFAULT '',
         auto_place_group_uuid TEXT,
         default_place_group_uuid TEXT,
         timeline_history_days INTEGER NOT NULL DEFAULT 7,

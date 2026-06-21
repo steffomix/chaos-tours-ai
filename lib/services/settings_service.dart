@@ -239,6 +239,9 @@ class SettingsService {
     filterMinAvgRating = a.filterMinAvgRating;
     filterDistanceEnabled = a.filterDistanceEnabled;
     filterMaxDistanceKm = a.filterMaxDistanceKm;
+    filterUseMedian = a.filterUseMedian;
+    filterUseSpecificRating = a.filterUseSpecificRating;
+    filterSpecificRatingField = a.filterSpecificRatingField;
     activeAktivitaetUuid = a.uuid;
     deviceId = a.deviceId;
   }
@@ -266,6 +269,9 @@ class SettingsService {
       filterMinAvgRating: filterMinAvgRating,
       filterDistanceEnabled: filterDistanceEnabled,
       filterMaxDistanceKm: filterMaxDistanceKm,
+      filterUseMedian: filterUseMedian,
+      filterUseSpecificRating: filterUseSpecificRating,
+      filterSpecificRatingField: filterSpecificRatingField,
       deviceId: deviceId,
     );
   }

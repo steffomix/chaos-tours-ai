@@ -1053,13 +1053,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get experienceFilter => 'Experience filter';
-
-  @override
   String get resetFilter2 => 'Reset';
 
   @override
-  String get activateExperienceFilter => 'Activate experience filter';
+  String get activateExperienceFilter => 'Experience filter';
 
   @override
   String get minAvgRating => 'Min. avg rating:';
@@ -1068,7 +1065,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ratingMetricAverage => 'Average';
 
   @override
-  String get ratingMetricMedian => 'Median';
+  String get ratingMetricMedian => 'x̃';
 
   @override
   String get camera => 'Camera';
@@ -1468,7 +1465,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statAverage => 'Average';
 
   @override
-  String get statMedian => 'Median';
+  String get statMedian => 'x̃';
 
   @override
   String openLabel(String label) {

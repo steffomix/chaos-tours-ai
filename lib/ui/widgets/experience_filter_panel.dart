@@ -171,20 +171,41 @@ class ExperienceFilterPanel extends StatelessWidget {
       onChanged: (v) {
         if (v != null) onChanged(filter.copyWith(useMedian: v));
       },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          RadioListTile<bool>(
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-            title: Text(l10n.ratingMetricAverage),
-            value: false,
+          Tooltip(
+            message: l10n.ratingMetricAverage,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Radio<bool>(
+                  value: false,
+                  groupValue: filter.useMedian,
+                  onChanged: (v) {
+                    if (v != null) onChanged(filter.copyWith(useMedian: v));
+                  },
+                ),
+                const Text('∅'),
+              ],
+            ),
           ),
-          RadioListTile<bool>(
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-            title: Text(l10n.ratingMetricMedian),
-            value: true,
+          const SizedBox(width: 8),
+          Tooltip(
+            message: l10n.ratingMetricMedian,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Radio<bool>(
+                  value: true,
+                  groupValue: filter.useMedian,
+                  onChanged: (v) {
+                    if (v != null) onChanged(filter.copyWith(useMedian: v));
+                  },
+                ),
+                const Text('x̃'),
+              ],
+            ),
           ),
         ],
       ),
@@ -238,55 +259,36 @@ class ExperienceFilterPanel extends StatelessWidget {
             // ── Experience filter ─────────────────────────────────────────
             Row(
               children: [
+                Switch(
+                  value: filter.requireExperiences,
+                  onChanged: (v) =>
+                      onChanged(filter.copyWith(requireExperiences: v)),
+                ),
                 Text(
-                  l10n.experienceFilter,
+                  l10n.activateExperienceFilter,
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ],
             ),
-            Row(
-              children: [
-                Checkbox(
-                  value: filter.requireExperiences,
-                  onChanged: (v) => onChanged(
-                    filter.copyWith(requireExperiences: v ?? false),
-                  ),
-                ),
-                Text(l10n.activateExperienceFilter),
-              ],
-            ),
+            if (filter.requireExperiences) _ratingSliderRow(context, filter),
             // Sub-filter options are only shown when experience filter active.
             if (filter.requireExperiences) ...[
-              // ── General / Specific sub-filter radio ───────────────────
-              RadioGroup<bool>(
-                groupValue: filter.useSpecificRating,
-                onChanged: (v) {
-                  if (v != null) {
-                    onChanged(filter.copyWith(useSpecificRating: v));
-                  }
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    RadioListTile<bool>(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(l10n.filterModeGeneral),
-                      value: false,
-                    ),
-                    RadioListTile<bool>(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(l10n.filterModeSpecific),
-                      value: true,
-                    ),
-                  ],
-                ),
+              // ── Specific sub-filter toggle ─────────────────────────────
+              Row(
+                children: [
+                  Switch(
+                    value: filter.useSpecificRating,
+                    onChanged: (v) =>
+                        onChanged(filter.copyWith(useSpecificRating: v)),
+                  ),
+                  Text(
+                    l10n.filterModeSpecific,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
               // ── General filter content ────────────────────────────────
               if (!filter.useSpecificRating) ...[
-                _ratingSliderRow(context, filter),
                 _avgMedianRadio(context, filter),
               ],
               // ── Specific filter content ───────────────────────────────
@@ -295,13 +297,10 @@ class ExperienceFilterPanel extends StatelessWidget {
                   padding: const EdgeInsets.only(left: 8, right: 8, bottom: 4),
                   child: Row(
                     children: [
-                      Text(l10n.selectRatingDimension),
-                      const SizedBox(width: 8),
                       Expanded(
                         child: DropdownButton<SpecificRatingField>(
                           value: filter.specificRatingField,
                           isExpanded: true,
-                          hint: Text(l10n.selectRatingDimension),
                           onChanged: (v) => onChanged(
                             v != null
                                 ? filter.copyWith(specificRatingField: v)
@@ -325,25 +324,24 @@ class ExperienceFilterPanel extends StatelessWidget {
                     ],
                   ),
                 ),
-                _ratingSliderRow(context, filter),
-                _avgMedianRadio(context, filter),
               ],
             ],
-            Row(
-              children: [
-                FilledButton(
-                  onPressed: () => onChanged(
-                    filter.copyWith(
-                      minAvgRating: 0.0,
-                      requireExperiences: false,
-                      useSpecificRating: false,
-                      clearSpecificRatingField: true,
+            if (filter.requireExperiences)
+              Row(
+                children: [
+                  FilledButton(
+                    onPressed: () => onChanged(
+                      filter.copyWith(
+                        minAvgRating: 0.0,
+                        requireExperiences: false,
+                        useSpecificRating: false,
+                        clearSpecificRatingField: true,
+                      ),
                     ),
+                    child: Text(l10n.resetFilter),
                   ),
-                  child: Text(l10n.resetFilter),
-                ),
-              ],
-            ),
+                ],
+              ),
           ],
         ),
       ),

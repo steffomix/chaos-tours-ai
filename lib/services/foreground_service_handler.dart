@@ -109,6 +109,7 @@ class GpsForegroundTaskHandler extends TaskHandler {
 
   Future<void> _setTracking(bool enabled) async {
     _trackingEnabled = enabled;
+    await SettingsService.instance.init();
     SettingsService.instance.trackingEnabled = enabled;
     if (enabled) {
       await _engine.initialize();

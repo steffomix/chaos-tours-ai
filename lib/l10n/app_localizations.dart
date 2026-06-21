@@ -1940,22 +1940,16 @@ abstract class AppLocalizations {
   /// **'max. {dist}'**
   String maxDistance(String dist);
 
-  /// Experience filter label
-  ///
-  /// In de, this message translates to:
-  /// **'Erfahrungs-Filter'**
-  String get experienceFilter;
-
   /// Reset filter button in experience panel
   ///
   /// In de, this message translates to:
   /// **'Zurücksetzen'**
   String get resetFilter2;
 
-  /// Activate experience filter checkbox
+  /// Experience filter switch
   ///
   /// In de, this message translates to:
-  /// **'Erfahrungsfilter aktivieren'**
+  /// **'Erfahrungsfilter'**
   String get activateExperienceFilter;
 
   /// Min average rating label
@@ -1973,7 +1967,7 @@ abstract class AppLocalizations {
   /// Rating metric: median
   ///
   /// In de, this message translates to:
-  /// **'Median'**
+  /// **'x̃'**
   String get ratingMetricMedian;
 
   /// Camera button
@@ -2228,13 +2222,13 @@ abstract class AppLocalizations {
   /// **'Fordert ↔ Bietet Medizin/Erstversorgung'**
   String get ratingMedicine;
 
-  /// General filter mode label
+  /// General experience filter mode label
   ///
   /// In de, this message translates to:
   /// **'Allgemeiner Filter'**
   String get filterModeGeneral;
 
-  /// Specific filter mode label
+  /// Specific experience filter mode label
   ///
   /// In de, this message translates to:
   /// **'Spezieller Filter'**
@@ -2246,7 +2240,7 @@ abstract class AppLocalizations {
   /// **'Bewertungsdimension:'**
   String get selectRatingDimension;
 
-  /// Overall rating row label in rating table
+  /// Overall rating row label in the rating table on place cards
   ///
   /// In de, this message translates to:
   /// **'Gesamt'**
@@ -2711,7 +2705,7 @@ abstract class AppLocalizations {
   /// Statistics: median label
   ///
   /// In de, this message translates to:
-  /// **'Median'**
+  /// **'x̃'**
   String get statMedian;
 
   /// Open {label} tooltip

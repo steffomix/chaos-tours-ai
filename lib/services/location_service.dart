@@ -12,14 +12,14 @@ class RecentGPSPoint {
 class LocationService {
   LocationService._();
   static final LocationService instance = LocationService._();
-  static RecentGPSPoint? lastPoint;
+  static RecentGPSPoint? _lastPoint;
 
   Future<Position?> getCurrentPosition() async {
     final interval = SettingsService.instance.gpsIntervalSeconds * 1000;
-    if (lastPoint != null &&
-        DateTime.now().difference(lastPoint!.timestamp).inMilliseconds <
+    if (_lastPoint != null &&
+        DateTime.now().difference(_lastPoint!.timestamp).inMilliseconds <
             interval * 0.8) {
-      return lastPoint!.position;
+      return _lastPoint!.position;
     }
     try {
       final position = await Geolocator.getCurrentPosition(
@@ -27,7 +27,7 @@ class LocationService {
           accuracy: LocationAccuracy.high,
         ),
       );
-      lastPoint = RecentGPSPoint(position, DateTime.now());
+      _lastPoint = RecentGPSPoint(position, DateTime.now());
       return position;
     } catch (_) {
       return null;
