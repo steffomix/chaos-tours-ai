@@ -82,6 +82,8 @@ class DatabaseService {
         website TEXT NOT NULL DEFAULT '',
         email TEXT NOT NULL DEFAULT '',
         phone TEXT NOT NULL DEFAULT '',
+        experience_rating_average REAL NOT NULL DEFAULT 0.0,
+        experience_rating_median REAL NOT NULL DEFAULT 0.0,
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
         device_id TEXT NOT NULL DEFAULT '',
