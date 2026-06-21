@@ -46,7 +46,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
   // Filter state
   DateTimeRange? _filterRange;
-  String? _filterPlaceUuid;
+  bool _filterOwnDeviceOnly = true;
 
   // Search state
   bool _searchActive = false;
@@ -181,7 +181,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
         toMs: _filterRange?.end
             .add(const Duration(days: 1))
             .millisecondsSinceEpoch,
-        placeUuid: _filterPlaceUuid,
+        deviceId: _filterOwnDeviceOnly
+            ? SettingsService.instance.deviceId
+            : null,
       );
 
       // Load persons + activities for this page only.
@@ -255,6 +257,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
   // ── Map filtered stays (Dart-side, for map polyline) ──────────────────────
 
   List<Stay> get _filteredStays {
+    final ownId = _filterOwnDeviceOnly
+        ? SettingsService.instance.deviceId
+        : null;
     return _stays.where((s) {
       if (_filterRange != null) {
         final dt = s.startDateTime;
@@ -262,9 +267,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
           return false;
         }
       }
-      if (_filterPlaceUuid != null && s.placeUuid != _filterPlaceUuid) {
-        return false;
-      }
+      if (ownId != null && s.deviceId != ownId) return false;
       return true;
     }).toList();
   }
@@ -344,24 +347,24 @@ class _TimelineScreenState extends State<TimelineScreen> {
                 onPressed: _pickDateRange,
                 tooltip: AppLocalizations.of(context)!.filterByDate,
               ),
-              // Filter by place
+              // Filter by own device ID
               IconButton(
                 icon: Badge(
-                  isLabelVisible: _filterPlaceUuid != null,
-                  child: const Icon(Icons.filter_list),
+                  isLabelVisible: _filterOwnDeviceOnly,
+                  child: const Icon(Icons.smartphone),
                 ),
-                onPressed: _showPlaceFilterSheet,
-                tooltip: AppLocalizations.of(context)!.filterByPlace,
+                onPressed: () {
+                  setState(() => _filterOwnDeviceOnly = !_filterOwnDeviceOnly);
+                  _reloadList();
+                },
+                tooltip: AppLocalizations.of(context)!.deviceIdExperienceFilter,
               ),
-              // Clear filters
-              if (_filterRange != null || _filterPlaceUuid != null)
+              // Clear date filter
+              if (_filterRange != null)
                 IconButton(
                   icon: const Icon(Icons.clear),
                   onPressed: () {
-                    setState(() {
-                      _filterRange = null;
-                      _filterPlaceUuid = null;
-                    });
+                    setState(() => _filterRange = null);
                     _reloadList();
                   },
                   tooltip: AppLocalizations.of(context)!.resetFilter,
@@ -754,42 +757,4 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
   Future<void> _onMapLongPress(TapPosition tap, LatLng latlng) =>
       createPlaceFromLongPress(context, tap, latlng, onCreated: _load);
-
-  void _showPlaceFilterSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      useSafeArea: true,
-      builder: (ctx) => ListView(
-        shrinkWrap: true,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.clear),
-            title: Text(AppLocalizations.of(ctx)!.allPlaces),
-            selected: _filterPlaceUuid == null,
-            onTap: () {
-              setState(() {
-                _filterPlaceUuid = null;
-              });
-              _reloadList();
-              Navigator.pop(ctx);
-            },
-          ),
-          ..._places.map(
-            (p) => ListTile(
-              leading: const Icon(Icons.location_on),
-              title: Text(p.name),
-              selected: _filterPlaceUuid == p.uuid,
-              onTap: () {
-                setState(() {
-                  _filterPlaceUuid = p.uuid;
-                });
-                _reloadList();
-                Navigator.pop(ctx);
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

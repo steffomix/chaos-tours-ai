@@ -1952,6 +1952,12 @@ abstract class AppLocalizations {
   /// **'Erfahrungsfilter'**
   String get activateExperienceFilter;
 
+  /// Only places with experiences with current deviceId switch
+  ///
+  /// In de, this message translates to:
+  /// **'Nur Erfahrungen mit\n aktueller Geräte ID'**
+  String get deviceIdExperienceFilter;
+
   /// Min average rating label
   ///
   /// In de, this message translates to:

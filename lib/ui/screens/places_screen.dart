@@ -64,7 +64,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
     _placesScrollCtrl.addListener(_onPlacesScroll);
     final s = SettingsService.instance;
     _expFilter = ExperienceFilterState(
-      requireExperiences: s.filterRequireExperiences,
+      ownDeviceOnly: s.filterRequireExperiences,
       minAvgRating: s.filterMinAvgRating,
       useMedian: s.filterUseMedian,
       distanceEnabled: s.filterDistanceEnabled,
@@ -265,6 +265,9 @@ class _PlacesScreenState extends State<PlacesScreen> {
           intervalOnly: _intervalOnly,
           groupFilter: SettingsService.instance.schedulerGroupUuidList,
           requireExperiences: _expFilter.requireExperiences,
+          ownDeviceId: _expFilter.ownDeviceOnly
+              ? SettingsService.instance.deviceId
+              : null,
           minAvgRating: _expFilter.isActive ? _expFilter.minAvgRating : null,
           useMedian: _expFilter.useMedian,
           placeTypeIndices: placeTypeIndices,
@@ -334,7 +337,10 @@ class _PlacesScreenState extends State<PlacesScreen> {
   }
 
   bool get _filterActive =>
-      _intervalOnly || _expFilter.isActive || _expFilter.distanceEnabled;
+      (_expFilter.useSpecificRating &&
+          _expFilter.specificRatingField != null) ||
+      _expFilter.minAvgRating != 0.0 ||
+      _expFilter.distanceEnabled;
 
   Color _ratingColor(double? rating) {
     if (rating == null) return Colors.grey;
@@ -566,7 +572,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
                   onChanged: (f) {
                     setState(() => _expFilter = f);
                     final s = SettingsService.instance;
-                    s.filterRequireExperiences = f.requireExperiences;
+                    s.filterRequireExperiences = f.ownDeviceOnly;
                     s.filterMinAvgRating = f.minAvgRating;
                     s.filterUseMedian = f.useMedian;
                     s.filterDistanceEnabled = f.distanceEnabled;

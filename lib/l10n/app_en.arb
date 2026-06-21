@@ -674,6 +674,7 @@
   },
   "resetFilter2": "Reset",
   "activateExperienceFilter": "Experience filter",
+  "deviceIdExperienceFilter": "Only this device ID experiences",
   "minAvgRating": "Min. ∅ rating:",
   "minMedianRating": "Min. x̃ rating:",
   "minSpecialRating": "Min. rating:",

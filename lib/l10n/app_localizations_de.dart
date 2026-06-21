@@ -1064,6 +1064,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get activateExperienceFilter => 'Erfahrungsfilter';
 
   @override
+  String get deviceIdExperienceFilter =>
+      'Nur Erfahrungen mit\n aktueller Geräte ID';
+
+  @override
   String get minAvgRating => 'Min. ⌀ Bewertung:';
 
   @override

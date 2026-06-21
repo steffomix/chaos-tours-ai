@@ -1495,6 +1495,10 @@
   "@activateExperienceFilter": {
     "description": "Experience filter switch"
   },
+  "deviceIdExperienceFilter": "Nur Erfahrungen mit\n aktueller Geräte ID",
+  "@deviceIdExperienceFilter": {
+    "description": "Only places with experiences with current deviceId switch"
+  },
   "minAvgRating": "Min. ⌀ Bewertung:",
   "@minAvgRating": {
     "description": "Min average rating label"

@@ -1590,6 +1590,7 @@ class DatabaseService {
     if (all.isNotEmpty) return all.first.uuid;
     return insertAktivitaet(
       Aktivitaet(
+        deviceId: _uuid.v4(),
         name: 'Standard',
         gpsIntervalSeconds: gpsInterval,
         stayDetectionSeconds: stayDetection,
@@ -1637,6 +1638,7 @@ class DatabaseService {
     bool intervalOnly = false,
     List<String> groupFilter = const [],
     bool requireExperiences = false,
+    String? ownDeviceId,
     double? minAvgRating,
     bool useMedian = false,
     List<int> placeTypeIndices = const [],
@@ -1668,6 +1670,15 @@ class DatabaseService {
 
     // Build the ORDER BY clause (and optional filter subquery for specific mode).
     String orderBy = 'sp.name ASC';
+
+    if (ownDeviceId != null) {
+      where.add(
+        'EXISTS (SELECT 1 FROM place_experiences'
+        ' WHERE saved_place_uuid = sp.uuid'
+        ' AND deleted_at IS NULL AND device_id = ?)',
+      );
+      args.add(ownDeviceId);
+    }
 
     if (specificRatingField != null && requireExperiences) {
       // Specific dimension filter: require non-NULL AVG for the chosen field.
@@ -1729,6 +1740,7 @@ class DatabaseService {
     bool intervalOnly = false,
     List<String> groupFilter = const [],
     bool requireExperiences = false,
+    String? ownDeviceId,
     double? minAvgRating,
     bool useMedian = false,
     List<int> placeTypeIndices = const [],
@@ -1755,6 +1767,15 @@ class DatabaseService {
         args.addAll(placeTypeIndices);
       }
       where.add('(${conds.join(' OR ')})');
+    }
+
+    if (ownDeviceId != null) {
+      where.add(
+        'EXISTS (SELECT 1 FROM place_experiences'
+        ' WHERE saved_place_uuid = sp.uuid'
+        ' AND deleted_at IS NULL AND device_id = ?)',
+      );
+      args.add(ownDeviceId);
     }
 
     if (requireExperiences) {
@@ -1794,6 +1815,7 @@ class DatabaseService {
     int? fromMs,
     int? toMs,
     String? placeUuid,
+    String? deviceId,
   }) async {
     final db = await database;
     final where = <String>["s.status = 'completed'"];
@@ -1810,6 +1832,10 @@ class DatabaseService {
     if (placeUuid != null) {
       where.add('s.place_uuid = ?');
       args.add(placeUuid);
+    }
+    if (deviceId != null) {
+      where.add('s.device_id = ?');
+      args.add(deviceId);
     }
 
     String joins = '';

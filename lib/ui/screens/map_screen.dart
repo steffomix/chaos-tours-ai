@@ -61,7 +61,7 @@ class _MapScreenState extends State<MapScreen> {
     super.initState();
     final s = SettingsService.instance;
     _expFilter = ExperienceFilterState(
-      requireExperiences: s.filterRequireExperiences,
+      ownDeviceOnly: s.filterRequireExperiences,
       minAvgRating: s.filterMinAvgRating,
       distanceEnabled: s.filterDistanceEnabled,
       maxDistanceKm: s.filterMaxDistanceKm,

@@ -1059,6 +1059,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activateExperienceFilter => 'Experience filter';
 
   @override
+  String get deviceIdExperienceFilter => 'Only this device ID experiences';
+
+  @override
   String get minAvgRating => 'Min. ∅ rating:';
 
   @override

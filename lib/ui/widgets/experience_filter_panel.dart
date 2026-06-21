@@ -53,8 +53,8 @@ enum SpecificRatingField {
 
 /// Immutable filter state for experience-based place filtering.
 class ExperienceFilterState {
-  /// Whether the filter requires places to have at least one experience.
-  final bool requireExperiences;
+  /// Whether to show only places that have experiences from the current device.
+  final bool ownDeviceOnly;
 
   /// Minimum average rating across all 6 dimensions (−9.0 to 9.0).
   final double minAvgRating;
@@ -76,7 +76,7 @@ class ExperienceFilterState {
   final SpecificRatingField? specificRatingField;
 
   const ExperienceFilterState({
-    this.requireExperiences = false,
+    this.ownDeviceOnly = false,
     this.minAvgRating = 0.0,
     this.useMedian = false,
     this.distanceEnabled = false,
@@ -85,15 +85,18 @@ class ExperienceFilterState {
     this.specificRatingField,
   });
 
-  bool get isActive =>
-      requireExperiences || minAvgRating != 0.0 || distanceEnabled;
+  /// True when experience-based filtering requires experiences to be present.
+  /// This is always the case when [specificFilterActive] is true.
+  bool get requireExperiences => ownDeviceOnly || specificFilterActive;
+
+  bool get isActive => ownDeviceOnly || minAvgRating != 0.0 || distanceEnabled;
 
   /// Whether the specific filter is fully configured and active.
   bool get specificFilterActive =>
-      requireExperiences && useSpecificRating && specificRatingField != null;
+      useSpecificRating && specificRatingField != null;
 
   ExperienceFilterState copyWith({
-    bool? requireExperiences,
+    bool? ownDeviceOnly,
     double? minAvgRating,
     bool? useMedian,
     bool? distanceEnabled,
@@ -102,7 +105,7 @@ class ExperienceFilterState {
     SpecificRatingField? specificRatingField,
     bool clearSpecificRatingField = false,
   }) => ExperienceFilterState(
-    requireExperiences: requireExperiences ?? this.requireExperiences,
+    ownDeviceOnly: ownDeviceOnly ?? this.ownDeviceOnly,
     minAvgRating: minAvgRating ?? this.minAvgRating,
     useMedian: useMedian ?? this.useMedian,
     distanceEnabled: distanceEnabled ?? this.distanceEnabled,
@@ -115,7 +118,7 @@ class ExperienceFilterState {
 }
 
 /// Collapsible filter panel shown above the places list / map.
-class ExperienceFilterPanel extends StatelessWidget {
+class ExperienceFilterPanel extends StatefulWidget {
   final ExperienceFilterState filter;
   final ValueChanged<ExperienceFilterState> onChanged;
 
@@ -124,6 +127,22 @@ class ExperienceFilterPanel extends StatelessWidget {
     required this.filter,
     required this.onChanged,
   });
+
+  @override
+  State<ExperienceFilterPanel> createState() => _ExperienceFilterPanelState();
+}
+
+class _ExperienceFilterPanelState extends State<ExperienceFilterPanel> {
+  bool _subPanelOpen = false;
+
+  ExperienceFilterState get filter => widget.filter;
+  ValueChanged<ExperienceFilterState> get onChanged => widget.onChanged;
+
+  @override
+  void initState() {
+    super.initState();
+    //_subPanelOpen = widget.filter.requireExperiences;
+  }
 
   String _fmtDist(double km) {
     if (km >= 1000) return '>1000 km';
@@ -268,9 +287,8 @@ class ExperienceFilterPanel extends StatelessWidget {
             Row(
               children: [
                 Switch(
-                  value: filter.requireExperiences,
-                  onChanged: (v) =>
-                      onChanged(filter.copyWith(requireExperiences: v)),
+                  value: _subPanelOpen,
+                  onChanged: (v) => setState(() => _subPanelOpen = v),
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -279,8 +297,21 @@ class ExperienceFilterPanel extends StatelessWidget {
                 ),
               ],
             ),
-            // Sub-filter options are only shown when experience filter active.
-            if (filter.requireExperiences) ...[
+            // Sub-filter options are only shown when sub-panel is open.
+            if (_subPanelOpen) ...[
+              // ── Own device only toggle ────────────────────────────────
+              Row(
+                children: [
+                  const SizedBox(width: 8),
+                  Switch(
+                    value: filter.ownDeviceOnly,
+                    onChanged: (v) =>
+                        onChanged(filter.copyWith(ownDeviceOnly: v)),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(l10n.deviceIdExperienceFilter),
+                ],
+              ),
               // ── Specific sub-filter toggle ─────────────────────────────
               Row(
                 children: [
@@ -335,24 +366,27 @@ class ExperienceFilterPanel extends StatelessWidget {
                   ),
                 ),
               ],
-            ],
-            if (filter.requireExperiences) _ratingSliderRow(context, filter),
-            if (filter.requireExperiences)
+              // Rating slider shown when experiences are required.
+              if (filter.requireExperiences) _ratingSliderRow(context, filter),
               Row(
                 children: [
                   FilledButton(
-                    onPressed: () => onChanged(
-                      filter.copyWith(
-                        minAvgRating: 0.0,
-                        requireExperiences: false,
-                        useSpecificRating: false,
-                        clearSpecificRatingField: true,
-                      ),
-                    ),
+                    onPressed: () {
+                      setState(() => _subPanelOpen = false);
+                      onChanged(
+                        filter.copyWith(
+                          minAvgRating: 0.0,
+                          ownDeviceOnly: false,
+                          useSpecificRating: false,
+                          clearSpecificRatingField: true,
+                        ),
+                      );
+                    },
                     child: Text(l10n.resetFilter),
                   ),
                 ],
               ),
+            ],
           ],
         ),
       ),
