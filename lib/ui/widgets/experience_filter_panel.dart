@@ -264,7 +264,6 @@ class ExperienceFilterPanel extends StatelessWidget {
                 onChanged: (v) => onChanged(filter.copyWith(maxDistanceKm: v)),
               ),
             ],
-            const Divider(height: 8),
             // ── Experience filter ─────────────────────────────────────────
             Row(
               children: [
@@ -285,6 +284,7 @@ class ExperienceFilterPanel extends StatelessWidget {
               // ── Specific sub-filter toggle ─────────────────────────────
               Row(
                 children: [
+                  const SizedBox(width: 8),
                   Switch(
                     value: filter.useSpecificRating,
                     onChanged: (v) =>
