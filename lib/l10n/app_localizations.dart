@@ -2228,6 +2228,36 @@ abstract class AppLocalizations {
   /// **'Fordert ↔ Bietet Medizin/Erstversorgung'**
   String get ratingMedicine;
 
+  /// General filter mode label
+  ///
+  /// In de, this message translates to:
+  /// **'Allgemeiner Filter'**
+  String get filterModeGeneral;
+
+  /// Specific filter mode label
+  ///
+  /// In de, this message translates to:
+  /// **'Spezieller Filter'**
+  String get filterModeSpecific;
+
+  /// Label for the rating dimension dropdown
+  ///
+  /// In de, this message translates to:
+  /// **'Bewertungsdimension:'**
+  String get selectRatingDimension;
+
+  /// Overall rating row label in rating table
+  ///
+  /// In de, this message translates to:
+  /// **'Gesamt'**
+  String get ratingTableOverall;
+
+  /// Loading indicator text for rating table
+  ///
+  /// In de, this message translates to:
+  /// **'Lade...'**
+  String get loadingRatings;
+
   /// No experiences yet
   ///
   /// In de, this message translates to:

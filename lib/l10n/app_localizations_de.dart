@@ -1204,6 +1204,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String get ratingMedicine => 'Fordert ↔ Bietet Medizin/Erstversorgung';
 
   @override
+  String get filterModeGeneral => 'Allgemeiner Filter';
+
+  @override
+  String get filterModeSpecific => 'Spezieller Filter';
+
+  @override
+  String get selectRatingDimension => 'Bewertungsdimension:';
+
+  @override
+  String get ratingTableOverall => 'Gesamt';
+
+  @override
+  String get loadingRatings => 'Lade...';
+
+  @override
   String get noExperiencesYet => 'Noch keine Erfahrungsberichte vorhanden.';
 
   @override

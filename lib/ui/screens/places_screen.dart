@@ -6,6 +6,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:focus_detector/focus_detector.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../models/place_experience.dart';
 import '../../models/saved_place.dart';
 import '../../models/stay.dart';
 import '../../services/database_service.dart';
@@ -68,6 +69,10 @@ class _PlacesScreenState extends State<PlacesScreen> {
       useMedian: s.filterUseMedian,
       distanceEnabled: s.filterDistanceEnabled,
       maxDistanceKm: s.filterMaxDistanceKm,
+      useSpecificRating: s.filterUseSpecificRating,
+      specificRatingField: SpecificRatingField.fromDbColumn(
+        s.filterSpecificRatingField,
+      ),
     );
     _loadCurrentPosition().then((_) => _loadPlaces());
   }
@@ -263,6 +268,9 @@ class _PlacesScreenState extends State<PlacesScreen> {
           minAvgRating: _expFilter.isActive ? _expFilter.minAvgRating : null,
           useMedian: _expFilter.useMedian,
           placeTypeIndices: placeTypeIndices,
+          specificRatingField: _expFilter.specificFilterActive
+              ? _expFilter.specificRatingField!.dbColumn
+              : null,
         );
 
         // Load visit metadata for this page.
@@ -375,6 +383,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
             avgRating: _expFilter.useMedian
                 ? place.experienceRatingMedian
                 : place.experienceRatingAverage,
+            filter: _expFilter,
             fmtDate: _fmtDate,
             fmtTime: _fmtTime,
             fmtDuration: _fmtDuration,
@@ -562,6 +571,9 @@ class _PlacesScreenState extends State<PlacesScreen> {
                     s.filterUseMedian = f.useMedian;
                     s.filterDistanceEnabled = f.distanceEnabled;
                     s.filterMaxDistanceKm = f.maxDistanceKm;
+                    s.filterUseSpecificRating = f.useSpecificRating;
+                    s.filterSpecificRatingField =
+                        f.specificRatingField?.dbColumn ?? '';
                     _loadPlaces();
                   },
                 ),
@@ -582,12 +594,13 @@ class _PlacesScreenState extends State<PlacesScreen> {
   }
 }
 
-class _PlaceCard extends StatelessWidget {
+class _PlaceCard extends StatefulWidget {
   final SavedPlace place;
   final int count;
   final Stay? lastStay;
   final double? distance;
   final double? avgRating;
+  final ExperienceFilterState filter;
   final String Function(int ms) fmtDate;
   final String Function(DateTime dt) fmtTime;
   final String Function(Duration d) fmtDuration;
@@ -603,21 +616,201 @@ class _PlaceCard extends StatelessWidget {
     required this.fmtDuration,
     required this.fmtDistance,
     required this.onTap,
+    required this.filter,
     this.distance,
     this.avgRating,
   });
+
+  @override
+  State<_PlaceCard> createState() => _PlaceCardState();
+}
+
+class _PlaceCardState extends State<_PlaceCard> {
+  List<PlaceExperience>? _experiences;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.filter.specificFilterActive) {
+      _loadExperiences();
+    }
+  }
+
+  @override
+  void didUpdateWidget(_PlaceCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.filter.specificFilterActive &&
+        _experiences == null &&
+        !_loading) {
+      _loadExperiences();
+    }
+  }
+
+  Future<void> _loadExperiences() async {
+    if (_loading || widget.place.uuid.isEmpty) return;
+    setState(() => _loading = true);
+    try {
+      final exps = await DatabaseService.instance.loadExperiencesForPlace(
+        widget.place.uuid,
+      );
+      if (mounted) {
+        setState(() {
+          _experiences = exps;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  double? _avg(int Function(PlaceExperience e) getter) {
+    final exps = _experiences;
+    if (exps == null || exps.isEmpty) return null;
+    return exps.map(getter).reduce((a, b) => a + b) / exps.length;
+  }
+
+  double? _median(int Function(PlaceExperience e) getter) {
+    final exps = _experiences;
+    if (exps == null || exps.isEmpty) return null;
+    final sorted = exps.map(getter).toList()..sort();
+    final n = sorted.length;
+    if (n % 2 == 1) return sorted[n ~/ 2].toDouble();
+    return (sorted[n ~/ 2 - 1] + sorted[n ~/ 2]) / 2.0;
+  }
+
+  String _fmtVal(double? v) => v == null ? '–' : v.toStringAsFixed(1);
+
+  Widget _buildRatingsTable(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    if (_loading) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 8),
+            Text(l10n.loadingRatings, style: textTheme.bodySmall),
+          ],
+        ),
+      );
+    }
+
+    // Header row.
+    Widget headerRow = Row(
+      children: [
+        Expanded(flex: 5, child: Text('', style: textTheme.bodySmall)),
+        SizedBox(
+          width: 42,
+          child: Text(
+            'Ø',
+            textAlign: TextAlign.center,
+            style: textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.primary,
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 52,
+          child: Text(
+            l10n.ratingMetricMedian,
+            textAlign: TextAlign.center,
+            style: textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.primary,
+            ),
+          ),
+        ),
+      ],
+    );
+
+    Widget tableRow(
+      String label,
+      double? avg,
+      double? median, {
+      bool bold = false,
+    }) {
+      final style = textTheme.bodySmall?.copyWith(
+        fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+      );
+      return Row(
+        children: [
+          Expanded(
+            flex: 5,
+            child: Text(label, style: style, overflow: TextOverflow.ellipsis),
+          ),
+          SizedBox(
+            width: 42,
+            child: Text(
+              _fmtVal(avg),
+              textAlign: TextAlign.center,
+              style: style,
+            ),
+          ),
+          SizedBox(
+            width: 52,
+            child: Text(
+              _fmtVal(median),
+              textAlign: TextAlign.center,
+              style: style,
+            ),
+          ),
+        ],
+      );
+    }
+
+    final fields = SpecificRatingField.values;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        headerRow,
+        const Divider(height: 4, thickness: 0.5),
+        // Overall rating (from saved_places cache) – bold.
+        tableRow(
+          l10n.ratingTableOverall,
+          widget.place.experienceRatingAverage,
+          widget.place.experienceRatingMedian,
+          bold: true,
+        ),
+        const Divider(height: 4, thickness: 0.5),
+        // Per-dimension rows (lazy-loaded).
+        for (final f in fields)
+          tableRow(f.label(l10n), _avg(f.extractFrom), _median(f.extractFrom)),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final specificActive = widget.filter.specificFilterActive;
+    final selectedField = widget.filter.specificRatingField;
+
+    // In specific mode, show the selected dimension's avg as the headline rating.
+    double? headlineRating;
+    if (specificActive && selectedField != null && _experiences != null) {
+      headlineRating = _avg(selectedField.extractFrom);
+    } else if (!specificActive) {
+      headlineRating = widget.avgRating;
+    }
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
+        onTap: widget.onTap,
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
@@ -626,64 +819,71 @@ class _PlaceCard extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    place.placeType.icon,
-                    color: place.placeType.dotColor,
+                    widget.place.placeType.icon,
+                    color: widget.place.placeType.dotColor,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      place.name,
+                      widget.place.name,
                       style: textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (distance != null)
+                  if (widget.distance != null)
                     Text(
-                      fmtDistance(distance!),
+                      widget.fmtDistance(widget.distance!),
                       style: textTheme.bodySmall?.copyWith(
                         color: colorScheme.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                  if (avgRating != null) ...[
+                  if (headlineRating != null) ...[
                     const SizedBox(width: 8),
                     Icon(Icons.star, size: 14, color: Colors.amber),
                     Text(
-                      avgRating!.toStringAsFixed(1),
+                      headlineRating.toStringAsFixed(1),
                       style: textTheme.bodySmall,
                     ),
                   ],
                 ],
               ),
+              // ── Ratings table (specific filter mode) ─────────────────
+              if (specificActive) ...[
+                const SizedBox(height: 8),
+                _buildRatingsTable(context),
+                const SizedBox(height: 8),
+              ],
+              // ── Visit info ────────────────────────────────────────────
               const SizedBox(height: 4),
               Text(
-                count == 0
+                widget.count == 0
                     ? l10n.notVisitedYet
-                    : (count == 1
-                          ? l10n.visitCount(count)
-                          : l10n.visitCountPlural(count)),
+                    : (widget.count == 1
+                          ? l10n.visitCount(widget.count)
+                          : l10n.visitCountPlural(widget.count)),
                 style: textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
               ),
-              if (lastStay != null) ...[
+              if (widget.lastStay != null) ...[
                 const SizedBox(height: 2),
                 Text(
-                  '${l10n.lastVisit(fmtDate(lastStay!.startTime), fmtTime(lastStay!.startDateTime))}'
-                  '${lastStay!.endDateTime != null ? ' – ${fmtTime(lastStay!.endDateTime!)}' : ''}'
-                  '${lastStay!.endDateTime != null ? '  (${fmtDuration(lastStay!.duration)})' : ''}',
+                  '${l10n.lastVisit(widget.fmtDate(widget.lastStay!.startTime), widget.fmtTime(widget.lastStay!.startDateTime))}'
+                  '${widget.lastStay!.endDateTime != null ? ' – ${widget.fmtTime(widget.lastStay!.endDateTime!)}' : ''}'
+                  '${widget.lastStay!.endDateTime != null ? '  (${widget.fmtDuration(widget.lastStay!.duration)})' : ''}',
                   style: textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
-              if (place.notes.isNotEmpty) ...[
+              if (widget.place.notes.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Text(
-                  place.notes,
+                  widget.place.notes,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: textTheme.bodySmall,

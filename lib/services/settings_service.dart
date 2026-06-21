@@ -33,6 +33,10 @@ class SettingsService {
   static const String _keyFilterDistanceEnabled = 'filter_distance_enabled';
   static const String _keyFilterMaxDistanceKm = 'filter_max_distance_km';
   static const String _keyFilterUseMedian = 'filter_use_median';
+  static const String _keyFilterUseSpecificRating =
+      'filter_use_specific_rating';
+  static const String _keyFilterSpecificRatingField =
+      'filter_specific_rating_field';
   static const String _keyLastSyncMs = 'sync_last_ms';
   static const String _keyDeviceId = 'device_id';
 
@@ -193,6 +197,16 @@ class SettingsService {
 
   bool get filterUseMedian => _p.getBool(_keyFilterUseMedian) ?? false;
   set filterUseMedian(bool v) => _p.setBool(_keyFilterUseMedian, v);
+
+  bool get filterUseSpecificRating =>
+      _p.getBool(_keyFilterUseSpecificRating) ?? false;
+  set filterUseSpecificRating(bool v) =>
+      _p.setBool(_keyFilterUseSpecificRating, v);
+
+  String get filterSpecificRatingField =>
+      _p.getString(_keyFilterSpecificRatingField) ?? '';
+  set filterSpecificRatingField(String v) =>
+      _p.setString(_keyFilterSpecificRatingField, v);
 
   // ── Aktivitaet binding ───────────────────────────────────────────────────
 

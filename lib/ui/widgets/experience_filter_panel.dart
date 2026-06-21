@@ -1,6 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 
+import '../../models/place_experience.dart';
+
+/// The 7 specific rating dimensions of a [PlaceExperience].
+enum SpecificRatingField {
+  dangerousFriendly,
+  fraudReliable,
+  dismissiveAccommodation,
+  food,
+  equipment,
+  transport,
+  medicine;
+
+  String get dbColumn => switch (this) {
+    dangerousFriendly => 'rating_dangerous_friendly',
+    fraudReliable => 'rating_fraud_reliable',
+    dismissiveAccommodation => 'rating_dismissive_accommodation',
+    food => 'rating_food',
+    equipment => 'rating_equipment',
+    transport => 'rating_transport',
+    medicine => 'rating_medicine',
+  };
+
+  static SpecificRatingField? fromDbColumn(String column) {
+    for (final f in SpecificRatingField.values) {
+      if (f.dbColumn == column) return f;
+    }
+    return null;
+  }
+
+  String label(AppLocalizations l10n) => switch (this) {
+    dangerousFriendly => l10n.ratingDangerFriendly,
+    fraudReliable => l10n.ratingFraudReliable,
+    dismissiveAccommodation => l10n.ratingDismissiveAccommodation,
+    food => l10n.ratingFood,
+    equipment => l10n.ratingEquipment,
+    transport => l10n.ratingTransport,
+    medicine => l10n.ratingMedicine,
+  };
+
+  int extractFrom(PlaceExperience e) => switch (this) {
+    dangerousFriendly => e.ratingDangerousFriendly,
+    fraudReliable => e.ratingFraudReliable,
+    dismissiveAccommodation => e.ratingDismissiveAccommodation,
+    food => e.ratingFood,
+    equipment => e.ratingEquipment,
+    transport => e.ratingTransport,
+    medicine => e.ratingMedicine,
+  };
+}
+
 /// Immutable filter state for experience-based place filtering.
 class ExperienceFilterState {
   /// Whether the filter requires places to have at least one experience.
@@ -18,16 +68,29 @@ class ExperienceFilterState {
   /// Maximum distance in kilometres (10 km – 1000+ km).
   final double maxDistanceKm;
 
+  /// Whether the specific rating filter sub-mode is active.
+  final bool useSpecificRating;
+
+  /// The specific rating field to filter and sort by (only used when
+  /// [useSpecificRating] is true).
+  final SpecificRatingField? specificRatingField;
+
   const ExperienceFilterState({
     this.requireExperiences = false,
     this.minAvgRating = 0.0,
     this.useMedian = false,
     this.distanceEnabled = false,
     this.maxDistanceKm = 100.0,
+    this.useSpecificRating = false,
+    this.specificRatingField,
   });
 
   bool get isActive =>
       requireExperiences || minAvgRating != 0.0 || distanceEnabled;
+
+  /// Whether the specific filter is fully configured and active.
+  bool get specificFilterActive =>
+      requireExperiences && useSpecificRating && specificRatingField != null;
 
   ExperienceFilterState copyWith({
     bool? requireExperiences,
@@ -35,12 +98,19 @@ class ExperienceFilterState {
     bool? useMedian,
     bool? distanceEnabled,
     double? maxDistanceKm,
+    bool? useSpecificRating,
+    SpecificRatingField? specificRatingField,
+    bool clearSpecificRatingField = false,
   }) => ExperienceFilterState(
     requireExperiences: requireExperiences ?? this.requireExperiences,
     minAvgRating: minAvgRating ?? this.minAvgRating,
     useMedian: useMedian ?? this.useMedian,
     distanceEnabled: distanceEnabled ?? this.distanceEnabled,
     maxDistanceKm: maxDistanceKm ?? this.maxDistanceKm,
+    useSpecificRating: useSpecificRating ?? this.useSpecificRating,
+    specificRatingField: clearSpecificRatingField
+        ? null
+        : specificRatingField ?? this.specificRatingField,
   );
 }
 
@@ -59,6 +129,66 @@ class ExperienceFilterPanel extends StatelessWidget {
     if (km >= 1000) return '>1000 km';
     if (km < 10) return '<10 km';
     return '${km.round()} km';
+  }
+
+  Widget _ratingSliderRow(BuildContext context, ExperienceFilterState filter) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(children: [const SizedBox(width: 8), Text(l10n.minAvgRating)]),
+        Row(
+          children: [
+            Expanded(
+              child: Slider(
+                value: filter.minAvgRating.clamp(-9.0, 9.0),
+                min: -9,
+                max: 9,
+                divisions: 18,
+                label: filter.minAvgRating.toStringAsFixed(0),
+                onChanged: (v) => onChanged(filter.copyWith(minAvgRating: v)),
+              ),
+            ),
+            SizedBox(
+              width: 36,
+              child: Text(
+                filter.minAvgRating.toStringAsFixed(0),
+                textAlign: TextAlign.right,
+                style: TextStyle(color: colorScheme.primary),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _avgMedianRadio(BuildContext context, ExperienceFilterState filter) {
+    final l10n = AppLocalizations.of(context)!;
+    return RadioGroup<bool>(
+      groupValue: filter.useMedian,
+      onChanged: (v) {
+        if (v != null) onChanged(filter.copyWith(useMedian: v));
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          RadioListTile<bool>(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            title: Text(l10n.ratingMetricAverage),
+            value: false,
+          ),
+          RadioListTile<bool>(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            title: Text(l10n.ratingMetricMedian),
+            value: true,
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -125,44 +255,15 @@ class ExperienceFilterPanel extends StatelessWidget {
                 Text(l10n.activateExperienceFilter),
               ],
             ),
-            // Rating slider and metric radio are only shown when the
-            // experience filter is active (requireExperiences = true).
+            // Sub-filter options are only shown when experience filter active.
             if (filter.requireExperiences) ...[
-              Row(
-                children: [
-                  const SizedBox(width: 8),
-                  Text(l10n.minAvgRating),
-                  const SizedBox(width: 8),
-                ],
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: Slider(
-                      value: filter.minAvgRating.clamp(-9.0, 9.0),
-                      min: -9,
-                      max: 9,
-                      divisions: 18,
-                      label: filter.minAvgRating.toStringAsFixed(0),
-                      onChanged: (v) =>
-                          onChanged(filter.copyWith(minAvgRating: v)),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 36,
-                    child: Text(
-                      filter.minAvgRating.toStringAsFixed(0),
-                      textAlign: TextAlign.right,
-                      style: TextStyle(color: colorScheme.primary),
-                    ),
-                  ),
-                ],
-              ),
-              // ── Average / Median radio ───────────────────────────────
+              // ── General / Specific sub-filter radio ───────────────────
               RadioGroup<bool>(
-                groupValue: filter.useMedian,
+                groupValue: filter.useSpecificRating,
                 onChanged: (v) {
-                  if (v != null) onChanged(filter.copyWith(useMedian: v));
+                  if (v != null) {
+                    onChanged(filter.copyWith(useSpecificRating: v));
+                  }
                 },
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,18 +271,63 @@ class ExperienceFilterPanel extends StatelessWidget {
                     RadioListTile<bool>(
                       dense: true,
                       contentPadding: EdgeInsets.zero,
-                      title: Text(l10n.ratingMetricAverage),
+                      title: Text(l10n.filterModeGeneral),
                       value: false,
                     ),
                     RadioListTile<bool>(
                       dense: true,
                       contentPadding: EdgeInsets.zero,
-                      title: Text(l10n.ratingMetricMedian),
+                      title: Text(l10n.filterModeSpecific),
                       value: true,
                     ),
                   ],
                 ),
               ),
+              const SizedBox(height: 4),
+              // ── General filter content ────────────────────────────────
+              if (!filter.useSpecificRating) ...[
+                _ratingSliderRow(context, filter),
+                _avgMedianRadio(context, filter),
+              ],
+              // ── Specific filter content ───────────────────────────────
+              if (filter.useSpecificRating) ...[
+                Padding(
+                  padding: const EdgeInsets.only(left: 8, right: 8, bottom: 4),
+                  child: Row(
+                    children: [
+                      Text(l10n.selectRatingDimension),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: DropdownButton<SpecificRatingField>(
+                          value: filter.specificRatingField,
+                          isExpanded: true,
+                          hint: Text(l10n.selectRatingDimension),
+                          onChanged: (v) => onChanged(
+                            v != null
+                                ? filter.copyWith(specificRatingField: v)
+                                : filter.copyWith(
+                                    clearSpecificRatingField: true,
+                                  ),
+                          ),
+                          items: SpecificRatingField.values
+                              .map(
+                                (f) => DropdownMenuItem(
+                                  value: f,
+                                  child: Text(
+                                    f.label(l10n),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                _ratingSliderRow(context, filter),
+                _avgMedianRadio(context, filter),
+              ],
             ],
             Row(
               children: [
@@ -190,6 +336,8 @@ class ExperienceFilterPanel extends StatelessWidget {
                     filter.copyWith(
                       minAvgRating: 0.0,
                       requireExperiences: false,
+                      useSpecificRating: false,
+                      clearSpecificRatingField: true,
                     ),
                   ),
                   child: Text(l10n.resetFilter),

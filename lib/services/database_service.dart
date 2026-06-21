@@ -1625,6 +1625,9 @@ class DatabaseService {
   /// values whose labels match the current search query.
   /// Set [useMedian] to filter by [experience_rating_median] instead of
   /// [experience_rating_average].
+  /// Set [specificRatingField] (a DB column name like 'rating_dangerous_friendly')
+  /// to filter and sort by that specific dimension's average/median instead of
+  /// the overall cached rating.
   Future<List<SavedPlace>> loadPlacesPaged({
     required int limit,
     required int offset,
@@ -1635,6 +1638,7 @@ class DatabaseService {
     double? minAvgRating,
     bool useMedian = false,
     List<int> placeTypeIndices = const [],
+    String? specificRatingField,
   }) async {
     final db = await database;
     final where = <String>['sp.deleted_at IS NULL'];
@@ -1660,7 +1664,32 @@ class DatabaseService {
       where.add('(${conds.join(' OR ')})');
     }
 
-    if (requireExperiences) {
+    // Build the ORDER BY clause (and optional filter subquery for specific mode).
+    String orderBy = 'sp.name ASC';
+
+    if (specificRatingField != null && requireExperiences) {
+      // Specific dimension filter: require non-NULL AVG for the chosen field.
+      final dimAvgSubq =
+          '(SELECT AVG($specificRatingField) FROM place_experiences'
+          ' WHERE saved_place_uuid = sp.uuid AND deleted_at IS NULL)';
+      final dimMedianSubq =
+          '(SELECT AVG(val) FROM ('
+          'SELECT val, ROW_NUMBER() OVER (ORDER BY val) AS rn,'
+          ' COUNT(*) OVER () AS cnt'
+          ' FROM (SELECT $specificRatingField AS val FROM place_experiences'
+          ' WHERE saved_place_uuid = sp.uuid AND deleted_at IS NULL)'
+          ') WHERE rn IN ((cnt + 1) / 2, (cnt + 2) / 2))';
+      final dimSubq = useMedian ? dimMedianSubq : dimAvgSubq;
+
+      if (minAvgRating != null) {
+        where.add('($dimSubq IS NOT NULL AND $dimSubq >= ?)');
+        args.add(minAvgRating);
+      } else {
+        where.add('$dimSubq IS NOT NULL');
+      }
+      // Sort by the chosen dimension descending (nulls last via COALESCE).
+      orderBy = 'COALESCE($dimAvgSubq, -999) DESC, sp.name ASC';
+    } else if (requireExperiences) {
       // Must have at least one experience (cached column is non-NULL)
       final col = useMedian
           ? 'sp.experience_rating_median'
@@ -1686,7 +1715,7 @@ class DatabaseService {
       FROM saved_places sp
       LEFT JOIN place_groups pg ON sp.group_uuid = pg.uuid
       WHERE ${where.join(' AND ')}
-      ORDER BY sp.name ASC
+      ORDER BY $orderBy
       LIMIT ? OFFSET ?
     ''', args);
     return rows.map(SavedPlace.fromMap).toList();

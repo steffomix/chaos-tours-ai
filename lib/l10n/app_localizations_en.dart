@@ -1201,6 +1201,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ratingMedicine => 'Demands ↔ Provides medical care';
 
   @override
+  String get filterModeGeneral => 'General filter';
+
+  @override
+  String get filterModeSpecific => 'Specific filter';
+
+  @override
+  String get selectRatingDimension => 'Rating dimension:';
+
+  @override
+  String get ratingTableOverall => 'Overall';
+
+  @override
+  String get loadingRatings => 'Loading...';
+
+  @override
   String get noExperiencesYet => 'No experience reports yet.';
 
   @override

@@ -1679,6 +1679,26 @@
   "@ratingMedicine": {
     "description": "Rating: demands to provides medical care"
   },
+  "filterModeGeneral": "Allgemeiner Filter",
+  "@filterModeGeneral": {
+    "description": "General experience filter mode label"
+  },
+  "filterModeSpecific": "Spezieller Filter",
+  "@filterModeSpecific": {
+    "description": "Specific experience filter mode label"
+  },
+  "selectRatingDimension": "Bewertungsdimension:",
+  "@selectRatingDimension": {
+    "description": "Label for the rating dimension dropdown"
+  },
+  "ratingTableOverall": "Gesamt",
+  "@ratingTableOverall": {
+    "description": "Overall rating row label in the rating table on place cards"
+  },
+  "loadingRatings": "Lade...",
+  "@loadingRatings": {
+    "description": "Loading indicator text for rating table"
+  },
   "noExperiencesYet": "Noch keine Erfahrungsberichte vorhanden.",
   "@noExperiencesYet": {
     "description": "No experiences yet"
