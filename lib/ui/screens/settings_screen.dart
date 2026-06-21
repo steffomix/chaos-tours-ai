@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
+import 'package:flutter/services.dart';
 
 import '../../models/aktivitaet.dart';
 import '../../models/place_group.dart';
@@ -160,16 +161,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 0, 0),
-            child: Text(
-              l10n.deviceId,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 0, 8),
-            child: Text(_deviceId, style: const TextStyle(fontSize: 12)),
+          ListTile(
+            leading: const Icon(Icons.copy),
+            title: Text(l10n.deviceId),
+            subtitle: Text(_deviceId),
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: _deviceId));
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(l10n.deviceIdCopied)));
+            },
           ),
           const Divider(),
           // ── Verwaltung ───────────────────────────────────────────────

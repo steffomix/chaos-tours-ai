@@ -512,11 +512,11 @@ abstract class AppLocalizations {
   /// **'Geräte ID'**
   String get deviceId;
 
-  /// No description provided for @deviceIdDescription.
+  /// No description provided for @deviceIdCopied.
   ///
   /// In de, this message translates to:
-  /// **'Diese ID hilft Ihnen dabei, importierte oder synchronisierte Inhalte von Ihren eigenen zu unterscheiden. Sie können frei eine eigene ID eintragen oder die automatisch generierte ID mit einem Namen versehen. Bitte beachten Sie jedoch, dass nicht geprüft wird, ob diese ID bereits anderweitig verwendet wird.'**
-  String get deviceIdDescription;
+  /// **'Geräte ID Kopiert'**
+  String get deviceIdCopied;
 
   /// Tracking section header
   ///

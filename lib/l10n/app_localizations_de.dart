@@ -236,8 +236,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get deviceId => 'Geräte ID';
 
   @override
-  String get deviceIdDescription =>
-      'Diese ID hilft Ihnen dabei, importierte oder synchronisierte Inhalte von Ihren eigenen zu unterscheiden. Sie können frei eine eigene ID eintragen oder die automatisch generierte ID mit einem Namen versehen. Bitte beachten Sie jedoch, dass nicht geprüft wird, ob diese ID bereits anderweitig verwendet wird.';
+  String get deviceIdCopied => 'Geräte ID Kopiert';
 
   @override
   String get sectionTracking => 'Tracking';
