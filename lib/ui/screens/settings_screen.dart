@@ -30,7 +30,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _timelineHistoryDays;
   late String _searchCountry;
   final TextEditingController _searchCountryCtrl = TextEditingController();
-  final TextEditingController _deviceIdCtrl = TextEditingController();
   late int _schedulerColorRange;
   Set<String> _schedulerGroupIds = {};
   List<PlaceGroup> _groups = [];
@@ -44,7 +43,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
     _searchCountryCtrl.dispose();
-    _deviceIdCtrl.dispose();
     super.dispose();
   }
 
@@ -140,13 +138,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         children: [
           // ── Aktivität ─────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-            child: Text(
-              l10n.sectionActivity,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
           ListTile(
             leading: const Icon(Icons.bolt),
             title: Text(_activeAktivitaet?.name ?? l10n.noActivity),
@@ -168,6 +159,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 0, 0),
+            child: Text(
+              l10n.deviceId,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 0, 8),
+            child: Text(_deviceId, style: const TextStyle(fontSize: 12)),
           ),
           const Divider(),
           // ── Verwaltung ───────────────────────────────────────────────
@@ -216,29 +218,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: Text(l10n.telegramConnectionsSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.pushNamed(context, '/telegram-connections'),
-          ),
-          // ── Device ID ───────────────────────────────────────────────
-          ListTile(
-            leading: const Icon(Icons.card_membership),
-            title: Text(l10n.deviceId),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: _deviceIdCtrl..text = _deviceId,
-                  decoration: InputDecoration(
-                    hintText: _deviceId,
-                    isDense: true,
-                  ),
-                  onChanged: (v) => _deviceIdCtrl.text = v,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.deviceIdDescription,
-                  style: const TextStyle(fontSize: 11),
-                ),
-              ],
-            ),
           ),
           const Divider(),
           // ── Adresssuche ───────────────────────────────────────────────
