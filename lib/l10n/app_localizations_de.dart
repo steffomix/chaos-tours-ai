@@ -1070,6 +1070,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get minAvgRating => 'Min. ⌀ Bewertung:';
 
   @override
+  String get ratingMetricAverage => 'Durchschnitt';
+
+  @override
+  String get ratingMetricMedian => 'Median';
+
+  @override
   String get camera => 'Kamera';
 
   @override

@@ -1964,6 +1964,18 @@ abstract class AppLocalizations {
   /// **'Min. ⌀ Bewertung:'**
   String get minAvgRating;
 
+  /// Rating metric: average
+  ///
+  /// In de, this message translates to:
+  /// **'Durchschnitt'**
+  String get ratingMetricAverage;
+
+  /// Rating metric: median
+  ///
+  /// In de, this message translates to:
+  /// **'Median'**
+  String get ratingMetricMedian;
+
   /// Camera button
   ///
   /// In de, this message translates to:

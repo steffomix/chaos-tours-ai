@@ -1503,6 +1503,14 @@
   "@minAvgRating": {
     "description": "Min average rating label"
   },
+  "ratingMetricAverage": "Durchschnitt",
+  "@ratingMetricAverage": {
+    "description": "Rating metric: average"
+  },
+  "ratingMetricMedian": "Median",
+  "@ratingMetricMedian": {
+    "description": "Rating metric: median"
+  },
   "camera": "Kamera",
   "@camera": {
     "description": "Camera button"

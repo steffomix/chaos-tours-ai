@@ -82,8 +82,8 @@ class DatabaseService {
         website TEXT NOT NULL DEFAULT '',
         email TEXT NOT NULL DEFAULT '',
         phone TEXT NOT NULL DEFAULT '',
-        experience_rating_average REAL NOT NULL DEFAULT 0.0,
-        experience_rating_median REAL NOT NULL DEFAULT 0.0,
+        experience_rating_average REAL DEFAULT NULL,
+        experience_rating_median REAL DEFAULT NULL,
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
         device_id TEXT NOT NULL DEFAULT '',
@@ -238,6 +238,132 @@ class DatabaseService {
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_place_experiences_saved_place_uuid ON place_experiences(saved_place_uuid)',
     );
+
+    // Triggers: keep experience_rating_average / _median on saved_places in sync.
+    // Average = mean of per-experience overall scores (each score = avg of 6 dims).
+    // Median uses SQLite window functions (available since 3.25 / Android API 21+).
+    // NULL is stored when the place has no (non-deleted) experiences.
+    for (final trigger in [
+      // AFTER INSERT
+      '''
+        CREATE TRIGGER IF NOT EXISTS trg_pe_ratings_insert
+        AFTER INSERT ON place_experiences
+        BEGIN
+          UPDATE saved_places
+          SET
+            experience_rating_average = (
+              SELECT CASE WHEN COUNT(*) = 0 THEN NULL
+                ELSE (AVG(rating_dangerous_friendly) + AVG(rating_fraud_reliable) +
+                      AVG(rating_dismissive_accommodation) + AVG(rating_food) +
+                      AVG(rating_equipment) + AVG(rating_transport)) / 6.0
+              END
+              FROM place_experiences
+              WHERE saved_place_uuid = NEW.saved_place_uuid AND deleted_at IS NULL
+            ),
+            experience_rating_median = (
+              SELECT CASE WHEN COUNT(*) = 0 THEN NULL
+                ELSE (
+                  SELECT AVG(val) FROM (
+                    SELECT val,
+                           ROW_NUMBER() OVER (ORDER BY val) AS rn,
+                           COUNT(*) OVER () AS cnt
+                    FROM (
+                      SELECT (rating_dangerous_friendly + rating_fraud_reliable +
+                              rating_dismissive_accommodation + rating_food +
+                              rating_equipment + rating_transport) / 6.0 AS val
+                      FROM place_experiences
+                      WHERE saved_place_uuid = NEW.saved_place_uuid AND deleted_at IS NULL
+                    )
+                  ) WHERE rn IN ((cnt + 1) / 2, (cnt + 2) / 2)
+                )
+              END
+              FROM place_experiences
+              WHERE saved_place_uuid = NEW.saved_place_uuid AND deleted_at IS NULL
+            )
+          WHERE uuid = NEW.saved_place_uuid;
+        END
+      ''',
+      // AFTER UPDATE
+      '''
+        CREATE TRIGGER IF NOT EXISTS trg_pe_ratings_update
+        AFTER UPDATE ON place_experiences
+        BEGIN
+          UPDATE saved_places
+          SET
+            experience_rating_average = (
+              SELECT CASE WHEN COUNT(*) = 0 THEN NULL
+                ELSE (AVG(rating_dangerous_friendly) + AVG(rating_fraud_reliable) +
+                      AVG(rating_dismissive_accommodation) + AVG(rating_food) +
+                      AVG(rating_equipment) + AVG(rating_transport)) / 6.0
+              END
+              FROM place_experiences
+              WHERE saved_place_uuid = NEW.saved_place_uuid AND deleted_at IS NULL
+            ),
+            experience_rating_median = (
+              SELECT CASE WHEN COUNT(*) = 0 THEN NULL
+                ELSE (
+                  SELECT AVG(val) FROM (
+                    SELECT val,
+                           ROW_NUMBER() OVER (ORDER BY val) AS rn,
+                           COUNT(*) OVER () AS cnt
+                    FROM (
+                      SELECT (rating_dangerous_friendly + rating_fraud_reliable +
+                              rating_dismissive_accommodation + rating_food +
+                              rating_equipment + rating_transport) / 6.0 AS val
+                      FROM place_experiences
+                      WHERE saved_place_uuid = NEW.saved_place_uuid AND deleted_at IS NULL
+                    )
+                  ) WHERE rn IN ((cnt + 1) / 2, (cnt + 2) / 2)
+                )
+              END
+              FROM place_experiences
+              WHERE saved_place_uuid = NEW.saved_place_uuid AND deleted_at IS NULL
+            )
+          WHERE uuid = NEW.saved_place_uuid;
+        END
+      ''',
+      // AFTER DELETE
+      '''
+        CREATE TRIGGER IF NOT EXISTS trg_pe_ratings_delete
+        AFTER DELETE ON place_experiences
+        BEGIN
+          UPDATE saved_places
+          SET
+            experience_rating_average = (
+              SELECT CASE WHEN COUNT(*) = 0 THEN NULL
+                ELSE (AVG(rating_dangerous_friendly) + AVG(rating_fraud_reliable) +
+                      AVG(rating_dismissive_accommodation) + AVG(rating_food) +
+                      AVG(rating_equipment) + AVG(rating_transport)) / 6.0
+              END
+              FROM place_experiences
+              WHERE saved_place_uuid = OLD.saved_place_uuid AND deleted_at IS NULL
+            ),
+            experience_rating_median = (
+              SELECT CASE WHEN COUNT(*) = 0 THEN NULL
+                ELSE (
+                  SELECT AVG(val) FROM (
+                    SELECT val,
+                           ROW_NUMBER() OVER (ORDER BY val) AS rn,
+                           COUNT(*) OVER () AS cnt
+                    FROM (
+                      SELECT (rating_dangerous_friendly + rating_fraud_reliable +
+                              rating_dismissive_accommodation + rating_food +
+                              rating_equipment + rating_transport) / 6.0 AS val
+                      FROM place_experiences
+                      WHERE saved_place_uuid = OLD.saved_place_uuid AND deleted_at IS NULL
+                    )
+                  ) WHERE rn IN ((cnt + 1) / 2, (cnt + 2) / 2)
+                )
+              END
+              FROM place_experiences
+              WHERE saved_place_uuid = OLD.saved_place_uuid AND deleted_at IS NULL
+            )
+          WHERE uuid = OLD.saved_place_uuid;
+        END
+      ''',
+    ]) {
+      await db.execute(trigger);
+    }
 
     await db.execute('''
       CREATE TABLE sync_source_experiences (
@@ -1103,31 +1229,73 @@ class DatabaseService {
     return rows.map(PlaceExperience.fromMap).toList();
   }
 
+  /// Returns a map from place UUID to cached average rating.
+  /// Uses the pre-computed [experience_rating_average] column.
   Future<Map<String, double>> loadAverageRatingsForAllPlaces() async {
     final db = await database;
     final rows = await db.rawQuery('''
-      SELECT saved_place_uuid,
-             AVG(rating_dangerous_friendly) AS r1,
-             AVG(rating_fraud_reliable) AS r2,
-             AVG(rating_dismissive_accommodation) AS r3,
-             AVG(rating_food) AS r4,
-             AVG(rating_equipment) AS r5,
-             AVG(rating_transport) AS r6
-      FROM place_experiences
-      WHERE deleted_at IS NULL
-      GROUP BY saved_place_uuid
+      SELECT uuid, experience_rating_average
+      FROM saved_places
+      WHERE deleted_at IS NULL AND experience_rating_average IS NOT NULL
     ''');
     return {
       for (final r in rows)
-        r['saved_place_uuid'] as String:
-            (((r['r1'] as num?) ?? 0) +
-                ((r['r2'] as num?) ?? 0) +
-                ((r['r3'] as num?) ?? 0) +
-                ((r['r4'] as num?) ?? 0) +
-                ((r['r5'] as num?) ?? 0) +
-                ((r['r6'] as num?) ?? 0)) /
-            6.0,
+        r['uuid'] as String: (r['experience_rating_average'] as num).toDouble(),
     };
+  }
+
+  /// Recalculates [experience_rating_average] and [experience_rating_median]
+  /// for ALL places. Call this after bulk imports where triggers may not have
+  /// fired (e.g. [importDump]).
+  Future<void> recalculateAllPlaceRatings() async {
+    final db = await database;
+    // Average
+    await db.rawUpdate('''
+      UPDATE saved_places
+      SET experience_rating_average = (
+        SELECT CASE WHEN COUNT(*) = 0 THEN NULL
+          ELSE (AVG(rating_dangerous_friendly) + AVG(rating_fraud_reliable) +
+                AVG(rating_dismissive_accommodation) + AVG(rating_food) +
+                AVG(rating_equipment) + AVG(rating_transport)) / 6.0
+        END
+        FROM place_experiences
+        WHERE saved_place_uuid = saved_places.uuid AND deleted_at IS NULL
+      )
+    ''');
+    // Median — per-place subquery using window functions
+    final uuids = await db.rawQuery(
+      'SELECT uuid FROM saved_places WHERE deleted_at IS NULL',
+    );
+    for (final row in uuids) {
+      final uuid = row['uuid'] as String;
+      await db.rawUpdate(
+        '''
+        UPDATE saved_places
+        SET experience_rating_median = (
+          SELECT CASE WHEN COUNT(*) = 0 THEN NULL
+            ELSE (
+              SELECT AVG(val) FROM (
+                SELECT val,
+                       ROW_NUMBER() OVER (ORDER BY val) AS rn,
+                       COUNT(*) OVER () AS cnt
+                FROM (
+                  SELECT (rating_dangerous_friendly + rating_fraud_reliable +
+                          rating_dismissive_accommodation + rating_food +
+                          rating_equipment + rating_transport) / 6.0 AS val
+                  FROM place_experiences
+                  WHERE saved_place_uuid = ? AND deleted_at IS NULL
+                )
+              ) WHERE rn IN ((cnt + 1) / 2, (cnt + 2) / 2)
+            )
+          END
+          FROM place_experiences
+          WHERE saved_place_uuid = ? AND deleted_at IS NULL
+        )
+        WHERE uuid = ?
+      ''',
+        [uuid, uuid, uuid],
+      );
+    }
   }
 
   Future<Map<String, double>> loadDimensionRatingsForPlace(
@@ -1439,6 +1607,8 @@ class DatabaseService {
   /// Loads a page of non-deleted places for the list view with all filters
   /// applied at the SQL level. [placeTypeIndices] are the [PlaceType.index]
   /// values whose labels match the current search query.
+  /// Set [useMedian] to filter by [experience_rating_median] instead of
+  /// [experience_rating_average].
   Future<List<SavedPlace>> loadPlacesPaged({
     required int limit,
     required int offset,
@@ -1447,6 +1617,7 @@ class DatabaseService {
     List<String> groupFilter = const [],
     bool requireExperiences = false,
     double? minAvgRating,
+    bool useMedian = false,
     List<int> placeTypeIndices = const [],
   }) async {
     final db = await database;
@@ -1473,23 +1644,23 @@ class DatabaseService {
       where.add('(${conds.join(' OR ')})');
     }
 
-    String avgJoin = '';
-    if (minAvgRating != null) {
-      avgJoin = '''
-        LEFT JOIN (
-          SELECT saved_place_uuid,
-                 (AVG(rating_dangerous_friendly) + AVG(rating_fraud_reliable) +
-                  AVG(rating_dismissive_accommodation) + AVG(rating_food) +
-                  AVG(rating_equipment) + AVG(rating_transport)) / 6.0 AS avg_rating
-          FROM place_experiences WHERE deleted_at IS NULL
-          GROUP BY saved_place_uuid
-        ) pe ON pe.saved_place_uuid = sp.uuid
-      ''';
-      if (requireExperiences) {
-        where.add('(pe.avg_rating IS NOT NULL AND pe.avg_rating >= ?)');
+    if (requireExperiences) {
+      // Must have at least one experience (cached column is non-NULL)
+      final col = useMedian
+          ? 'sp.experience_rating_median'
+          : 'sp.experience_rating_average';
+      if (minAvgRating != null) {
+        where.add('($col IS NOT NULL AND $col >= ?)');
+        args.add(minAvgRating);
       } else {
-        where.add('COALESCE(pe.avg_rating, 999) >= ?');
+        where.add('$col IS NOT NULL');
       }
+    } else if (minAvgRating != null) {
+      final col = useMedian
+          ? 'sp.experience_rating_median'
+          : 'sp.experience_rating_average';
+      // Places without experiences (NULL) always pass the rating filter
+      where.add('COALESCE($col, 999) >= ?');
       args.add(minAvgRating);
     }
 
@@ -1498,7 +1669,6 @@ class DatabaseService {
       SELECT sp.*, COALESCE(pg.place_type, 0) AS place_type
       FROM saved_places sp
       LEFT JOIN place_groups pg ON sp.group_uuid = pg.uuid
-      $avgJoin
       WHERE ${where.join(' AND ')}
       ORDER BY sp.name ASC
       LIMIT ? OFFSET ?
@@ -1513,6 +1683,7 @@ class DatabaseService {
     List<String> groupFilter = const [],
     bool requireExperiences = false,
     double? minAvgRating,
+    bool useMedian = false,
     List<int> placeTypeIndices = const [],
   }) async {
     final db = await database;
@@ -1539,23 +1710,21 @@ class DatabaseService {
       where.add('(${conds.join(' OR ')})');
     }
 
-    String avgJoin = '';
-    if (minAvgRating != null) {
-      avgJoin = '''
-        LEFT JOIN (
-          SELECT saved_place_uuid,
-                 (AVG(rating_dangerous_friendly) + AVG(rating_fraud_reliable) +
-                  AVG(rating_dismissive_accommodation) + AVG(rating_food) +
-                  AVG(rating_equipment) + AVG(rating_transport)) / 6.0 AS avg_rating
-          FROM place_experiences WHERE deleted_at IS NULL
-          GROUP BY saved_place_uuid
-        ) pe ON pe.saved_place_uuid = sp.uuid
-      ''';
-      if (requireExperiences) {
-        where.add('(pe.avg_rating IS NOT NULL AND pe.avg_rating >= ?)');
+    if (requireExperiences) {
+      final col = useMedian
+          ? 'sp.experience_rating_median'
+          : 'sp.experience_rating_average';
+      if (minAvgRating != null) {
+        where.add('($col IS NOT NULL AND $col >= ?)');
+        args.add(minAvgRating);
       } else {
-        where.add('COALESCE(pe.avg_rating, 999) >= ?');
+        where.add('$col IS NOT NULL');
       }
+    } else if (minAvgRating != null) {
+      final col = useMedian
+          ? 'sp.experience_rating_median'
+          : 'sp.experience_rating_average';
+      where.add('COALESCE($col, 999) >= ?');
       args.add(minAvgRating);
     }
 
@@ -1563,7 +1732,6 @@ class DatabaseService {
       SELECT COUNT(*) AS cnt
       FROM saved_places sp
       LEFT JOIN place_groups pg ON sp.group_uuid = pg.uuid
-      $avgJoin
       WHERE ${where.join(' AND ')}
     ''', args);
     return (result.first['cnt'] as int?) ?? 0;
@@ -1816,8 +1984,8 @@ class DatabaseService {
     }
   }
 
-  /// Average ratings for a specific set of place UUIDs (used when rendering a
-  /// page of places without loading ratings for the entire table).
+  /// Average ratings for a specific set of place UUIDs.
+  /// Uses the pre-computed [experience_rating_average] column.
   Future<Map<String, double>> loadAverageRatingsForPlaces(
     List<String> uuids,
   ) async {
@@ -1825,17 +1993,13 @@ class DatabaseService {
     final db = await database;
     final ph = uuids.map((_) => '?').join(',');
     final rows = await db.rawQuery('''
-      SELECT saved_place_uuid,
-             (AVG(rating_dangerous_friendly) + AVG(rating_fraud_reliable) +
-              AVG(rating_dismissive_accommodation) + AVG(rating_food) +
-              AVG(rating_equipment) + AVG(rating_transport)) / 6.0 AS avg_rating
-      FROM place_experiences
-      WHERE deleted_at IS NULL AND saved_place_uuid IN ($ph)
-      GROUP BY saved_place_uuid
+      SELECT uuid, experience_rating_average
+      FROM saved_places
+      WHERE uuid IN ($ph) AND experience_rating_average IS NOT NULL
     ''', uuids);
     return {
       for (final r in rows)
-        r['saved_place_uuid'] as String: (r['avg_rating'] as num).toDouble(),
+        r['uuid'] as String: (r['experience_rating_average'] as num).toDouble(),
     };
   }
 }

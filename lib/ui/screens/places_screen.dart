@@ -27,7 +27,6 @@ class PlacesScreen extends StatefulWidget {
 class _PlacesScreenState extends State<PlacesScreen> {
   // ── Map data (loaded in full) ────────────────────────────────────────────
   List<SavedPlace> _mapPlaces = [];
-  Map<String, double> _avgRatings = {};
 
   // ── List data (DB-paginated, accumulated) ────────────────────────────────
   List<({SavedPlace place, double? distance})> _listItems = [];
@@ -66,6 +65,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
     _expFilter = ExperienceFilterState(
       requireExperiences: s.filterRequireExperiences,
       minAvgRating: s.filterMinAvgRating,
+      useMedian: s.filterUseMedian,
       distanceEnabled: s.filterDistanceEnabled,
       maxDistanceKm: s.filterMaxDistanceKm,
     );
@@ -126,12 +126,9 @@ class _PlacesScreenState extends State<PlacesScreen> {
     } else {
       places = await DatabaseService.instance.loadAllPlaces();
     }
-    final avgRatings = await DatabaseService.instance
-        .loadAverageRatingsForAllPlaces();
     if (mounted) {
       setState(() {
         _mapPlaces = places;
-        _avgRatings = avgRatings;
       });
     }
   }
@@ -187,9 +184,11 @@ class _PlacesScreenState extends State<PlacesScreen> {
         }
         if (_expFilter.isActive) {
           list = list.where((p) {
-            final avg = _avgRatings[p.uuid];
-            if (avg == null) return !_expFilter.requireExperiences;
-            return avg >= _expFilter.minAvgRating;
+            final rating = _expFilter.useMedian
+                ? p.experienceRatingMedian
+                : p.experienceRatingAverage;
+            if (rating == null) return !_expFilter.requireExperiences;
+            return rating >= _expFilter.minAvgRating;
           }).toList();
         }
         var result =
@@ -208,8 +207,16 @@ class _PlacesScreenState extends State<PlacesScreen> {
               ..sort((a, b) {
                 final distCmp = a.distance.compareTo(b.distance);
                 if (distCmp != 0) return distCmp;
-                final rA = _avgRatings[a.place.uuid] ?? 0;
-                final rB = _avgRatings[b.place.uuid] ?? 0;
+                final rA =
+                    (_expFilter.useMedian
+                        ? a.place.experienceRatingMedian
+                        : a.place.experienceRatingAverage) ??
+                    0.0;
+                final rB =
+                    (_expFilter.useMedian
+                        ? b.place.experienceRatingMedian
+                        : b.place.experienceRatingAverage) ??
+                    0.0;
                 return rB.compareTo(rA);
               });
 
@@ -254,6 +261,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
           groupFilter: SettingsService.instance.schedulerGroupUuidList,
           requireExperiences: _expFilter.requireExperiences,
           minAvgRating: _expFilter.isActive ? _expFilter.minAvgRating : null,
+          useMedian: _expFilter.useMedian,
           placeTypeIndices: placeTypeIndices,
         );
 
@@ -267,9 +275,6 @@ class _PlacesScreenState extends State<PlacesScreen> {
           stays[p.uuid] = await DatabaseService.instance
               .lastCompletedStayForPlace(p.uuid);
         }
-        // Load ratings for just this page's places.
-        final pageRatings = await DatabaseService.instance
-            .loadAverageRatingsForPlaces(page.map((p) => p.uuid).toList());
 
         if (mounted) {
           setState(() {
@@ -279,7 +284,6 @@ class _PlacesScreenState extends State<PlacesScreen> {
             ];
             _visitCounts = counts;
             _lastStay = stays;
-            _avgRatings = {..._avgRatings, ...pageRatings};
             _listHasMore = page.length == _kChunkSize;
             if (!silent) _listLoading = false;
           });
@@ -368,7 +372,9 @@ class _PlacesScreenState extends State<PlacesScreen> {
             count: _visitCounts[place.uuid] ?? 0,
             lastStay: _lastStay[place.uuid],
             distance: item.distance,
-            avgRating: _avgRatings[place.uuid],
+            avgRating: _expFilter.useMedian
+                ? place.experienceRatingMedian
+                : place.experienceRatingAverage,
             fmtDate: _fmtDate,
             fmtTime: _fmtTime,
             fmtDuration: _fmtDuration,
@@ -404,7 +410,11 @@ class _PlacesScreenState extends State<PlacesScreen> {
     }
     final places = list;
     final markers = places.map((p) {
-      final color = _ratingColor(_avgRatings[p.uuid]);
+      final color = _ratingColor(
+        _expFilter.useMedian
+            ? p.experienceRatingMedian
+            : p.experienceRatingAverage,
+      );
       return Marker(
         point: LatLng(p.lat, p.lng),
         width: 36,
@@ -549,6 +559,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
                     final s = SettingsService.instance;
                     s.filterRequireExperiences = f.requireExperiences;
                     s.filterMinAvgRating = f.minAvgRating;
+                    s.filterUseMedian = f.useMedian;
                     s.filterDistanceEnabled = f.distanceEnabled;
                     s.filterMaxDistanceKm = f.maxDistanceKm;
                     _loadPlaces();

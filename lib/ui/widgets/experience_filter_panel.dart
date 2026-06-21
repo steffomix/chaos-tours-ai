@@ -9,6 +9,9 @@ class ExperienceFilterState {
   /// Minimum average rating across all 6 dimensions (−9.0 to 9.0).
   final double minAvgRating;
 
+  /// Whether to use the median rating instead of the average for filtering.
+  final bool useMedian;
+
   /// Whether the distance filter is enabled.
   final bool distanceEnabled;
 
@@ -18,6 +21,7 @@ class ExperienceFilterState {
   const ExperienceFilterState({
     this.requireExperiences = false,
     this.minAvgRating = 0.0,
+    this.useMedian = false,
     this.distanceEnabled = false,
     this.maxDistanceKm = 100.0,
   });
@@ -28,11 +32,13 @@ class ExperienceFilterState {
   ExperienceFilterState copyWith({
     bool? requireExperiences,
     double? minAvgRating,
+    bool? useMedian,
     bool? distanceEnabled,
     double? maxDistanceKm,
   }) => ExperienceFilterState(
     requireExperiences: requireExperiences ?? this.requireExperiences,
     minAvgRating: minAvgRating ?? this.minAvgRating,
+    useMedian: useMedian ?? this.useMedian,
     distanceEnabled: distanceEnabled ?? this.distanceEnabled,
     maxDistanceKm: maxDistanceKm ?? this.maxDistanceKm,
   );
@@ -119,36 +125,64 @@ class ExperienceFilterPanel extends StatelessWidget {
                 Text(l10n.activateExperienceFilter),
               ],
             ),
-            Row(
-              children: [
-                const SizedBox(width: 8),
-                Text(l10n.minAvgRating),
-                const SizedBox(width: 8),
-              ],
-            ),
-            Row(
-              children: [
-                Expanded(
-                  child: Slider(
-                    value: filter.minAvgRating.clamp(-9.0, 9.0),
-                    min: -9,
-                    max: 9,
-                    divisions: 18,
-                    label: filter.minAvgRating.toStringAsFixed(0),
-                    onChanged: (v) =>
-                        onChanged(filter.copyWith(minAvgRating: v)),
+            // Rating slider and metric radio are only shown when the
+            // experience filter is active (requireExperiences = true).
+            if (filter.requireExperiences) ...[
+              Row(
+                children: [
+                  const SizedBox(width: 8),
+                  Text(l10n.minAvgRating),
+                  const SizedBox(width: 8),
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Slider(
+                      value: filter.minAvgRating.clamp(-9.0, 9.0),
+                      min: -9,
+                      max: 9,
+                      divisions: 18,
+                      label: filter.minAvgRating.toStringAsFixed(0),
+                      onChanged: (v) =>
+                          onChanged(filter.copyWith(minAvgRating: v)),
+                    ),
                   ),
-                ),
-                SizedBox(
-                  width: 36,
-                  child: Text(
-                    filter.minAvgRating.toStringAsFixed(0),
-                    textAlign: TextAlign.right,
-                    style: TextStyle(color: colorScheme.primary),
+                  SizedBox(
+                    width: 36,
+                    child: Text(
+                      filter.minAvgRating.toStringAsFixed(0),
+                      textAlign: TextAlign.right,
+                      style: TextStyle(color: colorScheme.primary),
+                    ),
                   ),
+                ],
+              ),
+              // ── Average / Median radio ───────────────────────────────
+              RadioGroup<bool>(
+                groupValue: filter.useMedian,
+                onChanged: (v) {
+                  if (v != null) onChanged(filter.copyWith(useMedian: v));
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    RadioListTile<bool>(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(l10n.ratingMetricAverage),
+                      value: false,
+                    ),
+                    RadioListTile<bool>(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(l10n.ratingMetricMedian),
+                      value: true,
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
             Row(
               children: [
                 FilledButton(

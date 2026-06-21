@@ -136,6 +136,14 @@ class SavedPlace {
   /// Optional contact phone number for this place.
   final String phone;
 
+  /// Cached average of all experience ratings across 6 dimensions.
+  /// Null when no experiences exist.
+  final double? experienceRatingAverage;
+
+  /// Cached median of all experience ratings across 6 dimensions.
+  /// Null when no experiences exist.
+  final double? experienceRatingMedian;
+
   SavedPlace({
     String? uuid,
     required this.name,
@@ -156,6 +164,8 @@ class SavedPlace {
     this.website = '',
     this.email = '',
     this.phone = '',
+    this.experienceRatingAverage,
+    this.experienceRatingMedian,
   }) : uuid = uuid?.isNotEmpty == true ? uuid! : _uuid.v4(),
        createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch,
        updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch,
@@ -191,6 +201,10 @@ class SavedPlace {
       website: (map['website'] as String?) ?? '',
       email: (map['email'] as String?) ?? '',
       phone: (map['phone'] as String?) ?? '',
+      experienceRatingAverage: (map['experience_rating_average'] as num?)
+          ?.toDouble(),
+      experienceRatingMedian: (map['experience_rating_median'] as num?)
+          ?.toDouble(),
     );
   }
 
@@ -241,6 +255,8 @@ class SavedPlace {
     String? website,
     String? email,
     String? phone,
+    double? experienceRatingAverage,
+    double? experienceRatingMedian,
   }) {
     return SavedPlace(
       uuid: uuid ?? this.uuid,
@@ -266,6 +282,10 @@ class SavedPlace {
       website: website ?? this.website,
       email: email ?? this.email,
       phone: phone ?? this.phone,
+      experienceRatingAverage:
+          experienceRatingAverage ?? this.experienceRatingAverage,
+      experienceRatingMedian:
+          experienceRatingMedian ?? this.experienceRatingMedian,
     );
   }
 }

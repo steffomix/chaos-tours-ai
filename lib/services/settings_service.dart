@@ -32,6 +32,7 @@ class SettingsService {
   static const String _keyFilterMinAvgRating = 'filter_min_avg_rating';
   static const String _keyFilterDistanceEnabled = 'filter_distance_enabled';
   static const String _keyFilterMaxDistanceKm = 'filter_max_distance_km';
+  static const String _keyFilterUseMedian = 'filter_use_median';
   static const String _keyLastSyncMs = 'sync_last_ms';
   static const String _keyDeviceId = 'device_id';
 
@@ -189,6 +190,9 @@ class SettingsService {
   double get filterMaxDistanceKm =>
       _p.getDouble(_keyFilterMaxDistanceKm) ?? 100.0;
   set filterMaxDistanceKm(double v) => _p.setDouble(_keyFilterMaxDistanceKm, v);
+
+  bool get filterUseMedian => _p.getBool(_keyFilterUseMedian) ?? false;
+  set filterUseMedian(bool v) => _p.setBool(_keyFilterUseMedian, v);
 
   // ── Aktivitaet binding ───────────────────────────────────────────────────
 

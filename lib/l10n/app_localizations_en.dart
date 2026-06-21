@@ -1065,6 +1065,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get minAvgRating => 'Min. avg rating:';
 
   @override
+  String get ratingMetricAverage => 'Average';
+
+  @override
+  String get ratingMetricMedian => 'Median';
+
+  @override
   String get camera => 'Camera';
 
   @override
