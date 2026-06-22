@@ -25,6 +25,8 @@ class DatabaseService {
   DatabaseService._();
   static final DatabaseService instance = DatabaseService._();
 
+  static const _dbFilename = 'chaos_tours.sqlite';
+
   static const _uuid = Uuid();
 
   Database? _db;
@@ -40,7 +42,7 @@ class DatabaseService {
   // don't have to worry about migrations when changing the schema.
   Future<Database> _openDatabase() async {
     final dbPath = await getDatabasesPath();
-    final path = join(dbPath, 'chaos_tours.db');
+    final path = join(dbPath, _dbFilename);
     return openDatabase(
       path,
       version: 1,
@@ -1024,7 +1026,7 @@ class DatabaseService {
 
   Future<String> getDatabaseFilePath() async {
     final dbPath = await getDatabasesPath();
-    return join(dbPath, 'chaos_tours.db');
+    return join(dbPath, _dbFilename);
   }
 
   Future<void> importDatabaseFile(String sourcePath) async {
