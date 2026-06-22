@@ -33,6 +33,7 @@ class DatabaseService {
 
   Future<Database> get database async {
     _db ??= await _openDatabase();
+    _db!.execute('PRAGMA foreign_keys = ON');
     return _db!;
   }
 
@@ -117,7 +118,7 @@ class DatabaseService {
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
         device_id TEXT NOT NULL DEFAULT '',
-        FOREIGN KEY (place_uuid) REFERENCES saved_places(uuid) ON DELETE SET NULL
+        FOREIGN KEY (place_uuid) REFERENCES saved_places(uuid) ON DELETE CASCADE
       )
     ''');
     await db.execute(
@@ -153,7 +154,7 @@ class DatabaseService {
         deleted_at INTEGER,
         device_id TEXT NOT NULL DEFAULT '',
         FOREIGN KEY (stay_uuid) REFERENCES stays(uuid) ON DELETE CASCADE,
-        FOREIGN KEY (person_uuid) REFERENCES persons(uuid) ON DELETE SET NULL
+        FOREIGN KEY (person_uuid) REFERENCES persons(uuid) ON DELETE CASCADE
       )
     ''');
     await db.execute(
@@ -179,7 +180,6 @@ class DatabaseService {
 
     await db.execute('''
       CREATE TABLE tracking_points (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
         lat REAL NOT NULL,
         lng REAL NOT NULL,
         timestamp INTEGER NOT NULL
@@ -525,22 +525,7 @@ class DatabaseService {
 
   Future<void> deletePlace(String uuid) async {
     final db = await database;
-    await db.transaction((txn) async {
-      // ON DELETE CASCADE: place_photos
-      await txn.delete(
-        'place_photos',
-        where: 'place_uuid = ?',
-        whereArgs: [uuid],
-      );
-      // ON DELETE SET NULL: stays.place_uuid
-      await txn.update(
-        'stays',
-        {'place_uuid': null},
-        where: 'place_uuid = ?',
-        whereArgs: [uuid],
-      );
-      await txn.delete('saved_places', where: 'uuid = ?', whereArgs: [uuid]);
-    });
+    await db.delete('saved_places', where: 'uuid = ?', whereArgs: [uuid]);
   }
 
   /// Returns the number of completed stays at [placeUuid].
@@ -641,16 +626,7 @@ class DatabaseService {
 
   Future<void> deletePlaceGroup(String uuid) async {
     final db = await database;
-    await db.transaction((txn) async {
-      // ON DELETE SET NULL: saved_places.group_uuid
-      await txn.update(
-        'saved_places',
-        {'group_uuid': null},
-        where: 'group_uuid = ?',
-        whereArgs: [uuid],
-      );
-      await txn.delete('place_groups', where: 'uuid = ?', whereArgs: [uuid]);
-    });
+    await db.delete('place_groups', where: 'uuid = ?', whereArgs: [uuid]);
   }
 
   // ── Stays ────────────────────────────────────────────────────────────────
@@ -735,25 +711,7 @@ class DatabaseService {
 
   Future<void> deleteStay(String uuid) async {
     final db = await database;
-    await db.transaction((txn) async {
-      // ON DELETE CASCADE: stay_persons, stay_activities, place_photos
-      await txn.delete(
-        'stay_persons',
-        where: 'stay_uuid = ?',
-        whereArgs: [uuid],
-      );
-      await txn.delete(
-        'stay_activities',
-        where: 'stay_uuid = ?',
-        whereArgs: [uuid],
-      );
-      await txn.delete(
-        'place_photos',
-        where: 'stay_uuid = ?',
-        whereArgs: [uuid],
-      );
-      await txn.delete('stays', where: 'uuid = ?', whereArgs: [uuid]);
-    });
+    await db.delete('stays', where: 'uuid = ?', whereArgs: [uuid]);
   }
 
   // ── Persons ──────────────────────────────────────────────────────────────
@@ -787,16 +745,7 @@ class DatabaseService {
 
   Future<void> deletePerson(String uuid) async {
     final db = await database;
-    await db.transaction((txn) async {
-      // ON DELETE SET NULL: stay_persons.person_uuid
-      await txn.update(
-        'stay_persons',
-        {'person_uuid': null},
-        where: 'person_uuid = ?',
-        whereArgs: [uuid],
-      );
-      await txn.delete('persons', where: 'uuid = ?', whereArgs: [uuid]);
-    });
+    await db.delete('persons', where: 'uuid = ?', whereArgs: [uuid]);
   }
 
   // ── Activities ───────────────────────────────────────────────────────────
@@ -830,16 +779,7 @@ class DatabaseService {
 
   Future<void> deleteActivity(String uuid) async {
     final db = await database;
-    await db.transaction((txn) async {
-      // ON DELETE SET NULL: stay_activities.activity_uuid
-      await txn.update(
-        'stay_activities',
-        {'activity_uuid': null},
-        where: 'activity_uuid = ?',
-        whereArgs: [uuid],
-      );
-      await txn.delete('activities', where: 'uuid = ?', whereArgs: [uuid]);
-    });
+    await db.delete('activities', where: 'uuid = ?', whereArgs: [uuid]);
   }
 
   // ── StayPersons ──────────────────────────────────────────────────────────
