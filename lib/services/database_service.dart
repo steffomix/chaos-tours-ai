@@ -48,38 +48,10 @@ class DatabaseService {
     final path = join(dbPath, _dbFilename);
     return openDatabase(
       path,
-      version: 2,
+      version: 1,
       onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
-      // does not worke securely, so it's also handled manually in each transaction
-      // that needs it (e.g. deletePlace)
       onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
     );
-  }
-
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      // Migrate photo_data from TEXT (base64) to BLOB.
-      // SQLite allows this without DDL change: we just rewrite the data.
-      final rows = await db.query(
-        'place_photos',
-        columns: ['uuid', 'photo_data'],
-      );
-      for (final row in rows) {
-        final raw = row['photo_data'];
-        if (raw is String && raw.isNotEmpty) {
-          try {
-            final bytes = base64Decode(raw);
-            await db.update(
-              'place_photos',
-              {'photo_data': bytes},
-              where: 'uuid = ?',
-              whereArgs: [row['uuid']],
-            );
-          } catch (_) {}
-        }
-      }
-    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
