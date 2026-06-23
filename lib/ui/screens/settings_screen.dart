@@ -34,6 +34,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _schedulerColorRange;
   Set<String> _schedulerGroupIds = {};
   List<PlaceGroup> _groups = [];
+  late int _photoMaxWidth;
+  late int _photoMaxHeight;
+  late int _photoImageQuality;
 
   // Network info for display (used by SyncSourcesScreen)
 
@@ -67,6 +70,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _searchCountryCtrl.text = _searchCountry;
     _schedulerColorRange = s.schedulerColorRange;
     _schedulerGroupIds = Set<String>.from(s.schedulerGroupUuidList);
+    _photoMaxWidth = s.photoMaxWidth;
+    _photoMaxHeight = s.photoMaxHeight;
+    _photoImageQuality = s.photoImageQuality;
     _loadGroups();
     _loadAktivitaeten();
   }
@@ -106,6 +112,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     s.searchCountry = _searchCountry;
     s.schedulerColorRange = _schedulerColorRange;
     s.schedulerGroupIds = _schedulerGroupIds.join(',');
+    s.photoMaxWidth = _photoMaxWidth;
+    s.photoMaxHeight = _photoMaxHeight;
+    s.photoImageQuality = _photoImageQuality;
 
     // Persist settings back into the active Aktivitaet.
     final a = _activeAktivitaet;
@@ -507,6 +516,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: const TextStyle(fontSize: 11),
                 ),
               ],
+            ),
+          ),
+          const Divider(),
+          // ── Fotos ────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(
+              l10n.sectionPhotos,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          ListTile(
+            title: Text(l10n.photoMaxWidth(_photoMaxWidth)),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Slider(
+                  value: _photoMaxWidth.toDouble(),
+                  min: 0,
+                  max: 4096,
+                  divisions: 64,
+                  label: _photoMaxWidth == 0 ? '∞' : '$_photoMaxWidth',
+                  onChanged: (v) =>
+                      setState(() => _photoMaxWidth = (v / 64).round() * 64),
+                ),
+                Text(
+                  l10n.photoMaxDimensionSubtitle,
+                  style: const TextStyle(fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+            title: Text(l10n.photoMaxHeight(_photoMaxHeight)),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Slider(
+                  value: _photoMaxHeight.toDouble(),
+                  min: 0,
+                  max: 4096,
+                  divisions: 64,
+                  label: _photoMaxHeight == 0 ? '∞' : '$_photoMaxHeight',
+                  onChanged: (v) =>
+                      setState(() => _photoMaxHeight = (v / 64).round() * 64),
+                ),
+                Text(
+                  l10n.photoMaxDimensionSubtitle,
+                  style: const TextStyle(fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+            title: Text(l10n.photoImageQuality(_photoImageQuality)),
+            subtitle: Slider(
+              value: _photoImageQuality.toDouble(),
+              min: 10,
+              max: 100,
+              divisions: 18,
+              label: '$_photoImageQuality %',
+              onChanged: (v) => setState(() => _photoImageQuality = v.round()),
             ),
           ),
           const Divider(),

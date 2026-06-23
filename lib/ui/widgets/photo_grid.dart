@@ -1,12 +1,16 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../models/place_photo.dart';
 import '../../services/database_service.dart';
+import '../../services/settings_service.dart';
 
 /// A reusable photo grid widget that shows photos for a place and/or stay.
 ///
@@ -77,10 +81,13 @@ class _PhotoGridState extends State<PhotoGrid> {
   }
 
   Future<void> _addPhoto() async {
+    final s = SettingsService.instance;
     final picker = ImagePicker();
     final picked = await picker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 75,
+      imageQuality: s.photoImageQuality,
+      maxWidth: s.photoMaxWidth == 0 ? null : s.photoMaxWidth.toDouble(),
+      maxHeight: s.photoMaxHeight == 0 ? null : s.photoMaxHeight.toDouble(),
     );
     if (picked == null || !mounted) return;
 
@@ -101,10 +108,13 @@ class _PhotoGridState extends State<PhotoGrid> {
   }
 
   Future<void> _takePicture() async {
+    final s = SettingsService.instance;
     final picker = ImagePicker();
     final picked = await picker.pickImage(
       source: ImageSource.camera,
-      imageQuality: 75,
+      imageQuality: s.photoImageQuality,
+      maxWidth: s.photoMaxWidth == 0 ? null : s.photoMaxWidth.toDouble(),
+      maxHeight: s.photoMaxHeight == 0 ? null : s.photoMaxHeight.toDouble(),
     );
     if (picked == null || !mounted) return;
 
@@ -246,6 +256,23 @@ class _PhotoViewerState extends State<_PhotoViewer> {
 
   PlacePhoto get _current => widget.photos[_currentIndex];
 
+  Future<void> _share() async {
+    Uint8List? bytes;
+    try {
+      bytes = base64Decode(_current.photoData);
+    } catch (_) {}
+    if (bytes == null || !mounted) return;
+    final tmp = await getTemporaryDirectory();
+    final file = File('${tmp.path}/share_${_current.uuid}.jpg');
+    await file.writeAsBytes(bytes);
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path, mimeType: 'image/jpeg')],
+        text: _current.caption.isNotEmpty ? _current.caption : null,
+      ),
+    );
+  }
+
   Future<void> _delete() async {
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
@@ -325,6 +352,11 @@ class _PhotoViewerState extends State<_PhotoViewer> {
           style: const TextStyle(color: Colors.white),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.share, color: Colors.white),
+            tooltip: AppLocalizations.of(context)!.sharePhoto,
+            onPressed: _share,
+          ),
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.white),
             tooltip: AppLocalizations.of(context)!.editCaptionTooltip,

@@ -2731,6 +2731,42 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'{label} öffnen'**
   String openLabel(String label);
+
+  /// Photos section header in settings
+  ///
+  /// In de, this message translates to:
+  /// **'Fotos'**
+  String get sectionPhotos;
+
+  /// Photo max width setting label
+  ///
+  /// In de, this message translates to:
+  /// **'Max. Breite ({value} px)'**
+  String photoMaxWidth(int value);
+
+  /// Photo max height setting label
+  ///
+  /// In de, this message translates to:
+  /// **'Max. Höhe ({value} px)'**
+  String photoMaxHeight(int value);
+
+  /// Photo max dimension subtitle
+  ///
+  /// In de, this message translates to:
+  /// **'0 = unbegrenzt'**
+  String get photoMaxDimensionSubtitle;
+
+  /// Photo image quality setting label
+  ///
+  /// In de, this message translates to:
+  /// **'Bildqualität ({value} %)'**
+  String photoImageQuality(int value);
+
+  /// Share photo tooltip
+  ///
+  /// In de, this message translates to:
+  /// **'Foto teilen'**
+  String get sharePhoto;
 }
 
 class _AppLocalizationsDelegate

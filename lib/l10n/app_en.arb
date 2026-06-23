@@ -902,5 +902,44 @@
         "type": "String"
       }
     }
+  },
+  "sectionPhotos": "Photos",
+  "@sectionPhotos": {
+    "description": "Photos section header in settings"
+  },
+  "photoMaxWidth": "Max. width ({value} px)",
+  "@photoMaxWidth": {
+    "description": "Photo max width setting label",
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "photoMaxHeight": "Max. height ({value} px)",
+  "@photoMaxHeight": {
+    "description": "Photo max height setting label",
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "photoMaxDimensionSubtitle": "0 = unlimited",
+  "@photoMaxDimensionSubtitle": {
+    "description": "Photo max dimension subtitle"
+  },
+  "photoImageQuality": "Image quality ({value} %)",
+  "@photoImageQuality": {
+    "description": "Photo image quality setting label",
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "sharePhoto": "Share photo",
+  "@sharePhoto": {
+    "description": "Share photo tooltip"
   }
 }

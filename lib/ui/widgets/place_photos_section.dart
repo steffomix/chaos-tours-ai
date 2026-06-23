@@ -1,13 +1,17 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../models/place_photo.dart';
 import '../../models/stay.dart';
 import '../../services/database_service.dart';
+import '../../services/settings_service.dart';
 import 'stay_detail_sheet.dart';
 
 String _fmtMs(int ms) {
@@ -84,8 +88,14 @@ class _PlacePhotosSectionState extends State<PlacePhotosSection> {
   }
 
   Future<void> _addPlacePhoto({required ImageSource source}) async {
+    final s = SettingsService.instance;
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: source, imageQuality: 75);
+    final picked = await picker.pickImage(
+      source: source,
+      imageQuality: s.photoImageQuality,
+      maxWidth: s.photoMaxWidth == 0 ? null : s.photoMaxWidth.toDouble(),
+      maxHeight: s.photoMaxHeight == 0 ? null : s.photoMaxHeight.toDouble(),
+    );
     if (picked == null || !mounted) return;
 
     final bytes = await picked.readAsBytes();
@@ -371,6 +381,24 @@ class _FullScreenViewerState extends State<_FullScreenViewer> {
     super.dispose();
   }
 
+  Future<void> _share() async {
+    final photo = widget.photos[_index];
+    Uint8List? bytes;
+    try {
+      bytes = base64Decode(photo.photoData);
+    } catch (_) {}
+    if (bytes == null || !mounted) return;
+    final tmp = await getTemporaryDirectory();
+    final file = File('${tmp.path}/share_${photo.uuid}.jpg');
+    await file.writeAsBytes(bytes);
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path, mimeType: 'image/jpeg')],
+        text: photo.caption.isNotEmpty ? photo.caption : null,
+      ),
+    );
+  }
+
   Future<void> _delete() async {
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
@@ -423,6 +451,11 @@ class _FullScreenViewerState extends State<_FullScreenViewer> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.share, color: Colors.white),
+            tooltip: AppLocalizations.of(context)!.sharePhoto,
+            onPressed: _share,
+          ),
           IconButton(
             icon: const Icon(Icons.delete_outline, color: Colors.white),
             onPressed: _delete,

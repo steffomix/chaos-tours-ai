@@ -1,9 +1,12 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:focus_detector/focus_detector.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../models/place_photo.dart';
 import '../../services/database_service.dart';
@@ -311,6 +314,24 @@ class _AlbumPhotoViewerState extends State<_AlbumPhotoViewer> {
     super.dispose();
   }
 
+  Future<void> _share() async {
+    final photo = widget.photos[_index];
+    Uint8List? bytes;
+    try {
+      bytes = base64Decode(photo.photoData);
+    } catch (_) {}
+    if (bytes == null || !mounted) return;
+    final tmp = await getTemporaryDirectory();
+    final file = File('${tmp.path}/share_${photo.uuid}.jpg');
+    await file.writeAsBytes(bytes);
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path, mimeType: 'image/jpeg')],
+        text: photo.caption.isNotEmpty ? photo.caption : null,
+      ),
+    );
+  }
+
   Future<void> _delete() async {
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
@@ -354,6 +375,11 @@ class _AlbumPhotoViewerState extends State<_AlbumPhotoViewer> {
           style: const TextStyle(color: Colors.white),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.share, color: Colors.white),
+            tooltip: AppLocalizations.of(context)!.sharePhoto,
+            onPressed: _share,
+          ),
           IconButton(
             icon: const Icon(Icons.delete_outline, color: Colors.white),
             onPressed: _delete,

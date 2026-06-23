@@ -1486,4 +1486,28 @@ class AppLocalizationsDe extends AppLocalizations {
   String openLabel(String label) {
     return '$label öffnen';
   }
+
+  @override
+  String get sectionPhotos => 'Fotos';
+
+  @override
+  String photoMaxWidth(int value) {
+    return 'Max. Breite ($value px)';
+  }
+
+  @override
+  String photoMaxHeight(int value) {
+    return 'Max. Höhe ($value px)';
+  }
+
+  @override
+  String get photoMaxDimensionSubtitle => '0 = unbegrenzt';
+
+  @override
+  String photoImageQuality(int value) {
+    return 'Bildqualität ($value %)';
+  }
+
+  @override
+  String get sharePhoto => 'Foto teilen';
 }

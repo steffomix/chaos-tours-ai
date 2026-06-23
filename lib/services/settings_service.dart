@@ -39,6 +39,9 @@ class SettingsService {
       'filter_specific_rating_field';
   static const String _keyLastSyncMs = 'sync_last_ms';
   static const String _keyDeviceId = 'device_id';
+  static const String _keyPhotoMaxWidth = 'photo_max_width';
+  static const String _keyPhotoMaxHeight = 'photo_max_height';
+  static const String _keyPhotoImageQuality = 'photo_image_quality';
 
   SharedPreferences? _prefs;
 
@@ -73,6 +76,19 @@ class SettingsService {
   /// Timestamp of the last successful sync in milliseconds since epoch (0 = never).
   int get lastSyncMs => _p.getInt(_keyLastSyncMs) ?? 0;
   set lastSyncMs(int v) => _p.setInt(_keyLastSyncMs, v);
+
+  /// Maximum width in pixels when capturing/picking photos (0 = unlimited, default: 1920).
+  int get photoMaxWidth => _p.getInt(_keyPhotoMaxWidth) ?? 1920;
+  set photoMaxWidth(int v) => _p.setInt(_keyPhotoMaxWidth, v.clamp(0, 8192));
+
+  /// Maximum height in pixels when capturing/picking photos (0 = unlimited, default: 1080).
+  int get photoMaxHeight => _p.getInt(_keyPhotoMaxHeight) ?? 1080;
+  set photoMaxHeight(int v) => _p.setInt(_keyPhotoMaxHeight, v.clamp(0, 8192));
+
+  /// JPEG quality (1–100) when capturing/picking photos (default: 75).
+  int get photoImageQuality => _p.getInt(_keyPhotoImageQuality) ?? 75;
+  set photoImageQuality(int v) =>
+      _p.setInt(_keyPhotoImageQuality, v.clamp(1, 100));
 
   /// GPS sampling interval in seconds (default: 15).
   int get gpsIntervalSeconds => _p.getInt(_keyGpsInterval) ?? 15;
