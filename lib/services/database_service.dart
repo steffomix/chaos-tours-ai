@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -46,12 +48,38 @@ class DatabaseService {
     final path = join(dbPath, _dbFilename);
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
       // does not worke securely, so it's also handled manually in each transaction
       // that needs it (e.g. deletePlace)
       onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
     );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Migrate photo_data from TEXT (base64) to BLOB.
+      // SQLite allows this without DDL change: we just rewrite the data.
+      final rows = await db.query(
+        'place_photos',
+        columns: ['uuid', 'photo_data'],
+      );
+      for (final row in rows) {
+        final raw = row['photo_data'];
+        if (raw is String && raw.isNotEmpty) {
+          try {
+            final bytes = base64Decode(raw);
+            await db.update(
+              'place_photos',
+              {'photo_data': bytes},
+              where: 'uuid = ?',
+              whereArgs: [row['uuid']],
+            );
+          } catch (_) {}
+        }
+      }
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -406,7 +434,7 @@ class DatabaseService {
         stay_uuid TEXT,
         caption TEXT NOT NULL DEFAULT '',
         taken_at INTEGER NOT NULL DEFAULT 0,
-        photo_data TEXT NOT NULL DEFAULT '',
+        photo_data BLOB NOT NULL DEFAULT '',
         created_at INTEGER NOT NULL DEFAULT 0,
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
@@ -1541,7 +1569,22 @@ class DatabaseService {
     int since,
   ) async {
     final db = await database;
-    return db.query(table, where: 'updated_at > ?', whereArgs: [since]);
+    final rows = await db.query(
+      table,
+      where: 'updated_at > ?',
+      whereArgs: [since],
+    );
+    if (table != 'place_photos') return rows;
+    // Encode BLOB photo_data to base64 string for JSON transport.
+    return rows.map((row) {
+      final data = row['photo_data'];
+      if (data is List<int>) {
+        final copy = Map<String, dynamic>.from(row);
+        copy['photo_data'] = base64Encode(Uint8List.fromList(data));
+        return copy;
+      }
+      return row;
+    }).toList();
   }
 
   Future<void> upsertByUuid(
@@ -1549,8 +1592,19 @@ class DatabaseService {
     Map<String, dynamic> row, {
     SyncOptions options = SyncOptions.all,
   }) async {
+    // Decode base64 photo_data from JSON sync back to BLOB bytes.
+    Map<String, dynamic> localRow = row;
+    if (table == 'place_photos') {
+      final data = row['photo_data'];
+      if (data is String && data.isNotEmpty) {
+        localRow = Map<String, dynamic>.from(row);
+        try {
+          localRow['photo_data'] = base64Decode(data);
+        } catch (_) {}
+      }
+    }
     final db = await database;
-    final uuid = row['uuid'] as String?;
+    final uuid = localRow['uuid'] as String?;
     if (uuid == null || uuid.isEmpty) return;
 
     final existing = await db.query(
@@ -1564,20 +1618,21 @@ class DatabaseService {
       if (!options.allowInsert) return;
       await db.insert(
         table,
-        Map<String, dynamic>.from(row),
+        Map<String, dynamic>.from(localRow),
         conflictAlgorithm: ConflictAlgorithm.ignore,
       );
     } else {
       final localUpdatedAt = (existing.first['updated_at'] as int?) ?? 0;
-      final remoteUpdatedAt = (row['updated_at'] as int?) ?? 0;
+      final remoteUpdatedAt = (localRow['updated_at'] as int?) ?? 0;
       if (remoteUpdatedAt > localUpdatedAt) {
         final isDelete =
-            row['deleted_at'] != null && existing.first['deleted_at'] == null;
+            localRow['deleted_at'] != null &&
+            existing.first['deleted_at'] == null;
         if (isDelete && !options.allowDelete) return;
         if (!isDelete && !options.allowEdit) return;
         await db.update(
           table,
-          Map<String, dynamic>.from(row),
+          Map<String, dynamic>.from(localRow),
           where: 'uuid = ?',
           whereArgs: [uuid],
         );

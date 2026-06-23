@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -92,12 +91,11 @@ class _PhotoGridState extends State<PhotoGrid> {
     if (picked == null || !mounted) return;
 
     final bytes = await picked.readAsBytes();
-    final base64Data = base64Encode(bytes);
 
     final photo = PlacePhoto(
       placeUuid: widget.placeUuid,
       stayUuid: widget.stayUuid,
-      photoData: base64Data,
+      photoData: bytes,
       takenAt: DateTime.now().millisecondsSinceEpoch,
     );
     await DatabaseService.instance.insertPlacePhoto(
@@ -119,12 +117,11 @@ class _PhotoGridState extends State<PhotoGrid> {
     if (picked == null || !mounted) return;
 
     final bytes = await picked.readAsBytes();
-    final base64Data = base64Encode(bytes);
 
     final photo = PlacePhoto(
       placeUuid: widget.placeUuid,
       stayUuid: widget.stayUuid,
-      photoData: base64Data,
+      photoData: bytes,
       takenAt: DateTime.now().millisecondsSinceEpoch,
     );
     await DatabaseService.instance.insertPlacePhoto(
@@ -196,9 +193,8 @@ class _PhotoGridState extends State<PhotoGrid> {
             itemBuilder: (context, index) {
               final photo = _photos[index];
               Uint8List? bytes;
-              try {
-                bytes = base64Decode(photo.photoData);
-              } catch (_) {}
+              final raw = photo.photoData;
+              if (raw.isNotEmpty) bytes = raw;
               return GestureDetector(
                 onTap: () => _openPhoto(index),
                 child: ClipRRect(
@@ -257,11 +253,8 @@ class _PhotoViewerState extends State<_PhotoViewer> {
   PlacePhoto get _current => widget.photos[_currentIndex];
 
   Future<void> _share() async {
-    Uint8List? bytes;
-    try {
-      bytes = base64Decode(_current.photoData);
-    } catch (_) {}
-    if (bytes == null || !mounted) return;
+    final bytes = _current.photoData;
+    if (bytes.isEmpty || !mounted) return;
     final tmp = await getTemporaryDirectory();
     final file = File('${tmp.path}/share_${_current.uuid}.jpg');
     await file.writeAsBytes(bytes);
@@ -377,13 +370,10 @@ class _PhotoViewerState extends State<_PhotoViewer> {
               itemCount: widget.photos.length,
               onPageChanged: (i) => setState(() => _currentIndex = i),
               itemBuilder: (_, i) {
-                Uint8List? b;
-                try {
-                  b = base64Decode(widget.photos[i].photoData);
-                } catch (_) {}
+                final b = widget.photos[i].photoData;
                 return InteractiveViewer(
                   child: Center(
-                    child: b != null
+                    child: b.isNotEmpty
                         ? Image.memory(b)
                         : const Icon(
                             Icons.broken_image,

@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:uuid/uuid.dart';
 
 import '../services/settings_service.dart';
@@ -6,8 +9,8 @@ const _uuid = Uuid();
 
 /// A photo associated with a [SavedPlace] and/or a [Stay].
 ///
-/// [photoData] is the full image stored as base64 so that it is included in
-/// the standard timestamp-based sync without any extra file-transfer mechanism.
+/// [photoData] is the raw image bytes stored as BLOB in SQLite.
+/// Base64 encoding is only applied during sync transport (JSON).
 class PlacePhoto {
   final String uuid;
 
@@ -22,8 +25,8 @@ class PlacePhoto {
   /// When the photo was taken (ms since epoch).
   final int takenAt;
 
-  /// Base64-encoded JPEG/PNG image data.
-  final String photoData;
+  /// Raw JPEG/PNG image bytes.
+  final Uint8List photoData;
 
   final int createdAt;
 
@@ -51,7 +54,20 @@ class PlacePhoto {
            ? deviceId!
            : SettingsService.instance.deviceId;
 
+  /// Reads a row from the database. [photo_data] is stored as BLOB (Uint8List).
+  /// Sync rows arriving as JSON carry [photo_data] as a base64 string, which
+  /// is decoded by [DatabaseService.upsertByUuid] before calling [fromMap].
   factory PlacePhoto.fromMap(Map<String, dynamic> map) {
+    final rawData = map['photo_data'];
+    final Uint8List photoBytes;
+    if (rawData is Uint8List) {
+      photoBytes = rawData;
+    } else if (rawData is String && rawData.isNotEmpty) {
+      // Fallback: legacy TEXT base64 row that survived migration
+      photoBytes = base64Decode(rawData);
+    } else {
+      photoBytes = Uint8List(0);
+    }
     return PlacePhoto(
       uuid: map['uuid'] as String?,
       placeUuid: map['place_uuid'] as String?,
@@ -59,7 +75,7 @@ class PlacePhoto {
       caption: (map['caption'] as String?) ?? '',
       takenAt:
           (map['taken_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
-      photoData: (map['photo_data'] as String?) ?? '',
+      photoData: photoBytes,
       createdAt:
           (map['created_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       updatedAt:

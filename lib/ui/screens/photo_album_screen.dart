@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
@@ -251,10 +249,7 @@ class _LazyPlacePhotoGroupState extends State<_LazyPlacePhotoGroup> {
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   itemCount: photos.length,
                   itemBuilder: (context, index) {
-                    Uint8List? bytes;
-                    try {
-                      bytes = base64Decode(photos[index].photoData);
-                    } catch (_) {}
+                    final bytes = photos[index].photoData;
                     return GestureDetector(
                       onTap: () => widget.onViewerOpen(photos, index),
                       child: Container(
@@ -262,7 +257,7 @@ class _LazyPlacePhotoGroupState extends State<_LazyPlacePhotoGroup> {
                         margin: const EdgeInsets.only(right: 6),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: bytes != null
+                          child: bytes.isNotEmpty
                               ? Image.memory(bytes, fit: BoxFit.cover)
                               : Container(
                                   color: Colors.grey[300],
@@ -316,11 +311,8 @@ class _AlbumPhotoViewerState extends State<_AlbumPhotoViewer> {
 
   Future<void> _share() async {
     final photo = widget.photos[_index];
-    Uint8List? bytes;
-    try {
-      bytes = base64Decode(photo.photoData);
-    } catch (_) {}
-    if (bytes == null || !mounted) return;
+    final bytes = photo.photoData;
+    if (bytes.isEmpty || !mounted) return;
     final tmp = await getTemporaryDirectory();
     final file = File('${tmp.path}/share_${photo.uuid}.jpg');
     await file.writeAsBytes(bytes);
@@ -394,13 +386,10 @@ class _AlbumPhotoViewerState extends State<_AlbumPhotoViewer> {
               itemCount: widget.photos.length,
               onPageChanged: (i) => setState(() => _index = i),
               itemBuilder: (_, i) {
-                Uint8List? b;
-                try {
-                  b = base64Decode(widget.photos[i].photoData);
-                } catch (_) {}
+                final b = widget.photos[i].photoData;
                 return InteractiveViewer(
                   child: Center(
-                    child: b != null
+                    child: b.isNotEmpty
                         ? Image.memory(b)
                         : const Icon(
                             Icons.broken_image,
