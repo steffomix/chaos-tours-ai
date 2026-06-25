@@ -357,7 +357,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                   setState(() => _filterOwnDeviceOnly = !_filterOwnDeviceOnly);
                   _reloadList();
                 },
-                tooltip: AppLocalizations.of(context)!.deviceIdExperienceFilter,
+                tooltip: AppLocalizations.of(context)!.deviceIdStayFilter,
               ),
               // Clear date filter
               if (_filterRange != null)

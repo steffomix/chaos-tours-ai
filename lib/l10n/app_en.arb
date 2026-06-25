@@ -673,8 +673,10 @@
     }
   },
   "resetFilter2": "Reset",
-  "activateExperienceFilter": "Experience filter",
+  "activateExperienceFilter": "Activate experience filter",
   "deviceIdExperienceFilter": "Only this device ID experiences",
+  "deviceIdPlaceFilter": "Only this device ID Places",
+  "deviceIdStayFilter": "Only this device ID Stays",
   "minAvgRating": "Min. ∅ rating:",
   "minMedianRating": "Min. x̃ rating:",
   "minSpecialRating": "Min. rating:",

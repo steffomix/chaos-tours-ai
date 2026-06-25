@@ -1055,10 +1055,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resetFilter2 => 'Reset';
 
   @override
-  String get activateExperienceFilter => 'Experience filter';
+  String get activateExperienceFilter => 'Activate experience filter';
 
   @override
   String get deviceIdExperienceFilter => 'Only this device ID experiences';
+
+  @override
+  String get deviceIdPlaceFilter => 'Only this device ID Places';
+
+  @override
+  String get deviceIdStayFilter => 'Only this device ID Stays';
 
   @override
   String get minAvgRating => 'Min. ∅ rating:';

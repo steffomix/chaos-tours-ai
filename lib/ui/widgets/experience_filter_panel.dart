@@ -75,7 +75,12 @@ class ExperienceFilterState {
   /// [useSpecificRating] is true).
   final SpecificRatingField? specificRatingField;
 
+  /// Whether the experience sub-filter panel is open. When true, only places
+  /// with at least one experience entry are shown.
+  final bool subPanelOpen;
+
   const ExperienceFilterState({
+    this.subPanelOpen = false,
     this.ownDeviceOnly = false,
     this.minAvgRating = 0.0,
     this.useMedian = false,
@@ -86,8 +91,10 @@ class ExperienceFilterState {
   });
 
   /// True when experience-based filtering requires experiences to be present.
-  /// This is always the case when [specificFilterActive] is true.
-  bool get requireExperiences => ownDeviceOnly || specificFilterActive;
+  /// This is always the case when [specificFilterActive] is true or the
+  /// experience sub-panel is open.
+  bool get requireExperiences =>
+      subPanelOpen || ownDeviceOnly || specificFilterActive;
 
   bool get isActive => ownDeviceOnly || minAvgRating != 0.0 || distanceEnabled;
 
@@ -96,6 +103,7 @@ class ExperienceFilterState {
       useSpecificRating && specificRatingField != null;
 
   ExperienceFilterState copyWith({
+    bool? subPanelOpen,
     bool? ownDeviceOnly,
     double? minAvgRating,
     bool? useMedian,
@@ -105,6 +113,7 @@ class ExperienceFilterState {
     SpecificRatingField? specificRatingField,
     bool clearSpecificRatingField = false,
   }) => ExperienceFilterState(
+    subPanelOpen: subPanelOpen ?? this.subPanelOpen,
     ownDeviceOnly: ownDeviceOnly ?? this.ownDeviceOnly,
     minAvgRating: minAvgRating ?? this.minAvgRating,
     useMedian: useMedian ?? this.useMedian,
@@ -141,7 +150,7 @@ class _ExperienceFilterPanelState extends State<ExperienceFilterPanel> {
   @override
   void initState() {
     super.initState();
-    //_subPanelOpen = widget.filter.requireExperiences;
+    _subPanelOpen = widget.filter.subPanelOpen;
   }
 
   String _fmtDist(double km) {
@@ -288,7 +297,10 @@ class _ExperienceFilterPanelState extends State<ExperienceFilterPanel> {
               children: [
                 Switch(
                   value: _subPanelOpen,
-                  onChanged: (v) => setState(() => _subPanelOpen = v),
+                  onChanged: (v) {
+                    setState(() => _subPanelOpen = v);
+                    onChanged(filter.copyWith(subPanelOpen: v));
+                  },
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -375,6 +387,7 @@ class _ExperienceFilterPanelState extends State<ExperienceFilterPanel> {
                       setState(() => _subPanelOpen = false);
                       onChanged(
                         filter.copyWith(
+                          subPanelOpen: false,
                           minAvgRating: 0.0,
                           ownDeviceOnly: false,
                           useSpecificRating: false,

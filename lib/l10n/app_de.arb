@@ -1491,13 +1491,21 @@
   "@resetFilter2": {
     "description": "Reset filter button in experience panel"
   },
-  "activateExperienceFilter": "Erfahrungsfilter",
+  "activateExperienceFilter": "Aktiviere Erfahrungsfilter",
   "@activateExperienceFilter": {
     "description": "Experience filter switch"
   },
   "deviceIdExperienceFilter": "Nur Erfahrungen mit\n aktueller Geräte ID",
   "@deviceIdExperienceFilter": {
     "description": "Only places with experiences with current deviceId switch"
+  },
+  "deviceIdPlaceFilter": "Nur Orte mit\n aktueller Geräte ID",
+  "@deviceIdPlaceFilter": {
+    "description": "Only places with current deviceId switch"
+  },
+  "deviceIdStayFilter": "Nur Besuche mit\n aktueller Geräte ID",
+  "@deviceIdStayFilter": {
+    "description": "Only Stays with experiences with current deviceId switch"
   },
   "minAvgRating": "Min. ⌀ Bewertung:",
   "@minAvgRating": {

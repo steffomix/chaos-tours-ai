@@ -44,6 +44,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
   // Filter
   bool _intervalOnly = false;
   bool _filterPanelOpen = false;
+  bool _filterOwnDeviceOnly = true;
   ExperienceFilterState _expFilter = const ExperienceFilterState();
 
   // Map
@@ -178,6 +179,10 @@ class _PlacesScreenState extends State<PlacesScreen> {
               .toList();
         }
         if (_intervalOnly) list = list.where((p) => p.intervalEnabled).toList();
+        if (_filterOwnDeviceOnly) {
+          final ownId = SettingsService.instance.deviceId;
+          list = list.where((p) => p.deviceId == ownId).toList();
+        }
         if (_searchQuery.isNotEmpty) {
           final q = _searchQuery.toLowerCase();
           list = list.where((p) {
@@ -264,6 +269,9 @@ class _PlacesScreenState extends State<PlacesScreen> {
           search: q,
           intervalOnly: _intervalOnly,
           groupFilter: SettingsService.instance.schedulerGroupUuidList,
+          placeDeviceId: _filterOwnDeviceOnly
+              ? SettingsService.instance.deviceId
+              : null,
           requireExperiences: _expFilter.requireExperiences,
           ownDeviceId: _expFilter.ownDeviceOnly
               ? SettingsService.instance.deviceId
@@ -337,9 +345,8 @@ class _PlacesScreenState extends State<PlacesScreen> {
   }
 
   bool get _filterActive =>
-      (_expFilter.useSpecificRating &&
-          _expFilter.specificRatingField != null) ||
-      _expFilter.minAvgRating != 0.0 ||
+      _expFilter.requireExperiences ||
+      _expFilter.useSpecificRating ||
       _expFilter.distanceEnabled;
 
   Color _ratingColor(double? rating) {
@@ -542,6 +549,18 @@ class _PlacesScreenState extends State<PlacesScreen> {
                     : l10n.showIntervalOnly,
                 onPressed: () {
                   setState(() => _intervalOnly = !_intervalOnly);
+                  _reloadList();
+                },
+              ),
+              // Filter by own device ID (places created on this device)
+              IconButton(
+                icon: Badge(
+                  isLabelVisible: _filterOwnDeviceOnly,
+                  child: const Icon(Icons.smartphone),
+                ),
+                tooltip: l10n.deviceIdPlaceFilter,
+                onPressed: () {
+                  setState(() => _filterOwnDeviceOnly = !_filterOwnDeviceOnly);
                   _reloadList();
                 },
               ),

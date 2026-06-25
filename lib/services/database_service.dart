@@ -1673,6 +1673,7 @@ class DatabaseService {
     String? search,
     bool intervalOnly = false,
     List<String> groupFilter = const [],
+    String? placeDeviceId,
     bool requireExperiences = false,
     String? ownDeviceId,
     double? minAvgRating,
@@ -1690,6 +1691,11 @@ class DatabaseService {
       final ph = groupFilter.map((_) => '?').join(',');
       where.add('sp.group_uuid IN ($ph)');
       args.addAll(groupFilter);
+    }
+
+    if (placeDeviceId != null) {
+      where.add('sp.device_id = ?');
+      args.add(placeDeviceId);
     }
 
     if (search != null && search.isNotEmpty) {

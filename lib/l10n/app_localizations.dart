@@ -1949,7 +1949,7 @@ abstract class AppLocalizations {
   /// Experience filter switch
   ///
   /// In de, this message translates to:
-  /// **'Erfahrungsfilter'**
+  /// **'Aktiviere Erfahrungsfilter'**
   String get activateExperienceFilter;
 
   /// Only places with experiences with current deviceId switch
@@ -1957,6 +1957,18 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Nur Erfahrungen mit\n aktueller Geräte ID'**
   String get deviceIdExperienceFilter;
+
+  /// Only places with current deviceId switch
+  ///
+  /// In de, this message translates to:
+  /// **'Nur Orte mit\n aktueller Geräte ID'**
+  String get deviceIdPlaceFilter;
+
+  /// Only Stays with experiences with current deviceId switch
+  ///
+  /// In de, this message translates to:
+  /// **'Nur Besuche mit\n aktueller Geräte ID'**
+  String get deviceIdStayFilter;
 
   /// Min average rating label
   ///
