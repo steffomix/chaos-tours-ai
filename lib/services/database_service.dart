@@ -1660,8 +1660,9 @@ class DatabaseService {
   // ── Paginated queries ────────────────────────────────────────────────────
 
   /// Loads a page of non-deleted places for the list view with all filters
-  /// applied at the SQL level. [placeTypeIndices] are the [PlaceType.index]
-  /// values whose labels match the current search query.
+  /// applied at the SQL level.
+  /// [placeTypeIndices] filters by [PlaceType.index] values (top-level AND
+  /// filter, independent of [search]).
   /// Set [useMedian] to filter by [experience_rating_median] instead of
   /// [experience_rating_average].
   /// Set [specificRatingField] (a DB column name like 'rating_dangerous_friendly')
@@ -1675,7 +1676,7 @@ class DatabaseService {
     List<String> groupFilter = const [],
     String? placeDeviceId,
     bool requireExperiences = false,
-    String? ownDeviceId,
+    String? experienceDeviceId,
     double? minAvgRating,
     bool useMedian = false,
     List<int> placeTypeIndices = const [],
@@ -1698,31 +1699,61 @@ class DatabaseService {
       args.add(placeDeviceId);
     }
 
+    // Top-level place-type filter (independent of search).
+    if (placeTypeIndices.isNotEmpty) {
+      final ph = placeTypeIndices.map((_) => '?').join(',');
+      where.add('COALESCE(pg.place_type, 0) IN ($ph)');
+      args.addAll(placeTypeIndices);
+    }
+
     if (search != null && search.isNotEmpty) {
       final s = '%$search%';
-      final conds = <String>['sp.name LIKE ?', 'sp.notes LIKE ?'];
-      args.addAll([s, s]);
-      if (placeTypeIndices.isNotEmpty) {
-        final ph = placeTypeIndices.map((_) => '?').join(',');
-        conds.add('COALESCE(pg.place_type, 0) IN ($ph)');
-        args.addAll(placeTypeIndices);
-      }
-      where.add('(${conds.join(' OR ')})');
+      where.add('''
+        (
+          sp.name LIKE ?
+          OR sp.notes LIKE ?
+          OR sp.website LIKE ?
+          OR sp.email LIKE ?
+          OR sp.phone LIKE ?
+          OR EXISTS (
+            SELECT 1 FROM place_experiences pe
+            WHERE pe.saved_place_uuid = sp.uuid
+              AND pe.deleted_at IS NULL
+              AND pe.text LIKE ?
+          )
+          OR EXISTS (
+            SELECT 1 FROM stays st
+            LEFT JOIN stay_persons spn ON spn.stay_uuid = st.uuid AND spn.deleted_at IS NULL
+            LEFT JOIN stay_activities sa ON sa.stay_uuid = st.uuid AND sa.deleted_at IS NULL
+            WHERE st.place_uuid = sp.uuid
+              AND st.deleted_at IS NULL
+              AND (
+                st.notes LIKE ?
+                OR st.address LIKE ?
+                OR spn.name LIKE ?
+                OR sa.description LIKE ?
+              )
+          )
+        )
+      ''');
+      args.addAll([s, s, s, s, s, s, s, s, s, s]);
     }
 
     // Build the ORDER BY clause (and optional filter subquery for specific mode).
     String orderBy = 'sp.name ASC';
 
-    if (ownDeviceId != null) {
+    if (experienceDeviceId != null) {
       where.add(
         'EXISTS (SELECT 1 FROM place_experiences'
         ' WHERE saved_place_uuid = sp.uuid'
         ' AND deleted_at IS NULL AND device_id = ?)',
       );
-      args.add(ownDeviceId);
+      args.add(experienceDeviceId);
     }
 
-    if (specificRatingField != null && requireExperiences) {
+    if (specificRatingField != null &&
+        specificRatingField.isNotEmpty &&
+        requireExperiences) {
       // Specific dimension filter: require non-NULL AVG for the chosen field.
       final dimAvgSubq =
           '(SELECT AVG($specificRatingField) FROM place_experiences'
@@ -1781,11 +1812,13 @@ class DatabaseService {
     String? search,
     bool intervalOnly = false,
     List<String> groupFilter = const [],
+    String? placeDeviceId,
     bool requireExperiences = false,
-    String? ownDeviceId,
+    String? experienceDeviceId,
     double? minAvgRating,
     bool useMedian = false,
     List<int> placeTypeIndices = const [],
+    String? specificRatingField,
   }) async {
     final db = await database;
     final where = <String>['sp.deleted_at IS NULL'];
@@ -1799,28 +1832,73 @@ class DatabaseService {
       args.addAll(groupFilter);
     }
 
-    if (search != null && search.isNotEmpty) {
-      final s = '%$search%';
-      final conds = <String>['sp.name LIKE ?', 'sp.notes LIKE ?'];
-      args.addAll([s, s]);
-      if (placeTypeIndices.isNotEmpty) {
-        final ph = placeTypeIndices.map((_) => '?').join(',');
-        conds.add('COALESCE(pg.place_type, 0) IN ($ph)');
-        args.addAll(placeTypeIndices);
-      }
-      where.add('(${conds.join(' OR ')})');
+    if (placeDeviceId != null) {
+      where.add('sp.device_id = ?');
+      args.add(placeDeviceId);
     }
 
-    if (ownDeviceId != null) {
+    // Top-level place-type filter (independent of search).
+    if (placeTypeIndices.isNotEmpty) {
+      final ph = placeTypeIndices.map((_) => '?').join(',');
+      where.add('COALESCE(pg.place_type, 0) IN ($ph)');
+      args.addAll(placeTypeIndices);
+    }
+
+    if (search != null && search.isNotEmpty) {
+      final s = '%$search%';
+      where.add('''
+        (
+          sp.name LIKE ?
+          OR sp.notes LIKE ?
+          OR sp.website LIKE ?
+          OR sp.email LIKE ?
+          OR sp.phone LIKE ?
+          OR EXISTS (
+            SELECT 1 FROM place_experiences pe
+            WHERE pe.saved_place_uuid = sp.uuid
+              AND pe.deleted_at IS NULL
+              AND pe.text LIKE ?
+          )
+          OR EXISTS (
+            SELECT 1 FROM stays st
+            LEFT JOIN stay_persons spn ON spn.stay_uuid = st.uuid AND spn.deleted_at IS NULL
+            LEFT JOIN stay_activities sa ON sa.stay_uuid = st.uuid AND sa.deleted_at IS NULL
+            WHERE st.place_uuid = sp.uuid
+              AND st.deleted_at IS NULL
+              AND (
+                st.notes LIKE ?
+                OR st.address LIKE ?
+                OR spn.name LIKE ?
+                OR sa.description LIKE ?
+              )
+          )
+        )
+      ''');
+      args.addAll([s, s, s, s, s, s, s, s, s, s]);
+    }
+
+    if (experienceDeviceId != null) {
       where.add(
         'EXISTS (SELECT 1 FROM place_experiences'
         ' WHERE saved_place_uuid = sp.uuid'
         ' AND deleted_at IS NULL AND device_id = ?)',
       );
-      args.add(ownDeviceId);
+      args.add(experienceDeviceId);
     }
 
-    if (requireExperiences) {
+    if (specificRatingField != null &&
+        specificRatingField.isNotEmpty &&
+        requireExperiences) {
+      final dimAvgSubq =
+          '(SELECT AVG($specificRatingField) FROM place_experiences'
+          ' WHERE saved_place_uuid = sp.uuid AND deleted_at IS NULL)';
+      if (minAvgRating != null) {
+        where.add('($dimAvgSubq IS NOT NULL AND $dimAvgSubq >= ?)');
+        args.add(minAvgRating);
+      } else {
+        where.add('$dimAvgSubq IS NOT NULL');
+      }
+    } else if (requireExperiences) {
       final col = useMedian
           ? 'sp.experience_rating_median'
           : 'sp.experience_rating_average';

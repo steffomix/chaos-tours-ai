@@ -2252,6 +2252,18 @@ abstract class AppLocalizations {
   /// **'Fordert ↔ Bietet Medizinische Versorgung'**
   String get ratingMedicine;
 
+  /// Filter by group label
+  ///
+  /// In de, this message translates to:
+  /// **'Nach Gruppe filtern'**
+  String get filterByGroup;
+
+  /// Filter by place type label
+  ///
+  /// In de, this message translates to:
+  /// **'Nach Ortstyp filtern'**
+  String get filterByPlaceType;
+
   /// General experience filter mode label
   ///
   /// In de, this message translates to:

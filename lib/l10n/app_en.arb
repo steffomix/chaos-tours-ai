@@ -724,6 +724,8 @@
   "ratingEquipment": "Demands ↔ Provides equipment",
   "ratingTransport": "Demands ↔ Provides transport",
   "ratingMedicine": "Demands ↔ Provides medical care",
+  "filterByGroup": "Filter by group",
+  "filterByPlaceType": "Filter by place type",
   "filterModeGeneral": "General filter",
   "filterModeSpecific": "Specific filter",
   "selectRatingDimension": "Rating dimension:",

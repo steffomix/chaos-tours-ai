@@ -1695,6 +1695,14 @@
   "@ratingMedicine": {
     "description": "Rating: demands to provides medical care"
   },
+  "filterByGroup": "Nach Gruppe filtern",
+  "@filterByGroup": {
+    "description": "Filter by group label"
+  },
+  "filterByPlaceType": "Nach Ortstyp filtern",
+  "@filterByPlaceType": {
+    "description": "Filter by place type label"
+  },
   "filterModeGeneral": "Allgemeiner Filter",
   "@filterModeGeneral": {
     "description": "General experience filter mode label"

@@ -169,12 +169,23 @@ class _PlacesScreenState extends State<PlacesScreen> {
         // Whole set is already bounded by the bounding box — show everything.
         final pos = _currentPos!;
         final maxM = _expFilter.maxDistanceKm * 1000;
-        final groupFilter = SettingsService.instance.schedulerGroupUuidList;
+        final effectiveGroupFilter = _expFilter.groupFilter.isNotEmpty
+            ? _expFilter.groupFilter
+            : SettingsService.instance.schedulerGroupUuidList;
         var list = _mapPlaces;
-        if (groupFilter.isNotEmpty) {
+        if (effectiveGroupFilter.isNotEmpty) {
           list = list
               .where(
-                (p) => p.groupUuid != null && groupFilter.contains(p.groupUuid),
+                (p) =>
+                    p.groupUuid != null &&
+                    effectiveGroupFilter.contains(p.groupUuid),
+              )
+              .toList();
+        }
+        if (_expFilter.placeTypeFilter.isNotEmpty) {
+          list = list
+              .where(
+                (p) => _expFilter.placeTypeFilter.contains(p.placeType.index),
               )
               .toList();
         }
@@ -256,29 +267,28 @@ class _PlacesScreenState extends State<PlacesScreen> {
         // Normal mode: proper DB LIMIT/OFFSET pagination.
         final offset = silent ? 0 : _listItems.length;
         final q = _searchQuery.isNotEmpty ? _searchQuery.toLowerCase() : null;
-        final placeTypeIndices = q != null
-            ? PlaceType.values
-                  .where((t) => t.label.toLowerCase().contains(q))
-                  .map((t) => t.index)
-                  .toList()
-            : <int>[];
+
+        // Group filter: use panel selection if set, else fall back to scheduler.
+        final effectiveGroupFilter = _expFilter.groupFilter.isNotEmpty
+            ? _expFilter.groupFilter
+            : SettingsService.instance.schedulerGroupUuidList;
 
         final page = await DatabaseService.instance.loadPlacesPaged(
           limit: _kChunkSize,
           offset: offset,
           search: q,
           intervalOnly: _intervalOnly,
-          groupFilter: SettingsService.instance.schedulerGroupUuidList,
+          groupFilter: effectiveGroupFilter,
           placeDeviceId: _filterOwnDeviceOnly
               ? SettingsService.instance.deviceId
               : null,
           requireExperiences: _expFilter.requireExperiences,
-          ownDeviceId: _expFilter.ownDeviceOnly
+          experienceDeviceId: _expFilter.ownDeviceOnly
               ? SettingsService.instance.deviceId
               : null,
           minAvgRating: _expFilter.isActive ? _expFilter.minAvgRating : null,
           useMedian: _expFilter.useMedian,
-          placeTypeIndices: placeTypeIndices,
+          placeTypeIndices: _expFilter.placeTypeFilter,
           specificRatingField: _expFilter.specificFilterActive
               ? _expFilter.specificRatingField!.dbColumn
               : null,
@@ -347,7 +357,9 @@ class _PlacesScreenState extends State<PlacesScreen> {
   bool get _filterActive =>
       _expFilter.requireExperiences ||
       _expFilter.useSpecificRating ||
-      _expFilter.distanceEnabled;
+      _expFilter.distanceEnabled ||
+      _expFilter.groupFilter.isNotEmpty ||
+      _expFilter.placeTypeFilter.isNotEmpty;
 
   Color _ratingColor(double? rating) {
     if (rating == null) return Colors.grey;
@@ -412,12 +424,21 @@ class _PlacesScreenState extends State<PlacesScreen> {
     final l10n = AppLocalizations.of(context)!;
     // Map always shows the full (map) dataset with Dart-side filtering.
     var list = _mapPlaces;
-    final groupFilter = SettingsService.instance.schedulerGroupUuidList;
-    if (groupFilter.isNotEmpty) {
+    final effectiveGroupFilter = _expFilter.groupFilter.isNotEmpty
+        ? _expFilter.groupFilter
+        : SettingsService.instance.schedulerGroupUuidList;
+    if (effectiveGroupFilter.isNotEmpty) {
       list = list
           .where(
-            (p) => p.groupUuid != null && groupFilter.contains(p.groupUuid),
+            (p) =>
+                p.groupUuid != null &&
+                effectiveGroupFilter.contains(p.groupUuid),
           )
+          .toList();
+    }
+    if (_expFilter.placeTypeFilter.isNotEmpty) {
+      list = list
+          .where((p) => _expFilter.placeTypeFilter.contains(p.placeType.index))
           .toList();
     }
     if (_intervalOnly) list = list.where((p) => p.intervalEnabled).toList();

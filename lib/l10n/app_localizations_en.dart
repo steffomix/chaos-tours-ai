@@ -1212,6 +1212,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ratingMedicine => 'Demands ↔ Provides medical care';
 
   @override
+  String get filterByGroup => 'Filter by group';
+
+  @override
+  String get filterByPlaceType => 'Filter by place type';
+
+  @override
   String get filterModeGeneral => 'General filter';
 
   @override

@@ -1216,6 +1216,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get ratingMedicine => 'Fordert ↔ Bietet Medizinische Versorgung';
 
   @override
+  String get filterByGroup => 'Nach Gruppe filtern';
+
+  @override
+  String get filterByPlaceType => 'Nach Ortstyp filtern';
+
+  @override
   String get filterModeGeneral => 'Allgemeiner Filter';
 
   @override
