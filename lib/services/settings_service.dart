@@ -1,12 +1,10 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
 
 import '../models/aktivitaet.dart';
 
 class SettingsService {
   SettingsService._();
   static final SettingsService instance = SettingsService._();
-  static const _uuid = Uuid();
 
   static const String _keyGpsInterval = 'gps_interval_seconds';
   static const String _keyStayDetection = 'stay_detection_seconds';
@@ -60,17 +58,9 @@ class SettingsService {
     return _prefs!;
   }
 
-  /// UUID to identify this app installation for OpenStreetMap user agent.
-  /// Otherwise OSM may block requests from the app if all app users share the same user agent.
-  String get deviceId {
-    String? uuid = _p.getString(_keyDeviceId);
-    if (uuid == null) {
-      uuid = _uuid.v4();
-      _p.setString(_keyDeviceId, uuid);
-    }
-    return uuid;
-  }
-
+  /// Full device ID used in all database records: "name@uuid".
+  /// Set once at Aktivität creation and never changed individually.
+  String get deviceId => _p.getString(_keyDeviceId) ?? '';
   set deviceId(String v) => _p.setString(_keyDeviceId, v);
 
   /// Timestamp of the last successful sync in milliseconds since epoch (0 = never).

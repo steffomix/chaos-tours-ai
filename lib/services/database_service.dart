@@ -20,6 +20,7 @@ import '../models/sync_source.dart';
 import '../models/sync_source_experience.dart';
 import '../models/telegram_connection.dart';
 import '../models/tracking_point.dart';
+import '../models/trusted_source.dart';
 import 'sync_service.dart' show SyncOptions;
 import 'settings_service.dart';
 
@@ -434,6 +435,28 @@ class DatabaseService {
         device_id TEXT NOT NULL DEFAULT ''
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE trusted_sources (
+        uuid TEXT PRIMARY KEY,
+        trusted_device_id TEXT NOT NULL,
+        trusted INTEGER NOT NULL DEFAULT 0,
+        note TEXT NOT NULL DEFAULT '',
+        url TEXT NOT NULL DEFAULT '',
+        email TEXT NOT NULL DEFAULT '',
+        address TEXT NOT NULL DEFAULT '',
+        lat REAL,
+        lng REAL,
+        updated_at INTEGER NOT NULL DEFAULT 0,
+        deleted_at INTEGER,
+        device_id TEXT NOT NULL DEFAULT ''
+      )
+    ''');
+
+    await db.execute(
+      'CREATE UNIQUE INDEX idx_trusted_sources_device_id'
+      ' ON trusted_sources(trusted_device_id) WHERE deleted_at IS NULL',
+    );
   }
 
   // ── Sync helpers ─────────────────────────────────────────────────────────
@@ -1625,7 +1648,7 @@ class DatabaseService {
   }) async {
     final all = await loadAllAktivitaeten();
     if (all.isNotEmpty) return all.first.uuid;
-    return insertAktivitaet(
+    final uuid = await insertAktivitaet(
       Aktivitaet(
         name: 'Standard',
         gpsIntervalSeconds: gpsInterval,
@@ -1637,6 +1660,7 @@ class DatabaseService {
         defaultPlaceGroupUuid: defaultPlaceGroupUuid,
       ),
     );
+    return uuid;
   }
 
   Future<({String autoGroupUuid, String defaultGroupUuid})?>
@@ -1674,9 +1698,9 @@ class DatabaseService {
     String? search,
     bool intervalOnly = false,
     List<String> groupFilter = const [],
-    String? placeDeviceId,
+    List<String> placeDeviceIds = const [],
     bool requireExperiences = false,
-    String? experienceDeviceId,
+    List<String> experienceDeviceIds = const [],
     double? minAvgRating,
     bool useMedian = false,
     List<int> placeTypeIndices = const [],
@@ -1694,9 +1718,10 @@ class DatabaseService {
       args.addAll(groupFilter);
     }
 
-    if (placeDeviceId != null) {
-      where.add('sp.device_id = ?');
-      args.add(placeDeviceId);
+    if (placeDeviceIds.isNotEmpty) {
+      final ph = placeDeviceIds.map((_) => '?').join(',');
+      where.add('sp.device_id IN ($ph)');
+      args.addAll(placeDeviceIds);
     }
 
     // Top-level place-type filter (independent of search).
@@ -1742,13 +1767,14 @@ class DatabaseService {
     // Build the ORDER BY clause (and optional filter subquery for specific mode).
     String orderBy = 'sp.name ASC';
 
-    if (experienceDeviceId != null) {
+    if (experienceDeviceIds.isNotEmpty) {
+      final ph = experienceDeviceIds.map((_) => '?').join(',');
       where.add(
         'EXISTS (SELECT 1 FROM place_experiences'
         ' WHERE saved_place_uuid = sp.uuid'
-        ' AND deleted_at IS NULL AND device_id = ?)',
+        ' AND deleted_at IS NULL AND device_id IN ($ph))',
       );
-      args.add(experienceDeviceId);
+      args.addAll(experienceDeviceIds);
     }
 
     if (specificRatingField != null &&
@@ -1812,9 +1838,9 @@ class DatabaseService {
     String? search,
     bool intervalOnly = false,
     List<String> groupFilter = const [],
-    String? placeDeviceId,
+    List<String> placeDeviceIds = const [],
     bool requireExperiences = false,
-    String? experienceDeviceId,
+    List<String> experienceDeviceIds = const [],
     double? minAvgRating,
     bool useMedian = false,
     List<int> placeTypeIndices = const [],
@@ -1832,9 +1858,10 @@ class DatabaseService {
       args.addAll(groupFilter);
     }
 
-    if (placeDeviceId != null) {
-      where.add('sp.device_id = ?');
-      args.add(placeDeviceId);
+    if (placeDeviceIds.isNotEmpty) {
+      final ph = placeDeviceIds.map((_) => '?').join(',');
+      where.add('sp.device_id IN ($ph)');
+      args.addAll(placeDeviceIds);
     }
 
     // Top-level place-type filter (independent of search).
@@ -1877,13 +1904,14 @@ class DatabaseService {
       args.addAll([s, s, s, s, s, s, s, s, s, s]);
     }
 
-    if (experienceDeviceId != null) {
+    if (experienceDeviceIds.isNotEmpty) {
+      final ph = experienceDeviceIds.map((_) => '?').join(',');
       where.add(
         'EXISTS (SELECT 1 FROM place_experiences'
         ' WHERE saved_place_uuid = sp.uuid'
-        ' AND deleted_at IS NULL AND device_id = ?)',
+        ' AND deleted_at IS NULL AND device_id IN ($ph))',
       );
-      args.add(experienceDeviceId);
+      args.addAll(experienceDeviceIds);
     }
 
     if (specificRatingField != null &&
@@ -2177,24 +2205,136 @@ class DatabaseService {
     }
   }
 
-  /*
-  /// Average ratings for a specific set of place UUIDs.
-  /// Uses the pre-computed [experience_rating_average] column.
-  Future<Map<String, double>> loadAverageRatingsForPlaces(
-    List<String> uuids,
-  ) async {
-    if (uuids.isEmpty) return {};
+  // ── TrustedSources ───────────────────────────────────────────────────────
+
+  /// Returns all non-deleted sources — trusted entries first, then the rest,
+  /// both groups sorted by [trusted_device_id].
+  Future<List<TrustedSource>> loadAllTrustedSources() async {
     final db = await database;
-    final ph = uuids.map((_) => '?').join(',');
-    final rows = await db.rawQuery('''
-      SELECT uuid, experience_rating_average
-      FROM saved_places
-      WHERE uuid IN ($ph) AND experience_rating_average IS NOT NULL
-    ''', uuids);
-    return {
-      for (final r in rows)
-        r['uuid'] as String: (r['experience_rating_average'] as num).toDouble(),
-    };
+    final rows = await db.rawQuery(
+      'SELECT * FROM trusted_sources WHERE deleted_at IS NULL'
+      ' ORDER BY trusted DESC, trusted_device_id ASC',
+    );
+    return rows.map(TrustedSource.fromMap).toList();
   }
-  */
+
+  Future<void> upsertTrustedSource(TrustedSource ts) async {
+    final db = await database;
+    await db.insert(
+      'trusted_sources',
+      ts.toMap()..['updated_at'] = DateTime.now().millisecondsSinceEpoch,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> softDeleteTrustedSource(String uuid) async {
+    final db = await database;
+    await db.update(
+      'trusted_sources',
+      {
+        'deleted_at': DateTime.now().millisecondsSinceEpoch,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      },
+      where: 'uuid = ?',
+      whereArgs: [uuid],
+    );
+  }
+
+  /// Collects all distinct non-empty device IDs from every table and inserts
+  /// new entries into [trusted_sources] (existing entries are not modified).
+  /// Returns the count of newly discovered device IDs.
+  Future<int> refreshTrustedSources() async {
+    final db = await database;
+    const tables = [
+      'saved_places',
+      'stays',
+      'stay_persons',
+      'stay_activities',
+      'place_experiences',
+      'place_groups',
+      'persons',
+      'activities',
+      'aktivitaeten',
+      'sync_sources',
+      'sync_source_experiences',
+      'place_photos',
+      'telegram_connections',
+    ];
+
+    // Gather all distinct device IDs from all tables.
+    final allIds = <String>{};
+    for (final table in tables) {
+      try {
+        final rows = await db.rawQuery(
+          'SELECT DISTINCT device_id FROM $table'
+          ' WHERE device_id IS NOT NULL AND device_id != \'\'',
+        );
+        for (final r in rows) {
+          allIds.add(r['device_id'] as String);
+        }
+      } catch (_) {
+        // table may not exist (e.g. during first run)
+      }
+    }
+
+    // Normalize: old DB records may carry the raw UUID before the user set a
+    // device name. Replace any occurrence of the raw UUID with the current
+    // full device ID (e.g. "Alice@<uuid>") so we never get two entries for the
+    // same physical device.
+    final fullDeviceId = SettingsService.instance.deviceId;
+    final atIdx = fullDeviceId.lastIndexOf('@');
+    final rawUuid = atIdx >= 0
+        ? fullDeviceId.substring(atIdx + 1)
+        : fullDeviceId;
+    if (rawUuid != fullDeviceId) {
+      // There is a name prefix — normalise the set.
+      allIds.remove(rawUuid);
+    }
+    allIds.add(fullDeviceId);
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    // If an existing trusted-source entry still holds the raw UUID, rename it.
+    if (rawUuid != fullDeviceId) {
+      await db.update(
+        'trusted_sources',
+        {'trusted_device_id': fullDeviceId, 'updated_at': now},
+        where: 'trusted_device_id = ? AND deleted_at IS NULL',
+        whereArgs: [rawUuid],
+      );
+    }
+
+    // Load existing entries (after the potential rename above).
+    final existing = await loadAllTrustedSources();
+    final existingIds = existing.map((t) => t.deviceId).toSet();
+
+    int added = 0;
+    for (final id in allIds) {
+      if (existingIds.contains(id)) continue;
+      await db.insert('trusted_sources', {
+        'uuid': _uuid.v4(),
+        'trusted_device_id': id,
+        'trusted': 0,
+        'note': '',
+        'url': '',
+        'email': '',
+        'address': '',
+        'updated_at': now,
+        'device_id': fullDeviceId,
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      added++;
+    }
+    return added;
+  }
+
+  /// Returns device IDs of all non-deleted [TrustedSource] entries where
+  /// [trusted] is true.
+  Future<List<String>> loadTrustedDeviceIds() async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      'SELECT trusted_device_id FROM trusted_sources'
+      ' WHERE deleted_at IS NULL AND trusted = 1',
+    );
+    return rows.map((r) => r['trusted_device_id'] as String).toList();
+  }
 }

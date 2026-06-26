@@ -44,7 +44,8 @@ class _PlacesScreenState extends State<PlacesScreen> {
   // Filter
   bool _intervalOnly = false;
   bool _filterPanelOpen = false;
-  bool _filterOwnDeviceOnly = true;
+  bool _filterByTrusted = true;
+  List<String> _trustedDeviceIds = [];
   ExperienceFilterState _expFilter = const ExperienceFilterState();
 
   // Map
@@ -107,6 +108,13 @@ class _PlacesScreenState extends State<PlacesScreen> {
         setState(() => _currentPos = (lat: pos.latitude, lng: pos.longitude));
       }
     } catch (_) {}
+  }
+
+  /// Loads the trusted device IDs; falls back to own device ID if list is empty.
+  Future<List<String>> _resolveFilterDeviceIds() async {
+    final trusted = await DatabaseService.instance.loadTrustedDeviceIds();
+    if (trusted.isEmpty) return [SettingsService.instance.deviceId];
+    return trusted;
   }
 
   /// Reload both map data and list (first page).
@@ -190,9 +198,11 @@ class _PlacesScreenState extends State<PlacesScreen> {
               .toList();
         }
         if (_intervalOnly) list = list.where((p) => p.intervalEnabled).toList();
-        if (_filterOwnDeviceOnly) {
-          final ownId = SettingsService.instance.deviceId;
-          list = list.where((p) => p.deviceId == ownId).toList();
+        if (_filterByTrusted) {
+          final ids = _trustedDeviceIds.isNotEmpty
+              ? _trustedDeviceIds
+              : [SettingsService.instance.deviceId];
+          list = list.where((p) => ids.contains(p.deviceId)).toList();
         }
         if (_searchQuery.isNotEmpty) {
           final q = _searchQuery.toLowerCase();
@@ -273,19 +283,22 @@ class _PlacesScreenState extends State<PlacesScreen> {
             ? _expFilter.groupFilter
             : SettingsService.instance.schedulerGroupUuidList;
 
+        // Trusted sources filter.
+        if (_filterByTrusted) {
+          _trustedDeviceIds = await _resolveFilterDeviceIds();
+        }
+
         final page = await DatabaseService.instance.loadPlacesPaged(
           limit: _kChunkSize,
           offset: offset,
           search: q,
           intervalOnly: _intervalOnly,
           groupFilter: effectiveGroupFilter,
-          placeDeviceId: _filterOwnDeviceOnly
-              ? SettingsService.instance.deviceId
-              : null,
+          placeDeviceIds: _filterByTrusted ? _trustedDeviceIds : [],
           requireExperiences: _expFilter.requireExperiences,
-          experienceDeviceId: _expFilter.ownDeviceOnly
-              ? SettingsService.instance.deviceId
-              : null,
+          experienceDeviceIds: _expFilter.ownDeviceOnly
+              ? await _resolveFilterDeviceIds()
+              : [],
           minAvgRating: _expFilter.isActive ? _expFilter.minAvgRating : null,
           useMedian: _expFilter.useMedian,
           placeTypeIndices: _expFilter.placeTypeFilter,
@@ -573,15 +586,15 @@ class _PlacesScreenState extends State<PlacesScreen> {
                   _reloadList();
                 },
               ),
-              // Filter by own device ID (places created on this device)
+              // Filter by trusted sources
               IconButton(
                 icon: Badge(
-                  isLabelVisible: _filterOwnDeviceOnly,
-                  child: const Icon(Icons.smartphone),
+                  isLabelVisible: _filterByTrusted,
+                  child: const Icon(Icons.security),
                 ),
-                tooltip: l10n.deviceIdPlaceFilter,
+                tooltip: l10n.filterByTrustedSources,
                 onPressed: () {
-                  setState(() => _filterOwnDeviceOnly = !_filterOwnDeviceOnly);
+                  setState(() => _filterByTrusted = !_filterByTrusted);
                   _reloadList();
                 },
               ),

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../models/aktivitaet.dart';
 import '../../models/place_group.dart';
 import '../../models/saved_place.dart';
+import '../../models/trusted_source.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/permission_helper.dart';
@@ -180,6 +182,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 context,
               ).showSnackBar(SnackBar(content: Text(l10n.deviceIdCopied)));
             },
+          ),
+          ListTile(
+            leading: const Icon(Icons.security),
+            title: Text(l10n.trustedSourcesTitle),
+            subtitle: Text(l10n.trustedSourcesSubtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.pushNamed(context, '/trusted-sources'),
           ),
           const Divider(),
           // ── Verwaltung ───────────────────────────────────────────────
@@ -786,6 +795,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) {
       setState(() {
         _activeAktivitaet = a;
+        _deviceId = a.deviceId;
         _gpsInterval = a.gpsIntervalSeconds;
         _stayDetection = a.stayDetectionSeconds;
         _autoPlaceTime = a.autoPlaceSeconds;
@@ -802,7 +812,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final nameCtrl = TextEditingController(
       text: '${l10n.sectionActivity} ${_aktivitaeten.length + 1}',
     );
-    final deviceIdCtrl = TextEditingController(text: _deviceId);
+    final deviceNameCtrl = TextEditingController();
     // Offer to copy from an existing one as template.
     Aktivitaet template = _activeAktivitaet ?? Aktivitaet(name: '');
 
@@ -811,7 +821,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (ctx) {
         final l10n = AppLocalizations.of(ctx)!;
         return AlertDialog(
-          //title: Text(l10n.newActivityLabel),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -842,10 +851,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ],
-
+              const SizedBox(height: 12),
               TextField(
-                controller: deviceIdCtrl,
-                decoration: InputDecoration(labelText: l10n.deviceId),
+                controller: deviceNameCtrl,
+                maxLength: 20,
+                decoration: InputDecoration(
+                  labelText: l10n.deviceNameLabel,
+                  hintText: l10n.deviceNameHint,
+                  helperText: l10n.deviceNameLengthHint,
+                ),
               ),
             ],
           ),
@@ -865,12 +879,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (confirmed != true) return;
     final name = nameCtrl.text.trim();
-    final deviceId = deviceIdCtrl.text.trim();
-    if (name.isEmpty || deviceId.isEmpty) return;
+    final deviceNameInput = deviceNameCtrl.text.trim();
+    if (name.isEmpty) return;
+    if (deviceNameInput.length < 3 || deviceNameInput.length > 20) return;
 
+    const uuid = Uuid();
+    final deviceId = '$deviceNameInput@${uuid.v4()}';
     final newA = template.copyWith(name: name, uuid: '', deviceId: deviceId);
-    final id = await DatabaseService.instance.insertAktivitaet(newA);
-    final created = await DatabaseService.instance.loadAktivitaet(id);
+    final db = DatabaseService.instance;
+    final id = await db.insertAktivitaet(newA);
+    // set the new deviceId as trusted source.
+    await db.refreshTrustedSources();
+    await db.upsertTrustedSource(
+      TrustedSource(deviceId: deviceId, trusted: true),
+    );
+    final created = await db.loadAktivitaet(id);
+
     if (created != null) await _switchAktivitaet(created);
     await _loadAktivitaeten();
     await _loadGroups();

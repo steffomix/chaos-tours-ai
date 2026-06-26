@@ -79,6 +79,7 @@ class SyncService {
 
     if (results.isNotEmpty) {
       _setLastSyncMs(DateTime.now().millisecondsSinceEpoch);
+      await DatabaseService.instance.refreshTrustedSources();
     }
     return results;
   }
@@ -87,6 +88,7 @@ class SyncService {
   Future<SyncResult> syncWithSource(SyncSource source) async {
     final result = await _syncWithSource(source);
     _setLastSyncMs(DateTime.now().millisecondsSinceEpoch);
+    await DatabaseService.instance.refreshTrustedSources();
     return result;
   }
 

@@ -2791,6 +2791,126 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Foto teilen'**
   String get sharePhoto;
+
+  /// Skip button
+  ///
+  /// In de, this message translates to:
+  /// **'Überspringen'**
+  String get skip;
+
+  /// Address field label
+  ///
+  /// In de, this message translates to:
+  /// **'Adresse'**
+  String get address;
+
+  /// Filter by trusted sources label
+  ///
+  /// In de, this message translates to:
+  /// **'Nur vertrauenswürdige Quellen'**
+  String get filterByTrustedSources;
+
+  /// Trusted sources screen title
+  ///
+  /// In de, this message translates to:
+  /// **'Vertrauenswürdige Quellen'**
+  String get trustedSourcesTitle;
+
+  /// Trusted sources settings subtitle
+  ///
+  /// In de, this message translates to:
+  /// **'Bekannte Geräte-IDs verwalten'**
+  String get trustedSourcesSubtitle;
+
+  /// Empty state for trusted sources
+  ///
+  /// In de, this message translates to:
+  /// **'Keine bekannten Geräte-IDs.\nNutze Aktualisieren um Geräte-IDs aus der Datenbank zu sammeln.'**
+  String get noTrustedSources;
+
+  /// Collect device IDs tooltip
+  ///
+  /// In de, this message translates to:
+  /// **'Geräte-IDs aus Datenbank sammeln'**
+  String get refreshTrustedSources;
+
+  /// FAB tooltip
+  ///
+  /// In de, this message translates to:
+  /// **'Vertrauenswürdige Quelle hinzufügen'**
+  String get addTrustedSource;
+
+  /// Edit trusted source sheet title
+  ///
+  /// In de, this message translates to:
+  /// **'Quelle bearbeiten'**
+  String get editTrustedSource;
+
+  /// Device ID field label in trusted source sheet
+  ///
+  /// In de, this message translates to:
+  /// **'Geräte-ID'**
+  String get trustedDeviceIdLabel;
+
+  /// Confirm delete trusted source title
+  ///
+  /// In de, this message translates to:
+  /// **'Vertrauenswürdige Quelle entfernen?'**
+  String get trustedSourceDeleteTitle;
+
+  /// Section header for trusted devices
+  ///
+  /// In de, this message translates to:
+  /// **'Vertrauenswürdig'**
+  String get trustedDevicesSection;
+
+  /// Section header for known but untrusted devices
+  ///
+  /// In de, this message translates to:
+  /// **'Bekannte Geräte'**
+  String get knownDevicesSection;
+
+  /// Confirm dialog title when marking a device trusted
+  ///
+  /// In de, this message translates to:
+  /// **'Als vertrauenswürdig markieren?'**
+  String get confirmMarkTrustedTitle;
+
+  /// Confirm dialog title when revoking trust
+  ///
+  /// In de, this message translates to:
+  /// **'Vertrauen entziehen?'**
+  String get confirmMarkUntrustedTitle;
+
+  /// First-start device name dialog title
+  ///
+  /// In de, this message translates to:
+  /// **'Gerät benennen'**
+  String get deviceNameDialogTitle;
+
+  /// First-start device name dialog content
+  ///
+  /// In de, this message translates to:
+  /// **'Gib diesem Gerät einen Namen (3–20 Zeichen). Der Name wird fest mit einer UUID verbunden und bildet die Geräte-ID: Name@uuid\n\nDieser Name kann später nicht geändert werden.'**
+  String get deviceNameDialogContent;
+
+  /// Device name field label
+  ///
+  /// In de, this message translates to:
+  /// **'Gerätename'**
+  String get deviceNameLabel;
+
+  /// Device name field hint
+  ///
+  /// In de, this message translates to:
+  /// **'z. B. Alice, MeinHandy'**
+  String get deviceNameHint;
+
+  /// Helper text below the device name field
+  ///
+  /// In de, this message translates to:
+  /// **'3–20 Zeichen, Pflichtfeld'**
+  String get deviceNameLengthHint;
 }
 
 class _AppLocalizationsDelegate

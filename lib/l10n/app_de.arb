@@ -2127,5 +2127,85 @@
   "sharePhoto": "Foto teilen",
   "@sharePhoto": {
     "description": "Share photo tooltip"
+  },
+  "skip": "Überspringen",
+  "@skip": {
+    "description": "Skip button"
+  },
+  "address": "Adresse",
+  "@address": {
+    "description": "Address field label"
+  },
+  "filterByTrustedSources": "Nur vertrauenswürdige Quellen",
+  "@filterByTrustedSources": {
+    "description": "Filter by trusted sources label"
+  },
+  "trustedSourcesTitle": "Vertrauenswürdige Quellen",
+  "@trustedSourcesTitle": {
+    "description": "Trusted sources screen title"
+  },
+  "trustedSourcesSubtitle": "Bekannte Geräte-IDs verwalten",
+  "@trustedSourcesSubtitle": {
+    "description": "Trusted sources settings subtitle"
+  },
+  "noTrustedSources": "Keine bekannten Geräte-IDs.\nNutze Aktualisieren um Geräte-IDs aus der Datenbank zu sammeln.",
+  "@noTrustedSources": {
+    "description": "Empty state for trusted sources"
+  },
+  "refreshTrustedSources": "Geräte-IDs aus Datenbank sammeln",
+  "@refreshTrustedSources": {
+    "description": "Collect device IDs tooltip"
+  },
+  "addTrustedSource": "Vertrauenswürdige Quelle hinzufügen",
+  "@addTrustedSource": {
+    "description": "FAB tooltip"
+  },
+  "editTrustedSource": "Quelle bearbeiten",
+  "@editTrustedSource": {
+    "description": "Edit trusted source sheet title"
+  },
+  "trustedDeviceIdLabel": "Geräte-ID",
+  "@trustedDeviceIdLabel": {
+    "description": "Device ID field label in trusted source sheet"
+  },
+  "trustedSourceDeleteTitle": "Vertrauenswürdige Quelle entfernen?",
+  "@trustedSourceDeleteTitle": {
+    "description": "Confirm delete trusted source title"
+  },
+  "trustedDevicesSection": "Vertrauenswürdig",
+  "@trustedDevicesSection": {
+    "description": "Section header for trusted devices"
+  },
+  "knownDevicesSection": "Bekannte Geräte",
+  "@knownDevicesSection": {
+    "description": "Section header for known but untrusted devices"
+  },
+  "confirmMarkTrustedTitle": "Als vertrauenswürdig markieren?",
+  "@confirmMarkTrustedTitle": {
+    "description": "Confirm dialog title when marking a device trusted"
+  },
+  "confirmMarkUntrustedTitle": "Vertrauen entziehen?",
+  "@confirmMarkUntrustedTitle": {
+    "description": "Confirm dialog title when revoking trust"
+  },
+  "deviceNameDialogTitle": "Gerät benennen",
+  "@deviceNameDialogTitle": {
+    "description": "First-start device name dialog title"
+  },
+  "deviceNameDialogContent": "Gib diesem Gerät einen Namen (3\u201320 Zeichen). Der Name wird fest mit einer UUID verbunden und bildet die Geräte-ID: Name@uuid\n\nDieser Name kann später nicht geändert werden.",
+  "@deviceNameDialogContent": {
+    "description": "First-start device name dialog content"
+  },
+  "deviceNameLabel": "Gerätename",
+  "@deviceNameLabel": {
+    "description": "Device name field label"
+  },
+  "deviceNameHint": "z. B. Alice, MeinHandy",
+  "@deviceNameHint": {
+    "description": "Device name field hint"
+  },
+  "deviceNameLengthHint": "3\u201320 Zeichen, Pflichtfeld",
+  "@deviceNameLengthHint": {
+    "description": "Helper text below the device name field"
   }
 }

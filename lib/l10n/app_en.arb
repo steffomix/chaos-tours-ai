@@ -945,5 +945,25 @@
   "sharePhoto": "Share photo",
   "@sharePhoto": {
     "description": "Share photo tooltip"
-  }
+  },
+  "skip": "Skip",
+  "address": "Address",
+  "filterByTrustedSources": "Trusted sources only",
+  "trustedSourcesTitle": "Trusted Sources",
+  "trustedSourcesSubtitle": "Manage trusted device IDs",
+  "noTrustedSources": "No known device IDs.\nUse Refresh to collect device IDs from the database.",
+  "refreshTrustedSources": "Collect device IDs from database",
+  "addTrustedSource": "Add trusted source",
+  "editTrustedSource": "Edit trusted source",
+  "trustedDeviceIdLabel": "Device ID",
+  "trustedSourceDeleteTitle": "Remove trusted source?",
+  "trustedDevicesSection": "Trusted",
+  "knownDevicesSection": "Known Devices",
+  "confirmMarkTrustedTitle": "Mark as trusted?",
+  "confirmMarkUntrustedTitle": "Revoke trust?",
+  "deviceNameDialogTitle": "Name this device",
+  "deviceNameDialogContent": "Enter a name for this device (3\u201320 characters). The name is permanently bound to a UUID and forms the device ID: name@uuid\n\nThis name cannot be changed later.",
+  "deviceNameLabel": "Device name",
+  "deviceNameHint": "e.g. Alice, MyPhone",
+  "deviceNameLengthHint": "3\u201320 characters, required"
 }

@@ -1522,4 +1522,66 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get sharePhoto => 'Foto teilen';
+
+  @override
+  String get skip => 'Überspringen';
+
+  @override
+  String get address => 'Adresse';
+
+  @override
+  String get filterByTrustedSources => 'Nur vertrauenswürdige Quellen';
+
+  @override
+  String get trustedSourcesTitle => 'Vertrauenswürdige Quellen';
+
+  @override
+  String get trustedSourcesSubtitle => 'Bekannte Geräte-IDs verwalten';
+
+  @override
+  String get noTrustedSources =>
+      'Keine bekannten Geräte-IDs.\nNutze Aktualisieren um Geräte-IDs aus der Datenbank zu sammeln.';
+
+  @override
+  String get refreshTrustedSources => 'Geräte-IDs aus Datenbank sammeln';
+
+  @override
+  String get addTrustedSource => 'Vertrauenswürdige Quelle hinzufügen';
+
+  @override
+  String get editTrustedSource => 'Quelle bearbeiten';
+
+  @override
+  String get trustedDeviceIdLabel => 'Geräte-ID';
+
+  @override
+  String get trustedSourceDeleteTitle => 'Vertrauenswürdige Quelle entfernen?';
+
+  @override
+  String get trustedDevicesSection => 'Vertrauenswürdig';
+
+  @override
+  String get knownDevicesSection => 'Bekannte Geräte';
+
+  @override
+  String get confirmMarkTrustedTitle => 'Als vertrauenswürdig markieren?';
+
+  @override
+  String get confirmMarkUntrustedTitle => 'Vertrauen entziehen?';
+
+  @override
+  String get deviceNameDialogTitle => 'Gerät benennen';
+
+  @override
+  String get deviceNameDialogContent =>
+      'Gib diesem Gerät einen Namen (3–20 Zeichen). Der Name wird fest mit einer UUID verbunden und bildet die Geräte-ID: Name@uuid\n\nDieser Name kann später nicht geändert werden.';
+
+  @override
+  String get deviceNameLabel => 'Gerätename';
+
+  @override
+  String get deviceNameHint => 'z. B. Alice, MeinHandy';
+
+  @override
+  String get deviceNameLengthHint => '3–20 Zeichen, Pflichtfeld';
 }

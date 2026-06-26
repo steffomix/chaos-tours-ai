@@ -1515,4 +1515,66 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sharePhoto => 'Share photo';
+
+  @override
+  String get skip => 'Skip';
+
+  @override
+  String get address => 'Address';
+
+  @override
+  String get filterByTrustedSources => 'Trusted sources only';
+
+  @override
+  String get trustedSourcesTitle => 'Trusted Sources';
+
+  @override
+  String get trustedSourcesSubtitle => 'Manage trusted device IDs';
+
+  @override
+  String get noTrustedSources =>
+      'No known device IDs.\nUse Refresh to collect device IDs from the database.';
+
+  @override
+  String get refreshTrustedSources => 'Collect device IDs from database';
+
+  @override
+  String get addTrustedSource => 'Add trusted source';
+
+  @override
+  String get editTrustedSource => 'Edit trusted source';
+
+  @override
+  String get trustedDeviceIdLabel => 'Device ID';
+
+  @override
+  String get trustedSourceDeleteTitle => 'Remove trusted source?';
+
+  @override
+  String get trustedDevicesSection => 'Trusted';
+
+  @override
+  String get knownDevicesSection => 'Known Devices';
+
+  @override
+  String get confirmMarkTrustedTitle => 'Mark as trusted?';
+
+  @override
+  String get confirmMarkUntrustedTitle => 'Revoke trust?';
+
+  @override
+  String get deviceNameDialogTitle => 'Name this device';
+
+  @override
+  String get deviceNameDialogContent =>
+      'Enter a name for this device (3–20 characters). The name is permanently bound to a UUID and forms the device ID: name@uuid\n\nThis name cannot be changed later.';
+
+  @override
+  String get deviceNameLabel => 'Device name';
+
+  @override
+  String get deviceNameHint => 'e.g. Alice, MyPhone';
+
+  @override
+  String get deviceNameLengthHint => '3–20 characters, required';
 }

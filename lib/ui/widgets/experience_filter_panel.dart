@@ -408,7 +408,8 @@ class _ExperienceFilterPanelState extends State<ExperienceFilterPanel> {
                             onChanged(filter.copyWith(ownDeviceOnly: v)),
                       ),
                       const SizedBox(width: 4),
-                      Text(l10n.deviceIdExperienceFilter),
+                      Flexible(child: Text(l10n.deviceIdExperienceFilter)),
+                      //Text(l10n.deviceIdExperienceFilter),
                     ],
                   ),
                   // ── Specific sub-filter toggle ─────────────────────────────
