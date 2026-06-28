@@ -58,33 +58,34 @@ class DatabaseService {
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE place_groups (
+        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        calendar_id TEXT,
+        place_type INTEGER NOT NULL DEFAULT 0,
         telegram_connection_uuid TEXT,
+        calendar_id TEXT,
+        name TEXT NOT NULL,
         include_notes INTEGER NOT NULL DEFAULT 1,
         include_persons INTEGER NOT NULL DEFAULT 1,
         include_activities INTEGER NOT NULL DEFAULT 1,
         is_auto_group INTEGER NOT NULL DEFAULT 0,
-        place_type INTEGER NOT NULL DEFAULT 0,
         updated_at INTEGER NOT NULL DEFAULT 0,
-        deleted_at INTEGER,
-        device_id TEXT NOT NULL DEFAULT ''
+        deleted_at INTEGER
       )
     ''');
     await db.execute('''
       CREATE TABLE saved_places (
+        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
+        group_uuid TEXT,
+        origin_type INTEGER NOT NULL DEFAULT 0,
         name TEXT NOT NULL,
         lat REAL NOT NULL,
         lng REAL NOT NULL,
         radius REAL NOT NULL DEFAULT 50.0,
         notes TEXT NOT NULL DEFAULT '',
-        group_uuid TEXT,
         created_at INTEGER NOT NULL DEFAULT 0,
         interval_enabled INTEGER NOT NULL DEFAULT 0,
         interval_days INTEGER,
-        origin_type INTEGER NOT NULL DEFAULT 0,
         origin_source_uuid TEXT,
         website TEXT NOT NULL DEFAULT '',
         email TEXT NOT NULL DEFAULT '',
@@ -93,7 +94,6 @@ class DatabaseService {
         experience_rating_median REAL DEFAULT NULL,
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
-        device_id TEXT NOT NULL DEFAULT '',
         FOREIGN KEY (group_uuid) REFERENCES place_groups(uuid) ON DELETE SET NULL
       )
     ''');
@@ -106,19 +106,19 @@ class DatabaseService {
 
     await db.execute('''
       CREATE TABLE stays (
+        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
         place_uuid TEXT,
+        calendar_event_id TEXT,
         start_time INTEGER NOT NULL,
         end_time INTEGER,
         notes TEXT NOT NULL DEFAULT '',
-        calendar_event_id TEXT,
         telegram_message_id TEXT,
         address TEXT,
         status TEXT NOT NULL DEFAULT 'detecting',
         is_interval INTEGER NOT NULL DEFAULT 1,
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
-        device_id TEXT NOT NULL DEFAULT '',
         FOREIGN KEY (place_uuid) REFERENCES saved_places(uuid) ON DELETE CASCADE
       )
     ''');
@@ -128,32 +128,32 @@ class DatabaseService {
 
     await db.execute('''
       CREATE TABLE persons (
+        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT '',
         updated_at INTEGER NOT NULL DEFAULT 0,
-        deleted_at INTEGER,
-        device_id TEXT NOT NULL DEFAULT ''
+        deleted_at INTEGER
       )
     ''');
     await db.execute('''
       CREATE TABLE activities (
+        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         updated_at INTEGER NOT NULL DEFAULT 0,
-        deleted_at INTEGER,
-        device_id TEXT NOT NULL DEFAULT ''
+        deleted_at INTEGER
       )
     ''');
     await db.execute('''
       CREATE TABLE stay_persons (
+        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
         stay_uuid TEXT NOT NULL,
         person_uuid TEXT,
         name TEXT NOT NULL,
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
-        device_id TEXT NOT NULL DEFAULT '',
         FOREIGN KEY (stay_uuid) REFERENCES stays(uuid) ON DELETE CASCADE,
         FOREIGN KEY (person_uuid) REFERENCES persons(uuid) ON DELETE CASCADE
       )
@@ -164,13 +164,13 @@ class DatabaseService {
 
     await db.execute('''
       CREATE TABLE stay_activities (
+        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
         stay_uuid TEXT NOT NULL,
         activity_uuid TEXT,
         description TEXT NOT NULL,
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
-        device_id TEXT NOT NULL DEFAULT '',
         FOREIGN KEY (stay_uuid) REFERENCES stays(uuid) ON DELETE CASCADE,
         FOREIGN KEY (activity_uuid) REFERENCES activities(uuid) ON DELETE SET NULL
       )
@@ -192,9 +192,9 @@ class DatabaseService {
 
     await db.execute('''
       CREATE TABLE aktivitaeten (
+        device_id TEXT NOT NULL,
         uuid TEXT PRIMARY KEY,
         name TEXT NOT NULL,
-        device_id TEXT NOT NULL,
         gps_interval_seconds INTEGER NOT NULL DEFAULT 15,
         stay_detection_seconds INTEGER NOT NULL DEFAULT 180,
         auto_place_seconds INTEGER NOT NULL DEFAULT 900,
@@ -210,6 +210,7 @@ class DatabaseService {
         auto_place_group_uuid TEXT,
         default_place_group_uuid TEXT,
         timeline_history_days INTEGER NOT NULL DEFAULT 7,
+        use_osm INTEGER NOT NULL DEFAULT 0,
         search_country TEXT NOT NULL DEFAULT '',
         scheduler_color_range INTEGER NOT NULL DEFAULT 14,
         scheduler_group_ids TEXT NOT NULL DEFAULT '',
@@ -219,6 +220,7 @@ class DatabaseService {
     ''');
     await db.execute('''
       CREATE TABLE sync_sources (
+        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         sync_url TEXT NOT NULL DEFAULT '',
@@ -227,12 +229,12 @@ class DatabaseService {
         description TEXT NOT NULL DEFAULT '',
         sync_options TEXT NOT NULL DEFAULT '{}',
         updated_at INTEGER NOT NULL DEFAULT 0,
-        deleted_at INTEGER,
-        device_id TEXT NOT NULL DEFAULT ''
+        deleted_at INTEGER
       )
     ''');
     await db.execute('''
       CREATE TABLE place_experiences (
+        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
         saved_place_uuid TEXT NOT NULL,
         stay_uuid TEXT,
@@ -246,8 +248,7 @@ class DatabaseService {
         rating_medicine INTEGER NOT NULL DEFAULT 0,
         created_at INTEGER NOT NULL DEFAULT 0,
         updated_at INTEGER NOT NULL DEFAULT 0,
-        deleted_at INTEGER,
-        device_id TEXT NOT NULL DEFAULT ''
+        deleted_at INTEGER
       )
     ''');
     await db.execute(
@@ -388,13 +389,13 @@ class DatabaseService {
 
     await db.execute('''
       CREATE TABLE sync_source_experiences (
+        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
         sync_source_uuid TEXT NOT NULL,
         text TEXT NOT NULL DEFAULT '',
         created_at INTEGER NOT NULL DEFAULT 0,
         updated_at INTEGER NOT NULL DEFAULT 0,
-        deleted_at INTEGER,
-        device_id TEXT NOT NULL DEFAULT ''
+        deleted_at INTEGER
       )
     ''');
     await db.execute(
@@ -403,6 +404,7 @@ class DatabaseService {
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS place_photos (
+        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
         place_uuid TEXT,
         stay_uuid TEXT,
@@ -412,7 +414,6 @@ class DatabaseService {
         created_at INTEGER NOT NULL DEFAULT 0,
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
-        device_id TEXT NOT NULL DEFAULT '',
         FOREIGN KEY (place_uuid) REFERENCES saved_places(uuid) ON DELETE CASCADE,
         FOREIGN KEY (stay_uuid) REFERENCES stays(uuid) ON DELETE CASCADE
       )
@@ -426,19 +427,20 @@ class DatabaseService {
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS telegram_connections (
+        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
+        bot_token TEXT NOT NULL DEFAULT '',
+        chat_id TEXT NOT NULL DEFAULT '',
         name TEXT NOT NULL,
         description TEXT NOT NULL DEFAULT '',
-        chat_id TEXT NOT NULL DEFAULT '',
-        bot_token TEXT NOT NULL DEFAULT '',
         updated_at INTEGER NOT NULL DEFAULT 0,
-        deleted_at INTEGER,
-        device_id TEXT NOT NULL DEFAULT ''
+        deleted_at INTEGER
       )
     ''');
 
     await db.execute('''
       CREATE TABLE trusted_sources (
+        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
         trusted_device_id TEXT NOT NULL,
         trusted INTEGER NOT NULL DEFAULT 0,
@@ -449,8 +451,7 @@ class DatabaseService {
         lat REAL,
         lng REAL,
         updated_at INTEGER NOT NULL DEFAULT 0,
-        deleted_at INTEGER,
-        device_id TEXT NOT NULL DEFAULT ''
+        deleted_at INTEGER
       )
     ''');
 
