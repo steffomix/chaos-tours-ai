@@ -6,6 +6,7 @@ import 'models/trusted_source.dart';
 import 'services/database_service.dart';
 import 'services/settings_service.dart';
 import 'ui/screens/activities_screen.dart';
+import 'ui/screens/database_explorer_screen.dart';
 import 'ui/screens/home_screen.dart';
 import 'ui/screens/map_screen.dart';
 import 'ui/screens/persons_screen.dart';
@@ -47,6 +48,7 @@ class _AppState extends State<App> {
         '/sync-sources': (_) => const SyncSourcesScreen(),
         '/telegram-connections': (_) => const TelegramConnectionsScreen(),
         '/trusted-sources': (_) => const TrustedSourcesScreen(),
+        '/database-explorer': (_) => const DatabaseExplorerScreen(),
       },
       home: const _AppHome(),
     );

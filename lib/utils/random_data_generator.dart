@@ -221,6 +221,13 @@ class RandomDataGenerator {
   static final _random = Random();
   static final List<String> deviceIdPool = [];
 
+  static final firstStayStartTime = DateTime.now()
+      .subtract(const Duration(days: 365))
+      .millisecondsSinceEpoch;
+  static final stayStepTime = Duration(hours: 1).inMilliseconds;
+  static final stayDuration = Duration(minutes: 30).inMilliseconds;
+  static int stayCounter = 0;
+
   RandomDataGenerator();
 
   String randomUuid() => _uuid.v4();
@@ -482,18 +489,19 @@ class RandomDataGenerator {
   }
 
   Stay _createStay(String placeUuid) {
-    final ts = randomPastTimeStamp;
-    return Stay(
+    final stay = Stay(
       uuid: randomUuid(),
       placeUuid: placeUuid,
-      startTime: ts,
-      endTime: randomTimeStampAfter(ts),
+      startTime: firstStayStartTime + (stayCounter * stayStepTime),
+      endTime: firstStayStartTime + (stayCounter * stayStepTime) + stayDuration,
       address: address,
-      notes: notes,
-      status: randomStayStatus,
+      notes: '(Stay #$stayCounter) - $notes',
+      status: StayStatus.completed,
       isInterval: randomBool(),
       deviceId: deviceIdFromPool(),
     );
+    stayCounter++; // Increment stayCounter for each new stay
+    return stay;
   }
 
   Person _createPerson() => Person(

@@ -121,51 +121,57 @@ class _TrustedSourcesScreenState extends State<TrustedSourcesScreen> {
             ),
         ],
       ),
-      body: _loading && _all.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : _all.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+      body: SafeArea(
+        child: _loading && _all.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : _all.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.devices_other,
+                      size: 48,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(l10n.noTrustedSources, textAlign: TextAlign.center),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      icon: const Icon(Icons.refresh),
+                      label: Text(l10n.refreshTrustedSources),
+                      onPressed: _refresh,
+                    ),
+                  ],
+                ),
+              )
+            : ListView(
                 children: [
-                  const Icon(Icons.devices_other, size: 48, color: Colors.grey),
-                  const SizedBox(height: 12),
-                  Text(l10n.noTrustedSources, textAlign: TextAlign.center),
-                  const SizedBox(height: 16),
-                  FilledButton.icon(
-                    icon: const Icon(Icons.refresh),
-                    label: Text(l10n.refreshTrustedSources),
-                    onPressed: _refresh,
-                  ),
+                  if (trusted.isNotEmpty) ...[
+                    _sectionHeader(l10n.trustedDevicesSection),
+                    ...trusted.map(
+                      (ts) => _DeviceTile(
+                        source: ts,
+                        isOwn: ts.deviceId == ownId,
+                        onToggle: () => _toggleTrust(ts),
+                        onTap: () => _showEditSheet(ts),
+                      ),
+                    ),
+                  ],
+                  if (known.isNotEmpty) ...[
+                    _sectionHeader(l10n.knownDevicesSection),
+                    ...known.map(
+                      (ts) => _DeviceTile(
+                        source: ts,
+                        isOwn: ts.deviceId == ownId,
+                        onToggle: () => _toggleTrust(ts),
+                        onTap: () => _showEditSheet(ts),
+                      ),
+                    ),
+                  ],
                 ],
               ),
-            )
-          : ListView(
-              children: [
-                if (trusted.isNotEmpty) ...[
-                  _sectionHeader(l10n.trustedDevicesSection),
-                  ...trusted.map(
-                    (ts) => _DeviceTile(
-                      source: ts,
-                      isOwn: ts.deviceId == ownId,
-                      onToggle: () => _toggleTrust(ts),
-                      onTap: () => _showEditSheet(ts),
-                    ),
-                  ),
-                ],
-                if (known.isNotEmpty) ...[
-                  _sectionHeader(l10n.knownDevicesSection),
-                  ...known.map(
-                    (ts) => _DeviceTile(
-                      source: ts,
-                      isOwn: ts.deviceId == ownId,
-                      onToggle: () => _toggleTrust(ts),
-                      onTap: () => _showEditSheet(ts),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+      ),
     );
   }
 }

@@ -152,211 +152,238 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
-      body: ListView(
-        children: [
-          // ── Aktivität ─────────────────────────────────────────────────
-          ListTile(
-            leading: const Icon(Icons.bolt),
-            title: Text(_activeAktivitaet?.name ?? l10n.noActivity),
-            subtitle: Text(l10n.activityCount(_aktivitaeten.length)),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined),
-                  tooltip: l10n.tooltipRename,
-                  onPressed: _activeAktivitaet == null
-                      ? null
-                      : () => _renameAktivitaet(_activeAktivitaet!),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.swap_horiz),
-                  tooltip: l10n.tooltipSwitchCreate,
-                  onPressed: _showAktivitaetenPicker,
-                ),
-              ],
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.copy),
-            title: Text(l10n.deviceId),
-            subtitle: Text(_deviceId),
-            onTap: () {
-              Clipboard.setData(ClipboardData(text: _deviceId));
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(l10n.deviceIdCopied)));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.security),
-            title: Text(l10n.trustedSourcesTitle),
-            subtitle: Text(l10n.trustedSourcesSubtitle),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, '/trusted-sources'),
-          ),
-          const Divider(),
-          // ── Verwaltung ───────────────────────────────────────────────
-          // button to trigger random data generation for testing purposes
-          // only if in debug mode
-          if (kDebugMode) ...[
+      body: SafeArea(
+        child: ListView(
+          children: [
+            // ── Aktivität ─────────────────────────────────────────────────
             ListTile(
-              leading: const Icon(Icons.shuffle),
-              title: const Text('generate random data'),
-              onTap: () async {
-                await _generator.generateRandomData();
+              leading: const Icon(Icons.bolt),
+              title: Text(_activeAktivitaet?.name ?? l10n.noActivity),
+              subtitle: Text(l10n.activityCount(_aktivitaeten.length)),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: l10n.tooltipRename,
+                    onPressed: _activeAktivitaet == null
+                        ? null
+                        : () => _renameAktivitaet(_activeAktivitaet!),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.swap_horiz),
+                    tooltip: l10n.tooltipSwitchCreate,
+                    onPressed: _showAktivitaetenPicker,
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.copy),
+              title: Text(l10n.deviceId),
+              subtitle: Text(_deviceId),
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: _deviceId));
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(l10n.deviceIdCopied)));
               },
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 8.0,
+            ListTile(
+              leading: const Icon(Icons.security),
+              title: Text(l10n.trustedSourcesTitle),
+              subtitle: Text(l10n.trustedSourcesSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.pushNamed(context, '/trusted-sources'),
+            ),
+            const Divider(),
+            // ── Verwaltung ───────────────────────────────────────────────
+            // button to trigger random data generation for testing purposes
+            // only if in debug mode
+            if (kDebugMode) ...[
+              ListTile(
+                leading: const Icon(Icons.storage),
+                title: const Text('Database Explorer'),
+                onTap: () => Navigator.pushNamed(context, '/database-explorer'),
               ),
-              child: ValueListenableBuilder<String>(
-                valueListenable: _generator.progressNotifier,
-                builder: (context, progressText, child) {
-                  return Text(
-                    progressText,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  );
+              ListTile(
+                leading: const Icon(Icons.shuffle),
+                title: const Text('generate random data'),
+                onTap: () async {
+                  await _generator.generateRandomData();
                 },
               ),
-            ),
-          ],
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(
-              l10n.sectionManagement,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.folder),
-            title: Text(l10n.placeGroups),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, '/place-groups'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.people),
-            title: Text(l10n.persons),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, '/persons'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.work_outline),
-            title: Text(l10n.activities),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, '/activities'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.storage),
-            title: Text(l10n.databaseDump),
-            subtitle: Text(l10n.databaseDumpSubtitle),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, '/database-dump'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.public),
-            title: Text(l10n.syncSources),
-            subtitle: Text(l10n.syncSourcesSubtitle),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, '/sync-sources'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.send),
-            title: Text(l10n.telegramConnections),
-            subtitle: Text(l10n.telegramConnectionsSubtitle),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, '/telegram-connections'),
-          ),
-          const Divider(),
-          // ── Adresssuche ───────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(
-              l10n.sectionAddressSearch,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.flag_outlined),
-            title: Text(l10n.defaultCountry),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: _searchCountryCtrl,
-                  decoration: InputDecoration(
-                    hintText: l10n.defaultCountryHint,
-                    isDense: true,
-                  ),
-                  onChanged: (v) => _searchCountry = v,
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.defaultCountrySubtitle,
-                  style: const TextStyle(fontSize: 11),
+                child: ValueListenableBuilder<String>(
+                  valueListenable: _generator.progressNotifier,
+                  builder: (context, progressText, child) {
+                    return Text(
+                      progressText,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    );
+                  },
                 ),
-              ],
+              ),
+            ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Text(
+                l10n.sectionManagement,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
-          ),
-          const Divider(),
-          // ── Planer ──────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(
-              l10n.sectionPlanner,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          ListTile(
-            title: Text(l10n.colorRange(_schedulerColorRange)),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Slider(
-                  value: _schedulerColorRange.toDouble(),
-                  min: 1,
-                  max: 90,
-                  divisions: 89,
-                  label: '$_schedulerColorRange',
-                  onChanged: (v) =>
-                      setState(() => _schedulerColorRange = v.round()),
-                ),
-                Text(
-                  l10n.colorRangeHint(_schedulerColorRange),
-                  style: const TextStyle(fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-          const Divider(),
-          // ── Tracking Settings ─────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(
-              l10n.sectionTracking,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          SwitchListTile(
-            title: Text(l10n.autoCreatePlaces),
-            subtitle: Text(l10n.autoCreatePlacesSubtitle),
-            value: _autoCreatePlaces,
-            onChanged: (v) => setState(() => _autoCreatePlaces = v),
-          ),
-          if (_autoCreatePlaces)
             ListTile(
-              title: Text(l10n.autoPlaceGroup),
+              leading: const Icon(Icons.folder),
+              title: Text(l10n.placeGroups),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.pushNamed(context, '/place-groups'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.people),
+              title: Text(l10n.persons),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.pushNamed(context, '/persons'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.work_outline),
+              title: Text(l10n.activities),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.pushNamed(context, '/activities'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.storage),
+              title: Text(l10n.databaseDump),
+              subtitle: Text(l10n.databaseDumpSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.pushNamed(context, '/database-dump'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.public),
+              title: Text(l10n.syncSources),
+              subtitle: Text(l10n.syncSourcesSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.pushNamed(context, '/sync-sources'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.send),
+              title: Text(l10n.telegramConnections),
+              subtitle: Text(l10n.telegramConnectionsSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () =>
+                  Navigator.pushNamed(context, '/telegram-connections'),
+            ),
+            const Divider(),
+            // ── Adresssuche ───────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Text(
+                l10n.sectionAddressSearch,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.flag_outlined),
+              title: Text(l10n.defaultCountry),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: _searchCountryCtrl,
+                    decoration: InputDecoration(
+                      hintText: l10n.defaultCountryHint,
+                      isDense: true,
+                    ),
+                    onChanged: (v) => _searchCountry = v,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.defaultCountrySubtitle,
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            // ── Planer ──────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Text(
+                l10n.sectionPlanner,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListTile(
+              title: Text(l10n.colorRange(_schedulerColorRange)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Slider(
+                    value: _schedulerColorRange.toDouble(),
+                    min: 1,
+                    max: 90,
+                    divisions: 89,
+                    label: '$_schedulerColorRange',
+                    onChanged: (v) =>
+                        setState(() => _schedulerColorRange = v.round()),
+                  ),
+                  Text(
+                    l10n.colorRangeHint(_schedulerColorRange),
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            // ── Tracking Settings ─────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Text(
+                l10n.sectionTracking,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            SwitchListTile(
+              title: Text(l10n.autoCreatePlaces),
+              subtitle: Text(l10n.autoCreatePlacesSubtitle),
+              value: _autoCreatePlaces,
+              onChanged: (v) => setState(() => _autoCreatePlaces = v),
+            ),
+            if (_autoCreatePlaces)
+              ListTile(
+                title: Text(l10n.autoPlaceGroup),
+                trailing: DropdownButton<String?>(
+                  value: _autoPlaceGroupUuid == null
+                      ? null
+                      : (_groups.any((g) => g.uuid == _autoPlaceGroupUuid)
+                            ? _autoPlaceGroupUuid
+                            : null),
+                  hint: Text(l10n.none),
+                  items: [
+                    DropdownMenuItem(value: null, child: Text(l10n.none)),
+                    ..._groups.map(
+                      (g) =>
+                          DropdownMenuItem(value: g.uuid, child: Text(g.name)),
+                    ),
+                  ],
+                  onChanged: (v) => setState(() => _autoPlaceGroupUuid = v),
+                ),
+              ),
+            ListTile(
+              title: Text(l10n.defaultPlaceGroup),
+              subtitle: Text(l10n.defaultPlaceGroupSubtitle),
               trailing: DropdownButton<String?>(
-                value: _autoPlaceGroupUuid == null
+                value: _defaultPlaceGroupUuid == null
                     ? null
-                    : (_groups.any((g) => g.uuid == _autoPlaceGroupUuid)
-                          ? _autoPlaceGroupUuid
+                    : (_groups.any((g) => g.uuid == _defaultPlaceGroupUuid)
+                          ? _defaultPlaceGroupUuid
                           : null),
                 hint: Text(l10n.none),
                 items: [
@@ -365,382 +392,367 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     (g) => DropdownMenuItem(value: g.uuid, child: Text(g.name)),
                   ),
                 ],
-                onChanged: (v) => setState(() => _autoPlaceGroupUuid = v),
+                onChanged: (v) => setState(() => _defaultPlaceGroupUuid = v),
               ),
             ),
-          ListTile(
-            title: Text(l10n.defaultPlaceGroup),
-            subtitle: Text(l10n.defaultPlaceGroupSubtitle),
-            trailing: DropdownButton<String?>(
-              value: _defaultPlaceGroupUuid == null
-                  ? null
-                  : (_groups.any((g) => g.uuid == _defaultPlaceGroupUuid)
-                        ? _defaultPlaceGroupUuid
-                        : null),
-              hint: Text(l10n.none),
-              items: [
-                DropdownMenuItem(value: null, child: Text(l10n.none)),
-                ..._groups.map(
-                  (g) => DropdownMenuItem(value: g.uuid, child: Text(g.name)),
-                ),
-              ],
-              onChanged: (v) => setState(() => _defaultPlaceGroupUuid = v),
-            ),
-          ),
-          ListTile(
-            title: Text(l10n.shownGroups),
-            subtitle: _groups.isEmpty
-                ? Text(l10n.noGroupsAvailable)
-                : Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    children: [
-                      FilterChip(
-                        label: Text(l10n.all),
-                        selected: _schedulerGroupIds.isEmpty,
-                        onSelected: (_) =>
-                            setState(() => _schedulerGroupIds.clear()),
-                      ),
-                      ..._groups.map(
-                        (g) => FilterChip(
-                          avatar: Icon(
-                            g.placeType.icon,
-                            size: 14,
-                            color: g.placeType.dotColor,
-                          ),
-                          label: Text(g.name),
-                          selected: _schedulerGroupIds.contains(g.uuid),
-                          onSelected: (selected) {
-                            setState(() {
-                              if (selected) {
-                                _schedulerGroupIds.add(g.uuid);
-                              } else {
-                                _schedulerGroupIds.remove(g.uuid);
-                              }
-                            });
-                          },
+            ListTile(
+              title: Text(l10n.shownGroups),
+              subtitle: _groups.isEmpty
+                  ? Text(l10n.noGroupsAvailable)
+                  : Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        FilterChip(
+                          label: Text(l10n.all),
+                          selected: _schedulerGroupIds.isEmpty,
+                          onSelected: (_) =>
+                              setState(() => _schedulerGroupIds.clear()),
                         ),
-                      ),
-                    ],
-                  ),
-          ),
-          ListTile(
-            title: Text(l10n.gpsInterval(_gpsInterval)),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Slider(
-                  value: _gpsInterval.toDouble(),
-                  min: 5,
-                  max: 120,
-                  divisions: 23,
-                  label: '${_gpsInterval}s',
-                  onChanged: (v) => setState(() => _gpsInterval = v.round()),
-                ),
-                Text(
-                  l10n.gpsIntervalHint,
-                  style: const TextStyle(fontSize: 11),
-                ),
-              ],
+                        ..._groups.map(
+                          (g) => FilterChip(
+                            avatar: Icon(
+                              g.placeType.icon,
+                              size: 14,
+                              color: g.placeType.dotColor,
+                            ),
+                            label: Text(g.name),
+                            selected: _schedulerGroupIds.contains(g.uuid),
+                            onSelected: (selected) {
+                              setState(() {
+                                if (selected) {
+                                  _schedulerGroupIds.add(g.uuid);
+                                } else {
+                                  _schedulerGroupIds.remove(g.uuid);
+                                }
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
             ),
-          ),
-          ListTile(
-            title: Text(
-              l10n.gpsSmoothing(
-                _gpsSmoothingPoints == 1
-                    ? l10n.gpsSmoothingDisabled
-                    : l10n.gpsSmoothingPoints(_gpsSmoothingPoints),
+            ListTile(
+              title: Text(l10n.gpsInterval(_gpsInterval)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Slider(
+                    value: _gpsInterval.toDouble(),
+                    min: 5,
+                    max: 120,
+                    divisions: 23,
+                    label: '${_gpsInterval}s',
+                    onChanged: (v) => setState(() => _gpsInterval = v.round()),
+                  ),
+                  Text(
+                    l10n.gpsIntervalHint,
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
               ),
             ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Slider(
-                  value: _gpsSmoothingPoints.toDouble(),
-                  min: 1,
-                  max: 10,
-                  divisions: 9,
-                  label: _gpsSmoothingPoints == 1
-                      ? 'aus'
-                      : '$_gpsSmoothingPoints',
-                  onChanged: (v) =>
-                      setState(() => _gpsSmoothingPoints = v.round()),
-                ),
-                Text(
-                  l10n.gpsSmoothingHint,
-                  style: const TextStyle(fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-          ListTile(
-            title: Text(l10n.stayDetection((_stayDetection / 60).round())),
-            subtitle: Slider(
-              value: _stayDetection.toDouble(),
-              min: 60,
-              max: 600,
-              divisions: 18,
-              label: '${(_stayDetection / 60).toStringAsFixed(0)} min',
-              onChanged: (v) => setState(() => _stayDetection = v.round()),
-            ),
-          ),
-          ListTile(
-            title: Text(l10n.autoPlaceTime((_autoPlaceTime / 60).round())),
-            subtitle: Slider(
-              value: _autoPlaceTime.toDouble(),
-              min: 300,
-              max: 3600,
-              divisions: 33,
-              label: '${(_autoPlaceTime / 60).toStringAsFixed(0)} min',
-              onChanged: (v) => setState(() => _autoPlaceTime = v.round()),
-            ),
-          ),
-          ListTile(
-            title: Text(l10n.defaultRadius(_defaultRadius.toStringAsFixed(0))),
-            subtitle: Slider(
-              value: _defaultRadius,
-              min: 10,
-              max: 500,
-              divisions: 49,
-              label: '${_defaultRadius.toStringAsFixed(0)} m',
-              onChanged: (v) => setState(() => _defaultRadius = v),
-            ),
-          ),
-          const Divider(),
-          // ── Kartendarstellung ─────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(
-              l10n.sectionMapDisplay,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          SwitchListTile(
-            title: Text(l10n.showGpsPoints),
-            subtitle: Text(l10n.showGpsPointsSubtitle),
-            value: _showTrackingPoints,
-            onChanged: (v) => setState(() => _showTrackingPoints = v),
-          ),
-          if (_showTrackingPoints)
             ListTile(
               title: Text(
-                l10n.pointSize(_trackingPointRadius.toStringAsFixed(1)),
+                l10n.gpsSmoothing(
+                  _gpsSmoothingPoints == 1
+                      ? l10n.gpsSmoothingDisabled
+                      : l10n.gpsSmoothingPoints(_gpsSmoothingPoints),
+                ),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Slider(
+                    value: _gpsSmoothingPoints.toDouble(),
+                    min: 1,
+                    max: 10,
+                    divisions: 9,
+                    label: _gpsSmoothingPoints == 1
+                        ? 'aus'
+                        : '$_gpsSmoothingPoints',
+                    onChanged: (v) =>
+                        setState(() => _gpsSmoothingPoints = v.round()),
+                  ),
+                  Text(
+                    l10n.gpsSmoothingHint,
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              title: Text(l10n.stayDetection((_stayDetection / 60).round())),
+              subtitle: Slider(
+                value: _stayDetection.toDouble(),
+                min: 60,
+                max: 600,
+                divisions: 18,
+                label: '${(_stayDetection / 60).toStringAsFixed(0)} min',
+                onChanged: (v) => setState(() => _stayDetection = v.round()),
+              ),
+            ),
+            ListTile(
+              title: Text(l10n.autoPlaceTime((_autoPlaceTime / 60).round())),
+              subtitle: Slider(
+                value: _autoPlaceTime.toDouble(),
+                min: 300,
+                max: 3600,
+                divisions: 33,
+                label: '${(_autoPlaceTime / 60).toStringAsFixed(0)} min',
+                onChanged: (v) => setState(() => _autoPlaceTime = v.round()),
+              ),
+            ),
+            ListTile(
+              title: Text(
+                l10n.defaultRadius(_defaultRadius.toStringAsFixed(0)),
               ),
               subtitle: Slider(
-                value: _trackingPointRadius,
-                min: 1,
-                max: 20,
-                divisions: 19,
-                label: '${_trackingPointRadius.toStringAsFixed(1)} m',
-                onChanged: (v) => setState(() => _trackingPointRadius = v),
+                value: _defaultRadius,
+                min: 10,
+                max: 500,
+                divisions: 49,
+                label: '${_defaultRadius.toStringAsFixed(0)} m',
+                onChanged: (v) => setState(() => _defaultRadius = v),
               ),
             ),
-          ListTile(
-            title: Text(
-              l10n.visitHistory(
-                _timelineHistoryDays == 1
-                    ? l10n.visitHistoryDay(_timelineHistoryDays)
-                    : l10n.visitHistoryDays(_timelineHistoryDays),
+            const Divider(),
+            // ── Kartendarstellung ─────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Text(
+                l10n.sectionMapDisplay,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Slider(
-                  value: _timelineHistoryDays.toDouble(),
-                  min: 7,
-                  max: 90,
-                  //divisions: 29,
-                  label: '$_timelineHistoryDays',
-                  onChanged: (v) =>
-                      setState(() => _timelineHistoryDays = v.round()),
-                ),
-                Text(
-                  l10n.visitHistoryHint,
-                  style: const TextStyle(fontSize: 11),
-                ),
-              ],
+            SwitchListTile(
+              title: Text(l10n.showGpsPoints),
+              subtitle: Text(l10n.showGpsPointsSubtitle),
+              value: _showTrackingPoints,
+              onChanged: (v) => setState(() => _showTrackingPoints = v),
             ),
-          ),
-          const Divider(),
-          // ── Fotos ────────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(
-              l10n.sectionPhotos,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          ListTile(
-            title: Text(l10n.photoMaxWidth(_photoMaxWidth)),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Slider(
-                  value: _photoMaxWidth.toDouble(),
-                  min: 0,
-                  max: 4096,
-                  divisions: 64,
-                  label: _photoMaxWidth == 0 ? '∞' : '$_photoMaxWidth',
-                  onChanged: (v) =>
-                      setState(() => _photoMaxWidth = (v / 64).round() * 64),
+            if (_showTrackingPoints)
+              ListTile(
+                title: Text(
+                  l10n.pointSize(_trackingPointRadius.toStringAsFixed(1)),
                 ),
-                Text(
-                  l10n.photoMaxDimensionSubtitle,
-                  style: const TextStyle(fontSize: 11),
+                subtitle: Slider(
+                  value: _trackingPointRadius,
+                  min: 1,
+                  max: 20,
+                  divisions: 19,
+                  label: '${_trackingPointRadius.toStringAsFixed(1)} m',
+                  onChanged: (v) => setState(() => _trackingPointRadius = v),
                 ),
-              ],
-            ),
-          ),
-          ListTile(
-            title: Text(l10n.photoMaxHeight(_photoMaxHeight)),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Slider(
-                  value: _photoMaxHeight.toDouble(),
-                  min: 0,
-                  max: 4096,
-                  divisions: 64,
-                  label: _photoMaxHeight == 0 ? '∞' : '$_photoMaxHeight',
-                  onChanged: (v) =>
-                      setState(() => _photoMaxHeight = (v / 64).round() * 64),
-                ),
-                Text(
-                  l10n.photoMaxDimensionSubtitle,
-                  style: const TextStyle(fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-          ListTile(
-            title: Text(l10n.photoImageQuality(_photoImageQuality)),
-            subtitle: Slider(
-              value: _photoImageQuality.toDouble(),
-              min: 10,
-              max: 100,
-              divisions: 18,
-              label: '$_photoImageQuality %',
-              onChanged: (v) => setState(() => _photoImageQuality = v.round()),
-            ),
-          ),
-          const Divider(),
-          // ── Berechtigungen ───────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(
-              l10n.sectionPermissions,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.location_on),
-            title: Text(l10n.locationPermission),
-            subtitle: Text(l10n.locationPermissionSubtitle),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () async {
-              final granted = await PermissionHelper.instance
-                  .requestLocationPermission();
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      granted ? l10n.locationGranted : l10n.locationDenied,
-                    ),
-                  ),
-                );
-              }
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.location_searching),
-            title: Text(l10n.backgroundLocation),
-            subtitle: Text(l10n.backgroundLocationSubtitle),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () async {
-              final granted = await PermissionHelper.instance
-                  .requestBackgroundLocationPermission();
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      granted
-                          ? l10n.backgroundLocationGranted
-                          : l10n.backgroundLocationDenied,
-                    ),
-                  ),
-                );
-              }
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.notifications),
-            title: Text(l10n.notifications),
-            subtitle: Text(l10n.notificationsSubtitle),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () async {
-              final granted = await PermissionHelper.instance
-                  .requestNotificationPermission();
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      granted
-                          ? l10n.notificationsGranted
-                          : l10n.notificationsDenied,
-                    ),
-                  ),
-                );
-              }
-            },
-          ),
-          SwitchListTile(
-            secondary: const Icon(Icons.calendar_today),
-            title: Text(l10n.calendarSync),
-            subtitle: Text(l10n.calendarSyncSubtitle),
-            value: SettingsService.instance.calendarEnabled,
-            onChanged: (v) =>
-                setState(() => SettingsService.instance.calendarEnabled = v),
-          ),
-          if (SettingsService.instance.calendarEnabled)
+              ),
             ListTile(
-              leading: const Icon(Icons.lock_open_outlined),
-              title: Text(l10n.calendarPermission),
+              title: Text(
+                l10n.visitHistory(
+                  _timelineHistoryDays == 1
+                      ? l10n.visitHistoryDay(_timelineHistoryDays)
+                      : l10n.visitHistoryDays(_timelineHistoryDays),
+                ),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Slider(
+                    value: _timelineHistoryDays.toDouble(),
+                    min: 7,
+                    max: 90,
+                    //divisions: 29,
+                    label: '$_timelineHistoryDays',
+                    onChanged: (v) =>
+                        setState(() => _timelineHistoryDays = v.round()),
+                  ),
+                  Text(
+                    l10n.visitHistoryHint,
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            // ── Fotos ────────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Text(
+                l10n.sectionPhotos,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListTile(
+              title: Text(l10n.photoMaxWidth(_photoMaxWidth)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Slider(
+                    value: _photoMaxWidth.toDouble(),
+                    min: 0,
+                    max: 4096,
+                    divisions: 64,
+                    label: _photoMaxWidth == 0 ? '∞' : '$_photoMaxWidth',
+                    onChanged: (v) =>
+                        setState(() => _photoMaxWidth = (v / 64).round() * 64),
+                  ),
+                  Text(
+                    l10n.photoMaxDimensionSubtitle,
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              title: Text(l10n.photoMaxHeight(_photoMaxHeight)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Slider(
+                    value: _photoMaxHeight.toDouble(),
+                    min: 0,
+                    max: 4096,
+                    divisions: 64,
+                    label: _photoMaxHeight == 0 ? '∞' : '$_photoMaxHeight',
+                    onChanged: (v) =>
+                        setState(() => _photoMaxHeight = (v / 64).round() * 64),
+                  ),
+                  Text(
+                    l10n.photoMaxDimensionSubtitle,
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              title: Text(l10n.photoImageQuality(_photoImageQuality)),
+              subtitle: Slider(
+                value: _photoImageQuality.toDouble(),
+                min: 10,
+                max: 100,
+                divisions: 18,
+                label: '$_photoImageQuality %',
+                onChanged: (v) =>
+                    setState(() => _photoImageQuality = v.round()),
+              ),
+            ),
+            const Divider(),
+            // ── Berechtigungen ───────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Text(
+                l10n.sectionPermissions,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.location_on),
+              title: Text(l10n.locationPermission),
+              subtitle: Text(l10n.locationPermissionSubtitle),
               trailing: const Icon(Icons.chevron_right),
               onTap: () async {
                 final granted = await PermissionHelper.instance
-                    .requestCalendarPermission();
+                    .requestLocationPermission();
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        granted ? l10n.calendarGranted : l10n.calendarDenied,
+                        granted ? l10n.locationGranted : l10n.locationDenied,
                       ),
                     ),
                   );
                 }
               },
             ),
-          const Divider(),
-          const ListTile(
-            leading: Icon(Icons.info_outline),
-            title: Text('Chaos Tours'),
-            subtitle: Text('Version 2.0.0'),
-          ),
-          // ── Aktivität löschen ─────────────────────────────────────────
-          if (_aktivitaeten.length > 1 && _activeAktivitaet != null) ...[
-            const Divider(),
             ListTile(
-              leading: const Icon(Icons.delete_forever, color: Colors.red),
-              title: Text(
-                l10n.deleteActivityLabel(_activeAktivitaet!.name),
-                style: const TextStyle(color: Colors.red),
-              ),
-              subtitle: Text(l10n.deleteActivity),
-              onTap: _deleteCurrentAktivitaet,
+              leading: const Icon(Icons.location_searching),
+              title: Text(l10n.backgroundLocation),
+              subtitle: Text(l10n.backgroundLocationSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                final granted = await PermissionHelper.instance
+                    .requestBackgroundLocationPermission();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        granted
+                            ? l10n.backgroundLocationGranted
+                            : l10n.backgroundLocationDenied,
+                      ),
+                    ),
+                  );
+                }
+              },
             ),
+            ListTile(
+              leading: const Icon(Icons.notifications),
+              title: Text(l10n.notifications),
+              subtitle: Text(l10n.notificationsSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                final granted = await PermissionHelper.instance
+                    .requestNotificationPermission();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        granted
+                            ? l10n.notificationsGranted
+                            : l10n.notificationsDenied,
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.calendar_today),
+              title: Text(l10n.calendarSync),
+              subtitle: Text(l10n.calendarSyncSubtitle),
+              value: SettingsService.instance.calendarEnabled,
+              onChanged: (v) =>
+                  setState(() => SettingsService.instance.calendarEnabled = v),
+            ),
+            if (SettingsService.instance.calendarEnabled)
+              ListTile(
+                leading: const Icon(Icons.lock_open_outlined),
+                title: Text(l10n.calendarPermission),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async {
+                  final granted = await PermissionHelper.instance
+                      .requestCalendarPermission();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          granted ? l10n.calendarGranted : l10n.calendarDenied,
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
+            const Divider(),
+            const ListTile(
+              leading: Icon(Icons.info_outline),
+              title: Text('Chaos Tours'),
+              subtitle: Text('Version 2.0.0'),
+            ),
+            // ── Aktivität löschen ─────────────────────────────────────────
+            if (_aktivitaeten.length > 1 && _activeAktivitaet != null) ...[
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.delete_forever, color: Colors.red),
+                title: Text(
+                  l10n.deleteActivityLabel(_activeAktivitaet!.name),
+                  style: const TextStyle(color: Colors.red),
+                ),
+                subtitle: Text(l10n.deleteActivity),
+                onTap: _deleteCurrentAktivitaet,
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

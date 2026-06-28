@@ -460,6 +460,45 @@ class DatabaseService {
     );
   }
 
+  // ── Database Explorer ─────────────────────────────────────────────────────────
+  Future<List<Map<String, dynamic>>> getExplorerTables() async {
+    final db = await database;
+    return await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'android_metadata' AND name NOT LIKE 'sqlite_sequence'",
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getExplorerTableInfo(
+    String tableName,
+  ) async {
+    final db = await database;
+    return await db.rawQuery('PRAGMA table_info($tableName)');
+  }
+
+  Future<List<Map<String, dynamic>>> getExplorerTableRows(
+    String tableName, {
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    final db = await database;
+    return await db.query(tableName, limit: limit, offset: offset);
+  }
+
+  Future<int> updateExplorerTableRow(
+    String tableName,
+    Map<String, dynamic> values,
+    String whereClause,
+    List<dynamic> whereArgs,
+  ) async {
+    final db = await database;
+    return await db.update(
+      tableName,
+      values,
+      where: whereClause,
+      whereArgs: whereArgs,
+    );
+  }
+
   // ── Sync helpers ─────────────────────────────────────────────────────────
 
   /// Generates a new UUID v4 string.
