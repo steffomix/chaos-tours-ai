@@ -12,6 +12,8 @@ class PlaceExperience {
   /// UUID of the parent saved_place.
   final String savedPlaceUuid;
 
+  final String? stayUuid;
+
   /// Freetext experience report.
   final String text;
 
@@ -47,6 +49,7 @@ class PlaceExperience {
   PlaceExperience({
     String? uuid,
     required this.savedPlaceUuid,
+    this.stayUuid,
     this.text = '',
     this.ratingDangerousFriendly = 0,
     this.ratingFraudReliable = 0,
@@ -81,6 +84,7 @@ class PlaceExperience {
     return PlaceExperience(
       uuid: map['uuid'] as String?,
       savedPlaceUuid: (map['saved_place_uuid'] as String?) ?? '',
+      stayUuid: map['stay_uuid'] as String?,
       text: (map['text'] as String?) ?? '',
       ratingDangerousFriendly: (map['rating_dangerous_friendly'] as int?) ?? 0,
       ratingFraudReliable: (map['rating_fraud_reliable'] as int?) ?? 0,
@@ -104,6 +108,7 @@ class PlaceExperience {
     return {
       'uuid': uuid,
       'saved_place_uuid': savedPlaceUuid,
+      'stay_uuid': stayUuid,
       'text': text,
       'rating_dangerous_friendly': ratingDangerousFriendly,
       'rating_fraud_reliable': ratingFraudReliable,
@@ -122,6 +127,7 @@ class PlaceExperience {
   PlaceExperience copyWith({
     String? uuid,
     String? savedPlaceUuid,
+    String? stayUuid,
     String? text,
     int? ratingDangerousFriendly,
     int? ratingFraudReliable,
@@ -138,6 +144,7 @@ class PlaceExperience {
     return PlaceExperience(
       uuid: uuid ?? this.uuid,
       savedPlaceUuid: savedPlaceUuid ?? this.savedPlaceUuid,
+      stayUuid: stayUuid ?? this.stayUuid,
       text: text ?? this.text,
       ratingDangerousFriendly:
           ratingDangerousFriendly ?? this.ratingDangerousFriendly,

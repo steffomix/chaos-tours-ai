@@ -235,6 +235,7 @@ class DatabaseService {
       CREATE TABLE place_experiences (
         uuid TEXT PRIMARY KEY,
         saved_place_uuid TEXT NOT NULL,
+        stay_uuid TEXT,
         text TEXT NOT NULL DEFAULT '',
         rating_dangerous_friendly INTEGER NOT NULL DEFAULT 0,
         rating_fraud_reliable INTEGER NOT NULL DEFAULT 0,
