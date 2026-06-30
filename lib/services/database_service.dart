@@ -58,8 +58,8 @@ class DatabaseService {
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE place_groups (
-        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
+        device_id TEXT NOT NULL DEFAULT '',
         place_type INTEGER NOT NULL DEFAULT 0,
         telegram_connection_uuid TEXT,
         calendar_id TEXT,
@@ -72,10 +72,14 @@ class DatabaseService {
         deleted_at INTEGER
       )
     ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_place_groups_device_id ON place_groups(device_id) WHERE deleted_at IS NULL',
+    );
+
     await db.execute('''
       CREATE TABLE saved_places (
-        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
+        device_id TEXT NOT NULL DEFAULT '',
         group_uuid TEXT,
         origin_type INTEGER NOT NULL DEFAULT 0,
         name TEXT NOT NULL,
@@ -98,16 +102,19 @@ class DatabaseService {
       )
     ''');
     await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_place_lat ON saved_places(lat)',
+      'CREATE INDEX IF NOT EXISTS idx_saved_places_lat ON saved_places(lat) WHERE deleted_at IS NULL',
     );
     await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_place_lng ON saved_places(lng)',
+      'CREATE INDEX IF NOT EXISTS idx_saved_places_lng ON saved_places(lng) WHERE deleted_at IS NULL',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_saved_places__uuid ON saved_places(device_id, uuid) WHERE deleted_at IS NULL',
     );
 
     await db.execute('''
       CREATE TABLE stays (
-        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
+        device_id TEXT NOT NULL DEFAULT '',
         place_uuid TEXT,
         calendar_event_id TEXT,
         start_time INTEGER NOT NULL,
@@ -123,13 +130,13 @@ class DatabaseService {
       )
     ''');
     await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_stays_status ON stays(status)',
+      'CREATE INDEX IF NOT EXISTS idx_stays_status ON stays(status) WHERE deleted_at IS NULL',
     );
 
     await db.execute('''
       CREATE TABLE persons (
-        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
+        device_id TEXT NOT NULL DEFAULT '',
         name TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT '',
         updated_at INTEGER NOT NULL DEFAULT 0,
@@ -138,8 +145,8 @@ class DatabaseService {
     ''');
     await db.execute('''
       CREATE TABLE activities (
-        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
+        device_id TEXT NOT NULL DEFAULT '',
         name TEXT NOT NULL,
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER
@@ -147,8 +154,8 @@ class DatabaseService {
     ''');
     await db.execute('''
       CREATE TABLE stay_persons (
-        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
+        device_id TEXT NOT NULL DEFAULT '',
         stay_uuid TEXT NOT NULL,
         person_uuid TEXT,
         name TEXT NOT NULL,
@@ -159,13 +166,13 @@ class DatabaseService {
       )
     ''');
     await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_stay_persons_stay_uuid ON stay_persons(stay_uuid)',
+      'CREATE INDEX IF NOT EXISTS idx_stay_persons_stay_uuid ON stay_persons(stay_uuid) WHERE deleted_at IS NULL',
     );
 
     await db.execute('''
       CREATE TABLE stay_activities (
-        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
+        device_id TEXT NOT NULL DEFAULT '',
         stay_uuid TEXT NOT NULL,
         activity_uuid TEXT,
         description TEXT NOT NULL,
@@ -176,7 +183,7 @@ class DatabaseService {
       )
     ''');
     await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_stay_activities_stay_uuid ON stay_activities(stay_uuid)',
+      'CREATE INDEX IF NOT EXISTS idx_stay_activities_stay_uuid ON stay_activities(stay_uuid) WHERE deleted_at IS NULL',
     );
 
     await db.execute('''
@@ -186,14 +193,11 @@ class DatabaseService {
         timestamp INTEGER NOT NULL
       )
     ''');
-    await db.execute(
-      'CREATE INDEX idx_tracking_points_ts ON tracking_points(timestamp)',
-    );
 
     await db.execute('''
       CREATE TABLE aktivitaeten (
-        device_id TEXT NOT NULL,
         uuid TEXT PRIMARY KEY,
+        device_id TEXT NOT NULL,
         name TEXT NOT NULL,
         gps_interval_seconds INTEGER NOT NULL DEFAULT 15,
         stay_detection_seconds INTEGER NOT NULL DEFAULT 180,
@@ -220,8 +224,8 @@ class DatabaseService {
     ''');
     await db.execute('''
       CREATE TABLE sync_sources (
-        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
+        device_id TEXT NOT NULL DEFAULT '',
         name TEXT NOT NULL,
         sync_url TEXT NOT NULL DEFAULT '',
         api_key TEXT NOT NULL DEFAULT '',
@@ -234,8 +238,8 @@ class DatabaseService {
     ''');
     await db.execute('''
       CREATE TABLE place_experiences (
-        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
+        device_id TEXT NOT NULL DEFAULT '',
         saved_place_uuid TEXT NOT NULL,
         stay_uuid TEXT,
         text TEXT NOT NULL DEFAULT '',
@@ -252,7 +256,7 @@ class DatabaseService {
       )
     ''');
     await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_place_experiences_saved_place_uuid ON place_experiences(saved_place_uuid)',
+      'CREATE INDEX IF NOT EXISTS idx_place_experiences_saved_place_uuid ON place_experiences(saved_place_uuid) WHERE deleted_at IS NULL',
     );
 
     // Triggers: keep experience_rating_average / _median on saved_places in sync.
@@ -389,8 +393,8 @@ class DatabaseService {
 
     await db.execute('''
       CREATE TABLE sync_source_experiences (
-        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
+        device_id TEXT NOT NULL DEFAULT '',
         sync_source_uuid TEXT NOT NULL,
         text TEXT NOT NULL DEFAULT '',
         created_at INTEGER NOT NULL DEFAULT 0,
@@ -399,13 +403,13 @@ class DatabaseService {
       )
     ''');
     await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_sync_source_experiences_sync_source_uuid ON sync_source_experiences(sync_source_uuid)',
+      'CREATE INDEX IF NOT EXISTS idx_sync_source_experiences_sync_source_uuid ON sync_source_experiences(sync_source_uuid) WHERE deleted_at IS NULL',
     );
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS place_photos (
-        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
+        device_id TEXT NOT NULL DEFAULT '',
         place_uuid TEXT,
         stay_uuid TEXT,
         caption TEXT NOT NULL DEFAULT '',
@@ -419,16 +423,16 @@ class DatabaseService {
       )
     ''');
     await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_place_photos_place ON place_photos(place_uuid)',
+      'CREATE INDEX IF NOT EXISTS idx_place_photos_place ON place_photos(place_uuid) WHERE deleted_at IS NULL',
     );
     await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_place_photos_stay ON place_photos(stay_uuid)',
+      'CREATE INDEX IF NOT EXISTS idx_place_photos_stay ON place_photos(stay_uuid) WHERE deleted_at IS NULL',
     );
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS telegram_connections (
-        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
+        device_id TEXT NOT NULL DEFAULT '',
         bot_token TEXT NOT NULL DEFAULT '',
         chat_id TEXT NOT NULL DEFAULT '',
         name TEXT NOT NULL,
@@ -440,8 +444,8 @@ class DatabaseService {
 
     await db.execute('''
       CREATE TABLE trusted_sources (
-        device_id TEXT NOT NULL DEFAULT '',
         uuid TEXT PRIMARY KEY,
+        device_id TEXT NOT NULL DEFAULT '',
         trusted_device_id TEXT NOT NULL,
         trusted INTEGER NOT NULL DEFAULT 0,
         note TEXT NOT NULL DEFAULT '',
@@ -454,6 +458,10 @@ class DatabaseService {
         deleted_at INTEGER
       )
     ''');
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_trusted_sources_trusted_device_id ON trusted_sources(trusted_device_id) WHERE deleted_at IS NULL',
+    );
 
     await db.execute(
       'CREATE UNIQUE INDEX idx_trusted_sources_device_id'
@@ -648,6 +656,18 @@ class DatabaseService {
     return rows.map((r) => r['name'] as String).toList();
   }
 
+  Future<SavedPlace?> getSavedPlace(String? placeUuid) async {
+    if (placeUuid == null) return null;
+    final db = await database;
+    final rows = await db.query(
+      'saved_places',
+      where: 'uuid = ? AND deleted_at IS NULL',
+      whereArgs: [placeUuid],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return SavedPlace.fromMap(rows.first);
+  }
   // ── PlaceGroups ──────────────────────────────────────────────────────────
 
   Future<String> insertPlaceGroup(PlaceGroup group) async {

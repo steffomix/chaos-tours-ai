@@ -563,7 +563,6 @@ class _MapScreenState extends State<MapScreen> {
 
     return Stack(
       children: [
-        CircleLayer(circles: circles),
         PolylineLayer(
           polylines: [
             Polyline(
@@ -582,6 +581,7 @@ class _MapScreenState extends State<MapScreen> {
             ),
           ],
         ),
+        CircleLayer(circles: circles),
       ],
     );
   }

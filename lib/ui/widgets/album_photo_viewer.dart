@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'dart:math';
 
+import 'package:chaos_tours_ai/utils/share_place_foto.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:mime/mime.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/place_photo.dart';
@@ -46,17 +48,8 @@ class AlbumPhotoViewerState extends State<AlbumPhotoViewer> {
 
   Future<void> _share() async {
     final photo = widget.photos[_index];
-    final bytes = photo.photoData;
-    if (bytes.isEmpty || !mounted) return;
-    final tmp = await getTemporaryDirectory();
-    final file = File('${tmp.path}/share_${photo.uuid}.jpg');
-    await file.writeAsBytes(bytes);
-    await SharePlus.instance.share(
-      ShareParams(
-        files: [XFile(file.path, mimeType: 'image/jpeg')],
-        text: photo.caption.isNotEmpty ? photo.caption : null,
-      ),
-    );
+    if (photo.photoData.isEmpty) return;
+    sharePhoto(photo);
   }
 
   Future<void> _delete() async {
@@ -125,6 +118,8 @@ class AlbumPhotoViewerState extends State<AlbumPhotoViewer> {
               itemBuilder: (_, i) {
                 final b = widget.photos[i].photoData;
                 return InteractiveViewer(
+                  constrained: true,
+                  maxScale: 50.0,
                   child: Center(
                     child: b.isNotEmpty
                         ? Image.memory(b)
