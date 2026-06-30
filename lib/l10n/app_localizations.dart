@@ -1997,7 +1997,7 @@ abstract class AppLocalizations {
   /// Rating metric: median
   ///
   /// In de, this message translates to:
-  /// **'x̃'**
+  /// **'Median'**
   String get ratingMetricMedian;
 
   /// Camera button

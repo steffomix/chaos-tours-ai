@@ -172,10 +172,11 @@ class _ExperienceFilterPanelState extends State<ExperienceFilterPanel> {
 
   Future<void> _loadGroups() async {
     final groups = await DatabaseService.instance.loadAllPlaceGroups();
-    if (mounted)
+    if (mounted) {
       setState(
         () => _allGroups = groups.where((g) => g.deletedAt == null).toList(),
       );
+    }
   }
 
   String _fmtDist(double km) {
@@ -228,49 +229,34 @@ class _ExperienceFilterPanelState extends State<ExperienceFilterPanel> {
 
   Widget _avgMedianRadio(BuildContext context, ExperienceFilterState filter) {
     final l10n = AppLocalizations.of(context)!;
-    return RadioGroup<bool>(
-      groupValue: filter.useMedian,
-      onChanged: (v) {
-        if (v != null) onChanged(filter.copyWith(useMedian: v));
-      },
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Tooltip(
-            message: l10n.ratingMetricAverage,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Radio<bool>(
-                  value: false,
-                  groupValue: filter.useMedian,
-                  onChanged: (v) {
-                    if (v != null) onChanged(filter.copyWith(useMedian: v));
-                  },
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        RadioGroup<bool>(
+          groupValue: filter.useMedian,
+          child: Row(
+            children: [
+              Tooltip(
+                message: l10n.ratingMetricAverage,
+                child: Row(
+                  children: [Radio<bool>(value: false), const Text('∅')],
                 ),
-                const Text('∅'),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Tooltip(
-            message: l10n.ratingMetricMedian,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Radio<bool>(
-                  value: true,
-                  groupValue: filter.useMedian,
-                  onChanged: (v) {
-                    if (v != null) onChanged(filter.copyWith(useMedian: v));
-                  },
+              ),
+              Tooltip(
+                message: l10n.ratingMetricMedian,
+                child: Row(
+                  children: [Radio<bool>(value: true), const Text('x̃')],
                 ),
-                const Text('x̃'),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+          onChanged: (v) {
+            if (v != null) onChanged(filter.copyWith(useMedian: v));
+          },
+        ),
+        const Text('∅'),
+      ],
     );
   }
 

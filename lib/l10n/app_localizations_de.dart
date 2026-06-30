@@ -1085,7 +1085,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get ratingMetricAverage => 'Durchschnitt';
 
   @override
-  String get ratingMetricMedian => 'x̃';
+  String get ratingMetricMedian => 'Median';
 
   @override
   String get camera => 'Kamera';

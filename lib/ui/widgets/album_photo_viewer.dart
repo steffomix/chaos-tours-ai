@@ -1,11 +1,5 @@
-import 'dart:io';
-import 'dart:math';
-
 import 'package:chaos_tours_ai/utils/share_place_foto.dart';
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:mime/mime.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/place_photo.dart';

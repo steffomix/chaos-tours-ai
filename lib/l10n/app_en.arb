@@ -681,7 +681,7 @@
   "minMedianRating": "Min. x̃ rating:",
   "minSpecialRating": "Min. rating:",
   "ratingMetricAverage": "Average",
-  "ratingMetricMedian": "x̃",
+  "ratingMetricMedian": "Median",
   "camera": "Camera",
   "fromGallery": "From gallery",
   "noPhotosGrid": "No photos yet",

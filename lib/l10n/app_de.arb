@@ -1523,7 +1523,7 @@
   "@ratingMetricAverage": {
     "description": "Rating metric: average"
   },
-  "ratingMetricMedian": "x̃",
+  "ratingMetricMedian": "Median",
   "@ratingMetricMedian": {
     "description": "Rating metric: median"
   },
