@@ -2911,6 +2911,72 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'3–20 Zeichen, Pflichtfeld'**
   String get deviceNameLengthHint;
+
+  /// No description provided for @databaseExplorerButton.
+  ///
+  /// In de, this message translates to:
+  /// **'Datenbank Explorer'**
+  String get databaseExplorerButton;
+
+  /// Button to create random test data
+  ///
+  /// In de, this message translates to:
+  /// **'Erstelle zufällige Testdaten'**
+  String get generateRandomData;
+
+  /// header on SQLite Database Explorer Screen
+  ///
+  /// In de, this message translates to:
+  /// **'SQLite Explorer'**
+  String get databaseExplorerScreenHeader;
+
+  /// Label for table dropdown selector
+  ///
+  /// In de, this message translates to:
+  /// **'Tabelle'**
+  String get databaseExplorerTableLabel;
+
+  /// Database Explorer no data found or no table selected message
+  ///
+  /// In de, this message translates to:
+  /// **'Keine Daten oder keine Tabelle ausgewählt'**
+  String get noDataOrTableSelected;
+
+  /// Text button to load more data into table
+  ///
+  /// In de, this message translates to:
+  /// **'Lade mehr Daten'**
+  String get loadMoreRows;
+
+  /// Message on end of data table
+  ///
+  /// In de, this message translates to:
+  /// **'Ende der Tabelle erreicht'**
+  String get endOfTableReached;
+
+  /// Header for edit row data of given table name
+  ///
+  /// In de, this message translates to:
+  /// **'Bearbeite Tabelle {value}'**
+  String editFieldTitle(String value);
+
+  /// Label for new value input
+  ///
+  /// In de, this message translates to:
+  /// **'Neuer Wert'**
+  String get newValueLabel;
+
+  /// Database has been updated message
+  ///
+  /// In de, this message translates to:
+  /// **'Datenbank aktualisiert'**
+  String get databaseUpdated;
+
+  /// Shows next gps timer in seconds in home screen
+  ///
+  /// In de, this message translates to:
+  /// **'Nächster GPS in {value} sek.'**
+  String nextGpsIn(int value);
 }
 
 class _AppLocalizationsDelegate

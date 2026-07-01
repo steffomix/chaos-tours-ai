@@ -965,5 +965,16 @@
   "deviceNameDialogContent": "Enter a name for this device (3\u201320 characters). The name is permanently bound to a UUID and forms the device ID: name@uuid\n\nThis name cannot be changed later.",
   "deviceNameLabel": "Device name",
   "deviceNameHint": "e.g. Alice, MyPhone",
-  "deviceNameLengthHint": "3\u201320 characters, required"
+  "deviceNameLengthHint": "3\u201320 characters, required",
+  "databaseExplorerButton": "Database explorer",
+  "generateRandomData": "Create random test data",
+  "databaseExplorerScreenHeader": "SQLite explorer",
+  "databaseExplorerTableLabel": "Table",
+  "noDataOrTableSelected": "No data or nor table selected",
+  "loadMoreRows": "Load more Data",
+  "endOfTableReached": "Reached end of table",
+  "editFieldTitle": "Edit {value}s columns",
+  "newValueLabel": "New Value",
+  "databaseUpdated": "Database updated",
+  "nextGpsIn" : "Next GPS in {value} sec."
 }

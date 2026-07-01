@@ -981,6 +981,18 @@ class DatabaseService {
     await db.delete('tracking_points');
   }
 
+  // get last tracking point by timestamp for home screen counter
+  Future<TrackingPoint?> getLastTrackingPoint() async {
+    final db = await database;
+    final rows = await db.query(
+      'tracking_points',
+      orderBy: 'timestamp DESC',
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return TrackingPoint.fromMap(rows.first);
+  }
+
   // ── Aktivitaeten ─────────────────────────────────────────────────────────
 
   Future<String> insertAktivitaet(Aktivitaet a) async {

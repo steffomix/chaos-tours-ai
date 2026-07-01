@@ -1577,4 +1577,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceNameLengthHint => '3–20 characters, required';
+
+  @override
+  String get databaseExplorerButton => 'Database explorer';
+
+  @override
+  String get generateRandomData => 'Create random test data';
+
+  @override
+  String get databaseExplorerScreenHeader => 'SQLite explorer';
+
+  @override
+  String get databaseExplorerTableLabel => 'Table';
+
+  @override
+  String get noDataOrTableSelected => 'No data or nor table selected';
+
+  @override
+  String get loadMoreRows => 'Load more Data';
+
+  @override
+  String get endOfTableReached => 'Reached end of table';
+
+  @override
+  String editFieldTitle(String value) {
+    return 'Edit ${value}s columns';
+  }
+
+  @override
+  String get newValueLabel => 'New Value';
+
+  @override
+  String get databaseUpdated => 'Database updated';
+
+  @override
+  String nextGpsIn(int value) {
+    return 'Next GPS in $value sec.';
+  }
 }

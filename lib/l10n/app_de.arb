@@ -2207,5 +2207,59 @@
   "deviceNameLengthHint": "3\u201320 Zeichen, Pflichtfeld",
   "@deviceNameLengthHint": {
     "description": "Helper text below the device name field"
+  },
+  "databaseExplorerButton": "Datenbank Explorer",
+  "@databaseExplorer": {
+    "description": "Button to Database Explorer Screen"
+  },
+  "generateRandomData": "Erstelle zufällige Testdaten",
+  "@generateRandomData": {
+    "description": "Button to create random test data"
+  },
+  "databaseExplorerScreenHeader": "SQLite Explorer",
+  "@databaseExplorerScreenHeader": {
+    "description": "header on SQLite Database Explorer Screen"
+  },
+  "databaseExplorerTableLabel": "Tabelle",
+  "@databaseExplorerTableLabel": {
+    "description": "Label for table dropdown selector"
+  },
+  "noDataOrTableSelected": "Keine Daten oder keine Tabelle ausgewählt",
+  "@noDataOrTableSelected": {
+    "description": "Database Explorer no data found or no table selected message"
+  },
+  "loadMoreRows": "Lade mehr Daten",
+  "@loadMoreRows": {
+    "description": "Text button to load more data into table"
+  },
+  "endOfTableReached": "Ende der Tabelle erreicht",
+  "@endOfTableReached": {
+    "description": "Message on end of data table"
+  },
+  "editFieldTitle": "Bearbeite Tabelle {value}",
+  "@editFieldTitle": {
+    "description": "Header for edit row data of given table name",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "newValueLabel": "Neuer Wert",
+  "@newValueLabel": {
+    "description": "Label for new value input"
+  },
+  "databaseUpdated": "Datenbank aktualisiert",
+  "@databaseUpdated": {
+    "description": "Database has been updated message"
+  },
+  "nextGpsIn" : "Nächster GPS in {value} sek.",
+  "@nextGpsIn": {
+    "description": "Shows next gps timer in seconds in home screen",
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
   }
 }

@@ -8,11 +8,66 @@ import 'package:focus_detector/focus_detector.dart';
 import '../../models/aktivitaet.dart';
 import '../../models/saved_place.dart';
 import '../../models/stay.dart';
+import '../../models/tracking_point.dart';
 import '../../services/database_service.dart';
 import '../../services/foreground_service_handler.dart';
 import '../../services/settings_service.dart';
 import '../../utils/permission_helper.dart';
 import '../widgets/stay_detail_sheet.dart';
+
+class _GpsCountdownNotifier extends ValueNotifier<int> {
+  _GpsCountdownNotifier(super.value);
+
+  Timer? _timer;
+
+  int counter = SettingsService.instance.gpsIntervalSeconds;
+
+  void _gpsCountdownTick() {
+    debugPrint('###[GPS Countdown] tick: $counter');
+    if (counter > 0) {
+      counter--;
+      value = counter;
+    }
+  }
+
+  void startGpsCountdown() {
+    debugPrint('###[GPS Countdown] start');
+    if (_timer != null) return;
+    reset().then((_) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        _gpsCountdownTick();
+      });
+    });
+  }
+
+  void stopGpsCountdown() {
+    debugPrint('###[GPS Countdown] stop');
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  // get elapsed time since last GPS fix in seconds
+  Future<int> getElapsedTimeSinceLastGpsFix() async {
+    TrackingPoint? lastGps = await DatabaseService.instance
+        .getLastTrackingPoint();
+    if (lastGps == null) return SettingsService.instance.gpsIntervalSeconds;
+    final lastGpsTime = lastGps.timestamp;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final elapsedMillis = now - lastGpsTime;
+    final seconds = (elapsedMillis / 1000).round();
+    debugPrint('###[GPS Countdown] elapsed since last fix: $seconds seconds');
+    return seconds;
+  }
+
+  Future<void> reset() async {
+    debugPrint('###[GPS Countdown] reset');
+    final elapsed = await getElapsedTimeSinceLastGpsFix();
+    counter = SettingsService.instance.gpsIntervalSeconds - elapsed;
+    if (counter < 0) counter = SettingsService.instance.gpsIntervalSeconds;
+    debugPrint('###[GPS Countdown] reset counter to $counter');
+    value = counter;
+  }
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,6 +79,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   AppLocalizations? _l10n;
+
+  _GpsCountdownNotifier nextGpsNotifier = _GpsCountdownNotifier(
+    SettingsService.instance.gpsIntervalSeconds,
+  );
 
   // Active Aktivitaet
   Aktivitaet? _currentAktivitaet;
@@ -59,6 +118,9 @@ class _HomeScreenState extends State<HomeScreen>
     _checkActualTrackingState();
     _loadCurrentAktivitaet();
     _relaodStays();
+    if (SettingsService.instance.trackingEnabled) {
+      nextGpsNotifier.startGpsCountdown();
+    }
   }
 
   Future<void> _relaodStays() async {
@@ -84,6 +146,7 @@ class _HomeScreenState extends State<HomeScreen>
             : (_l10n?.trackingDisabled ?? '');
       });
       if (serviceRunning) {
+        nextGpsNotifier.startGpsCountdown();
         _pulseController.stop();
       } else {
         _pulseController.repeat(reverse: true);
@@ -96,9 +159,11 @@ class _HomeScreenState extends State<HomeScreen>
     ForegroundServiceManager.removeDataListener(_onServiceData);
     _pulseController.dispose();
     super.dispose();
+    nextGpsNotifier.stopGpsCountdown();
   }
 
   void _onServiceData(Map data) {
+    nextGpsNotifier.reset();
     final cmd = data['cmd'] as String?;
     if (cmd == FgTaskKeys.position) {
       if (mounted) setState(() {});
@@ -237,6 +302,7 @@ class _HomeScreenState extends State<HomeScreen>
 
       final batteryOk = await _ensureBatteryOptimizationExempt();
       if (!batteryOk) return;
+      nextGpsNotifier.reset();
     }
 
     setState(() {
@@ -266,11 +332,13 @@ class _HomeScreenState extends State<HomeScreen>
         }
         return;
       }
+      nextGpsNotifier.startGpsCountdown();
       debugPrint('[Tracking] startService OK');
     }
     ForegroundServiceManager.sendSetTracking(value);
 
     if (!value) {
+      nextGpsNotifier.stopGpsCountdown();
       try {
         await ForegroundServiceManager.stopService();
       } catch (_) {
@@ -405,6 +473,36 @@ class _HomeScreenState extends State<HomeScreen>
             ),
 
             const SizedBox(height: 7, width: 6),
+            // next gps row
+            if (_trackingEnabled)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.timer,
+                      size: 16,
+                      color: _trackingEnabled
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.outline,
+                    ),
+                    const SizedBox(width: 6),
+                    ValueListenableBuilder<int>(
+                      valueListenable: nextGpsNotifier,
+                      builder: (context, progressText, child) {
+                        return Text(
+                          l10n.nextGpsIn(progressText),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
             // Tracking status row
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),

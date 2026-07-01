@@ -4,6 +4,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/place_photo.dart';
 import '../../services/database_service.dart';
 import '../widgets/album_photo_viewer.dart';
@@ -204,10 +205,12 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Feld bearbeiten: $column"),
+        title: Text(AppLocalizations.of(context)!.editFieldTitle(column)),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(labelText: "Neuer Wert"),
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context)!.newValueLabel,
+          ),
           keyboardType: isNumeric
               ? const TextInputType.numberWithOptions(decimal: true)
               : TextInputType.text,
@@ -215,7 +218,7 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Abbrechen"),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -243,12 +246,12 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
                 });
 
                 if (mounted) Navigator.pop(context);
-                _showSnackBar("Datenbank aktualisiert!");
+                _showSnackBar(AppLocalizations.of(context)!.databaseUpdated);
               } catch (e) {
                 _showSnackBar("Fehler beim Speichern: $e");
               }
             },
-            child: const Text("Speichern"),
+            child: Text(AppLocalizations.of(context)!.save),
           ),
         ],
       ),
@@ -264,9 +267,10 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SQLite DB Explorer'),
+        title: Text(l10n.databaseExplorerScreenHeader),
         backgroundColor: Colors.teal,
       ),
       body: SafeArea(
@@ -277,9 +281,12 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
               padding: const EdgeInsets.all(12.0),
               child: Row(
                 children: [
-                  const Text(
-                    "Tabelle: ",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  Text(
+                    '${l10n.databaseExplorerTableLabel}: ',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -307,9 +314,7 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
             // TABELLEN-INHALT (Horizontal + Vertikal Scroll)
             Expanded(
               child: _columns.isEmpty
-                  ? const Center(
-                      child: Text("Keine Daten oder keine Tabelle ausgewählt"),
-                    )
+                  ? Center(child: Text(l10n.noDataOrTableSelected))
                   : SingleChildScrollView(
                       scrollDirection: Axis.vertical,
                       child: SingleChildScrollView(
@@ -477,12 +482,14 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
                                               ),
                                             )
                                           : const Icon(Icons.arrow_downward),
-                                      label: const Text("Mehr Zeilen laden..."),
+                                      label: Text(l10n.loadMoreRows),
                                     )
                                   else
-                                    const Text(
-                                      "--- Ende der Tabelle erreicht ---",
-                                      style: TextStyle(color: Colors.grey),
+                                    Text(
+                                      l10n.endOfTableReached,
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                      ),
                                     ),
                                 ],
                               ),

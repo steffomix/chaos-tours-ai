@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../models/aktivitaet.dart';
@@ -104,6 +105,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _saveAll() async {
     final s = SettingsService.instance;
+    bool gpsInterfalChanged = s.gpsIntervalSeconds != _gpsInterval;
     s.deviceId = _deviceId;
     s.gpsIntervalSeconds = _gpsInterval;
     s.stayDetectionSeconds = _stayDetection;
@@ -122,7 +124,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     s.photoMaxWidth = _photoMaxWidth;
     s.photoMaxHeight = _photoMaxHeight;
     s.photoImageQuality = _photoImageQuality;
-
+    // notify foreground service about new settings
+    if (gpsInterfalChanged) {
+      await FlutterForegroundTask.updateService(
+        foregroundTaskOptions: ForegroundTaskOptions(
+          eventAction: ForegroundTaskEventAction.repeat(
+            s.gpsIntervalSeconds * 1000,
+          ),
+        ),
+      );
+    }
     // Persist settings back into the active Aktivitaet.
     final a = _activeAktivitaet;
     if (a != null) {
@@ -203,12 +214,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             if (kDebugMode) ...[
               ListTile(
                 leading: const Icon(Icons.storage),
-                title: const Text('Database Explorer'),
+                title: Text(l10n.databaseExplorerButton),
                 onTap: () => Navigator.pushNamed(context, '/database-explorer'),
               ),
               ListTile(
                 leading: const Icon(Icons.shuffle),
-                title: const Text('generate random data'),
+                title: Text(l10n.generateRandomData),
                 onTap: () async {
                   await _generator.generateRandomData();
                 },

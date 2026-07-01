@@ -214,7 +214,7 @@ class RandomDataGenerator {
 
   // NEU: Ein Notifier, der den aktuellen Status-Text hält
   final RandomDataProgressNotifier progressNotifier =
-      RandomDataProgressNotifier('Bereit');
+      RandomDataProgressNotifier('Ready');
 
   final DatabaseService _db = DatabaseService.instance;
   static const _uuid = Uuid();

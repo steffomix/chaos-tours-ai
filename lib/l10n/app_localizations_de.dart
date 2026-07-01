@@ -1584,4 +1584,42 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get deviceNameLengthHint => '3–20 Zeichen, Pflichtfeld';
+
+  @override
+  String get databaseExplorerButton => 'Datenbank Explorer';
+
+  @override
+  String get generateRandomData => 'Erstelle zufällige Testdaten';
+
+  @override
+  String get databaseExplorerScreenHeader => 'SQLite Explorer';
+
+  @override
+  String get databaseExplorerTableLabel => 'Tabelle';
+
+  @override
+  String get noDataOrTableSelected =>
+      'Keine Daten oder keine Tabelle ausgewählt';
+
+  @override
+  String get loadMoreRows => 'Lade mehr Daten';
+
+  @override
+  String get endOfTableReached => 'Ende der Tabelle erreicht';
+
+  @override
+  String editFieldTitle(String value) {
+    return 'Bearbeite Tabelle $value';
+  }
+
+  @override
+  String get newValueLabel => 'Neuer Wert';
+
+  @override
+  String get databaseUpdated => 'Datenbank aktualisiert';
+
+  @override
+  String nextGpsIn(int value) {
+    return 'Nächster GPS in $value sek.';
+  }
 }

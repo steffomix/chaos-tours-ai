@@ -80,14 +80,14 @@ class SettingsService {
   set photoImageQuality(int v) =>
       _p.setInt(_keyPhotoImageQuality, v.clamp(1, 100));
 
-  /// GPS sampling interval in seconds (default: 15).
-  int get gpsIntervalSeconds => _p.getInt(_keyGpsInterval) ?? 15;
-  set gpsIntervalSeconds(int v) => _p.setInt(_keyGpsInterval, v.clamp(5, 120));
+  /// GPS sampling interval in seconds (default: 60).
+  int get gpsIntervalSeconds => _p.getInt(_keyGpsInterval) ?? 60;
+  set gpsIntervalSeconds(int v) => _p.setInt(_keyGpsInterval, v.clamp(10, 180));
 
-  /// Duration in seconds for stay detection at known places (default: 180 = 3 min).
-  int get stayDetectionSeconds => _p.getInt(_keyStayDetection) ?? 180;
+  /// Duration in seconds for stay detection at known places (default: 300 = 5 min).
+  int get stayDetectionSeconds => _p.getInt(_keyStayDetection) ?? 300;
   set stayDetectionSeconds(int v) =>
-      _p.setInt(_keyStayDetection, v.clamp(60, 600));
+      _p.setInt(_keyStayDetection, v.clamp(180, 600));
 
   /// Duration in seconds before auto-creating a place (default: 900 = 15 min).
   int get autoPlaceSeconds => _p.getInt(_keyAutoPlace) ?? 900;
