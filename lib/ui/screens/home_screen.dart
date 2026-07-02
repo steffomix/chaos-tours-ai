@@ -15,27 +15,48 @@ import '../../utils/permission_helper.dart';
 import '../widgets/stay_detail_sheet.dart';
 
 class _GpsCountdownNotifier extends ValueNotifier<int> {
-  _GpsCountdownNotifier() : super(SettingsService.instance.gpsIntervalSeconds);
+  _GpsCountdownNotifier() : super(SettingsService.instance.gpsIntervalSeconds) {
+    SettingsService.instance.gpsIntervalNotifier.addListener(_onIntervalChanged);
+  }
 
   Timer? _timer;
+  bool _running = false;
 
-  void _gpsCountdownTick() {
-    if (value > 0) {
-      value--;
+  // Called whenever the user saves a new GPS interval in settings.
+  void _onIntervalChanged() {
+    final newInterval = SettingsService.instance.gpsIntervalSeconds;
+    value = newInterval;
+    if (_running) {
+      _timer?.cancel();
+      _timer = null;
+      _startTimer();
     }
   }
 
-  void startGpsCountdown() async {
-    if (_timer != null) return;
-
-    await reset();
-    // Sicherheitscheck, falls während des 'await' stopGpsCountdown() aufgerufen wurde
-    _timer ??= Timer.periodic(const Duration(seconds: 1), (_) {
-      _gpsCountdownTick();
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (value > 0) {
+        value--;
+      } else {
+        // Pause — no point ticking at zero; reset() will restart the timer.
+        _timer?.cancel();
+        _timer = null;
+      }
     });
   }
 
+  void startGpsCountdown() async {
+    if (_running) return;
+    _running = true;
+    await reset();
+    // Guard: stopGpsCountdown() may have been called while reset() awaited.
+    if (_running && _timer == null && value > 0) {
+      _startTimer();
+    }
+  }
+
   void stopGpsCountdown() {
+    _running = false;
     _timer?.cancel();
     _timer = null;
   }
@@ -60,10 +81,17 @@ class _GpsCountdownNotifier extends ValueNotifier<int> {
     if (calculatedCounter < 0) calculatedCounter = maxInterval;
 
     value = calculatedCounter;
+    // Restart the timer if it was paused at zero.
+    if (_running && _timer == null && calculatedCounter > 0) {
+      _startTimer();
+    }
   }
 
   @override
   void dispose() {
+    SettingsService.instance.gpsIntervalNotifier.removeListener(
+      _onIntervalChanged,
+    );
     stopGpsCountdown();
     super.dispose();
   }

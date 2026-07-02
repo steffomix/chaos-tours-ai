@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/aktivitaet.dart';
@@ -43,8 +44,12 @@ class SettingsService {
 
   SharedPreferences? _prefs;
 
+  /// Broadcasts the GPS interval whenever it is changed via the setter.
+  final ValueNotifier<int> gpsIntervalNotifier = ValueNotifier<int>(60);
+
   Future<void> init() async {
     _prefs ??= await SharedPreferences.getInstance();
+    gpsIntervalNotifier.value = gpsIntervalSeconds;
   }
 
   /// Reload values from disk — call this in the service isolate before reading
@@ -82,7 +87,11 @@ class SettingsService {
 
   /// GPS sampling interval in seconds (default: 60).
   int get gpsIntervalSeconds => _p.getInt(_keyGpsInterval) ?? 60;
-  set gpsIntervalSeconds(int v) => _p.setInt(_keyGpsInterval, v.clamp(10, 180));
+  set gpsIntervalSeconds(int v) {
+    final clamped = v.clamp(10, 180);
+    _p.setInt(_keyGpsInterval, clamped);
+    gpsIntervalNotifier.value = clamped;
+  }
 
   /// Duration in seconds for stay detection at known places (default: 300 = 5 min).
   int get stayDetectionSeconds => _p.getInt(_keyStayDetection) ?? 300;
