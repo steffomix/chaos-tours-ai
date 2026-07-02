@@ -9,7 +9,6 @@ import '../services/tracking_engine.dart';
 /// Keys used when communicating via SendPort.
 class FgTaskKeys {
   static const String setTracking = 'set_tracking';
-  static const String setInterval = 'set_interval';
   static const String endStay = 'end_stay';
   static const String position = 'position';
   static const String enabled = 'enabled';
@@ -98,15 +97,6 @@ class GpsForegroundTaskHandler extends TaskHandler {
     if (data is Map) {
       final cmd = data['cmd'] as String?;
       switch (cmd) {
-        case FgTaskKeys.setInterval:
-          await SettingsService.instance.reload();
-          FlutterForegroundTask.updateService(
-            foregroundTaskOptions: ForegroundTaskOptions(
-              eventAction: ForegroundTaskEventAction.repeat(
-                SettingsService.instance.gpsIntervalSeconds * 1000,
-              ),
-            ),
-          );
         case FgTaskKeys.setTracking:
           final enabled = data[FgTaskKeys.enabled] as bool? ?? false;
           _setTracking(enabled);

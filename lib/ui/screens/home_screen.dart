@@ -8,7 +8,6 @@ import 'package:focus_detector/focus_detector.dart';
 import '../../models/aktivitaet.dart';
 import '../../models/saved_place.dart';
 import '../../models/stay.dart';
-import '../../models/tracking_point.dart';
 import '../../services/database_service.dart';
 import '../../services/foreground_service_handler.dart';
 import '../../services/settings_service.dart';
@@ -16,56 +15,57 @@ import '../../utils/permission_helper.dart';
 import '../widgets/stay_detail_sheet.dart';
 
 class _GpsCountdownNotifier extends ValueNotifier<int> {
-  _GpsCountdownNotifier(super.value);
+  _GpsCountdownNotifier() : super(SettingsService.instance.gpsIntervalSeconds);
 
   Timer? _timer;
 
-  int counter = SettingsService.instance.gpsIntervalSeconds;
-
   void _gpsCountdownTick() {
-    debugPrint('###[GPS Countdown] tick: $counter');
-    if (counter > 0) {
-      counter--;
-      value = counter;
+    if (value > 0) {
+      value--;
     }
   }
 
-  void startGpsCountdown() {
-    debugPrint('###[GPS Countdown] start');
+  void startGpsCountdown() async {
     if (_timer != null) return;
-    reset().then((_) {
-      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-        _gpsCountdownTick();
-      });
+
+    await reset();
+    // Sicherheitscheck, falls während des 'await' stopGpsCountdown() aufgerufen wurde
+    _timer ??= Timer.periodic(const Duration(seconds: 1), (_) {
+      _gpsCountdownTick();
     });
   }
 
   void stopGpsCountdown() {
-    debugPrint('###[GPS Countdown] stop');
     _timer?.cancel();
     _timer = null;
   }
 
-  // get elapsed time since last GPS fix in seconds
-  Future<int> getElapsedTimeSinceLastGpsFix() async {
-    TrackingPoint? lastGps = await DatabaseService.instance
-        .getLastTrackingPoint();
+  Future<int> getElapsedSeconds() async {
+    final lastGps = await DatabaseService.instance.getLastTrackingPoint();
     if (lastGps == null) return SettingsService.instance.gpsIntervalSeconds;
+
     final lastGpsTime = lastGps.timestamp;
     final now = DateTime.now().millisecondsSinceEpoch;
     final elapsedMillis = now - lastGpsTime;
     final seconds = (elapsedMillis / 1000).round();
-    debugPrint('###[GPS Countdown] elapsed since last fix: $seconds seconds');
+
     return seconds;
   }
 
   Future<void> reset() async {
-    debugPrint('###[GPS Countdown] reset');
-    final elapsed = await getElapsedTimeSinceLastGpsFix();
-    counter = SettingsService.instance.gpsIntervalSeconds - elapsed;
-    if (counter < 0) counter = SettingsService.instance.gpsIntervalSeconds;
-    debugPrint('###[GPS Countdown] reset counter to $counter');
-    value = counter;
+    final elapsed = await getElapsedSeconds();
+    final maxInterval = SettingsService.instance.gpsIntervalSeconds;
+
+    int calculatedCounter = maxInterval - elapsed;
+    if (calculatedCounter < 0) calculatedCounter = maxInterval;
+
+    value = calculatedCounter;
+  }
+
+  @override
+  void dispose() {
+    stopGpsCountdown();
+    super.dispose();
   }
 }
 
@@ -80,9 +80,7 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   AppLocalizations? _l10n;
 
-  _GpsCountdownNotifier nextGpsNotifier = _GpsCountdownNotifier(
-    SettingsService.instance.gpsIntervalSeconds,
-  );
+  _GpsCountdownNotifier nextGpsNotifier = _GpsCountdownNotifier();
 
   // Active Aktivitaet
   Aktivitaet? _currentAktivitaet;
