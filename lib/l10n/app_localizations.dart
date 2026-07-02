@@ -2972,6 +2972,60 @@ abstract class AppLocalizations {
   /// **'Datenbank aktualisiert'**
   String get databaseUpdated;
 
+  /// Button to Shared Preferences Explorer Screen
+  ///
+  /// In de, this message translates to:
+  /// **'Shared Preferences Explorer'**
+  String get sharedPrefsExplorerButton;
+
+  /// Header on Shared Preferences Explorer Screen
+  ///
+  /// In de, this message translates to:
+  /// **'Shared Preferences Explorer'**
+  String get sharedPrefsExplorerScreenHeader;
+
+  /// Message when no shared preferences entries exist
+  ///
+  /// In de, this message translates to:
+  /// **'Keine Einträge vorhanden'**
+  String get sharedPrefsNoEntries;
+
+  /// Header for editing a shared preferences entry
+  ///
+  /// In de, this message translates to:
+  /// **'Bearbeite {key}'**
+  String sharedPrefsEditTitle(String key);
+
+  /// Title of the delete confirmation dialog
+  ///
+  /// In de, this message translates to:
+  /// **'Eintrag löschen'**
+  String get sharedPrefsDeleteTitle;
+
+  /// Delete confirmation message for a shared preferences entry
+  ///
+  /// In de, this message translates to:
+  /// **'Soll der Eintrag \"{key}\" wirklich gelöscht werden?'**
+  String sharedPrefsDeleteConfirm(String key);
+
+  /// Confirmation that an entry was deleted
+  ///
+  /// In de, this message translates to:
+  /// **'Eintrag gelöscht'**
+  String get sharedPrefsDeleted;
+
+  /// Confirmation that an entry was updated
+  ///
+  /// In de, this message translates to:
+  /// **'Eintrag aktualisiert'**
+  String get sharedPrefsUpdated;
+
+  /// Error message when the entered value cannot be parsed to the entry type
+  ///
+  /// In de, this message translates to:
+  /// **'Ungültiger Wert für Typ {type}'**
+  String sharedPrefsInvalidValue(String type);
+
   /// Shows next gps timer in seconds in home screen
   ///
   /// In de, this message translates to:

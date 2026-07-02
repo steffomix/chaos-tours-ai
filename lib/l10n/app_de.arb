@@ -2253,6 +2253,57 @@
   "@databaseUpdated": {
     "description": "Database has been updated message"
   },
+  "sharedPrefsExplorerButton": "Shared Preferences Explorer",
+  "@sharedPrefsExplorerButton": {
+    "description": "Button to Shared Preferences Explorer Screen"
+  },
+  "sharedPrefsExplorerScreenHeader": "Shared Preferences Explorer",
+  "@sharedPrefsExplorerScreenHeader": {
+    "description": "Header on Shared Preferences Explorer Screen"
+  },
+  "sharedPrefsNoEntries": "Keine Einträge vorhanden",
+  "@sharedPrefsNoEntries": {
+    "description": "Message when no shared preferences entries exist"
+  },
+  "sharedPrefsEditTitle": "Bearbeite {key}",
+  "@sharedPrefsEditTitle": {
+    "description": "Header for editing a shared preferences entry",
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "sharedPrefsDeleteTitle": "Eintrag löschen",
+  "@sharedPrefsDeleteTitle": {
+    "description": "Title of the delete confirmation dialog"
+  },
+  "sharedPrefsDeleteConfirm": "Soll der Eintrag \"{key}\" wirklich gelöscht werden?",
+  "@sharedPrefsDeleteConfirm": {
+    "description": "Delete confirmation message for a shared preferences entry",
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "sharedPrefsDeleted": "Eintrag gelöscht",
+  "@sharedPrefsDeleted": {
+    "description": "Confirmation that an entry was deleted"
+  },
+  "sharedPrefsUpdated": "Eintrag aktualisiert",
+  "@sharedPrefsUpdated": {
+    "description": "Confirmation that an entry was updated"
+  },
+  "sharedPrefsInvalidValue": "Ungültiger Wert für Typ {type}",
+  "@sharedPrefsInvalidValue": {
+    "description": "Error message when the entered value cannot be parsed to the entry type",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
   "nextGpsIn" : "Nächster GPS in {value} sek.",
   "@nextGpsIn": {
     "description": "Shows next gps timer in seconds in home screen",

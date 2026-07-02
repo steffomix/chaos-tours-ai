@@ -1619,6 +1619,39 @@ class AppLocalizationsDe extends AppLocalizations {
   String get databaseUpdated => 'Datenbank aktualisiert';
 
   @override
+  String get sharedPrefsExplorerButton => 'Shared Preferences Explorer';
+
+  @override
+  String get sharedPrefsExplorerScreenHeader => 'Shared Preferences Explorer';
+
+  @override
+  String get sharedPrefsNoEntries => 'Keine Einträge vorhanden';
+
+  @override
+  String sharedPrefsEditTitle(String key) {
+    return 'Bearbeite $key';
+  }
+
+  @override
+  String get sharedPrefsDeleteTitle => 'Eintrag löschen';
+
+  @override
+  String sharedPrefsDeleteConfirm(String key) {
+    return 'Soll der Eintrag \"$key\" wirklich gelöscht werden?';
+  }
+
+  @override
+  String get sharedPrefsDeleted => 'Eintrag gelöscht';
+
+  @override
+  String get sharedPrefsUpdated => 'Eintrag aktualisiert';
+
+  @override
+  String sharedPrefsInvalidValue(String type) {
+    return 'Ungültiger Wert für Typ $type';
+  }
+
+  @override
   String nextGpsIn(int value) {
     return 'Nächster GPS in $value sek.';
   }

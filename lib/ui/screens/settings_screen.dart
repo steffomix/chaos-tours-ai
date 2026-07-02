@@ -218,6 +218,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: () => Navigator.pushNamed(context, '/database-explorer'),
               ),
               ListTile(
+                leading: const Icon(Icons.tune),
+                title: Text(l10n.sharedPrefsExplorerButton),
+                onTap: () =>
+                    Navigator.pushNamed(context, '/shared-prefs-explorer'),
+              ),
+              ListTile(
                 leading: const Icon(Icons.shuffle),
                 title: Text(l10n.generateRandomData),
                 onTap: () async {

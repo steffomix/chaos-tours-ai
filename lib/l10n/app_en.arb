@@ -976,5 +976,14 @@
   "editFieldTitle": "Edit {value}s columns",
   "newValueLabel": "New Value",
   "databaseUpdated": "Database updated",
+  "sharedPrefsExplorerButton": "Shared preferences explorer",
+  "sharedPrefsExplorerScreenHeader": "Shared preferences explorer",
+  "sharedPrefsNoEntries": "No entries available",
+  "sharedPrefsEditTitle": "Edit {key}",
+  "sharedPrefsDeleteTitle": "Delete entry",
+  "sharedPrefsDeleteConfirm": "Do you really want to delete the entry \"{key}\"?",
+  "sharedPrefsDeleted": "Entry deleted",
+  "sharedPrefsUpdated": "Entry updated",
+  "sharedPrefsInvalidValue": "Invalid value for type {type}",
   "nextGpsIn" : "Next GPS in {value} sec."
 }
