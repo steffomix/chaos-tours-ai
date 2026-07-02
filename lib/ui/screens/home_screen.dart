@@ -16,7 +16,9 @@ import '../widgets/stay_detail_sheet.dart';
 
 class _GpsCountdownNotifier extends ValueNotifier<int> {
   _GpsCountdownNotifier() : super(SettingsService.instance.gpsIntervalSeconds) {
-    SettingsService.instance.gpsIntervalNotifier.addListener(_onIntervalChanged);
+    SettingsService.instance.gpsIntervalNotifier.addListener(
+      _onIntervalChanged,
+    );
   }
 
   Timer? _timer;
