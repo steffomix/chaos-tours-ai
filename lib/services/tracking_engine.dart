@@ -402,12 +402,17 @@ class TrackingEngine {
     final group = await DatabaseService.instance.loadPlaceGroup(
       place.groupUuid!,
     );
-    if (group == null || group.calendarId == null) return;
+    if (group == null) return;
+    final groupCalendarId = SettingsService.instance.getGroupCalendarId(
+      group.uuid,
+    );
+    if (groupCalendarId == null) return;
 
     final eventId = await CalendarService.instance.createArrivalEvent(
       stay,
       group,
       place.name,
+      calendarId: groupCalendarId,
     );
     if (eventId != null) {
       final updated = stay.copyWith(calendarEventId: eventId);
@@ -466,39 +471,45 @@ class TrackingEngine {
         place.groupUuid!,
       );
       if (group != null) {
-        final persons = await DatabaseService.instance.loadPersonsForStay(
-          ended.uuid,
+        final groupCalendarId = SettingsService.instance.getGroupCalendarId(
+          group.uuid,
         );
-        final activities = await DatabaseService.instance.loadActivitiesForStay(
-          ended.uuid,
-        );
+        if (groupCalendarId != null) {
+          final persons = await DatabaseService.instance.loadPersonsForStay(
+            ended.uuid,
+          );
+          final activities = await DatabaseService.instance
+              .loadActivitiesForStay(ended.uuid);
 
-        bool updated = false;
-        if (ended.calendarEventId != null) {
-          updated = await CalendarService.instance.updateStayEvent(
-            ended,
-            group,
-            place.name,
-            persons: persons.cast(),
-            activities: activities.cast(),
-            lat: place.lat,
-            lng: place.lng,
-          );
-        }
-        if (!updated) {
-          final eventId = await CalendarService.instance.createStayEvent(
-            ended,
-            group,
-            place.name,
-            persons: persons.cast(),
-            activities: activities.cast(),
-            lat: place.lat,
-            lng: place.lng,
-          );
-          if (eventId != null) {
-            await DatabaseService.instance.updateStay(
-              ended.copyWith(calendarEventId: eventId),
+          bool updated = false;
+          if (ended.calendarEventId != null) {
+            updated = await CalendarService.instance.updateStayEvent(
+              ended,
+              group,
+              place.name,
+              calendarId: groupCalendarId,
+              persons: persons.cast(),
+              activities: activities.cast(),
+              lat: place.lat,
+              lng: place.lng,
             );
+          }
+          if (!updated) {
+            final eventId = await CalendarService.instance.createStayEvent(
+              ended,
+              group,
+              place.name,
+              calendarId: groupCalendarId,
+              persons: persons.cast(),
+              activities: activities.cast(),
+              lat: place.lat,
+              lng: place.lng,
+            );
+            if (eventId != null) {
+              await DatabaseService.instance.updateStay(
+                ended.copyWith(calendarEventId: eventId),
+              );
+            }
           }
         }
       }

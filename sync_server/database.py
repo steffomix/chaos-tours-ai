@@ -70,7 +70,6 @@ place_groups = Table(
     metadata,
     Column("uuid", String, primary_key=True),
     Column("name", String, nullable=False),
-    Column("calendar_id", String, nullable=True),
     Column("telegram_connection_uuid", String, nullable=True),
     Column("include_notes", Integer, nullable=False, default=1),
     Column("include_persons", Integer, nullable=False, default=1),

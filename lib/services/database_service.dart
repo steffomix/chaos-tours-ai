@@ -62,7 +62,6 @@ class DatabaseService {
         device_id TEXT NOT NULL DEFAULT '',
         place_type INTEGER NOT NULL DEFAULT 0,
         telegram_connection_uuid TEXT,
-        calendar_id TEXT,
         name TEXT NOT NULL,
         include_notes INTEGER NOT NULL DEFAULT 1,
         include_persons INTEGER NOT NULL DEFAULT 1,

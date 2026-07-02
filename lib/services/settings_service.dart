@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -41,6 +43,7 @@ class SettingsService {
   static const String _keyPhotoMaxWidth = 'photo_max_width';
   static const String _keyPhotoMaxHeight = 'photo_max_height';
   static const String _keyPhotoImageQuality = 'photo_image_quality';
+  static const String _keyGroupCalendarIds = 'group_calendar_ids';
 
   SharedPreferences? _prefs;
 
@@ -176,6 +179,57 @@ class SettingsService {
   int get schedulerColorRange => _p.getInt(_keySchedulerColorRange) ?? 14;
   set schedulerColorRange(int v) =>
       _p.setInt(_keySchedulerColorRange, v.clamp(1, 365));
+
+  // ── Group calendar mapping (device-local, never synced) ────────────────
+
+  /// Returns the device calendar ID linked to [groupUuid], or null.
+  String? getGroupCalendarId(String groupUuid) {
+    final raw = _p.getString(_keyGroupCalendarIds);
+    if (raw == null || raw.isEmpty) return null;
+    final map = Map<String, String>.from(
+      (jsonDecode(raw) as Map<String, dynamic>).map(
+        (k, v) => MapEntry(k, v as String),
+      ),
+    );
+    return map[groupUuid];
+  }
+
+  /// Sets or clears the device calendar ID for [groupUuid].
+  Future<void> setGroupCalendarId(String groupUuid, String? calendarId) async {
+    final raw = _p.getString(_keyGroupCalendarIds);
+    final map = <String, String>{};
+    if (raw != null && raw.isNotEmpty) {
+      map.addAll(
+        Map<String, String>.from(
+          (jsonDecode(raw) as Map<String, dynamic>).map(
+            (k, v) => MapEntry(k, v as String),
+          ),
+        ),
+      );
+    }
+    if (calendarId == null) {
+      map.remove(groupUuid);
+    } else {
+      map[groupUuid] = calendarId;
+    }
+    await _p.setString(_keyGroupCalendarIds, jsonEncode(map));
+  }
+
+  /// Removes all calendar mappings for the given group UUIDs (e.g. after group deletion).
+  Future<void> removeGroupCalendarIds(List<String> groupUuids) async {
+    if (groupUuids.isEmpty) return;
+    final raw = _p.getString(_keyGroupCalendarIds);
+    if (raw == null || raw.isEmpty) return;
+    final map = Map<String, String>.from(
+      (jsonDecode(raw) as Map<String, dynamic>).map(
+        (k, v) => MapEntry(k, v as String),
+      ),
+    );
+    for (final uuid in groupUuids) {
+      map.remove(uuid);
+    }
+    await _p.setString(_keyGroupCalendarIds, jsonEncode(map));
+  }
 
   /// Comma-separated group UUIDs to display in map and scheduler (empty = all).
   String get schedulerGroupIds => _p.getString(_keySchedulerGroupIds) ?? '';

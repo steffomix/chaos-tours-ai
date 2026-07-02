@@ -46,10 +46,10 @@ class CalendarService {
   Future<String?> createArrivalEvent(
     Stay stay,
     PlaceGroup group,
-    String? placeName,
-  ) async {
-    final calId = group.calendarId;
-    if (calId == null) return null;
+    String? placeName, {
+    required String calendarId,
+  }) async {
+    final calId = calendarId;
     _initTz();
 
     final location = tz.local;
@@ -83,13 +83,13 @@ class CalendarService {
     Stay stay,
     PlaceGroup group,
     String? placeName, {
+    required String calendarId,
     List<StayPerson> persons = const [],
     List<StayActivity> activities = const [],
     double? lat,
     double? lng,
   }) async {
-    final calId = group.calendarId;
-    if (calId == null) return null;
+    final calId = calendarId;
     if (stay.status != StayStatus.completed) return null;
     _initTz();
 
@@ -129,14 +129,14 @@ class CalendarService {
     Stay stay,
     PlaceGroup group,
     String? placeName, {
+    required String calendarId,
     List<StayPerson> persons = const [],
     List<StayActivity> activities = const [],
     double? lat,
     double? lng,
   }) async {
     if (stay.calendarEventId == null) return false;
-    final calId = group.calendarId;
-    if (calId == null) return false;
+    final calId = calendarId;
     _initTz();
 
     final location = tz.local;

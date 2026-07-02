@@ -5,6 +5,7 @@ import '../../models/place_group.dart';
 import '../../models/saved_place.dart';
 import '../../services/calendar_service.dart';
 import '../../services/database_service.dart';
+import '../../services/settings_service.dart';
 
 class PlaceGroupsScreen extends StatefulWidget {
   const PlaceGroupsScreen({super.key});
@@ -30,7 +31,11 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
   Future<void> _addGroup() async {
     final result = await _showEditDialog(null);
     if (result != null) {
-      await DatabaseService.instance.insertPlaceGroup(result);
+      await DatabaseService.instance.insertPlaceGroup(result.$1);
+      await SettingsService.instance.setGroupCalendarId(
+        result.$1.uuid,
+        result.$2,
+      );
       await _load();
     }
   }
@@ -38,7 +43,11 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
   Future<void> _editGroup(PlaceGroup group) async {
     final result = await _showEditDialog(group);
     if (result != null) {
-      await DatabaseService.instance.updatePlaceGroup(result);
+      await DatabaseService.instance.updatePlaceGroup(result.$1);
+      await SettingsService.instance.setGroupCalendarId(
+        result.$1.uuid,
+        result.$2,
+      );
       await _load();
     }
   }
@@ -68,9 +77,11 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
     }
   }
 
-  Future<PlaceGroup?> _showEditDialog(PlaceGroup? existing) async {
+  Future<(PlaceGroup, String?)?> _showEditDialog(PlaceGroup? existing) async {
     final nameCtrl = TextEditingController(text: existing?.name ?? '');
-    String? calendarId = existing?.calendarId;
+    String? calendarId = existing != null
+        ? SettingsService.instance.getGroupCalendarId(existing.uuid)
+        : null;
     String? telegramConnectionUuid = existing?.telegramConnectionUuid;
     bool includeNotes = existing?.includeNotes ?? true;
     bool includePersons = existing?.includePersons ?? true;
@@ -82,7 +93,7 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
     final telegramConnections = await DatabaseService.instance
         .loadAllTelegramConnections();
 
-    return showDialog<PlaceGroup>(
+    return showDialog<(PlaceGroup, String?)>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) {
@@ -235,7 +246,6 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
                   final group = PlaceGroup(
                     uuid: existing?.uuid,
                     name: name,
-                    calendarId: calendarId,
                     telegramConnectionUuid: telegramConnectionUuid,
                     includeNotes: includeNotes,
                     includePersons: includePersons,
@@ -243,7 +253,7 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
                     isAutoGroup: isAutoGroup,
                     placeType: placeType,
                   );
-                  Navigator.pop(ctx, group);
+                  Navigator.pop(ctx, (group, calendarId));
                 },
                 child: Text(l10n.save),
               ),
@@ -311,7 +321,8 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
                       ),
                       const SizedBox(width: 4),
                       Text(g.placeType.label),
-                      if (g.calendarId != null) ...const [
+                      if (SettingsService.instance.getGroupCalendarId(g.uuid) !=
+                          null) ...const [
                         SizedBox(width: 8),
                         Icon(Icons.calendar_today, size: 14),
                       ],

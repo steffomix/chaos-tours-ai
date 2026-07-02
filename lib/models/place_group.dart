@@ -8,7 +8,6 @@ const _uuid = Uuid();
 class PlaceGroup {
   final String uuid;
   final String name;
-  final String? calendarId;
   final String? telegramConnectionUuid;
   final bool includeNotes;
   final bool includePersons;
@@ -24,7 +23,6 @@ class PlaceGroup {
   PlaceGroup({
     String? uuid,
     required this.name,
-    this.calendarId,
     this.telegramConnectionUuid,
     this.includeNotes = true,
     this.includePersons = true,
@@ -45,7 +43,6 @@ class PlaceGroup {
     return PlaceGroup(
       uuid: map['uuid'] as String?,
       name: map['name'] as String,
-      calendarId: map['calendar_id'] as String?,
       telegramConnectionUuid: map['telegram_connection_uuid'] as String?,
       includeNotes: (map['include_notes'] as int? ?? 1) == 1,
       includePersons: (map['include_persons'] as int? ?? 1) == 1,
@@ -65,7 +62,6 @@ class PlaceGroup {
     return {
       'uuid': uuid,
       'name': name,
-      if (calendarId != null) 'calendar_id': calendarId,
       if (telegramConnectionUuid != null)
         'telegram_connection_uuid': telegramConnectionUuid,
       'include_notes': includeNotes ? 1 : 0,
@@ -82,14 +78,12 @@ class PlaceGroup {
   PlaceGroup copyWith({
     String? uuid,
     String? name,
-    String? calendarId,
     String? telegramConnectionUuid,
     bool? includeNotes,
     bool? includePersons,
     bool? includeActivities,
     bool? isAutoGroup,
     PlaceType? placeType,
-    bool clearCalendarId = false,
     bool clearTelegramConnectionUuid = false,
     int? updatedAt,
     int? deletedAt,
@@ -99,7 +93,6 @@ class PlaceGroup {
     return PlaceGroup(
       uuid: uuid ?? this.uuid,
       name: name ?? this.name,
-      calendarId: clearCalendarId ? null : (calendarId ?? this.calendarId),
       telegramConnectionUuid: clearTelegramConnectionUuid
           ? null
           : (telegramConnectionUuid ?? this.telegramConnectionUuid),
