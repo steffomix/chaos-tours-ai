@@ -49,6 +49,8 @@ class SettingsService {
   static const String _keyPhotoImageQuality = 'photo_image_quality';
   static const String _keyGroupCalendarIds = 'group_calendar_ids';
   static const String _keyTelegramBotTokens = 'telegram_bot_tokens';
+  static const String _keyDevToolsUnlockedUntilMs =
+      'dev_tools_unlocked_until_ms';
 
   SharedPreferences? _prefs;
 
@@ -79,6 +81,17 @@ class SettingsService {
   /// Timestamp of the last successful sync in milliseconds since epoch (0 = never).
   int get lastSyncMs => _p.getInt(_keyLastSyncMs) ?? 0;
   set lastSyncMs(int v) => _p.setInt(_keyLastSyncMs, v);
+
+  /// Timestamp (ms since epoch) until which the potentially destructive
+  /// developer tools remain unlocked (0 = locked).
+  int get devToolsUnlockedUntilMs =>
+      _p.getInt(_keyDevToolsUnlockedUntilMs) ?? 0;
+  set devToolsUnlockedUntilMs(int v) =>
+      _p.setInt(_keyDevToolsUnlockedUntilMs, v);
+
+  /// Whether the developer tools are currently unlocked (within the hour).
+  bool get devToolsUnlocked =>
+      DateTime.now().millisecondsSinceEpoch < devToolsUnlockedUntilMs;
 
   /// Maximum width in pixels when capturing/picking photos (0 = unlimited, default: 1920).
   int get photoMaxWidth => _p.getInt(_keyPhotoMaxWidth) ?? 1920;

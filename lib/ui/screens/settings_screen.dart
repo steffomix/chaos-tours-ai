@@ -1,9 +1,10 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:uuid/uuid.dart';
+
+import 'dart:math';
 
 import '../../models/aktivitaet.dart';
 import '../../models/place_group.dart';
@@ -222,47 +223,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const Divider(),
             // ── Verwaltung ───────────────────────────────────────────────
-            // button to trigger random data generation for testing purposes
-            // only if in debug mode
-            if (kDebugMode) ...[
-              ListTile(
-                leading: const Icon(Icons.storage),
-                title: Text(l10n.databaseExplorerButton),
-                onTap: () => Navigator.pushNamed(context, '/database-explorer'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.tune),
-                title: Text(l10n.sharedPrefsExplorerButton),
-                onTap: () =>
-                    Navigator.pushNamed(context, '/shared-prefs-explorer'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.shuffle),
-                title: Text(l10n.generateRandomData),
-                onTap: () async {
-                  await _generator.generateRandomData();
-                },
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 8.0,
-                ),
-                child: ValueListenableBuilder<String>(
-                  valueListenable: _generator.progressNotifier,
-                  builder: (context, progressText, child) {
-                    return Text(
-                      progressText,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
               child: Text(
@@ -340,8 +300,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: Text(l10n.addressOnIntervalTitle),
               subtitle: Text(l10n.addressOnIntervalSubtitle),
               value: _addressOnInterval,
-              onChanged: (v) =>
-                  setState(() => _addressOnInterval = v ?? false),
+              onChanged: (v) => setState(() => _addressOnInterval = v ?? false),
             ),
             ListTile(
               leading: const Icon(Icons.badge_outlined),
@@ -826,6 +785,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: _deleteCurrentAktivitaet,
               ),
             ],
+            ..._buildDevToolsSection(l10n),
           ],
         ),
       ),
@@ -833,6 +793,236 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // ── Aktivitaet helpers ────────────────────────────────────────────────────
+
+  /// Builds the potentially destructive developer tools, always rendered at the
+  /// very bottom of the settings list. The tools are only visible while unlocked
+  /// (for one hour after solving the type-in challenge).
+  List<Widget> _buildDevToolsSection(AppLocalizations l10n) {
+    final unlocked = SettingsService.instance.devToolsUnlocked;
+
+    if (!unlocked) {
+      return [
+        const Divider(),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          child: Text(
+            l10n.devToolsSectionTitle,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.withValues(alpha: 0.08),
+              border: Border.all(color: Colors.red),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.warning_amber_rounded, color: Colors.red),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    l10n.devToolsWarning,
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.red,
+              side: const BorderSide(color: Colors.red),
+            ),
+            icon: const Icon(Icons.lock_open),
+            label: Text(l10n.devToolsUnlockButton),
+            onPressed: _startDevToolsChallenge,
+          ),
+        ),
+      ];
+    }
+
+    final until = DateTime.fromMillisecondsSinceEpoch(
+      SettingsService.instance.devToolsUnlockedUntilMs,
+    );
+    final untilText =
+        '${until.hour.toString().padLeft(2, '0')}:${until.minute.toString().padLeft(2, '0')}';
+
+    return [
+      const Divider(),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+        child: Text(
+          l10n.devToolsSectionTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+        child: Text(
+          l10n.devToolsUnlockedUntil(untilText),
+          style: TextStyle(color: Colors.grey[600], fontSize: 12),
+        ),
+      ),
+      ListTile(
+        leading: const Icon(Icons.storage),
+        title: Text(l10n.databaseExplorerButton),
+        onTap: () => Navigator.pushNamed(context, '/database-explorer'),
+      ),
+      ListTile(
+        leading: const Icon(Icons.tune),
+        title: Text(l10n.sharedPrefsExplorerButton),
+        onTap: () => Navigator.pushNamed(context, '/shared-prefs-explorer'),
+      ),
+      ListTile(
+        leading: const Icon(Icons.shuffle),
+        title: Text(l10n.generateRandomData),
+        onTap: () async {
+          await _generator.generateRandomData();
+        },
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: ValueListenableBuilder<String>(
+          valueListenable: _generator.progressNotifier,
+          builder: (context, progressText, child) {
+            return Text(
+              progressText,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+              ),
+            );
+          },
+        ),
+      ),
+      ListTile(
+        leading: const Icon(Icons.lock_outline, color: Colors.red),
+        title: Text(
+          l10n.devToolsRelock,
+          style: const TextStyle(color: Colors.red),
+        ),
+        onTap: () {
+          SettingsService.instance.devToolsUnlockedUntilMs = 0;
+          setState(() {});
+        },
+      ),
+    ];
+  }
+
+  /// Generates a random 8-character letter code the user must type correctly to
+  /// unlock the developer tools for one hour.
+  Future<void> _startDevToolsChallenge() async {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    final rnd = Random.secure();
+    final code = List.generate(
+      8,
+      (_) => chars[rnd.nextInt(chars.length)],
+    ).join();
+    final controller = TextEditingController();
+
+    final success = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) {
+        final l10n = AppLocalizations.of(dialogCtx)!;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            final input = controller.text.trim().toUpperCase();
+            final matches = input == code;
+            return AlertDialog(
+              title: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded, color: Colors.red),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(l10n.devToolsSectionTitle)),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.devToolsWarning,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(l10n.devToolsChallengeInstruction),
+                  const SizedBox(height: 8),
+                  SelectionContainer.disabled(
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        code,
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 4,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    textCapitalization: TextCapitalization.characters,
+                    decoration: InputDecoration(
+                      hintText: l10n.devToolsChallengeHint,
+                      border: const OutlineInputBorder(),
+                    ),
+                    onChanged: (_) => setDialogState(() {}),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: Text(l10n.cancel),
+                ),
+                FilledButton(
+                  onPressed: matches ? () => Navigator.pop(ctx, true) : null,
+                  child: Text(l10n.ok),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    controller.dispose();
+
+    if (success == true) {
+      SettingsService.instance.devToolsUnlockedUntilMs = DateTime.now()
+          .add(const Duration(hours: 1))
+          .millisecondsSinceEpoch;
+      if (mounted) {
+        setState(() {});
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.devToolsUnlockSuccess)));
+      }
+    }
+  }
 
   void _showAktivitaetenPicker() {
     showModalBottomSheet<void>(

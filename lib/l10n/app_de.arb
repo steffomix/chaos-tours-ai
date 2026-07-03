@@ -2348,5 +2348,42 @@
         "type": "int"
       }
     }
+  },
+  "devToolsSectionTitle": "Entwicklerwerkzeuge",
+  "@devToolsSectionTitle": {
+    "description": "Title of the developer tools section at the bottom of settings"
+  },
+  "devToolsWarning": "WARNUNG: Diese Werkzeuge sind potentiell ZERSTÖRERISCH. Sie können Daten unwiderruflich verändern oder löschen. Nach dem Freischalten sind sie für eine Stunde nutzbar. Es ist SEHR SEHR SEHR ratsam, vorher wenigstens ein Backup der Datenbank anzulegen!",
+  "@devToolsWarning": {
+    "description": "Warning shown above the developer tools unlock challenge"
+  },
+  "devToolsUnlockButton": "Entwicklerwerkzeuge freischalten",
+  "@devToolsUnlockButton": {
+    "description": "Button that starts the unlock challenge"
+  },
+  "devToolsChallengeInstruction": "Tippe die folgende 8-stellige Zeichenfolge exakt ab, um freizuschalten:",
+  "@devToolsChallengeInstruction": {
+    "description": "Instruction above the code the user must type"
+  },
+  "devToolsChallengeHint": "Zeichenfolge eingeben",
+  "@devToolsChallengeHint": {
+    "description": "Hint text for the challenge input field"
+  },
+  "devToolsUnlockSuccess": "Entwicklerwerkzeuge für eine Stunde freigeschaltet.",
+  "@devToolsUnlockSuccess": {
+    "description": "Snackbar shown after a successful unlock"
+  },
+  "devToolsUnlockedUntil": "Freigeschaltet bis {time}",
+  "@devToolsUnlockedUntil": {
+    "description": "Shows until when the dev tools stay unlocked",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "devToolsRelock": "Jetzt sperren",
+  "@devToolsRelock": {
+    "description": "Button to immediately re-lock the developer tools"
   }
 }

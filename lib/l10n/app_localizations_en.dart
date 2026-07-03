@@ -1678,4 +1678,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String nextGpsIn(int value) {
     return 'Next GPS in $value sec.';
   }
+
+  @override
+  String get devToolsSectionTitle => 'Developer tools';
+
+  @override
+  String get devToolsWarning =>
+      'WARNING: These tools are potentially DESTRUCTIVE. They can irreversibly modify or delete data. Once unlocked they stay usable for one hour. It is STRONGLY, STRONGLY, STRONGLY advised to at least make a backup of the database first!';
+
+  @override
+  String get devToolsUnlockButton => 'Unlock developer tools';
+
+  @override
+  String get devToolsChallengeInstruction =>
+      'Type the following 8-character string exactly to unlock:';
+
+  @override
+  String get devToolsChallengeHint => 'Enter the string';
+
+  @override
+  String get devToolsUnlockSuccess => 'Developer tools unlocked for one hour.';
+
+  @override
+  String devToolsUnlockedUntil(String time) {
+    return 'Unlocked until $time';
+  }
+
+  @override
+  String get devToolsRelock => 'Lock now';
 }

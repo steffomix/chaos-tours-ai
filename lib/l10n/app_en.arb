@@ -994,5 +994,13 @@
   "sharedPrefsDeleted": "Entry deleted",
   "sharedPrefsUpdated": "Entry updated",
   "sharedPrefsInvalidValue": "Invalid value for type {type}",
-  "nextGpsIn" : "Next GPS in {value} sec."
+  "nextGpsIn" : "Next GPS in {value} sec.",
+  "devToolsSectionTitle": "Developer tools",
+  "devToolsWarning": "WARNING: These tools are potentially DESTRUCTIVE. They can irreversibly modify or delete data. Once unlocked they stay usable for one hour. It is STRONGLY, STRONGLY, STRONGLY advised to at least make a backup of the database first!",
+  "devToolsUnlockButton": "Unlock developer tools",
+  "devToolsChallengeInstruction": "Type the following 8-character string exactly to unlock:",
+  "devToolsChallengeHint": "Enter the string",
+  "devToolsUnlockSuccess": "Developer tools unlocked for one hour.",
+  "devToolsUnlockedUntil": "Unlocked until {time}",
+  "devToolsRelock": "Lock now"
 }

@@ -3085,6 +3085,54 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Nächster GPS in {value} sek.'**
   String nextGpsIn(int value);
+
+  /// Title of the developer tools section at the bottom of settings
+  ///
+  /// In de, this message translates to:
+  /// **'Entwicklerwerkzeuge'**
+  String get devToolsSectionTitle;
+
+  /// Warning shown above the developer tools unlock challenge
+  ///
+  /// In de, this message translates to:
+  /// **'WARNUNG: Diese Werkzeuge sind potentiell ZERSTÖRERISCH. Sie können Daten unwiderruflich verändern oder löschen. Nach dem Freischalten sind sie für eine Stunde nutzbar. Es ist SEHR SEHR SEHR ratsam, vorher wenigstens ein Backup der Datenbank anzulegen!'**
+  String get devToolsWarning;
+
+  /// Button that starts the unlock challenge
+  ///
+  /// In de, this message translates to:
+  /// **'Entwicklerwerkzeuge freischalten'**
+  String get devToolsUnlockButton;
+
+  /// Instruction above the code the user must type
+  ///
+  /// In de, this message translates to:
+  /// **'Tippe die folgende 8-stellige Zeichenfolge exakt ab, um freizuschalten:'**
+  String get devToolsChallengeInstruction;
+
+  /// Hint text for the challenge input field
+  ///
+  /// In de, this message translates to:
+  /// **'Zeichenfolge eingeben'**
+  String get devToolsChallengeHint;
+
+  /// Snackbar shown after a successful unlock
+  ///
+  /// In de, this message translates to:
+  /// **'Entwicklerwerkzeuge für eine Stunde freigeschaltet.'**
+  String get devToolsUnlockSuccess;
+
+  /// Shows until when the dev tools stay unlocked
+  ///
+  /// In de, this message translates to:
+  /// **'Freigeschaltet bis {time}'**
+  String devToolsUnlockedUntil(String time);
+
+  /// Button to immediately re-lock the developer tools
+  ///
+  /// In de, this message translates to:
+  /// **'Jetzt sperren'**
+  String get devToolsRelock;
 }
 
 class _AppLocalizationsDelegate

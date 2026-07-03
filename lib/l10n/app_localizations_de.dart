@@ -1689,4 +1689,33 @@ class AppLocalizationsDe extends AppLocalizations {
   String nextGpsIn(int value) {
     return 'Nächster GPS in $value sek.';
   }
+
+  @override
+  String get devToolsSectionTitle => 'Entwicklerwerkzeuge';
+
+  @override
+  String get devToolsWarning =>
+      'WARNUNG: Diese Werkzeuge sind potentiell ZERSTÖRERISCH. Sie können Daten unwiderruflich verändern oder löschen. Nach dem Freischalten sind sie für eine Stunde nutzbar. Es ist SEHR SEHR SEHR ratsam, vorher wenigstens ein Backup der Datenbank anzulegen!';
+
+  @override
+  String get devToolsUnlockButton => 'Entwicklerwerkzeuge freischalten';
+
+  @override
+  String get devToolsChallengeInstruction =>
+      'Tippe die folgende 8-stellige Zeichenfolge exakt ab, um freizuschalten:';
+
+  @override
+  String get devToolsChallengeHint => 'Zeichenfolge eingeben';
+
+  @override
+  String get devToolsUnlockSuccess =>
+      'Entwicklerwerkzeuge für eine Stunde freigeschaltet.';
+
+  @override
+  String devToolsUnlockedUntil(String time) {
+    return 'Freigeschaltet bis $time';
+  }
+
+  @override
+  String get devToolsRelock => 'Jetzt sperren';
 }
