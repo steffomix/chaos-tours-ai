@@ -533,7 +533,6 @@ class RandomDataGenerator {
   TelegramConnection _createTelegramConnection() => TelegramConnection(
     uuid: randomUuid(),
     name: 'TelegramConnection ${randomString(5)}',
-    botToken: randomString(10),
     chatId: randomString(10),
     description: notes,
     updatedAt: randomPastTimeStamp,

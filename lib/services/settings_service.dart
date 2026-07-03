@@ -44,6 +44,7 @@ class SettingsService {
   static const String _keyPhotoMaxHeight = 'photo_max_height';
   static const String _keyPhotoImageQuality = 'photo_image_quality';
   static const String _keyGroupCalendarIds = 'group_calendar_ids';
+  static const String _keyTelegramBotTokens = 'telegram_bot_tokens';
 
   SharedPreferences? _prefs;
 
@@ -229,6 +230,60 @@ class SettingsService {
       map.remove(uuid);
     }
     await _p.setString(_keyGroupCalendarIds, jsonEncode(map));
+  }
+
+  // ── Telegram bot-token mapping (device-local, never synced) ────────────
+
+  /// Returns the bot token linked to [connectionUuid], or null.
+  String? getTelegramBotToken(String connectionUuid) {
+    final raw = _p.getString(_keyTelegramBotTokens);
+    if (raw == null || raw.isEmpty) return null;
+    final map = Map<String, String>.from(
+      (jsonDecode(raw) as Map<String, dynamic>).map(
+        (k, v) => MapEntry(k, v as String),
+      ),
+    );
+    return map[connectionUuid];
+  }
+
+  /// Sets or clears the bot token for [connectionUuid].
+  Future<void> setTelegramBotToken(
+    String connectionUuid,
+    String? token,
+  ) async {
+    final raw = _p.getString(_keyTelegramBotTokens);
+    final map = <String, String>{};
+    if (raw != null && raw.isNotEmpty) {
+      map.addAll(
+        Map<String, String>.from(
+          (jsonDecode(raw) as Map<String, dynamic>).map(
+            (k, v) => MapEntry(k, v as String),
+          ),
+        ),
+      );
+    }
+    if (token == null || token.isEmpty) {
+      map.remove(connectionUuid);
+    } else {
+      map[connectionUuid] = token;
+    }
+    await _p.setString(_keyTelegramBotTokens, jsonEncode(map));
+  }
+
+  /// Removes bot tokens for the given connection UUIDs (e.g. after deletion).
+  Future<void> removeTelegramBotTokens(List<String> connectionUuids) async {
+    if (connectionUuids.isEmpty) return;
+    final raw = _p.getString(_keyTelegramBotTokens);
+    if (raw == null || raw.isEmpty) return;
+    final map = Map<String, String>.from(
+      (jsonDecode(raw) as Map<String, dynamic>).map(
+        (k, v) => MapEntry(k, v as String),
+      ),
+    );
+    for (final uuid in connectionUuids) {
+      map.remove(uuid);
+    }
+    await _p.setString(_keyTelegramBotTokens, jsonEncode(map));
   }
 
   /// Comma-separated group UUIDs to display in map and scheduler (empty = all).

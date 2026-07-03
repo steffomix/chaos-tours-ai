@@ -432,7 +432,6 @@ class DatabaseService {
       CREATE TABLE IF NOT EXISTS telegram_connections (
         uuid TEXT PRIMARY KEY,
         device_id TEXT NOT NULL DEFAULT '',
-        bot_token TEXT NOT NULL DEFAULT '',
         chat_id TEXT NOT NULL DEFAULT '',
         name TEXT NOT NULL,
         description TEXT NOT NULL DEFAULT '',

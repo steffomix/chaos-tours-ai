@@ -18,9 +18,6 @@ class TelegramConnection {
   /// (e.g. "@mychannel").
   final String chatId;
 
-  /// Bot token (e.g. "123456:ABC-DEF…").
-  final String botToken;
-
   // ── Sync fields ──────────────────────────────────────────────────────────
   final int updatedAt;
   final int? deletedAt;
@@ -31,7 +28,6 @@ class TelegramConnection {
     required this.name,
     this.description = '',
     required this.chatId,
-    required this.botToken,
     int? updatedAt,
     this.deletedAt,
     String? deviceId,
@@ -47,7 +43,6 @@ class TelegramConnection {
       name: map['name'] as String,
       description: (map['description'] as String?) ?? '',
       chatId: (map['chat_id'] as String?) ?? '',
-      botToken: (map['bot_token'] as String?) ?? '',
       updatedAt:
           (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       deletedAt: map['deleted_at'] as int?,
@@ -62,7 +57,6 @@ class TelegramConnection {
       'name': name,
       'description': description,
       'chat_id': chatId,
-      'bot_token': botToken,
       'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
       'device_id': deviceId,
@@ -74,7 +68,6 @@ class TelegramConnection {
     String? name,
     String? description,
     String? chatId,
-    String? botToken,
     int? updatedAt,
     int? deletedAt,
     bool clearDeletedAt = false,
@@ -85,7 +78,6 @@ class TelegramConnection {
       name: name ?? this.name,
       description: description ?? this.description,
       chatId: chatId ?? this.chatId,
-      botToken: botToken ?? this.botToken,
       updatedAt: updatedAt ?? DateTime.now().millisecondsSinceEpoch,
       deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
       deviceId: deviceId ?? this.deviceId,

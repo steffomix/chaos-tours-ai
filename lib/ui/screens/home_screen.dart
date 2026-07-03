@@ -52,9 +52,13 @@ class _GpsCountdownNotifier extends ValueNotifier<int> {
     _running = true;
     await reset();
     // Guard: stopGpsCountdown() may have been called while reset() awaited.
-    if (_running && _timer == null && value > 0) {
-      _startTimer();
+    if (!_running) return;
+    // On the very first start there is no GPS history, so reset() lands on 0.
+    // Seed the full interval so the user sees the countdown running right away.
+    if (value == 0) {
+      value = SettingsService.instance.gpsIntervalSeconds;
     }
+    if (_timer == null) _startTimer();
   }
 
   void stopGpsCountdown() {

@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/telegram_connection.dart';
 import '../../services/database_service.dart';
+import '../../services/settings_service.dart';
 
 class TelegramConnectionsScreen extends StatefulWidget {
   const TelegramConnectionsScreen({super.key});
@@ -32,7 +33,11 @@ class _TelegramConnectionsScreenState extends State<TelegramConnectionsScreen> {
   Future<void> _add() async {
     final result = await _showEditDialog(null);
     if (result != null) {
-      await DatabaseService.instance.insertTelegramConnection(result);
+      await DatabaseService.instance.insertTelegramConnection(result.$1);
+      await SettingsService.instance.setTelegramBotToken(
+        result.$1.uuid,
+        result.$2,
+      );
       await _load();
     }
   }
@@ -40,8 +45,11 @@ class _TelegramConnectionsScreenState extends State<TelegramConnectionsScreen> {
   Future<void> _edit(TelegramConnection conn) async {
     final result = await _showEditDialog(conn);
     if (result != null) {
-      await DatabaseService.instance.updateTelegramConnection(
-        result.copyWith(uuid: conn.uuid),
+      final updated = result.$1.copyWith(uuid: conn.uuid);
+      await DatabaseService.instance.updateTelegramConnection(updated);
+      await SettingsService.instance.setTelegramBotToken(
+        updated.uuid,
+        result.$2,
       );
       await _load();
     }
@@ -74,17 +82,21 @@ class _TelegramConnectionsScreenState extends State<TelegramConnectionsScreen> {
 
   // ── Edit Dialog ────────────────────────────────────────────────────────────
 
-  Future<TelegramConnection?> _showEditDialog(
+  Future<(TelegramConnection, String)?> _showEditDialog(
     TelegramConnection? existing,
   ) async {
     final nameCtrl = TextEditingController(text: existing?.name ?? '');
     final descCtrl = TextEditingController(text: existing?.description ?? '');
     final chatIdCtrl = TextEditingController(text: existing?.chatId ?? '');
-    final tokenCtrl = TextEditingController(text: existing?.botToken ?? '');
+    final tokenCtrl = TextEditingController(
+      text: existing != null
+          ? (SettingsService.instance.getTelegramBotToken(existing.uuid) ?? '')
+          : '',
+    );
     final formKey = GlobalKey<FormState>();
     bool tokenVisible = false;
 
-    return showDialog<TelegramConnection>(
+    return showDialog<(TelegramConnection, String)>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlgState) {
@@ -155,16 +167,15 @@ class _TelegramConnectionsScreenState extends State<TelegramConnectionsScreen> {
               FilledButton(
                 onPressed: () {
                   if (formKey.currentState?.validate() != true) return;
-                  Navigator.pop(
-                    ctx,
+                  Navigator.pop(ctx, (
                     TelegramConnection(
                       uuid: existing?.uuid,
                       name: nameCtrl.text.trim(),
                       description: descCtrl.text.trim(),
                       chatId: chatIdCtrl.text.trim(),
-                      botToken: tokenCtrl.text.trim(),
                     ),
-                  );
+                    tokenCtrl.text.trim(),
+                  ));
                 },
                 child: Text(l10n.save),
               ),

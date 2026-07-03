@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/telegram_connection.dart';
+import 'settings_service.dart';
 
 class TelegramSendResult {
   final bool success;
@@ -29,7 +30,9 @@ class TelegramService {
     TelegramConnection connection,
     String text,
   ) async {
-    final token = connection.botToken.trim();
+    final token =
+        (SettingsService.instance.getTelegramBotToken(connection.uuid) ?? '')
+            .trim();
     final chatId = connection.chatId.trim();
     if (token.isEmpty || chatId.isEmpty) {
       return const TelegramSendResult(
@@ -82,7 +85,9 @@ class TelegramService {
     String messageId,
     String text,
   ) async {
-    final token = connection.botToken.trim();
+    final token =
+        (SettingsService.instance.getTelegramBotToken(connection.uuid) ?? '')
+            .trim();
     final chatId = connection.chatId.trim();
     if (token.isEmpty || chatId.isEmpty) return false;
 

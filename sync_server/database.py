@@ -210,7 +210,6 @@ telegram_connections = Table(
     Column("name", String, nullable=False),
     Column("description", Text, nullable=False, default=""),
     Column("chat_id", String, nullable=False, default=""),
-    Column("bot_token", String, nullable=False, default=""),
     *_sync_cols(),
 )
 
