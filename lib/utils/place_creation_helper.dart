@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../models/saved_place.dart';
 import '../services/database_service.dart';
+import '../services/nominatim_service.dart';
 import '../services/settings_service.dart';
 
 /// Shows a dialog to create a new [SavedPlace] at [latlng] via long-press.
@@ -15,7 +16,18 @@ Future<void> createPlaceFromLongPress(
   LatLng latlng, {
   required Future<void> Function() onCreated,
 }) async {
-  final nameController = TextEditingController();
+  // Optionally pre-fill the name with the reverse-geocoded address so the user
+  // can edit it before saving.
+  String prefillName = '';
+  if (SettingsService.instance.addressOnManualCreate) {
+    final address = await NominatimService.instance.reverseGeocode(
+      latlng.latitude,
+      latlng.longitude,
+    );
+    if (address != null) prefillName = address;
+  }
+  if (!context.mounted) return;
+  final nameController = TextEditingController(text: prefillName);
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (ctx) {

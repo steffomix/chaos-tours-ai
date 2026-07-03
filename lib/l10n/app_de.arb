@@ -478,6 +478,42 @@
   "@sectionAddressSearch": {
     "description": "Address search section header"
   },
+  "addressOnAutoCreateTitle": "Adresse bei automatischer Ortserstellung",
+  "@addressOnAutoCreateTitle": {
+    "description": "Checkbox: query address on auto place creation"
+  },
+  "addressOnAutoCreateSubtitle": "Adresse per OSM abfragen und beim automatischen Erstellen eines Ortes verwenden.",
+  "@addressOnAutoCreateSubtitle": {
+    "description": "Subtitle for address on auto create"
+  },
+  "addressOnManualCreateTitle": "Adresse bei manueller Ortserstellung",
+  "@addressOnManualCreateTitle": {
+    "description": "Checkbox: query address on manual place creation"
+  },
+  "addressOnManualCreateSubtitle": "Adresse per OSM abfragen und als Namensvorschlag beim Anlegen per Langdruck auf der Karte vorausfüllen.",
+  "@addressOnManualCreateSubtitle": {
+    "description": "Subtitle for address on manual create"
+  },
+  "addressOnIntervalTitle": "Adresse bei jedem GPS-Intervall",
+  "@addressOnIntervalTitle": {
+    "description": "Checkbox: query address on every GPS interval"
+  },
+  "addressOnIntervalSubtitle": "Adresse per OSM bei jedem Tracking-Intervall abfragen und im Startbildschirm anzeigen.",
+  "@addressOnIntervalSubtitle": {
+    "description": "Subtitle for address on interval"
+  },
+  "nominatimUserAgent": "Eigener User-Agent (OSM)",
+  "@nominatimUserAgent": {
+    "description": "Custom Nominatim user agent setting"
+  },
+  "nominatimUserAgentHint": "z. B. MeineApp/1.0 (kontakt@example.com)",
+  "@nominatimUserAgentHint": {
+    "description": "Custom Nominatim user agent hint"
+  },
+  "nominatimUserAgentSubtitle": "Der User-Agent identifiziert die App gegenüber dem OSM-Nominatim-Dienst. Leer lassen für den Standardwert. Verwenden viele Geräte denselben User-Agent, kann der Dienst Anfragen drosseln oder blockieren.",
+  "@nominatimUserAgentSubtitle": {
+    "description": "Custom Nominatim user agent subtitle"
+  },
   "defaultCountry": "Standard-Land für Adresssuche",
   "@defaultCountry": {
     "description": "Default country setting"

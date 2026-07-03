@@ -20,8 +20,17 @@ class NominatimResult {
 class NominatimService {
   NominatimService._();
   static final NominatimService instance = NominatimService._();
-  static final String _userAgent =
+
+  /// Built-in default User-Agent, used when the user has not set a custom one.
+  static String get _defaultUserAgent =>
       "ChaosTours/1.0 (user_${SettingsService.instance.deviceId})";
+
+  /// Effective User-Agent: the user's custom value, or the default when empty.
+  static String get _userAgent {
+    final custom = SettingsService.instance.nominatimUserAgent;
+    return custom.isNotEmpty ? custom : _defaultUserAgent;
+  }
+
   static const Duration _timeout = Duration(seconds: 10);
 
   /// Reverse geocode [lat]/[lng] and return a human-readable address string,

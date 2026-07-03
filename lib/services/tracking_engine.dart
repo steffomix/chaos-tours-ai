@@ -319,11 +319,13 @@ class TrackingEngine {
   }) async {
     final settings = SettingsService.instance;
 
-    // Fetch address from Nominatim (best-effort)
-    final address = await NominatimService.instance.reverseGeocode(
-      centroidLat,
-      centroidLng,
-    );
+    // Fetch address from Nominatim (best-effort), unless disabled in settings.
+    final address = settings.addressOnAutoCreate
+        ? await NominatimService.instance.reverseGeocode(
+            centroidLat,
+            centroidLng,
+          )
+        : null;
 
     if (settings.autoCreatePlaces) {
       final now = DateTime.fromMillisecondsSinceEpoch(startTime);

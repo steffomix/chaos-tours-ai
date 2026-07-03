@@ -25,6 +25,10 @@ class SettingsService {
   static const String _keyCalendarEnabled = 'calendar_enabled';
   static const String _keyTimelineHistoryDays = 'timeline_history_days';
   static const String _keyForceEndStayPending = 'force_end_stay_pending';
+  static const String _keyAddressOnAutoCreate = 'address_on_auto_create';
+  static const String _keyAddressOnManualCreate = 'address_on_manual_create';
+  static const String _keyAddressOnInterval = 'address_on_interval';
+  static const String _keyNominatimUserAgent = 'nominatim_user_agent';
   static const String _keySearchCountry = 'search_country';
   static const String _keySchedulerColorRange = 'scheduler_color_range';
   static const String _keySchedulerGroupIds = 'scheduler_group_ids';
@@ -172,6 +176,28 @@ class SettingsService {
   bool get forceEndStayPending => _p.getBool(_keyForceEndStayPending) ?? false;
   set forceEndStayPending(bool v) => _p.setBool(_keyForceEndStayPending, v);
 
+  /// Whether to query the address (Nominatim) when a place is auto-created
+  /// during tracking (default: true).
+  bool get addressOnAutoCreate => _p.getBool(_keyAddressOnAutoCreate) ?? true;
+  set addressOnAutoCreate(bool v) => _p.setBool(_keyAddressOnAutoCreate, v);
+
+  /// Whether to pre-fill the address as the name when the user creates a place
+  /// manually via long-press on the map (default: true).
+  bool get addressOnManualCreate =>
+      _p.getBool(_keyAddressOnManualCreate) ?? true;
+  set addressOnManualCreate(bool v) => _p.setBool(_keyAddressOnManualCreate, v);
+
+  /// Whether to query the address on every GPS tracking interval and show it
+  /// on the home screen (default: false).
+  bool get addressOnInterval => _p.getBool(_keyAddressOnInterval) ?? false;
+  set addressOnInterval(bool v) => _p.setBool(_keyAddressOnInterval, v);
+
+  /// Custom HTTP User-Agent for Nominatim requests. Device-local (never synced).
+  /// Empty string means the built-in default is used.
+  String get nominatimUserAgent => _p.getString(_keyNominatimUserAgent) ?? '';
+  set nominatimUserAgent(String v) =>
+      _p.setString(_keyNominatimUserAgent, v.trim());
+
   /// Default country pre-filled in the map address search (e.g. 'Deutschland').
   String get searchCountry => _p.getString(_keySearchCountry) ?? '';
   set searchCountry(String v) => _p.setString(_keySearchCountry, v);
@@ -247,10 +273,7 @@ class SettingsService {
   }
 
   /// Sets or clears the bot token for [connectionUuid].
-  Future<void> setTelegramBotToken(
-    String connectionUuid,
-    String? token,
-  ) async {
+  Future<void> setTelegramBotToken(String connectionUuid, String? token) async {
     final raw = _p.getString(_keyTelegramBotTokens);
     final map = <String, String>{};
     if (raw != null && raw.isNotEmpty) {
@@ -357,6 +380,9 @@ class SettingsService {
     defaultPlaceGroupUuid = a.defaultPlaceGroupUuid;
     timelineHistoryDays = a.timelineHistoryDays;
     searchCountry = a.searchCountry;
+    addressOnAutoCreate = a.addressOnAutoCreate;
+    addressOnManualCreate = a.addressOnManualCreate;
+    addressOnInterval = a.addressOnInterval;
     schedulerColorRange = a.schedulerColorRange;
     schedulerGroupIds = a.schedulerGroupIds;
     filterRequireExperiences = a.filterRequireExperiences;
@@ -387,6 +413,9 @@ class SettingsService {
       defaultPlaceGroupUuid: defaultPlaceGroupUuid,
       timelineHistoryDays: timelineHistoryDays,
       searchCountry: searchCountry,
+      addressOnAutoCreate: addressOnAutoCreate,
+      addressOnManualCreate: addressOnManualCreate,
+      addressOnInterval: addressOnInterval,
       schedulerColorRange: schedulerColorRange,
       schedulerGroupIds: schedulerGroupIds,
       filterRequireExperiences: filterRequireExperiences,

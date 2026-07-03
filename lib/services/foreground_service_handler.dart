@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 
 import '../services/settings_service.dart';
 import '../services/tracking_engine.dart';
+import '../services/nominatim_service.dart';
 
 /// Keys used when communicating via SendPort.
 class FgTaskKeys {
@@ -14,6 +15,7 @@ class FgTaskKeys {
   static const String enabled = 'enabled';
   static const String trackingStatus = 'tracking_status';
   static const String stayChanged = 'stay_changed';
+  static const String intervalAddress = 'interval_address';
 }
 
 /// Task handler that runs in the foreground service isolate.
@@ -71,6 +73,16 @@ class GpsForegroundTaskHandler extends TaskHandler {
         );
       }
 
+      // Optionally reverse-geocode the current position on every interval so
+      // the home screen can display the live address (best-effort).
+      String? intervalAddress;
+      if (SettingsService.instance.addressOnInterval) {
+        intervalAddress = await NominatimService.instance.reverseGeocode(
+          position.latitude,
+          position.longitude,
+        );
+      }
+
       // Notify main isolate
       FlutterForegroundTask.sendDataToMain({
         'cmd': FgTaskKeys.trackingStatus,
@@ -78,6 +90,7 @@ class GpsForegroundTaskHandler extends TaskHandler {
         'stay_uuid': result.currentStay?.uuid,
         'place_name': result.currentPlace?.name,
         'address': result.currentStay?.address,
+        FgTaskKeys.intervalAddress: intervalAddress,
         'lat': position.latitude,
         'lng': position.longitude,
         'ts': position.timestamp.millisecondsSinceEpoch,

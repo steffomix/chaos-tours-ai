@@ -692,6 +692,60 @@ abstract class AppLocalizations {
   /// **'Adresssuche'**
   String get sectionAddressSearch;
 
+  /// Checkbox: query address on auto place creation
+  ///
+  /// In de, this message translates to:
+  /// **'Adresse bei automatischer Ortserstellung'**
+  String get addressOnAutoCreateTitle;
+
+  /// Subtitle for address on auto create
+  ///
+  /// In de, this message translates to:
+  /// **'Adresse per OSM abfragen und beim automatischen Erstellen eines Ortes verwenden.'**
+  String get addressOnAutoCreateSubtitle;
+
+  /// Checkbox: query address on manual place creation
+  ///
+  /// In de, this message translates to:
+  /// **'Adresse bei manueller Ortserstellung'**
+  String get addressOnManualCreateTitle;
+
+  /// Subtitle for address on manual create
+  ///
+  /// In de, this message translates to:
+  /// **'Adresse per OSM abfragen und als Namensvorschlag beim Anlegen per Langdruck auf der Karte vorausfüllen.'**
+  String get addressOnManualCreateSubtitle;
+
+  /// Checkbox: query address on every GPS interval
+  ///
+  /// In de, this message translates to:
+  /// **'Adresse bei jedem GPS-Intervall'**
+  String get addressOnIntervalTitle;
+
+  /// Subtitle for address on interval
+  ///
+  /// In de, this message translates to:
+  /// **'Adresse per OSM bei jedem Tracking-Intervall abfragen und im Startbildschirm anzeigen.'**
+  String get addressOnIntervalSubtitle;
+
+  /// Custom Nominatim user agent setting
+  ///
+  /// In de, this message translates to:
+  /// **'Eigener User-Agent (OSM)'**
+  String get nominatimUserAgent;
+
+  /// Custom Nominatim user agent hint
+  ///
+  /// In de, this message translates to:
+  /// **'z. B. MeineApp/1.0 (kontakt@example.com)'**
+  String get nominatimUserAgentHint;
+
+  /// Custom Nominatim user agent subtitle
+  ///
+  /// In de, this message translates to:
+  /// **'Der User-Agent identifiziert die App gegenüber dem OSM-Nominatim-Dienst. Leer lassen für den Standardwert. Verwenden viele Geräte denselben User-Agent, kann der Dienst Anfragen drosseln oder blockieren.'**
+  String get nominatimUserAgentSubtitle;
+
   /// Default country setting
   ///
   /// In de, this message translates to:

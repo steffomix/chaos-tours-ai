@@ -353,6 +353,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sectionAddressSearch => 'Address search';
 
   @override
+  String get addressOnAutoCreateTitle => 'Address on automatic place creation';
+
+  @override
+  String get addressOnAutoCreateSubtitle =>
+      'Query the address via OSM and use it when a place is created automatically.';
+
+  @override
+  String get addressOnManualCreateTitle => 'Address on manual place creation';
+
+  @override
+  String get addressOnManualCreateSubtitle =>
+      'Query the address via OSM and pre-fill it as the name when creating a place via long-press on the map.';
+
+  @override
+  String get addressOnIntervalTitle => 'Address on every GPS interval';
+
+  @override
+  String get addressOnIntervalSubtitle =>
+      'Query the address via OSM on every tracking interval and show it on the home screen.';
+
+  @override
+  String get nominatimUserAgent => 'Custom User-Agent (OSM)';
+
+  @override
+  String get nominatimUserAgentHint => 'e.g. MyApp/1.0 (contact@example.com)';
+
+  @override
+  String get nominatimUserAgentSubtitle =>
+      'The User-Agent identifies the app to the OSM Nominatim service. Leave empty to use the default. If many devices share the same User-Agent, the service may throttle or block requests.';
+
+  @override
   String get defaultCountry => 'Default country for address search';
 
   @override

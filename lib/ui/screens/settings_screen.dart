@@ -39,6 +39,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _timelineHistoryDays;
   late String _searchCountry;
   final TextEditingController _searchCountryCtrl = TextEditingController();
+  late bool _addressOnAutoCreate;
+  late bool _addressOnManualCreate;
+  late bool _addressOnInterval;
+  final TextEditingController _nominatimUserAgentCtrl = TextEditingController();
   late int _schedulerColorRange;
   Set<String> _schedulerGroupIds = {};
   List<PlaceGroup> _groups = [];
@@ -55,6 +59,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
     _searchCountryCtrl.dispose();
+    _nominatimUserAgentCtrl.dispose();
     super.dispose();
   }
 
@@ -76,6 +81,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _timelineHistoryDays = s.timelineHistoryDays;
     _searchCountry = s.searchCountry;
     _searchCountryCtrl.text = _searchCountry;
+    _addressOnAutoCreate = s.addressOnAutoCreate;
+    _addressOnManualCreate = s.addressOnManualCreate;
+    _addressOnInterval = s.addressOnInterval;
+    _nominatimUserAgentCtrl.text = s.nominatimUserAgent;
     _schedulerColorRange = s.schedulerColorRange;
     _schedulerGroupIds = Set<String>.from(s.schedulerGroupUuidList);
     _photoMaxWidth = s.photoMaxWidth;
@@ -119,6 +128,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     s.trackingPointRadius = _trackingPointRadius;
     s.timelineHistoryDays = _timelineHistoryDays;
     s.searchCountry = _searchCountry;
+    s.addressOnAutoCreate = _addressOnAutoCreate;
+    s.addressOnManualCreate = _addressOnManualCreate;
+    s.addressOnInterval = _addressOnInterval;
+    s.nominatimUserAgent = _nominatimUserAgentCtrl.text;
     s.schedulerColorRange = _schedulerColorRange;
     s.schedulerGroupIds = _schedulerGroupIds.join(',');
     s.photoMaxWidth = _photoMaxWidth;
@@ -304,6 +317,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Text(
                 l10n.sectionAddressSearch,
                 style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            CheckboxListTile(
+              secondary: const Icon(Icons.auto_awesome),
+              title: Text(l10n.addressOnAutoCreateTitle),
+              subtitle: Text(l10n.addressOnAutoCreateSubtitle),
+              value: _addressOnAutoCreate,
+              onChanged: (v) =>
+                  setState(() => _addressOnAutoCreate = v ?? true),
+            ),
+            CheckboxListTile(
+              secondary: const Icon(Icons.touch_app),
+              title: Text(l10n.addressOnManualCreateTitle),
+              subtitle: Text(l10n.addressOnManualCreateSubtitle),
+              value: _addressOnManualCreate,
+              onChanged: (v) =>
+                  setState(() => _addressOnManualCreate = v ?? true),
+            ),
+            CheckboxListTile(
+              secondary: const Icon(Icons.gps_fixed),
+              title: Text(l10n.addressOnIntervalTitle),
+              subtitle: Text(l10n.addressOnIntervalSubtitle),
+              value: _addressOnInterval,
+              onChanged: (v) =>
+                  setState(() => _addressOnInterval = v ?? false),
+            ),
+            ListTile(
+              leading: const Icon(Icons.badge_outlined),
+              title: Text(l10n.nominatimUserAgent),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: _nominatimUserAgentCtrl,
+                    decoration: InputDecoration(
+                      hintText: l10n.nominatimUserAgentHint,
+                      isDense: true,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.nominatimUserAgentSubtitle,
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
               ),
             ),
             ListTile(

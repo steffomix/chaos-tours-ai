@@ -128,6 +128,8 @@ class _HomeScreenState extends State<HomeScreen>
   Stay? _activeStay;
   SavedPlace? _activeStayPlace;
   String _trackingStatusText = '';
+  // Live address from per-interval reverse geocoding (null when disabled/unknown).
+  String? _intervalAddress;
   // ending stay takes a while so we wait more than one interval to be safe
   int _endingStay = 0;
 
@@ -203,6 +205,7 @@ class _HomeScreenState extends State<HomeScreen>
       final statusName = data['status'] as String? ?? 'idle';
       final placeName = data['place_name'] as String?;
       final address = data['address'] as String?;
+      final intervalAddress = data[FgTaskKeys.intervalAddress] as String?;
       String text;
       switch (statusName) {
         case 'haltAtKnown':
@@ -227,6 +230,7 @@ class _HomeScreenState extends State<HomeScreen>
       if (mounted) {
         setState(() {
           _trackingStatusText = text;
+          _intervalAddress = intervalAddress;
           _endingStay--;
         });
       }
@@ -531,6 +535,32 @@ class _HomeScreenState extends State<HomeScreen>
                           ),
                         );
                       },
+                    ),
+                  ],
+                ),
+              ),
+            // Live interval address row (between GPS countdown and status)
+            if (_trackingEnabled &&
+                SettingsService.instance.addressOnInterval &&
+                _intervalAddress != null &&
+                _intervalAddress!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.place_outlined,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        _intervalAddress!,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
                     ),
                   ],
                 ),

@@ -355,6 +355,40 @@ class AppLocalizationsDe extends AppLocalizations {
   String get sectionAddressSearch => 'Adresssuche';
 
   @override
+  String get addressOnAutoCreateTitle =>
+      'Adresse bei automatischer Ortserstellung';
+
+  @override
+  String get addressOnAutoCreateSubtitle =>
+      'Adresse per OSM abfragen und beim automatischen Erstellen eines Ortes verwenden.';
+
+  @override
+  String get addressOnManualCreateTitle =>
+      'Adresse bei manueller Ortserstellung';
+
+  @override
+  String get addressOnManualCreateSubtitle =>
+      'Adresse per OSM abfragen und als Namensvorschlag beim Anlegen per Langdruck auf der Karte vorausfüllen.';
+
+  @override
+  String get addressOnIntervalTitle => 'Adresse bei jedem GPS-Intervall';
+
+  @override
+  String get addressOnIntervalSubtitle =>
+      'Adresse per OSM bei jedem Tracking-Intervall abfragen und im Startbildschirm anzeigen.';
+
+  @override
+  String get nominatimUserAgent => 'Eigener User-Agent (OSM)';
+
+  @override
+  String get nominatimUserAgentHint =>
+      'z. B. MeineApp/1.0 (kontakt@example.com)';
+
+  @override
+  String get nominatimUserAgentSubtitle =>
+      'Der User-Agent identifiziert die App gegenüber dem OSM-Nominatim-Dienst. Leer lassen für den Standardwert. Verwenden viele Geräte denselben User-Agent, kann der Dienst Anfragen drosseln oder blockieren.';
+
+  @override
   String get defaultCountry => 'Standard-Land für Adresssuche';
 
   @override

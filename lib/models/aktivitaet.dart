@@ -28,6 +28,15 @@ class Aktivitaet {
   /// Default country pre-filled in the map address search (e.g. 'Deutschland').
   final String searchCountry;
 
+  /// Whether to query the address (Nominatim) when a place is auto-created.
+  final bool addressOnAutoCreate;
+
+  /// Whether to pre-fill the address as name on manual place creation.
+  final bool addressOnManualCreate;
+
+  /// Whether to query the address on every GPS tracking interval.
+  final bool addressOnInterval;
+
   /// Color-range in days for the scheduler urgency indicator (default: 14).
   /// >= colorRange = green, 0 = yellow, <= -colorRange = red.
   final int schedulerColorRange;
@@ -62,6 +71,9 @@ class Aktivitaet {
     this.defaultPlaceGroupUuid,
     this.timelineHistoryDays = 7,
     this.searchCountry = '',
+    this.addressOnAutoCreate = true,
+    this.addressOnManualCreate = true,
+    this.addressOnInterval = false,
     this.schedulerColorRange = 14,
     this.schedulerGroupIds = '',
     this.filterRequireExperiences = false,
@@ -96,6 +108,10 @@ class Aktivitaet {
       defaultPlaceGroupUuid: map['default_place_group_uuid'] as String?,
       timelineHistoryDays: map['timeline_history_days'] as int? ?? 7,
       searchCountry: map['search_country'] as String? ?? '',
+      addressOnAutoCreate: (map['address_on_auto_create'] as int? ?? 1) == 1,
+      addressOnManualCreate:
+          (map['address_on_manual_create'] as int? ?? 1) == 1,
+      addressOnInterval: (map['address_on_interval'] as int? ?? 0) == 1,
       schedulerColorRange: map['scheduler_color_range'] as int? ?? 14,
       schedulerGroupIds: map['scheduler_group_ids'] as String? ?? '',
       filterRequireExperiences:
@@ -132,6 +148,9 @@ class Aktivitaet {
         'default_place_group_uuid': defaultPlaceGroupUuid,
       'timeline_history_days': timelineHistoryDays,
       'search_country': searchCountry,
+      'address_on_auto_create': addressOnAutoCreate ? 1 : 0,
+      'address_on_manual_create': addressOnManualCreate ? 1 : 0,
+      'address_on_interval': addressOnInterval ? 1 : 0,
       'scheduler_color_range': schedulerColorRange,
       'scheduler_group_ids': schedulerGroupIds,
       'filter_require_experiences': filterRequireExperiences ? 1 : 0,
@@ -161,6 +180,9 @@ class Aktivitaet {
     bool clearDefaultPlaceGroupUuid = false,
     int? timelineHistoryDays,
     String? searchCountry,
+    bool? addressOnAutoCreate,
+    bool? addressOnManualCreate,
+    bool? addressOnInterval,
     int? schedulerColorRange,
     String? schedulerGroupIds,
     bool? filterRequireExperiences,
@@ -191,6 +213,10 @@ class Aktivitaet {
           : (defaultPlaceGroupUuid ?? this.defaultPlaceGroupUuid),
       timelineHistoryDays: timelineHistoryDays ?? this.timelineHistoryDays,
       searchCountry: searchCountry ?? this.searchCountry,
+      addressOnAutoCreate: addressOnAutoCreate ?? this.addressOnAutoCreate,
+      addressOnManualCreate:
+          addressOnManualCreate ?? this.addressOnManualCreate,
+      addressOnInterval: addressOnInterval ?? this.addressOnInterval,
       schedulerColorRange: schedulerColorRange ?? this.schedulerColorRange,
       schedulerGroupIds: schedulerGroupIds ?? this.schedulerGroupIds,
       filterRequireExperiences:
