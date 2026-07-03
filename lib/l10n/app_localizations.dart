@@ -3133,6 +3133,228 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Jetzt sperren'**
   String get devToolsRelock;
+
+  /// No description provided for @messagesTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Nachrichten'**
+  String get messagesTitle;
+
+  /// No description provided for @messagesPlaceTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Ort-Nachrichten'**
+  String get messagesPlaceTitle;
+
+  /// No description provided for @messagesRegionTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Nachrichten der Region'**
+  String get messagesRegionTitle;
+
+  /// No description provided for @messagesEmpty.
+  ///
+  /// In de, this message translates to:
+  /// **'Noch keine Nachrichten.'**
+  String get messagesEmpty;
+
+  /// No description provided for @messageDeleteTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Nachricht löschen?'**
+  String get messageDeleteTitle;
+
+  /// No description provided for @messageNeedsPlace.
+  ///
+  /// In de, this message translates to:
+  /// **'Nachrichten benötigen einen Ort. Bitte in einem Ort verfassen.'**
+  String get messageNeedsPlace;
+
+  /// No description provided for @messageAuthorSelf.
+  ///
+  /// In de, this message translates to:
+  /// **'Ich'**
+  String get messageAuthorSelf;
+
+  /// No description provided for @messageDeleted.
+  ///
+  /// In de, this message translates to:
+  /// **'[gelöschte Nachricht]'**
+  String get messageDeleted;
+
+  /// No description provided for @messagePhotoPlaceholder.
+  ///
+  /// In de, this message translates to:
+  /// **'[Foto]'**
+  String get messagePhotoPlaceholder;
+
+  /// No description provided for @reply.
+  ///
+  /// In de, this message translates to:
+  /// **'Antworten'**
+  String get reply;
+
+  /// Banner shown while composing a reply
+  ///
+  /// In de, this message translates to:
+  /// **'Antwort auf: {preview}'**
+  String replyingTo(String preview);
+
+  /// No description provided for @noPlaceAvailable.
+  ///
+  /// In de, this message translates to:
+  /// **'Kein Ort verfügbar.'**
+  String get noPlaceAvailable;
+
+  /// No description provided for @noPhotosAtPlace.
+  ///
+  /// In de, this message translates to:
+  /// **'Keine Fotos an diesem Ort.'**
+  String get noPhotosAtPlace;
+
+  /// No description provided for @gallery.
+  ///
+  /// In de, this message translates to:
+  /// **'Galerie'**
+  String get gallery;
+
+  /// No description provided for @existingPlacePhoto.
+  ///
+  /// In de, this message translates to:
+  /// **'Vorhandenes Foto des Ortes'**
+  String get existingPlacePhoto;
+
+  /// No description provided for @messageHint.
+  ///
+  /// In de, this message translates to:
+  /// **'Nachricht…'**
+  String get messageHint;
+
+  /// No description provided for @placeMessagesButton.
+  ///
+  /// In de, this message translates to:
+  /// **'Nachrichten zum Ort'**
+  String get placeMessagesButton;
+
+  /// No description provided for @createPlace.
+  ///
+  /// In de, this message translates to:
+  /// **'Ort erstellen'**
+  String get createPlace;
+
+  /// No description provided for @showRegionMessages.
+  ///
+  /// In de, this message translates to:
+  /// **'Nachrichten der Region zeigen'**
+  String get showRegionMessages;
+
+  /// No description provided for @regionRadiusTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Radius der Region'**
+  String get regionRadiusTitle;
+
+  /// No description provided for @radiusInKm.
+  ///
+  /// In de, this message translates to:
+  /// **'Radius in km'**
+  String get radiusInKm;
+
+  /// No description provided for @showAction.
+  ///
+  /// In de, this message translates to:
+  /// **'Anzeigen'**
+  String get showAction;
+
+  /// No description provided for @sectionP2pMessenger.
+  ///
+  /// In de, this message translates to:
+  /// **'P2P-Messenger'**
+  String get sectionP2pMessenger;
+
+  /// No description provided for @messengerEnable.
+  ///
+  /// In de, this message translates to:
+  /// **'Messenger aktivieren'**
+  String get messengerEnable;
+
+  /// No description provided for @messengerEnableSubtitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Ortsgebundener P2P-Chat im Orte-Tab (Store-and-Forward).'**
+  String get messengerEnableSubtitle;
+
+  /// No description provided for @createPlaceOnSync.
+  ///
+  /// In de, this message translates to:
+  /// **'Orte bei Sync-Gelegenheit erstellen'**
+  String get createPlaceOnSync;
+
+  /// No description provided for @createPlaceOnSyncSubtitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Legt bei einer Synchronisationsgelegenheit automatisch einen Ort als „Sync-Quelle\" an – auch wenn die automatische Ortserstellung deaktiviert ist. Nötig, damit dort empfangene Nachrichten einen Bezugsort haben.'**
+  String get createPlaceOnSyncSubtitle;
+
+  /// No description provided for @syncPhotos.
+  ///
+  /// In de, this message translates to:
+  /// **'Fotos synchronisieren'**
+  String get syncPhotos;
+
+  /// No description provided for @syncPhotosSubtitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Bilder über das Mesh übertragen (base64 im JSON – kann groß werden).'**
+  String get syncPhotosSubtitle;
+
+  /// No description provided for @photoSizeLimitUnlimited.
+  ///
+  /// In de, this message translates to:
+  /// **'Foto-Größenlimit: unbegrenzt'**
+  String get photoSizeLimitUnlimited;
+
+  /// Photo sync size limit in KiB
+  ///
+  /// In de, this message translates to:
+  /// **'Foto-Größenlimit: {kib} KiB'**
+  String photoSizeLimitKib(int kib);
+
+  /// No description provided for @unlimited.
+  ///
+  /// In de, this message translates to:
+  /// **'unbegrenzt'**
+  String get unlimited;
+
+  /// No description provided for @nodeScanModeLabel.
+  ///
+  /// In de, this message translates to:
+  /// **'Node-Scan-Modus'**
+  String get nodeScanModeLabel;
+
+  /// No description provided for @nodeScanOnHalt.
+  ///
+  /// In de, this message translates to:
+  /// **'Bei Halt am Ort'**
+  String get nodeScanOnHalt;
+
+  /// No description provided for @nodeScanPerGps.
+  ///
+  /// In de, this message translates to:
+  /// **'Pro GPS-Intervall'**
+  String get nodeScanPerGps;
+
+  /// Periodic node scan interval
+  ///
+  /// In de, this message translates to:
+  /// **'Scan alle {count} GPS-Intervalle'**
+  String nodeScanEvery(int count);
+
+  /// No description provided for @autoCreatePlacesMessengerNote.
+  ///
+  /// In de, this message translates to:
+  /// **'Hinweis: Ortsgebundene Nachrichten des P2P-Messengers benötigen zwingend einen Ort als Bezugspunkt. Ist die automatische Ortserstellung aus, können bei Synchronisationsgelegenheiten dennoch Orte als „Sync-Quelle\" angelegt werden (siehe P2P-Messenger).'**
+  String get autoCreatePlacesMessengerNote;
 }
 
 class _AppLocalizationsDelegate

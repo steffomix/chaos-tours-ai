@@ -10,10 +10,10 @@ import '../../models/stay.dart';
 import '../../services/database_service.dart';
 import '../../services/telegram_service.dart';
 import '../../services/settings_service.dart';
-import 'place_reposition_screen.dart';
-import 'place_visits_screen.dart';
-import 'messages_screen.dart';
-import '../widgets/place_photos_section.dart';
+import '../screens/place_reposition_screen.dart';
+import '../screens/place_visits_screen.dart';
+import '../screens/messages_screen.dart';
+import 'place_photos_section.dart';
 
 class PlaceDetailScreen extends StatefulWidget {
   final SavedPlace place;
@@ -1366,9 +1366,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                           ),
                         ),
                   icon: const Icon(Icons.forum),
-                  label: Text(
-                    AppLocalizations.of(context)!.placeMessagesButton,
-                  ),
+                  label: const Text('Nachrichten zum Ort'),
                 ),
               if (SettingsService.instance.messengerEnabled)
                 const SizedBox(height: 8),

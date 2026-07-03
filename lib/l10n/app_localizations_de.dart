@@ -1718,4 +1718,126 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get devToolsRelock => 'Jetzt sperren';
+
+  @override
+  String get messagesTitle => 'Nachrichten';
+
+  @override
+  String get messagesPlaceTitle => 'Ort-Nachrichten';
+
+  @override
+  String get messagesRegionTitle => 'Nachrichten der Region';
+
+  @override
+  String get messagesEmpty => 'Noch keine Nachrichten.';
+
+  @override
+  String get messageDeleteTitle => 'Nachricht löschen?';
+
+  @override
+  String get messageNeedsPlace =>
+      'Nachrichten benötigen einen Ort. Bitte in einem Ort verfassen.';
+
+  @override
+  String get messageAuthorSelf => 'Ich';
+
+  @override
+  String get messageDeleted => '[gelöschte Nachricht]';
+
+  @override
+  String get messagePhotoPlaceholder => '[Foto]';
+
+  @override
+  String get reply => 'Antworten';
+
+  @override
+  String replyingTo(String preview) {
+    return 'Antwort auf: $preview';
+  }
+
+  @override
+  String get noPlaceAvailable => 'Kein Ort verfügbar.';
+
+  @override
+  String get noPhotosAtPlace => 'Keine Fotos an diesem Ort.';
+
+  @override
+  String get gallery => 'Galerie';
+
+  @override
+  String get existingPlacePhoto => 'Vorhandenes Foto des Ortes';
+
+  @override
+  String get messageHint => 'Nachricht…';
+
+  @override
+  String get placeMessagesButton => 'Nachrichten zum Ort';
+
+  @override
+  String get createPlace => 'Ort erstellen';
+
+  @override
+  String get showRegionMessages => 'Nachrichten der Region zeigen';
+
+  @override
+  String get regionRadiusTitle => 'Radius der Region';
+
+  @override
+  String get radiusInKm => 'Radius in km';
+
+  @override
+  String get showAction => 'Anzeigen';
+
+  @override
+  String get sectionP2pMessenger => 'P2P-Messenger';
+
+  @override
+  String get messengerEnable => 'Messenger aktivieren';
+
+  @override
+  String get messengerEnableSubtitle =>
+      'Ortsgebundener P2P-Chat im Orte-Tab (Store-and-Forward).';
+
+  @override
+  String get createPlaceOnSync => 'Orte bei Sync-Gelegenheit erstellen';
+
+  @override
+  String get createPlaceOnSyncSubtitle =>
+      'Legt bei einer Synchronisationsgelegenheit automatisch einen Ort als „Sync-Quelle\" an – auch wenn die automatische Ortserstellung deaktiviert ist. Nötig, damit dort empfangene Nachrichten einen Bezugsort haben.';
+
+  @override
+  String get syncPhotos => 'Fotos synchronisieren';
+
+  @override
+  String get syncPhotosSubtitle =>
+      'Bilder über das Mesh übertragen (base64 im JSON – kann groß werden).';
+
+  @override
+  String get photoSizeLimitUnlimited => 'Foto-Größenlimit: unbegrenzt';
+
+  @override
+  String photoSizeLimitKib(int kib) {
+    return 'Foto-Größenlimit: $kib KiB';
+  }
+
+  @override
+  String get unlimited => 'unbegrenzt';
+
+  @override
+  String get nodeScanModeLabel => 'Node-Scan-Modus';
+
+  @override
+  String get nodeScanOnHalt => 'Bei Halt am Ort';
+
+  @override
+  String get nodeScanPerGps => 'Pro GPS-Intervall';
+
+  @override
+  String nodeScanEvery(int count) {
+    return 'Scan alle $count GPS-Intervalle';
+  }
+
+  @override
+  String get autoCreatePlacesMessengerNote =>
+      'Hinweis: Ortsgebundene Nachrichten des P2P-Messengers benötigen zwingend einen Ort als Bezugspunkt. Ist die automatische Ortserstellung aus, können bei Synchronisationsgelegenheiten dennoch Orte als „Sync-Quelle\" angelegt werden (siehe P2P-Messenger).';
 }

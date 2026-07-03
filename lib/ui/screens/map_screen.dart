@@ -18,7 +18,7 @@ import '../../services/tracking_engine.dart';
 import '../../utils/geo_utils.dart';
 import '../../utils/place_creation_helper.dart';
 import '../widgets/experience_filter_panel.dart';
-import '../widgets/place_bottom_sheet.dart';
+import 'place_detail_screen.dart';
 
 /// Categorised live tracking state for the map layer.
 class _LiveTrackingState {
@@ -267,17 +267,16 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _onLongPress(TapPosition tap, LatLng latlng) =>
-      createPlaceFromLongPress(context, tap, latlng, onCreated: _loadPlaces);
+      handleMapLongPress(context, tap, latlng, onCreated: _loadPlaces);
 
   void _showPlaceSheet(SavedPlace place) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (_) => PlaceBottomSheet(
-        place: place,
-        onUpdated: _loadPlaces,
-        onDeleted: _loadPlaces,
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PlaceDetailScreen(
+          place: place,
+          onUpdated: _loadPlaces,
+          onDeleted: _loadPlaces,
+        ),
       ),
     );
   }

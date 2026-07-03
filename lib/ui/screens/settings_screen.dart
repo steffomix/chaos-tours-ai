@@ -51,6 +51,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _photoMaxHeight;
   late int _photoImageQuality;
 
+  // P2P Messenger / mesh sync
+  late bool _messengerEnabled;
+  late bool _createPlaceOnSyncOpportunity;
+  late bool _syncPhotosEnabled;
+  late int _photoSyncMaxBytes;
+  late NodeScanMode _nodeScanMode;
+  late int _nodeScanIntervalPerGps;
+
   // Network info for display (used by SyncSourcesScreen)
 
   // Aktivitaet management
@@ -91,6 +99,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _photoMaxWidth = s.photoMaxWidth;
     _photoMaxHeight = s.photoMaxHeight;
     _photoImageQuality = s.photoImageQuality;
+    _messengerEnabled = s.messengerEnabled;
+    _createPlaceOnSyncOpportunity = s.createPlaceOnSyncOpportunity;
+    _syncPhotosEnabled = s.syncPhotosEnabled;
+    _photoSyncMaxBytes = s.photoSyncMaxBytes;
+    _nodeScanMode = s.nodeScanMode;
+    _nodeScanIntervalPerGps = s.nodeScanIntervalPerGps;
     _loadGroups();
     _loadAktivitaeten();
   }
@@ -138,6 +152,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     s.photoMaxWidth = _photoMaxWidth;
     s.photoMaxHeight = _photoMaxHeight;
     s.photoImageQuality = _photoImageQuality;
+    s.messengerEnabled = _messengerEnabled;
+    s.createPlaceOnSyncOpportunity = _createPlaceOnSyncOpportunity;
+    s.syncPhotosEnabled = _syncPhotosEnabled;
+    s.photoSyncMaxBytes = _photoSyncMaxBytes;
+    s.nodeScanMode = _nodeScanMode;
+    s.nodeScanIntervalPerGps = _nodeScanIntervalPerGps;
     // notify foreground service about new settings
     if (gpsInterfalChanged) {
       await FlutterForegroundTask.updateService(
@@ -390,6 +410,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
               value: _autoCreatePlaces,
               onChanged: (v) => setState(() => _autoCreatePlaces = v),
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l10n.autoCreatePlacesMessengerNote,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             if (_autoCreatePlaces)
               ListTile(
                 title: Text(l10n.autoPlaceGroup),
@@ -550,6 +586,90 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onChanged: (v) => setState(() => _defaultRadius = v),
               ),
             ),
+            const Divider(),
+            // ── P2P Messenger / Mesh-Sync ─────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Text(
+                l10n.sectionP2pMessenger,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            SwitchListTile(
+              title: Text(l10n.messengerEnable),
+              subtitle: Text(l10n.messengerEnableSubtitle),
+              value: _messengerEnabled,
+              onChanged: (v) => setState(() => _messengerEnabled = v),
+            ),
+            if (_messengerEnabled) ...[
+              SwitchListTile(
+                title: Text(l10n.createPlaceOnSync),
+                subtitle: Text(l10n.createPlaceOnSyncSubtitle),
+                value: _createPlaceOnSyncOpportunity,
+                onChanged: (v) =>
+                    setState(() => _createPlaceOnSyncOpportunity = v),
+              ),
+              SwitchListTile(
+                title: Text(l10n.syncPhotos),
+                subtitle: Text(l10n.syncPhotosSubtitle),
+                value: _syncPhotosEnabled,
+                onChanged: (v) => setState(() => _syncPhotosEnabled = v),
+              ),
+              if (_syncPhotosEnabled)
+                ListTile(
+                  title: Text(
+                    _photoSyncMaxBytes == 0
+                        ? l10n.photoSizeLimitUnlimited
+                        : l10n.photoSizeLimitKib(
+                            (_photoSyncMaxBytes / 1024).round(),
+                          ),
+                  ),
+                  subtitle: Slider(
+                    value: (_photoSyncMaxBytes / 1024)
+                        .clamp(0, 4096)
+                        .toDouble(),
+                    min: 0,
+                    max: 4096,
+                    divisions: 32,
+                    label: _photoSyncMaxBytes == 0
+                        ? l10n.unlimited
+                        : '${(_photoSyncMaxBytes / 1024).round()} KiB',
+                    onChanged: (v) =>
+                        setState(() => _photoSyncMaxBytes = (v.round() * 1024)),
+                  ),
+                ),
+              ListTile(
+                title: Text(l10n.nodeScanModeLabel),
+                trailing: DropdownButton<NodeScanMode>(
+                  value: _nodeScanMode,
+                  items: [
+                    DropdownMenuItem(
+                      value: NodeScanMode.onHalt,
+                      child: Text(l10n.nodeScanOnHalt),
+                    ),
+                    DropdownMenuItem(
+                      value: NodeScanMode.perGpsInterval,
+                      child: Text(l10n.nodeScanPerGps),
+                    ),
+                  ],
+                  onChanged: (v) =>
+                      setState(() => _nodeScanMode = v ?? NodeScanMode.onHalt),
+                ),
+              ),
+              if (_nodeScanMode == NodeScanMode.perGpsInterval)
+                ListTile(
+                  title: Text(l10n.nodeScanEvery(_nodeScanIntervalPerGps)),
+                  subtitle: Slider(
+                    value: _nodeScanIntervalPerGps.toDouble(),
+                    min: 1,
+                    max: 20,
+                    divisions: 19,
+                    label: '$_nodeScanIntervalPerGps',
+                    onChanged: (v) =>
+                        setState(() => _nodeScanIntervalPerGps = v.round()),
+                  ),
+                ),
+            ],
             const Divider(),
             // ── Kartendarstellung ─────────────────────────────────────────
             Padding(

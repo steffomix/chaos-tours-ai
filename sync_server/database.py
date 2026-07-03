@@ -213,6 +213,28 @@ telegram_connections = Table(
     *_sync_cols(),
 )
 
+messages = Table(
+    "messages",
+    metadata,
+    Column("uuid", String, primary_key=True),
+    Column("author_name", String, nullable=False, default=""),
+    Column("place_uuid", String, nullable=False),
+    Column("reply_to_uuid", String, nullable=True),
+    Column("body", Text, nullable=False, default=""),
+    Column("created_at", BigInteger, nullable=False, default=0),
+    *_sync_cols(),
+)
+
+message_attachments = Table(
+    "message_attachments",
+    metadata,
+    Column("uuid", String, primary_key=True),
+    Column("message_uuid", String, nullable=False),
+    Column("photo_uuid", String, nullable=False),
+    Column("created_at", BigInteger, nullable=False, default=0),
+    *_sync_cols(),
+)
+
 # Ordered by foreign-key dependency (parents before children).
 SYNC_TABLES = [
     ("place_groups", place_groups),
@@ -228,6 +250,8 @@ SYNC_TABLES = [
     ("sync_source_experiences", sync_source_experiences),
     ("place_photos", place_photos),
     ("telegram_connections", telegram_connections),
+    ("messages", messages),
+    ("message_attachments", message_attachments),
 ]
 
 

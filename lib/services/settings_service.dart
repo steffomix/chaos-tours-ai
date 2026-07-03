@@ -5,6 +5,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/aktivitaet.dart';
 
+/// When the app scans the local network for P2P mesh nodes.
+enum NodeScanMode {
+  /// Scan periodically, every N GPS sampling intervals.
+  perGpsInterval,
+
+  /// Scan only when the tracking engine registers a halt at a place.
+  onHalt,
+}
+
 class SettingsService {
   SettingsService._();
   static final SettingsService instance = SettingsService._();
@@ -51,6 +60,17 @@ class SettingsService {
   static const String _keyTelegramBotTokens = 'telegram_bot_tokens';
   static const String _keyDevToolsUnlockedUntilMs =
       'dev_tools_unlocked_until_ms';
+
+  // ── P2P Messenger / mesh sync ─────────────────────────────────────────────
+  static const String _keyMessengerEnabled = 'messenger_enabled';
+  static const String _keyCreatePlaceOnSyncOpportunity =
+      'create_place_on_sync_opportunity';
+  static const String _keySyncSourcePlaceGroup = 'sync_source_place_group_uuid';
+  static const String _keySyncPhotosEnabled = 'sync_photos_enabled';
+  static const String _keyPhotoSyncMaxBytes = 'photo_sync_max_bytes';
+  static const String _keyNodeScanMode = 'node_scan_mode';
+  static const String _keyNodeScanIntervalPerGps = 'node_scan_interval_per_gps';
+  static const String _keyRegionMessageRadiusKm = 'region_message_radius_km';
 
   SharedPreferences? _prefs;
 
@@ -131,6 +151,61 @@ class SettingsService {
   /// Whether to automatically create places for unknown stays (default: true).
   bool get autoCreatePlaces => _p.getBool(_keyAutoCreate) ?? true;
   set autoCreatePlaces(bool v) => _p.setBool(_keyAutoCreate, v);
+
+  // ── P2P Messenger / mesh sync ─────────────────────────────────────────────
+
+  /// Whether the P2P messenger feature is enabled (default: true).
+  bool get messengerEnabled => _p.getBool(_keyMessengerEnabled) ?? true;
+  set messengerEnabled(bool v) => _p.setBool(_keyMessengerEnabled, v);
+
+  /// When a sync opportunity is detected and no place is nearby, create a
+  /// "Sync-Quelle" place automatically — even if [autoCreatePlaces] is off.
+  /// Location-bound messages require a place to anchor to (default: true).
+  bool get createPlaceOnSyncOpportunity =>
+      _p.getBool(_keyCreatePlaceOnSyncOpportunity) ?? true;
+  set createPlaceOnSyncOpportunity(bool v) =>
+      _p.setBool(_keyCreatePlaceOnSyncOpportunity, v);
+
+  /// UUID of the group assigned to auto-created "Sync-Quelle" places. The group
+  /// carries [PlaceType.syncSource]. Nullable until first created.
+  String? get syncSourcePlaceGroupUuid =>
+      _p.getString(_keySyncSourcePlaceGroup);
+  set syncSourcePlaceGroupUuid(String? v) {
+    if (v == null || v.isEmpty) {
+      _p.remove(_keySyncSourcePlaceGroup);
+    } else {
+      _p.setString(_keySyncSourcePlaceGroup, v);
+    }
+  }
+
+  /// Whether photos are included in mesh sync transport (default: true).
+  bool get syncPhotosEnabled => _p.getBool(_keySyncPhotosEnabled) ?? true;
+  set syncPhotosEnabled(bool v) => _p.setBool(_keySyncPhotosEnabled, v);
+
+  /// Maximum photo size in bytes eligible for sync (0 = no limit).
+  /// Photos larger than this are skipped during sync (default: 512 KiB).
+  int get photoSyncMaxBytes => _p.getInt(_keyPhotoSyncMaxBytes) ?? 524288;
+  set photoSyncMaxBytes(int v) =>
+      _p.setInt(_keyPhotoSyncMaxBytes, v < 0 ? 0 : v);
+
+  /// When the app scans for local mesh nodes (default: onHalt).
+  NodeScanMode get nodeScanMode {
+    final raw = _p.getInt(_keyNodeScanMode) ?? NodeScanMode.onHalt.index;
+    return NodeScanMode.values[raw.clamp(0, NodeScanMode.values.length - 1)];
+  }
+
+  set nodeScanMode(NodeScanMode v) => _p.setInt(_keyNodeScanMode, v.index);
+
+  /// In [NodeScanMode.perGpsInterval], scan every N GPS intervals (default: 4).
+  int get nodeScanIntervalPerGps => _p.getInt(_keyNodeScanIntervalPerGps) ?? 4;
+  set nodeScanIntervalPerGps(int v) =>
+      _p.setInt(_keyNodeScanIntervalPerGps, v.clamp(1, 100));
+
+  /// Radius in km for the "messages of the region" map view (default: 5.0).
+  double get regionMessageRadiusKm =>
+      _p.getDouble(_keyRegionMessageRadiusKm) ?? 5.0;
+  set regionMessageRadiusKm(double v) =>
+      _p.setDouble(_keyRegionMessageRadiusKm, v.clamp(0.1, 500.0));
 
   /// UUID of group for automatically created places (nullable).
   String? get autoPlaceGroupUuid => _p.getString(_keyAutoPlaceGroup);

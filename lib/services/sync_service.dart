@@ -92,6 +92,23 @@ class SyncService {
     return result;
   }
 
+  /// Opportunistic mesh sync against a freshly discovered node reachable at
+  /// [baseUrl] (e.g. `http://192.168.4.1:8000`). Uses full insert+update table
+  /// options so all shared data (messages, attachments, photos, places…) is
+  /// exchanged epidemically. Does not persist the node as a [SyncSource].
+  Future<SyncResult> syncWithNode(String baseUrl, {String apiKey = ''}) async {
+    final ephemeral = SyncSource(
+      name: baseUrl,
+      syncUrl: baseUrl,
+      apiKey: apiKey,
+      syncOptions: SyncSourceOptions.allEnabled(),
+    );
+    final result = await _syncWithSource(ephemeral);
+    _setLastSyncMs(DateTime.now().millisecondsSinceEpoch);
+    await DatabaseService.instance.refreshTrustedSources();
+    return result;
+  }
+
   // ── Internal sync logic ───────────────────────────────────────────────────
 
   Future<SyncResult> _syncWithSource(SyncSource source) async {

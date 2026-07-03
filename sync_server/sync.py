@@ -4,7 +4,6 @@ Sync pull/push logic for Chaos Tours sync server.
 from typing import Any
 
 from sqlalchemy import select, text
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from config import get_table_config

@@ -15,8 +15,9 @@ import '../../services/settings_service.dart';
 import '../../services/location_service.dart';
 import '../../utils/geo_utils.dart';
 import '../../utils/place_creation_helper.dart';
-import '../widgets/place_bottom_sheet.dart';
+import 'place_detail_screen.dart';
 import '../widgets/experience_filter_panel.dart';
+import 'messages_screen.dart';
 
 class PlacesScreen extends StatefulWidget {
   const PlacesScreen({super.key});
@@ -355,14 +356,13 @@ class _PlacesScreenState extends State<PlacesScreen> {
   }
 
   void _openSheet(SavedPlace place) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (_) => PlaceBottomSheet(
-        place: place,
-        onUpdated: _loadPlaces,
-        onDeleted: _loadPlaces,
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PlaceDetailScreen(
+          place: place,
+          onUpdated: _loadPlaces,
+          onDeleted: _loadPlaces,
+        ),
       ),
     );
   }
@@ -495,7 +495,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
           options: MapOptions(
             initialCenter: center,
             initialZoom: 12,
-            onLongPress: (tap, latlng) => createPlaceFromLongPress(
+            onLongPress: (tap, latlng) => handleMapLongPress(
               context,
               tap,
               latlng,
@@ -616,7 +616,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
           ],
         ),
         body: DefaultTabController(
-          length: 2,
+          length: SettingsService.instance.messengerEnabled ? 3 : 2,
           child: Column(
             children: [
               if (_filterPanelOpen)
@@ -639,11 +639,20 @@ class _PlacesScreenState extends State<PlacesScreen> {
               TabBar(
                 tabs: [
                   Tab(icon: const Icon(Icons.list), text: l10n.tabPlaces),
+                  if (SettingsService.instance.messengerEnabled)
+                    const Tab(icon: Icon(Icons.forum), text: 'Messenger'),
                   const Tab(icon: Icon(Icons.map), text: 'Survive'),
                 ],
               ),
               Expanded(
-                child: TabBarView(children: [_buildList(), _buildMap()]),
+                child: TabBarView(
+                  children: [
+                    _buildList(),
+                    if (SettingsService.instance.messengerEnabled)
+                      const MessagesScreen(filter: MessagesFilter.all),
+                    _buildMap(),
+                  ],
+                ),
               ),
             ],
           ),

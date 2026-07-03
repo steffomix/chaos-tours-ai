@@ -12,5 +12,7 @@
   "place_experiences":        { "pull": true,  "push": true  },
   "sync_source_experiences":  { "pull": true,  "push": true  },
   "place_photos":             { "pull": true,  "push": true  },
-  "telegram_connections":     { "pull": true,  "push": true  }
+  "telegram_connections":     { "pull": true,  "push": true  },
+  "messages":                 { "pull": true,  "push": true  },
+  "message_attachments":      { "pull": true,  "push": true  }
 }

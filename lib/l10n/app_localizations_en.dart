@@ -1706,4 +1706,126 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get devToolsRelock => 'Lock now';
+
+  @override
+  String get messagesTitle => 'Messages';
+
+  @override
+  String get messagesPlaceTitle => 'Place messages';
+
+  @override
+  String get messagesRegionTitle => 'Regional messages';
+
+  @override
+  String get messagesEmpty => 'No messages yet.';
+
+  @override
+  String get messageDeleteTitle => 'Delete message?';
+
+  @override
+  String get messageNeedsPlace =>
+      'Messages require a place. Please compose within a place.';
+
+  @override
+  String get messageAuthorSelf => 'Me';
+
+  @override
+  String get messageDeleted => '[deleted message]';
+
+  @override
+  String get messagePhotoPlaceholder => '[photo]';
+
+  @override
+  String get reply => 'Reply';
+
+  @override
+  String replyingTo(String preview) {
+    return 'Replying to: $preview';
+  }
+
+  @override
+  String get noPlaceAvailable => 'No place available.';
+
+  @override
+  String get noPhotosAtPlace => 'No photos at this place.';
+
+  @override
+  String get gallery => 'Gallery';
+
+  @override
+  String get existingPlacePhoto => 'Existing place photo';
+
+  @override
+  String get messageHint => 'Message…';
+
+  @override
+  String get placeMessagesButton => 'Place messages';
+
+  @override
+  String get createPlace => 'Create place';
+
+  @override
+  String get showRegionMessages => 'Show messages of the region';
+
+  @override
+  String get regionRadiusTitle => 'Region radius';
+
+  @override
+  String get radiusInKm => 'Radius in km';
+
+  @override
+  String get showAction => 'Show';
+
+  @override
+  String get sectionP2pMessenger => 'P2P messenger';
+
+  @override
+  String get messengerEnable => 'Enable messenger';
+
+  @override
+  String get messengerEnableSubtitle =>
+      'Location-bound P2P chat in the Places tab (store-and-forward).';
+
+  @override
+  String get createPlaceOnSync => 'Create places on sync opportunity';
+
+  @override
+  String get createPlaceOnSyncSubtitle =>
+      'Automatically creates a \"sync source\" place on a synchronization opportunity — even when automatic place creation is disabled. Required so messages received there have a reference place.';
+
+  @override
+  String get syncPhotos => 'Sync photos';
+
+  @override
+  String get syncPhotosSubtitle =>
+      'Transfer images over the mesh (base64 in JSON — can get large).';
+
+  @override
+  String get photoSizeLimitUnlimited => 'Photo size limit: unlimited';
+
+  @override
+  String photoSizeLimitKib(int kib) {
+    return 'Photo size limit: $kib KiB';
+  }
+
+  @override
+  String get unlimited => 'unlimited';
+
+  @override
+  String get nodeScanModeLabel => 'Node scan mode';
+
+  @override
+  String get nodeScanOnHalt => 'On halt at place';
+
+  @override
+  String get nodeScanPerGps => 'Per GPS interval';
+
+  @override
+  String nodeScanEvery(int count) {
+    return 'Scan every $count GPS intervals';
+  }
+
+  @override
+  String get autoCreatePlacesMessengerNote =>
+      'Note: Location-bound messages of the P2P messenger strictly require a place as reference point. If automatic place creation is off, places can still be created as \"sync source\" on synchronization opportunities (see P2P messenger).';
 }

@@ -2385,5 +2385,61 @@
   "devToolsRelock": "Jetzt sperren",
   "@devToolsRelock": {
     "description": "Button to immediately re-lock the developer tools"
-  }
+  },
+  "messagesTitle": "Nachrichten",
+  "messagesPlaceTitle": "Ort-Nachrichten",
+  "messagesRegionTitle": "Nachrichten der Region",
+  "messagesEmpty": "Noch keine Nachrichten.",
+  "messageDeleteTitle": "Nachricht löschen?",
+  "messageNeedsPlace": "Nachrichten benötigen einen Ort. Bitte in einem Ort verfassen.",
+  "messageAuthorSelf": "Ich",
+  "messageDeleted": "[gelöschte Nachricht]",
+  "messagePhotoPlaceholder": "[Foto]",
+  "reply": "Antworten",
+  "replyingTo": "Antwort auf: {preview}",
+  "@replyingTo": {
+    "description": "Banner shown while composing a reply",
+    "placeholders": {
+      "preview": { "type": "String" }
+    }
+  },
+  "noPlaceAvailable": "Kein Ort verfügbar.",
+  "noPhotosAtPlace": "Keine Fotos an diesem Ort.",
+  "camera": "Kamera",
+  "gallery": "Galerie",
+  "existingPlacePhoto": "Vorhandenes Foto des Ortes",
+  "messageHint": "Nachricht…",
+  "placeMessagesButton": "Nachrichten zum Ort",
+  "createPlace": "Ort erstellen",
+  "showRegionMessages": "Nachrichten der Region zeigen",
+  "regionRadiusTitle": "Radius der Region",
+  "radiusInKm": "Radius in km",
+  "showAction": "Anzeigen",
+  "sectionP2pMessenger": "P2P-Messenger",
+  "messengerEnable": "Messenger aktivieren",
+  "messengerEnableSubtitle": "Ortsgebundener P2P-Chat im Orte-Tab (Store-and-Forward).",
+  "createPlaceOnSync": "Orte bei Sync-Gelegenheit erstellen",
+  "createPlaceOnSyncSubtitle": "Legt bei einer Synchronisationsgelegenheit automatisch einen Ort als „Sync-Quelle\" an – auch wenn die automatische Ortserstellung deaktiviert ist. Nötig, damit dort empfangene Nachrichten einen Bezugsort haben.",
+  "syncPhotos": "Fotos synchronisieren",
+  "syncPhotosSubtitle": "Bilder über das Mesh übertragen (base64 im JSON – kann groß werden).",
+  "photoSizeLimitUnlimited": "Foto-Größenlimit: unbegrenzt",
+  "photoSizeLimitKib": "Foto-Größenlimit: {kib} KiB",
+  "@photoSizeLimitKib": {
+    "description": "Photo sync size limit in KiB",
+    "placeholders": {
+      "kib": { "type": "int" }
+    }
+  },
+  "unlimited": "unbegrenzt",
+  "nodeScanModeLabel": "Node-Scan-Modus",
+  "nodeScanOnHalt": "Bei Halt am Ort",
+  "nodeScanPerGps": "Pro GPS-Intervall",
+  "nodeScanEvery": "Scan alle {count} GPS-Intervalle",
+  "@nodeScanEvery": {
+    "description": "Periodic node scan interval",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "autoCreatePlacesMessengerNote": "Hinweis: Ortsgebundene Nachrichten des P2P-Messengers benötigen zwingend einen Ort als Bezugspunkt. Ist die automatische Ortserstellung aus, können bei Synchronisationsgelegenheiten dennoch Orte als „Sync-Quelle\" angelegt werden (siehe P2P-Messenger)."
 }

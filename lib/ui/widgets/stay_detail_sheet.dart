@@ -8,7 +8,7 @@ import '../../models/stay.dart';
 import '../../models/stay_activity.dart';
 import '../../models/stay_person.dart';
 import '../../services/database_service.dart';
-import 'place_bottom_sheet.dart';
+import '../screens/place_detail_screen.dart';
 import 'photo_grid.dart';
 
 class StayDetailSheet extends StatefulWidget {
@@ -150,17 +150,16 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
   void _openPlaceSheet() {
     final place = _place;
     if (place == null) return;
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (_) => PlaceBottomSheet(
-        place: place,
-        onUpdated: _load,
-        onDeleted: () {
-          Navigator.pop(context);
-          widget.onUpdated?.call();
-        },
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PlaceDetailScreen(
+          place: place,
+          onUpdated: _load,
+          onDeleted: () {
+            Navigator.pop(context);
+            widget.onUpdated?.call();
+          },
+        ),
       ),
     );
   }

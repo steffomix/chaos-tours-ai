@@ -15,7 +15,7 @@ import '../../services/database_service.dart';
 import '../../services/foreground_service_handler.dart';
 import '../../services/settings_service.dart';
 import '../../utils/place_creation_helper.dart';
-import '../widgets/place_bottom_sheet.dart';
+import 'place_detail_screen.dart';
 import '../widgets/stay_card.dart';
 
 class TimelineScreen extends StatefulWidget {
@@ -527,12 +527,14 @@ class _TimelineScreenState extends State<TimelineScreen> {
         width: 36,
         height: 36,
         child: GestureDetector(
-          onTap: () => showModalBottomSheet<void>(
-            context: context,
-            isScrollControlled: true,
-            useSafeArea: true,
-            builder: (_) =>
-                PlaceBottomSheet(place: p, onUpdated: _load, onDeleted: _load),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => PlaceDetailScreen(
+                place: p,
+                onUpdated: _load,
+                onDeleted: _load,
+              ),
+            ),
           ),
           child: Icon(Icons.location_pin, color: markerColor, size: 36),
         ),
@@ -661,14 +663,13 @@ class _TimelineScreenState extends State<TimelineScreen> {
             margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: InkWell(
               borderRadius: BorderRadius.circular(12),
-              onTap: () => showModalBottomSheet<void>(
-                context: context,
-                isScrollControlled: true,
-                useSafeArea: true,
-                builder: (_) => PlaceBottomSheet(
-                  place: place,
-                  onUpdated: _load,
-                  onDeleted: _load,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => PlaceDetailScreen(
+                    place: place,
+                    onUpdated: _load,
+                    onDeleted: _load,
+                  ),
                 ),
               ),
               child: Padding(
@@ -756,5 +757,5 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   Future<void> _onMapLongPress(TapPosition tap, LatLng latlng) =>
-      createPlaceFromLongPress(context, tap, latlng, onCreated: _load);
+      handleMapLongPress(context, tap, latlng, onCreated: _load);
 }

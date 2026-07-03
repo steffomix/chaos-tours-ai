@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:path/path.dart';
@@ -21,6 +22,8 @@ import '../models/sync_source_experience.dart';
 import '../models/telegram_connection.dart';
 import '../models/tracking_point.dart';
 import '../models/trusted_source.dart';
+import '../models/message.dart';
+import '../models/message_attachment.dart';
 import 'sync_service.dart' show SyncOptions;
 import 'settings_service.dart';
 
@@ -95,6 +98,7 @@ class DatabaseService {
         phone TEXT NOT NULL DEFAULT '',
         experience_rating_average REAL DEFAULT NULL,
         experience_rating_median REAL DEFAULT NULL,
+        last_messages_sync_ms INTEGER NOT NULL DEFAULT 0,
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
         FOREIGN KEY (group_uuid) REFERENCES place_groups(uuid) ON DELETE SET NULL
@@ -432,6 +436,50 @@ class DatabaseService {
     );
 
     await db.execute('''
+      CREATE TABLE IF NOT EXISTS messages (
+        uuid TEXT PRIMARY KEY,
+        device_id TEXT NOT NULL DEFAULT '',
+        author_name TEXT NOT NULL DEFAULT '',
+        place_uuid TEXT NOT NULL,
+        reply_to_uuid TEXT,
+        body TEXT NOT NULL DEFAULT '',
+        created_at INTEGER NOT NULL DEFAULT 0,
+        updated_at INTEGER NOT NULL DEFAULT 0,
+        deleted_at INTEGER,
+        FOREIGN KEY (place_uuid) REFERENCES saved_places(uuid) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_messages_place ON messages(place_uuid) WHERE deleted_at IS NULL',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_messages_reply ON messages(reply_to_uuid) WHERE deleted_at IS NULL',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at) WHERE deleted_at IS NULL',
+    );
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS message_attachments (
+        uuid TEXT PRIMARY KEY,
+        device_id TEXT NOT NULL DEFAULT '',
+        message_uuid TEXT NOT NULL,
+        photo_uuid TEXT NOT NULL,
+        created_at INTEGER NOT NULL DEFAULT 0,
+        updated_at INTEGER NOT NULL DEFAULT 0,
+        deleted_at INTEGER,
+        FOREIGN KEY (message_uuid) REFERENCES messages(uuid) ON DELETE CASCADE,
+        FOREIGN KEY (photo_uuid) REFERENCES place_photos(uuid) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_message_attachments_message ON message_attachments(message_uuid) WHERE deleted_at IS NULL',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_message_attachments_photo ON message_attachments(photo_uuid) WHERE deleted_at IS NULL',
+    );
+
+    await db.execute('''
       CREATE TABLE IF NOT EXISTS telegram_connections (
         uuid TEXT PRIMARY KEY,
         device_id TEXT NOT NULL DEFAULT '',
@@ -599,6 +647,19 @@ class DatabaseService {
   Future<void> deletePlace(String uuid) async {
     final db = await database;
     await db.delete('saved_places', where: 'uuid = ?', whereArgs: [uuid]);
+  }
+
+  /// Updates the local message-sync watermark for a place. This is device-local
+  /// state (each device tracks its own delta position per place), so it does
+  /// NOT bump `updated_at` and must be excluded from place row sync payloads.
+  Future<void> updatePlaceMessagesSyncMs(String placeUuid, int ms) async {
+    final db = await database;
+    await db.update(
+      'saved_places',
+      {'last_messages_sync_ms': ms},
+      where: 'uuid = ?',
+      whereArgs: [placeUuid],
+    );
   }
 
   /// Returns the number of completed stays at [placeUuid].
@@ -1631,6 +1692,207 @@ class DatabaseService {
     );
   }
 
+  // ── Messages (P2P location-bound chat) ────────────────────────────────────
+
+  Future<String> insertMessage(Message message, {String deviceId = ''}) async {
+    final db = await database;
+    final map = _withSyncFields(message.toMap(), deviceId);
+    await db.insert(
+      'messages',
+      map,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    return map['uuid'] as String;
+  }
+
+  /// Chronological paginated feed across all places (newest first).
+  Future<List<Message>> loadMessagesPaged({
+    required int limit,
+    required int offset,
+  }) async {
+    final db = await database;
+    final rows = await db.query(
+      'messages',
+      where: 'deleted_at IS NULL',
+      orderBy: 'created_at DESC',
+      limit: limit,
+      offset: offset,
+    );
+    return rows.map(Message.fromMap).toList();
+  }
+
+  /// Paginated feed for a single place (newest first).
+  Future<List<Message>> loadMessagesForPlace(
+    String placeUuid, {
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final db = await database;
+    final rows = await db.query(
+      'messages',
+      where: 'place_uuid = ? AND deleted_at IS NULL',
+      whereArgs: [placeUuid],
+      orderBy: 'created_at DESC',
+      limit: limit,
+      offset: offset,
+    );
+    return rows.map(Message.fromMap).toList();
+  }
+
+  /// Paginated feed for all places whose coordinates fall inside the bounding
+  /// box around ([lat], [lng]) with the given [radiusKm]. A cheap bounding-box
+  /// prefilter is applied in SQL; callers may refine by exact distance.
+  Future<List<Message>> loadMessagesForRegion({
+    required double lat,
+    required double lng,
+    required double radiusKm,
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final db = await database;
+    final radiusM = radiusKm * 1000;
+    final latDelta = radiusM / 111000;
+    final cosLat = cos(lat * pi / 180).abs().clamp(0.001, 1.0);
+    final lngDelta = radiusM / (111000 * cosLat);
+    final rows = await db.rawQuery(
+      '''SELECT m.* FROM messages m
+         JOIN saved_places p ON p.uuid = m.place_uuid
+         WHERE m.deleted_at IS NULL
+           AND p.deleted_at IS NULL
+           AND p.lat BETWEEN ? AND ?
+           AND p.lng BETWEEN ? AND ?
+         ORDER BY m.created_at DESC
+         LIMIT ? OFFSET ?''',
+      [
+        lat - latDelta,
+        lat + latDelta,
+        lng - lngDelta,
+        lng + lngDelta,
+        limit,
+        offset,
+      ],
+    );
+    return rows.map(Message.fromMap).toList();
+  }
+
+  /// Direct replies to [messageUuid] (oldest first, forum-style).
+  Future<List<Message>> loadReplies(String messageUuid) async {
+    final db = await database;
+    final rows = await db.query(
+      'messages',
+      where: 'reply_to_uuid = ? AND deleted_at IS NULL',
+      whereArgs: [messageUuid],
+      orderBy: 'created_at ASC',
+    );
+    return rows.map(Message.fromMap).toList();
+  }
+
+  /// Loads a single message by UUID (regardless of soft-delete state), or null.
+  Future<Message?> loadMessage(String uuid) async {
+    final db = await database;
+    final rows = await db.query(
+      'messages',
+      where: 'uuid = ?',
+      whereArgs: [uuid],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return Message.fromMap(rows.first);
+  }
+
+  Future<void> updateMessageBody(
+    String uuid,
+    String body, {
+    String deviceId = '',
+  }) async {
+    final db = await database;
+    await db.update(
+      'messages',
+      {
+        'body': body,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+        if (deviceId.isNotEmpty) 'device_id': deviceId,
+      },
+      where: 'uuid = ?',
+      whereArgs: [uuid],
+    );
+  }
+
+  Future<void> softDeleteMessage(String uuid, {String deviceId = ''}) async {
+    final db = await database;
+    await db.update(
+      'messages',
+      {
+        'deleted_at': DateTime.now().millisecondsSinceEpoch,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+        if (deviceId.isNotEmpty) 'device_id': deviceId,
+      },
+      where: 'uuid = ?',
+      whereArgs: [uuid],
+    );
+  }
+
+  // ── Message attachments (references to place_photos) ──────────────────────
+
+  Future<String> insertMessageAttachment(
+    MessageAttachment attachment, {
+    String deviceId = '',
+  }) async {
+    final db = await database;
+    final map = _withSyncFields(attachment.toMap(), deviceId);
+    await db.insert(
+      'message_attachments',
+      map,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    return map['uuid'] as String;
+  }
+
+  Future<List<MessageAttachment>> loadAttachmentsForMessage(
+    String messageUuid,
+  ) async {
+    final db = await database;
+    final rows = await db.query(
+      'message_attachments',
+      where: 'message_uuid = ? AND deleted_at IS NULL',
+      whereArgs: [messageUuid],
+      orderBy: 'created_at ASC',
+    );
+    return rows.map(MessageAttachment.fromMap).toList();
+  }
+
+  /// Resolves the referenced photos for a message in one query.
+  Future<List<PlacePhoto>> loadPhotosForMessage(String messageUuid) async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      '''SELECT ph.* FROM place_photos ph
+         JOIN message_attachments ma ON ma.photo_uuid = ph.uuid
+         WHERE ma.message_uuid = ?
+           AND ma.deleted_at IS NULL
+           AND ph.deleted_at IS NULL
+         ORDER BY ma.created_at ASC''',
+      [messageUuid],
+    );
+    return rows.map(PlacePhoto.fromMap).toList();
+  }
+
+  Future<void> softDeleteMessageAttachment(
+    String uuid, {
+    String deviceId = '',
+  }) async {
+    final db = await database;
+    await db.update(
+      'message_attachments',
+      {
+        'deleted_at': DateTime.now().millisecondsSinceEpoch,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+        if (deviceId.isNotEmpty) 'device_id': deviceId,
+      },
+      where: 'uuid = ?',
+      whereArgs: [uuid],
+    );
+  }
+
   // ── Sync queries ──────────────────────────────────────────────────────────
 
   Future<List<Map<String, dynamic>>> loadChangedRows(
@@ -1643,17 +1905,39 @@ class DatabaseService {
       where: 'updated_at > ?',
       whereArgs: [since],
     );
+
+    // saved_places carries a device-local message-sync watermark that must not
+    // propagate to other devices — strip it from the sync payload.
+    if (table == 'saved_places') {
+      return rows.map((row) {
+        final copy = Map<String, dynamic>.from(row);
+        copy.remove('last_messages_sync_ms');
+        return copy;
+      }).toList();
+    }
+
     if (table != 'place_photos') return rows;
-    // Encode BLOB photo_data to base64 string for JSON transport.
-    return rows.map((row) {
+
+    // Photo sync is optional and size-limited (base64 in JSON bloats transport).
+    final settings = SettingsService.instance;
+    if (!settings.syncPhotosEnabled) return const [];
+    final maxBytes = settings.photoSyncMaxBytes;
+
+    final result = <Map<String, dynamic>>[];
+    for (final row in rows) {
       final data = row['photo_data'];
       if (data is List<int>) {
+        // Skip oversized photos; the rest of their metadata is not synced
+        // either, so peers simply won't see the image until limits change.
+        if (maxBytes > 0 && data.length > maxBytes) continue;
         final copy = Map<String, dynamic>.from(row);
         copy['photo_data'] = base64Encode(Uint8List.fromList(data));
-        return copy;
+        result.add(copy);
+      } else {
+        result.add(row);
       }
-      return row;
-    }).toList();
+    }
+    return result;
   }
 
   Future<void> upsertByUuid(
@@ -1671,6 +1955,12 @@ class DatabaseService {
           localRow['photo_data'] = base64Decode(data);
         } catch (_) {}
       }
+    }
+    // Never let a remote peer overwrite our device-local message watermark.
+    if (table == 'saved_places' &&
+        localRow.containsKey('last_messages_sync_ms')) {
+      localRow = Map<String, dynamic>.from(localRow)
+        ..remove('last_messages_sync_ms');
     }
     final db = await database;
     final uuid = localRow['uuid'] as String?;

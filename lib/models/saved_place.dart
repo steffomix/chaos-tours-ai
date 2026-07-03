@@ -18,6 +18,11 @@ enum PlaceType {
 
   /// Only visible in the places list when "Verbotene Orte auflisten" is enabled.
   forbidden,
+
+  /// Orange dot. Automatically created at a P2P sync opportunity (mesh node /
+  /// peer). Anchors location-bound messages. No notification, no stay tracking,
+  /// no calendar sync.
+  syncSource,
 }
 
 extension PlaceTypeExtension on PlaceType {
@@ -31,6 +36,8 @@ extension PlaceTypeExtension on PlaceType {
         return 'Geheim';
       case PlaceType.forbidden:
         return 'Verboten';
+      case PlaceType.syncSource:
+        return 'Sync-Quelle';
     }
   }
 
@@ -44,6 +51,8 @@ extension PlaceTypeExtension on PlaceType {
         return Icons.visibility_off;
       case PlaceType.forbidden:
         return Icons.block;
+      case PlaceType.syncSource:
+        return Icons.hub;
     }
   }
 
@@ -57,6 +66,8 @@ extension PlaceTypeExtension on PlaceType {
         return Colors.red;
       case PlaceType.forbidden:
         return Colors.grey;
+      case PlaceType.syncSource:
+        return Colors.orange;
     }
   }
 
@@ -144,6 +155,10 @@ class SavedPlace {
   /// Null when no experiences exist.
   final double? experienceRatingMedian;
 
+  /// Delta-sync watermark for location-bound P2P messages anchored to this
+  /// place. Milliseconds since epoch of the last successful message sync.
+  final int lastMessagesSyncMs;
+
   SavedPlace({
     String? uuid,
     required this.name,
@@ -166,9 +181,11 @@ class SavedPlace {
     this.phone = '',
     this.experienceRatingAverage,
     this.experienceRatingMedian,
+    int? lastMessagesSyncMs,
   }) : uuid = uuid?.isNotEmpty == true ? uuid! : _uuid.v4(),
        createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch,
        updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch,
+       lastMessagesSyncMs = lastMessagesSyncMs ?? 0,
        deviceId = deviceId?.isNotEmpty == true
            ? deviceId!
            : SettingsService.instance.deviceId;
@@ -205,6 +222,7 @@ class SavedPlace {
           ?.toDouble(),
       experienceRatingMedian: (map['experience_rating_median'] as num?)
           ?.toDouble(),
+      lastMessagesSyncMs: (map['last_messages_sync_ms'] as int?) ?? 0,
     );
   }
 
@@ -228,6 +246,7 @@ class SavedPlace {
       'website': website,
       'email': email,
       'phone': phone,
+      'last_messages_sync_ms': lastMessagesSyncMs,
     };
   }
 
@@ -257,6 +276,7 @@ class SavedPlace {
     String? phone,
     double? experienceRatingAverage,
     double? experienceRatingMedian,
+    int? lastMessagesSyncMs,
   }) {
     return SavedPlace(
       uuid: uuid ?? this.uuid,
@@ -286,6 +306,7 @@ class SavedPlace {
           experienceRatingAverage ?? this.experienceRatingAverage,
       experienceRatingMedian:
           experienceRatingMedian ?? this.experienceRatingMedian,
+      lastMessagesSyncMs: lastMessagesSyncMs ?? this.lastMessagesSyncMs,
     );
   }
 }
