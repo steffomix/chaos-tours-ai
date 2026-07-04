@@ -3355,6 +3355,42 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Hinweis: Ortsgebundene Nachrichten des P2P-Messengers benötigen zwingend einen Ort als Bezugspunkt. Ist die automatische Ortserstellung aus, können bei Synchronisationsgelegenheiten dennoch Orte als „Sync-Quelle\" angelegt werden (siehe P2P-Messenger).'**
   String get autoCreatePlacesMessengerNote;
+
+  /// No description provided for @locatorCopied.
+  ///
+  /// In de, this message translates to:
+  /// **'Locator kopiert'**
+  String get locatorCopied;
+
+  /// No description provided for @compassTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Kompass'**
+  String get compassTitle;
+
+  /// No description provided for @compassRefHere.
+  ///
+  /// In de, this message translates to:
+  /// **'Von hier'**
+  String get compassRefHere;
+
+  /// No description provided for @compassRefPlace.
+  ///
+  /// In de, this message translates to:
+  /// **'Von Ort'**
+  String get compassRefPlace;
+
+  /// No description provided for @compassFromHere.
+  ///
+  /// In de, this message translates to:
+  /// **'Mit Kompass von hier'**
+  String get compassFromHere;
+
+  /// No description provided for @compassFromPlace.
+  ///
+  /// In de, this message translates to:
+  /// **'Mit Kompass von diesem Ort'**
+  String get compassFromPlace;
 }
 
 class _AppLocalizationsDelegate

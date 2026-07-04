@@ -65,4 +65,38 @@ class GeoUtils {
     if (rawPoints.length == 1) return rawPoints.first;
     return centroid(rawPoints);
   }
+
+  /// Initial great-circle bearing in degrees (0..360, 0=N, 90=E) from point 1
+  /// to point 2.
+  static double bearingDegrees(
+    double lat1,
+    double lng1,
+    double lat2,
+    double lng2,
+  ) {
+    final phi1 = _toRad(lat1);
+    final phi2 = _toRad(lat2);
+    final dLon = _toRad(lng2 - lng1);
+    final y = sin(dLon) * cos(phi2);
+    final x = cos(phi1) * sin(phi2) - sin(phi1) * cos(phi2) * cos(dLon);
+    return (atan2(y, x) * 180 / pi + 360) % 360;
+  }
+
+  /// Formats a bearing as degrees + arc-minutes for a compass dial, e.g. 123°45'.
+  static String formatBearingDegMin(double deg) {
+    var d = deg % 360;
+    if (d < 0) d += 360;
+    var whole = d.floor();
+    var minutes = ((d - whole) * 60).round();
+    if (minutes == 60) {
+      minutes = 0;
+      whole = (whole + 1) % 360;
+    }
+    return "$whole°${minutes.toString().padLeft(2, '0')}'";
+  }
+
+  /// Formats a distance (meters) as kilometres with 1 m resolution, e.g.
+  /// "12.345 km". Practical range up to ~1000 km.
+  static String formatDistanceKm(double meters) =>
+      '${(meters / 1000.0).toStringAsFixed(3)} km';
 }

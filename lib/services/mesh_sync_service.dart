@@ -3,6 +3,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import '../models/place_group.dart';
 import '../models/saved_place.dart';
 import '../utils/geo_utils.dart';
+import '../utils/maidenhead.dart';
 import 'database_service.dart';
 import 'node_discovery_service.dart';
 import 'settings_service.dart';
@@ -56,10 +57,9 @@ class MeshSyncService {
       final nodes = await NodeDiscoveryService.instance.discover();
       if (nodes.isEmpty) return const MeshSyncOutcome();
 
-      // 3. Ensure a place exists to anchor exchanged messages to.
-      final place = await ensureSyncSourcePlace(lat: lat, lng: lng);
-
-      // 4. Delta-sync with every discovered node.
+      // 3. Delta-sync with every discovered node FIRST. This way an already
+      //    shared place for this cell (deterministic UUID) is pulled in before
+      //    we decide whether to create one — preventing duplicate places.
       var synced = 0;
       var pulled = 0;
       var pushed = 0;
@@ -74,6 +74,10 @@ class MeshSyncService {
           error ??= res.errorMessage;
         }
       }
+
+      // 4. Ensure a place exists to anchor exchanged messages to — adopting the
+      //    just-pulled / deterministic place, or creating it when permitted.
+      final place = await ensureSyncSourcePlace(lat: lat, lng: lng);
 
       // 5. Record the message-sync watermark on the anchor place.
       if (place != null) {
@@ -99,8 +103,11 @@ class MeshSyncService {
   }
 
   /// Returns a place near ([lat], [lng]) to anchor messages to. Reuses an
-  /// existing nearby place when possible; otherwise creates a "Sync-Quelle"
-  /// place (when permitted by settings) so location-bound messages have a home.
+  /// existing nearby place when possible; otherwise adopts (or creates) a
+  /// deterministic "Sync-Quelle" place whose UUID is derived from the 10-char
+  /// Maidenhead cell of the location. Because every device in the same cell
+  /// derives the *same* UUID and uses the cell-center coordinates, the sync
+  /// merge collapses them into one shared place instead of an endless stack.
   /// Returns null when no place exists and creation is disabled.
   Future<SavedPlace?> ensureSyncSourcePlace({
     required double lat,
@@ -110,7 +117,7 @@ class MeshSyncService {
     final s = SettingsService.instance;
     final radius = s.defaultRadiusMeters;
 
-    // Look for an existing place within the default radius (bounding box first).
+    // 1. Reuse any existing place within the default radius (bounding box first).
     final latDelta = radius / 111000;
     final lngDelta = radius / 111000;
     final candidates = await db.loadPlacesWithinBounds(
@@ -128,16 +135,31 @@ class MeshSyncService {
         nearestDist = d;
       }
     }
-    if (nearest != null) return nearest;
+    if (nearest != null) {
+      return nearest;
+    }
 
-    // No nearby place — create one only if permitted.
+    // 2. Deterministic identity for this cell.
+    final placeUuid = Maidenhead.deterministicPlaceUuid(lat, lng);
+    final loc10 = Maidenhead.encodeId(lat, lng);
+
+    // 3. Adopt the place if it already exists locally (e.g. just pulled).
+    final existing = await db.getSavedPlace(placeUuid);
+    if (existing != null) {
+      return existing;
+    }
+
+    // 4. No place yet — create one only if permitted.
     if (!s.autoCreatePlaces && !s.createPlaceOnSyncOpportunity) return null;
 
     final groupUuid = await _ensureSyncSourceGroup();
+    // Use the cell CENTER so all devices agree on identical coordinates.
+    final center = Maidenhead.decodeCenter(loc10);
     final place = SavedPlace(
-      name: 'Sync-Quelle ${_shortTime()}',
-      lat: lat,
-      lng: lng,
+      uuid: placeUuid,
+      name: 'Sync-Quelle ${Maidenhead.format(loc10)}',
+      lat: center.lat,
+      lng: center.lng,
       radius: radius,
       groupUuid: groupUuid,
       originType: PlaceOriginType.auto,
@@ -164,11 +186,5 @@ class MeshSyncService {
     await db.insertPlaceGroup(group);
     s.syncSourcePlaceGroupUuid = group.uuid;
     return group.uuid;
-  }
-
-  String _shortTime() {
-    final dt = DateTime.now();
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(dt.day)}.${two(dt.month)}. ${two(dt.hour)}:${two(dt.minute)}';
   }
 }

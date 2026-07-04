@@ -14,13 +14,34 @@ import '../../services/foreground_service_handler.dart';
 import '../../services/settings_service.dart';
 import '../../services/location_service.dart';
 import '../../utils/geo_utils.dart';
+import '../../utils/maidenhead.dart';
 import '../../utils/place_creation_helper.dart';
 import 'place_detail_screen.dart';
 import '../widgets/experience_filter_panel.dart';
 import 'messages_screen.dart';
 
+/// Reference point for the compass view: the user's current location, or a
+/// specific place the user selected.
+enum CompassReference { here, place }
+
 class PlacesScreen extends StatefulWidget {
-  const PlacesScreen({super.key});
+  /// When true, the screen renders as a focused compass view: a single AppBar +
+  /// place list, where each card shows bearing + distance from the current
+  /// location to that place. Pushed as its own route from a place detail.
+  final bool compassMode;
+
+  /// Place to highlight in compass mode (the one the user navigated from).
+  final String? compassTargetUuid;
+
+  /// Initial compass reference point (switchable at runtime in compass mode).
+  final CompassReference compassReference;
+
+  const PlacesScreen({
+    super.key,
+    this.compassMode = false,
+    this.compassTargetUuid,
+    this.compassReference = CompassReference.here,
+  });
 
   @override
   State<PlacesScreen> createState() => _PlacesScreenState();
@@ -55,6 +76,10 @@ class _PlacesScreenState extends State<PlacesScreen> {
   // Distance
   ({double lat, double lng})? _currentPos;
 
+  // Compass mode
+  late CompassReference _compassRef;
+  SavedPlace? _compassTargetPlace;
+
   // Pagination
   static const int _kChunkSize = 20;
   final ScrollController _placesScrollCtrl = ScrollController();
@@ -77,7 +102,26 @@ class _PlacesScreenState extends State<PlacesScreen> {
         s.filterSpecificRatingField,
       ),
     );
+    _compassRef = widget.compassReference;
+    if (widget.compassMode && widget.compassTargetUuid != null) {
+      DatabaseService.instance.getSavedPlace(widget.compassTargetUuid).then((
+        p,
+      ) {
+        if (mounted) setState(() => _compassTargetPlace = p);
+      });
+    }
     _loadCurrentPosition().then((_) => _loadPlaces());
+  }
+
+  /// The active compass origin coordinate, or null if unavailable.
+  ({double lat, double lng})? get _compassOrigin {
+    switch (_compassRef) {
+      case CompassReference.here:
+        return _currentPos;
+      case CompassReference.place:
+        final p = _compassTargetPlace;
+        return p == null ? null : (lat: p.lat, lng: p.lng);
+    }
   }
 
   void _onPlacesScroll() {
@@ -387,6 +431,66 @@ class _PlacesScreenState extends State<PlacesScreen> {
     }
   }
 
+  /// Compass reference indicator + switch (visible above the place cards).
+  Widget _buildCompassHeader(AppLocalizations l10n) {
+    final here = _currentPos;
+    final hereValue = here == null
+        ? null
+        : Maidenhead.format(Maidenhead.encodeId(here.lat, here.lng));
+    final placeName = _compassTargetPlace?.name ?? '';
+    final activeText = _compassRef == CompassReference.here
+        ? (hereValue == null
+              ? l10n.compassRefHere
+              : '${l10n.compassRefHere}: $hereValue')
+        : (placeName.isEmpty
+              ? l10n.compassRefPlace
+              : '${l10n.compassRefPlace}: $placeName');
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SegmentedButton<CompassReference>(
+            segments: [
+              ButtonSegment(
+                value: CompassReference.here,
+                icon: const Icon(Icons.my_location),
+                label: Text(l10n.compassRefHere),
+              ),
+              ButtonSegment(
+                value: CompassReference.place,
+                icon: const Icon(Icons.place),
+                label: Text(l10n.compassRefPlace),
+              ),
+            ],
+            selected: {_compassRef},
+            onSelectionChanged: (s) => setState(() => _compassRef = s.first),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Icon(
+                Icons.explore,
+                size: 16,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  activeText,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildList() {
     final l10n = AppLocalizations.of(context)!;
     if (!_listLoading && _listItems.isEmpty) {
@@ -427,6 +531,9 @@ class _PlacesScreenState extends State<PlacesScreen> {
             fmtDuration: _fmtDuration,
             fmtDistance: _fmtDistance,
             onTap: () => _openSheet(place),
+            compassOrigin: widget.compassMode ? _compassOrigin : null,
+            isCompassTarget:
+                widget.compassMode && place.uuid == widget.compassTargetUuid,
           );
         },
       ),
@@ -532,6 +639,24 @@ class _PlacesScreenState extends State<PlacesScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    if (widget.compassMode) {
+      return FocusDetector(
+        onFocusGained: () {
+          _loadCurrentPosition().then((_) => _loadPlaces(silent: true));
+        },
+        onFocusLost: () {},
+        child: Scaffold(
+          appBar: AppBar(title: Text(l10n.compassTitle)),
+          body: Column(
+            children: [
+              _buildCompassHeader(l10n),
+              const Divider(height: 1),
+              Expanded(child: _buildList()),
+            ],
+          ),
+        ),
+      );
+    }
     return FocusDetector(
       onFocusGained: () {
         ForegroundServiceManager.addDataListener(_onServiceData);
@@ -675,6 +800,13 @@ class _PlaceCard extends StatefulWidget {
   final String Function(double m) fmtDistance;
   final VoidCallback onTap;
 
+  /// When set (compass mode), the card shows a bearing + distance row from this
+  /// origin to the place.
+  final ({double lat, double lng})? compassOrigin;
+
+  /// Highlights the card as the compass navigation target.
+  final bool isCompassTarget;
+
   const _PlaceCard({
     required this.place,
     required this.count,
@@ -687,6 +819,8 @@ class _PlaceCard extends StatefulWidget {
     required this.filter,
     this.distance,
     this.avgRating,
+    this.compassOrigin,
+    this.isCompassTarget = false,
   });
 
   @override
@@ -882,6 +1016,12 @@ class _PlaceCardState extends State<_PlaceCard> {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      shape: widget.isCompassTarget
+          ? RoundedRectangleBorder(
+              side: BorderSide(color: colorScheme.primary, width: 2),
+              borderRadius: BorderRadius.circular(12),
+            )
+          : null,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: widget.onTap,
@@ -925,6 +1065,56 @@ class _PlaceCardState extends State<_PlaceCard> {
                   ],
                 ],
               ),
+              // ── Kompass-Zeile (Peilung + Distanz) ────────────────────
+              if (widget.compassOrigin != null) ...[
+                const SizedBox(height: 6),
+                Builder(
+                  builder: (_) {
+                    final o = widget.compassOrigin!;
+                    final bearing = GeoUtils.bearingDegrees(
+                      o.lat,
+                      o.lng,
+                      widget.place.lat,
+                      widget.place.lng,
+                    );
+                    final dist = GeoUtils.distanceMeters(
+                      o.lat,
+                      o.lng,
+                      widget.place.lat,
+                      widget.place.lng,
+                    );
+                    return Row(
+                      children: [
+                        Icon(
+                          Icons.explore,
+                          size: 16,
+                          color: colorScheme.primary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          GeoUtils.formatBearingDegMin(bearing),
+                          style: textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Icon(
+                          Icons.straighten,
+                          size: 16,
+                          color: colorScheme.primary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          GeoUtils.formatDistanceKm(dist),
+                          style: textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ],
               // ── Ratings table (specific filter mode) ─────────────────
               if (specificActive) ...[
                 const SizedBox(height: 8),

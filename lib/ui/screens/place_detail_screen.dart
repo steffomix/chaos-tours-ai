@@ -10,9 +10,11 @@ import '../../models/stay.dart';
 import '../../services/database_service.dart';
 import '../../services/telegram_service.dart';
 import '../../services/settings_service.dart';
+import '../../utils/maidenhead.dart';
 import 'place_reposition_screen.dart';
 import 'place_visits_screen.dart';
 import 'messages_screen.dart';
+import 'places_screen.dart';
 import '../widgets/place_photos_section.dart';
 
 class PlaceDetailScreen extends StatefulWidget {
@@ -645,6 +647,29 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(AppLocalizations.of(context)!.gpsCopied)),
+    );
+  }
+
+  void _copyLocator() {
+    final loc = Maidenhead.format(
+      Maidenhead.encodeId(widget.place.lat, widget.place.lng),
+    );
+    Clipboard.setData(ClipboardData(text: loc));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.locatorCopied)),
+    );
+  }
+
+  void _openCompass(CompassReference reference) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => PlacesScreen(
+          compassMode: true,
+          compassTargetUuid: widget.place.uuid,
+          compassReference: reference,
+        ),
+      ),
     );
   }
 
@@ -1458,6 +1483,76 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     ],
                   ),
                 ),
+              ),
+              const SizedBox(height: 8),
+              // ── Maidenhead-Locator (QTH, 6+4) ──────────────────────────
+              InkWell(
+                onTap: _copyLocator,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.grid_on,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          Maidenhead.format(
+                            Maidenhead.encodeId(
+                              widget.place.lat,
+                              widget.place.lng,
+                            ),
+                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(fontFamily: 'monospace'),
+                        ),
+                      ),
+                      const Icon(Icons.copy, size: 14, color: Colors.grey),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // ── Mit Kompass … (Bezugspunkt wählbar) ────────────────────
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: widget.place.uuid.isEmpty
+                          ? null
+                          : () => _openCompass(CompassReference.here),
+                      icon: const Icon(Icons.my_location),
+                      label: Text(
+                        AppLocalizations.of(context)!.compassFromHere,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: widget.place.uuid.isEmpty
+                          ? null
+                          : () => _openCompass(CompassReference.place),
+                      icon: const Icon(Icons.place),
+                      label: Text(
+                        AppLocalizations.of(context)!.compassFromPlace,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               // ── Position ändern ────────────────────────────────────────

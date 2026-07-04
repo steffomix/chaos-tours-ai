@@ -10,6 +10,7 @@ import '../services/settings_service.dart';
 import '../services/telegram_service.dart';
 import '../services/mesh_sync_service.dart';
 import '../utils/geo_utils.dart';
+import '../utils/maidenhead.dart';
 
 enum TrackingStatus { idle, moving, detectingHalt, haltAtKnown, haltAtUnknown }
 
@@ -367,24 +368,37 @@ class TrackingEngine {
 
       // Create the auto-place and its stay, then register as a known-place stay
       // so subsequent ticks find it via _activeStays.
-      final place = SavedPlace(
-        name: autoPlaceName,
-        lat: centroidLat,
-        lng: centroidLng,
-        radius: settings.defaultRadiusMeters,
-        groupUuid: settings.autoPlaceGroupUuid,
-        originType: PlaceOriginType.auto,
+      //
+      // Location = identity: the place UUID is derived deterministically from
+      // the 10-char Maidenhead (QTH) cell and the cell-center coordinates are
+      // used, so the same spot becomes ONE shared place across all devices
+      // (the UUID-merge sync collapses duplicates instead of stacking them).
+      final placeUuid = Maidenhead.deterministicPlaceUuid(
+        centroidLat,
+        centroidLng,
       );
-      final placeUuid = await DatabaseService.instance.insertPlace(place);
-      final placePersisted = SavedPlace(
-        uuid: placeUuid,
-        name: autoPlaceName,
-        lat: centroidLat,
-        lng: centroidLng,
-        radius: settings.defaultRadiusMeters,
-        groupUuid: settings.autoPlaceGroupUuid,
-        originType: PlaceOriginType.auto,
+      final center = Maidenhead.decodeCenter(
+        Maidenhead.encodeId(centroidLat, centroidLng),
       );
+
+      SavedPlace placePersisted;
+      final existing = await DatabaseService.instance.getSavedPlace(placeUuid);
+      if (existing != null) {
+        // Adopt the already-existing (possibly synced) place for this cell.
+        placePersisted = existing;
+      } else {
+        final place = SavedPlace(
+          uuid: placeUuid,
+          name: autoPlaceName,
+          lat: center.lat,
+          lng: center.lng,
+          radius: settings.defaultRadiusMeters,
+          groupUuid: settings.autoPlaceGroupUuid,
+          originType: PlaceOriginType.auto,
+        );
+        await DatabaseService.instance.insertPlace(place);
+        placePersisted = place;
+      }
 
       final stay = Stay(
         placeUuid: placeUuid,
