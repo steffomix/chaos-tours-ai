@@ -608,6 +608,18 @@ abstract class AppLocalizations {
   /// **'Voreingestellte Gruppe beim manuellen Erstellen von Orten'**
   String get defaultPlaceGroupSubtitle;
 
+  /// Sync place group setting
+  ///
+  /// In de, this message translates to:
+  /// **'Gruppe für Sync-Orte'**
+  String get syncPlaceGroup;
+
+  /// Sync place group subtitle
+  ///
+  /// In de, this message translates to:
+  /// **'Gruppe für automatisch erstellte Orte zur Nachrichtensynchronisation'**
+  String get syncPlaceGroupSubtitle;
+
   /// Map display section header
   ///
   /// In de, this message translates to:

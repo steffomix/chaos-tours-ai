@@ -297,6 +297,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Preset group when manually creating places';
 
   @override
+  String get syncPlaceGroup => 'Sync source group';
+
+  @override
+  String get syncPlaceGroupSubtitle =>
+      'Group for auto-created places as message sync-sources location';
+
+  @override
   String get sectionMapDisplay => 'Map display';
 
   @override

@@ -392,6 +392,14 @@
   "@defaultPlaceGroupSubtitle": {
     "description": "Default place group subtitle"
   },
+  "syncPlaceGroup": "Gruppe für Sync-Orte",
+  "@syncPlaceGroup": {
+    "description": "Sync place group setting"
+  },
+  "syncPlaceGroupSubtitle": "Gruppe für automatisch erstellte Orte zur Nachrichtensynchronisation",
+  "@syncPlaceGroupSubtitle": {
+    "description": "Sync place group subtitle"
+  },
   "sectionMapDisplay": "Kartendarstellung",
   "@sectionMapDisplay": {
     "description": "Map display section header"

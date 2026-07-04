@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
@@ -34,6 +36,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late bool _autoCreatePlaces;
   String? _autoPlaceGroupUuid;
   String? _defaultPlaceGroupUuid;
+  String? _syncSourcePlaceGroupUuid;
   late int _gpsSmoothingPoints;
   late bool _showTrackingPoints;
   late double _trackingPointRadius;
@@ -84,6 +87,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _autoCreatePlaces = s.autoCreatePlaces;
     _autoPlaceGroupUuid = s.autoPlaceGroupUuid;
     _defaultPlaceGroupUuid = s.defaultPlaceGroupUuid;
+    _syncSourcePlaceGroupUuid = s.syncSourcePlaceGroupUuid;
     _gpsSmoothingPoints = s.gpsSmoothingPoints;
     _showTrackingPoints = s.showTrackingPoints;
     _trackingPointRadius = s.trackingPointRadius;
@@ -138,6 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     s.autoCreatePlaces = _autoCreatePlaces;
     s.autoPlaceGroupUuid = _autoPlaceGroupUuid;
     s.defaultPlaceGroupUuid = _defaultPlaceGroupUuid;
+    s.syncSourcePlaceGroupUuid = _syncSourcePlaceGroupUuid;
     s.gpsSmoothingPoints = _gpsSmoothingPoints;
     s.showTrackingPoints = _showTrackingPoints;
     s.trackingPointRadius = _trackingPointRadius;
@@ -159,7 +164,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     s.nodeScanMode = _nodeScanMode;
     s.nodeScanIntervalPerGps = _nodeScanIntervalPerGps;
     // notify foreground service about new settings
-    if (gpsInterfalChanged) {
+    if (gpsInterfalChanged && (Platform.isAndroid || Platform.isIOS)) {
       await FlutterForegroundTask.updateService(
         foregroundTaskOptions: ForegroundTaskOptions(
           eventAction: ForegroundTaskEventAction.repeat(
@@ -463,6 +468,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
                 onChanged: (v) => setState(() => _defaultPlaceGroupUuid = v),
+              ),
+            ),
+            ListTile(
+              title: Text(l10n.syncPlaceGroup),
+              subtitle: Text(l10n.syncPlaceGroupSubtitle),
+              trailing: DropdownButton<String?>(
+                value: _syncSourcePlaceGroupUuid == null
+                    ? null
+                    : (_groups.any((g) => g.uuid == _syncSourcePlaceGroupUuid)
+                          ? _syncSourcePlaceGroupUuid
+                          : null),
+                hint: Text(l10n.none),
+                items: [
+                  DropdownMenuItem(value: null, child: Text(l10n.none)),
+                  ..._groups.map(
+                    (g) => DropdownMenuItem(value: g.uuid, child: Text(g.name)),
+                  ),
+                ],
+                onChanged: (v) => setState(() => _syncSourcePlaceGroupUuid = v),
               ),
             ),
             ListTile(
@@ -1235,6 +1259,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _autoCreatePlaces = a.autoCreatePlaces;
         _autoPlaceGroupUuid = a.autoPlaceGroupUuid;
         _defaultPlaceGroupUuid = a.defaultPlaceGroupUuid;
+        _syncSourcePlaceGroupUuid = a.syncSourcePlaceGroupUuid;
       });
     }
   }

@@ -14,7 +14,7 @@ keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 
 android {
     namespace = "de.chaostours.chaos_tours_ai"
-    compileSdk = 36
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -34,7 +34,7 @@ android {
     defaultConfig {
         applicationId = "de.chaostours.chaos_tours_ai"
         minSdk = flutter.minSdkVersion
-        targetSdk = 36
+        targetSdk = 37
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

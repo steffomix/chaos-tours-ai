@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:permission_handler/permission_handler.dart';
 
 class PermissionHelper {
@@ -7,6 +9,8 @@ class PermissionHelper {
   /// Request fine location + coarse location.
   /// Returns true if granted.
   Future<bool> requestLocationPermission() async {
+    if (!(Platform.isAndroid || Platform.isIOS)) return true;
+    if (!(Platform.isAndroid || Platform.isIOS)) return true;
     final status = await Permission.locationWhenInUse.request();
     return status.isGranted;
   }
@@ -14,24 +18,28 @@ class PermissionHelper {
   /// Request background location (must be called AFTER regular location
   /// permission is already granted — Android 10+ requires separate dialog).
   Future<bool> requestBackgroundLocationPermission() async {
+    if (!(Platform.isAndroid || Platform.isIOS)) return true;
     final status = await Permission.locationAlways.request();
     return status.isGranted;
   }
 
   /// Request POST_NOTIFICATIONS (Android 13+).
   Future<bool> requestNotificationPermission() async {
+    if (!(Platform.isAndroid || Platform.isIOS)) return true;
     final status = await Permission.notification.request();
     return status.isGranted;
   }
 
   /// Request READ_CALENDAR + WRITE_CALENDAR.
   Future<bool> requestCalendarPermission() async {
+    if (!(Platform.isAndroid || Platform.isIOS)) return true;
     final status = await Permission.calendarFullAccess.request();
     return status.isGranted;
   }
 
   /// Check whether all required runtime permissions are granted.
   Future<bool> hasAllPermissions() async {
+    if (!(Platform.isAndroid || Platform.isIOS)) return true;
     final location = await Permission.locationWhenInUse.isGranted;
     final background = await Permission.locationAlways.isGranted;
     final notification = await Permission.notification.isGranted;
@@ -40,6 +48,7 @@ class PermissionHelper {
 
   /// Check whether fine location permission is granted (without requesting).
   Future<bool> hasLocationPermission() async {
+    if (!(Platform.isAndroid || Platform.isIOS)) return true;
     return Permission.locationWhenInUse.isGranted;
   }
 }

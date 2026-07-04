@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
@@ -163,7 +164,9 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _checkActualTrackingState() async {
-    final serviceRunning = await FlutterForegroundTask.isRunningService;
+    final serviceRunning = (Platform.isAndroid || Platform.isIOS)
+        ? await FlutterForegroundTask.isRunningService
+        : false;
     final storedEnabled = SettingsService.instance.trackingEnabled;
 
     // If the stored flag claims tracking is on but the service isn't running,
@@ -281,6 +284,7 @@ class _HomeScreenState extends State<HomeScreen>
   /// Returns false when the user must first grant the exemption manually and
   /// the service start should be aborted.
   Future<bool> _ensureBatteryOptimizationExempt() async {
+    if (!(Platform.isAndroid || Platform.isIOS)) return true;
     final ignoring = await FlutterForegroundTask.isIgnoringBatteryOptimizations;
     if (ignoring) return true;
 

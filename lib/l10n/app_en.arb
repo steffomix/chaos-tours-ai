@@ -171,6 +171,8 @@
   "autoPlaceGroup": "Group for auto-places",
   "defaultPlaceGroup": "Default group for new places",
   "defaultPlaceGroupSubtitle": "Preset group when manually creating places",
+  "syncPlaceGroup": "Sync source group",
+  "syncPlaceGroupSubtitle": "Group for auto-created places as message sync-sources location",
   "sectionMapDisplay": "Map display",
   "showGpsPoints": "Show GPS points",
   "showGpsPointsSubtitle": "Show tracking points in color on the map",

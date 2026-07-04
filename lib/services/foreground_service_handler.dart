@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:geolocator/geolocator.dart';
@@ -6,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import '../services/settings_service.dart';
 import '../services/tracking_engine.dart';
 import '../services/nominatim_service.dart';
+import 'location_service.dart';
 
 /// Keys used when communicating via SendPort.
 class FgTaskKeys {
@@ -136,7 +138,94 @@ class GpsForegroundTaskHandler extends TaskHandler {
 class ForegroundServiceManager {
   ForegroundServiceManager._();
 
+  // ── Linux-native in-process tracking ─────────────────────────────────────
+  static Timer? _linuxTimer;
+  static TrackingEngine? _linuxEngine;
+  static bool _linuxTrackingEnabled = false;
+  static final List<void Function(Map<dynamic, dynamic>)> _linuxListeners = [];
+
+  static void _notifyLinuxListeners(Map<dynamic, dynamic> data) {
+    for (final cb in List.of(_linuxListeners)) {
+      cb(data);
+    }
+  }
+
+  static Future<void> _linuxTick() async {
+    await SettingsService.instance.reload();
+    final wantTracking = SettingsService.instance.trackingEnabled;
+    if (wantTracking != _linuxTrackingEnabled) {
+      _linuxTrackingEnabled = wantTracking;
+      if (wantTracking) {
+        await _linuxEngine?.initialize();
+      } else {
+        await _linuxEngine?.stopTracking();
+      }
+    }
+    if (SettingsService.instance.forceEndStayPending) {
+      SettingsService.instance.forceEndStayPending = false;
+      await _linuxEngine?.forceEndCurrentStay();
+    }
+    if (!_linuxTrackingEnabled) return;
+    Position? pos;
+    Position position;
+    try {
+      pos = position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+    } catch (_) {
+      pos = await LocationService.instance.getCurrentPosition();
+    } finally {
+      pos ??= Position(
+        altitudeAccuracy: 1.0,
+        headingAccuracy: 1.0,
+        longitude: 9.1968649600297,
+        latitude: 52.3282720600297,
+        timestamp: DateTime.now(),
+        accuracy: 1.0,
+        altitude: 1.0,
+        heading: 1.0,
+        speed: 1.0,
+        speedAccuracy: 1.0,
+      );
+    }
+    position = pos;
+    try {
+      final engine = _linuxEngine;
+      if (engine == null) return;
+      final result = await engine.onNewPoint(
+        position.latitude,
+        position.longitude,
+        position.timestamp.millisecondsSinceEpoch,
+      );
+      String? intervalAddress;
+      if (SettingsService.instance.addressOnInterval) {
+        intervalAddress = await NominatimService.instance.reverseGeocode(
+          position.latitude,
+          position.longitude,
+        );
+      }
+      _notifyLinuxListeners({
+        'cmd': FgTaskKeys.trackingStatus,
+        'status': result.status.name,
+        'stay_uuid': result.currentStay?.uuid,
+        'place_name': result.currentPlace?.name,
+        'address': result.currentStay?.address,
+        FgTaskKeys.intervalAddress: intervalAddress,
+        'lat': position.latitude,
+        'lng': position.longitude,
+        'ts': position.timestamp.millisecondsSinceEpoch,
+      });
+    } catch (_) {
+      // GPS unavailable — silently skip this tick
+    }
+  }
+
+  // ── Public API ────────────────────────────────────────────────────────────
+
   static void init() {
+    if (!(Platform.isAndroid || Platform.isIOS)) return;
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
         channelId: 'chaos_tours_gps',
@@ -161,6 +250,19 @@ class ForegroundServiceManager {
   static Future<ServiceRequestResult> startService({
     required String notificationText,
   }) async {
+    if (!(Platform.isAndroid || Platform.isIOS)) {
+      // Linux: run tracking in the main isolate via a periodic timer.
+      _linuxEngine ??= TrackingEngine();
+      await SettingsService.instance.init();
+      _linuxTrackingEnabled = true;
+      await _linuxEngine!.initialize();
+      _linuxTimer?.cancel();
+      final interval = Duration(
+        seconds: SettingsService.instance.gpsIntervalSeconds,
+      );
+      _linuxTimer = Timer.periodic(interval, (_) => _linuxTick());
+      return ServiceRequestSuccess();
+    }
     if (await FlutterForegroundTask.isRunningService) {
       return FlutterForegroundTask.restartService();
     }
@@ -173,13 +275,30 @@ class ForegroundServiceManager {
     );
   }
 
-  static Future<ServiceRequestResult> stopService() {
+  static Future<ServiceRequestResult> stopService() async {
+    if (!(Platform.isAndroid || Platform.isIOS)) {
+      _linuxTimer?.cancel();
+      _linuxTimer = null;
+      _linuxTrackingEnabled = false;
+      await _linuxEngine?.stopTracking();
+      return ServiceRequestSuccess();
+    }
     return FlutterForegroundTask.stopService();
   }
 
   // ── Auto-Tracking Commands ───────────────────────────────────────────────
 
   static void sendSetTracking(bool enabled) {
+    if (!(Platform.isAndroid || Platform.isIOS)) {
+      _linuxTrackingEnabled = enabled;
+      SettingsService.instance.trackingEnabled = enabled;
+      if (enabled) {
+        _linuxEngine?.initialize();
+      } else {
+        _linuxEngine?.stopTracking();
+      }
+      return;
+    }
     FlutterForegroundTask.sendDataToTask({
       'cmd': FgTaskKeys.setTracking,
       FgTaskKeys.enabled: enabled,
@@ -191,6 +310,10 @@ class ForegroundServiceManager {
     // next onRepeatEvent tick. The SendPort message is sent as a fallback for
     // cases where the message mechanism happens to work.
     SettingsService.instance.forceEndStayPending = true;
+    if (!(Platform.isAndroid || Platform.isIOS)) {
+      _linuxEngine?.forceEndCurrentStay();
+      return;
+    }
     FlutterForegroundTask.sendDataToTask({'cmd': FgTaskKeys.endStay});
   }
 
@@ -200,6 +323,12 @@ class ForegroundServiceManager {
   _dataCallbackWrappers = {};
 
   static void addDataListener(void Function(Map<dynamic, dynamic>) callback) {
+    if (!(Platform.isAndroid || Platform.isIOS)) {
+      if (!_linuxListeners.contains(callback)) {
+        _linuxListeners.add(callback);
+      }
+      return;
+    }
     // Guard against duplicate registration for the same callback.
     if (_dataCallbackWrappers.containsKey(callback)) return;
     void wrapper(Object data) {
@@ -213,6 +342,10 @@ class ForegroundServiceManager {
   static void removeDataListener(
     void Function(Map<dynamic, dynamic>) callback,
   ) {
+    if (!(Platform.isAndroid || Platform.isIOS)) {
+      _linuxListeners.remove(callback);
+      return;
+    }
     final wrapper = _dataCallbackWrappers.remove(callback);
     if (wrapper != null) {
       FlutterForegroundTask.removeTaskDataCallback(wrapper);

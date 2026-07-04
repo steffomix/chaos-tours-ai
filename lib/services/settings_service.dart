@@ -24,6 +24,8 @@ class SettingsService {
   static const String _keyDefaultRadius = 'default_radius_meters';
   static const String _keyAutoCreate = 'auto_create_places';
   static const String _keyAutoPlaceGroup = 'auto_place_group_uuid';
+  static const String _keySyncSourcePlaceGroupUuid =
+      'sync_source_place_group_uuid';
   static const String _keyDefaultPlaceGroup = 'default_place_group_uuid';
   static const String _keyTrackingEnabled = 'tracking_enabled';
   static const String _keyActiveAktivitaetId = 'active_aktivitaet_uuid';
@@ -65,7 +67,6 @@ class SettingsService {
   static const String _keyMessengerEnabled = 'messenger_enabled';
   static const String _keyCreatePlaceOnSyncOpportunity =
       'create_place_on_sync_opportunity';
-  static const String _keySyncSourcePlaceGroup = 'sync_source_place_group_uuid';
   static const String _keySyncPhotosEnabled = 'sync_photos_enabled';
   static const String _keyPhotoSyncMaxBytes = 'photo_sync_max_bytes';
   static const String _keyNodeScanMode = 'node_scan_mode';
@@ -166,18 +167,6 @@ class SettingsService {
   set createPlaceOnSyncOpportunity(bool v) =>
       _p.setBool(_keyCreatePlaceOnSyncOpportunity, v);
 
-  /// UUID of the group assigned to auto-created "Sync-Quelle" places. The group
-  /// carries [PlaceType.syncSource]. Nullable until first created.
-  String? get syncSourcePlaceGroupUuid =>
-      _p.getString(_keySyncSourcePlaceGroup);
-  set syncSourcePlaceGroupUuid(String? v) {
-    if (v == null || v.isEmpty) {
-      _p.remove(_keySyncSourcePlaceGroup);
-    } else {
-      _p.setString(_keySyncSourcePlaceGroup, v);
-    }
-  }
-
   /// Whether photos are included in mesh sync transport (default: true).
   bool get syncPhotosEnabled => _p.getBool(_keySyncPhotosEnabled) ?? true;
   set syncPhotosEnabled(bool v) => _p.setBool(_keySyncPhotosEnabled, v);
@@ -224,6 +213,18 @@ class SettingsService {
       _p.remove(_keyDefaultPlaceGroup);
     } else {
       _p.setString(_keyDefaultPlaceGroup, v);
+    }
+  }
+
+  /// UUID of the group assigned to auto-created "Sync-Quelle" places. The group
+  /// carries [PlaceType.syncSource]. Nullable until first created.
+  String? get syncSourcePlaceGroupUuid =>
+      _p.getString(_keySyncSourcePlaceGroupUuid);
+  set syncSourcePlaceGroupUuid(String? v) {
+    if (v == null || v.isEmpty) {
+      _p.remove(_keySyncSourcePlaceGroupUuid);
+    } else {
+      _p.setString(_keySyncSourcePlaceGroupUuid, v);
     }
   }
 
@@ -466,6 +467,7 @@ class SettingsService {
     autoCreatePlaces = a.autoCreatePlaces;
     autoPlaceGroupUuid = a.autoPlaceGroupUuid;
     defaultPlaceGroupUuid = a.defaultPlaceGroupUuid;
+    syncSourcePlaceGroupUuid = a.syncSourcePlaceGroupUuid;
     timelineHistoryDays = a.timelineHistoryDays;
     searchCountry = a.searchCountry;
     addressOnAutoCreate = a.addressOnAutoCreate;
@@ -499,6 +501,7 @@ class SettingsService {
       autoCreatePlaces: autoCreatePlaces,
       autoPlaceGroupUuid: autoPlaceGroupUuid,
       defaultPlaceGroupUuid: defaultPlaceGroupUuid,
+      syncSourcePlaceGroupUuid: syncSourcePlaceGroupUuid,
       timelineHistoryDays: timelineHistoryDays,
       searchCountry: searchCountry,
       addressOnAutoCreate: addressOnAutoCreate,

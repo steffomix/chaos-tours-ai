@@ -299,6 +299,13 @@ class AppLocalizationsDe extends AppLocalizations {
       'Voreingestellte Gruppe beim manuellen Erstellen von Orten';
 
   @override
+  String get syncPlaceGroup => 'Gruppe für Sync-Orte';
+
+  @override
+  String get syncPlaceGroupSubtitle =>
+      'Gruppe für automatisch erstellte Orte zur Nachrichtensynchronisation';
+
+  @override
   String get sectionMapDisplay => 'Kartendarstellung';
 
   @override

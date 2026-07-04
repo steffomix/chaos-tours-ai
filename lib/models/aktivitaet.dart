@@ -22,6 +22,9 @@ class Aktivitaet {
   /// UUID of the [PlaceGroup] pre-selected when the user creates a place manually.
   final String? defaultPlaceGroupUuid;
 
+  /// UUID of the [PlaceGroup] used for synchronization.
+  final String? syncSourcePlaceGroupUuid;
+
   /// How many days of stay history are shown on the timeline map (default: 7).
   final int timelineHistoryDays;
 
@@ -69,6 +72,7 @@ class Aktivitaet {
     this.autoCreatePlaces = true,
     this.autoPlaceGroupUuid,
     this.defaultPlaceGroupUuid,
+    this.syncSourcePlaceGroupUuid,
     this.timelineHistoryDays = 7,
     this.searchCountry = '',
     this.addressOnAutoCreate = true,
@@ -106,6 +110,7 @@ class Aktivitaet {
       autoCreatePlaces: (map['auto_create_places'] as int? ?? 1) == 1,
       autoPlaceGroupUuid: map['auto_place_group_uuid'] as String?,
       defaultPlaceGroupUuid: map['default_place_group_uuid'] as String?,
+      syncSourcePlaceGroupUuid: map['sync_source_place_group_uuid'] as String?,
       timelineHistoryDays: map['timeline_history_days'] as int? ?? 7,
       searchCountry: map['search_country'] as String? ?? '',
       addressOnAutoCreate: (map['address_on_auto_create'] as int? ?? 1) == 1,
@@ -146,6 +151,8 @@ class Aktivitaet {
         'auto_place_group_uuid': autoPlaceGroupUuid,
       if (defaultPlaceGroupUuid != null)
         'default_place_group_uuid': defaultPlaceGroupUuid,
+      if (syncSourcePlaceGroupUuid != null)
+        'sync_source_place_group_uuid': syncSourcePlaceGroupUuid,
       'timeline_history_days': timelineHistoryDays,
       'search_country': searchCountry,
       'address_on_auto_create': addressOnAutoCreate ? 1 : 0,
@@ -178,6 +185,8 @@ class Aktivitaet {
     bool clearAutoPlaceGroupUuid = false,
     String? defaultPlaceGroupUuid,
     bool clearDefaultPlaceGroupUuid = false,
+    String? syncSourcePlaceGroupUuid,
+    bool clearSyncSourcePlaceGroupUuid = false,
     int? timelineHistoryDays,
     String? searchCountry,
     bool? addressOnAutoCreate,
@@ -211,6 +220,9 @@ class Aktivitaet {
       defaultPlaceGroupUuid: clearDefaultPlaceGroupUuid
           ? null
           : (defaultPlaceGroupUuid ?? this.defaultPlaceGroupUuid),
+      syncSourcePlaceGroupUuid: clearSyncSourcePlaceGroupUuid
+          ? null
+          : (syncSourcePlaceGroupUuid ?? this.syncSourcePlaceGroupUuid),
       timelineHistoryDays: timelineHistoryDays ?? this.timelineHistoryDays,
       searchCountry: searchCountry ?? this.searchCountry,
       addressOnAutoCreate: addressOnAutoCreate ?? this.addressOnAutoCreate,

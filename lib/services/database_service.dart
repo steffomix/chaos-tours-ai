@@ -4,7 +4,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:path/path.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/aktivitaet.dart';
@@ -48,6 +48,10 @@ class DatabaseService {
   // the old schema and start fresh. This also simplifies development and testing, as we
   // don't have to worry about migrations when changing the schema.
   Future<Database> _openDatabase() async {
+    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+    }
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, _dbFilename);
     return openDatabase(
@@ -216,6 +220,7 @@ class DatabaseService {
         filter_specific_rating_field TEXT NOT NULL DEFAULT '',
         auto_place_group_uuid TEXT,
         default_place_group_uuid TEXT,
+        sync_source_place_group_uuid TEXT,
         timeline_history_days INTEGER NOT NULL DEFAULT 7,
         use_osm INTEGER NOT NULL DEFAULT 0,
         search_country TEXT NOT NULL DEFAULT '',
@@ -2001,36 +2006,32 @@ class DatabaseService {
 
   // ── ensureDefaultAktivitaet / ensureDefaultGroups ─────────────────────────
 
-  Future<String> ensureDefaultAktivitaet({
-    int gpsInterval = 15,
-    int stayDetection = 180,
-    int autoPlace = 900,
-    double radius = 50.0,
-    bool autoCreate = true,
-    String? autoPlaceGroupUuid,
-    String? defaultPlaceGroupUuid,
-  }) async {
+  Future<void> ensureDefaultAktivitaet() async {
+    final s = SettingsService.instance;
     final all = await loadAllAktivitaeten();
-    if (all.isNotEmpty) return all.first.uuid;
-    final uuid = await insertAktivitaet(
+    if (all.isNotEmpty) return;
+
+    final firstUuid = await insertAktivitaet(
       Aktivitaet(
         name: 'Standard',
-        gpsIntervalSeconds: gpsInterval,
-        stayDetectionSeconds: stayDetection,
-        autoPlaceSeconds: autoPlace,
-        defaultRadiusMeters: radius,
-        autoCreatePlaces: autoCreate,
-        autoPlaceGroupUuid: autoPlaceGroupUuid,
-        defaultPlaceGroupUuid: defaultPlaceGroupUuid,
+        autoPlaceGroupUuid: s.autoPlaceGroupUuid,
+        defaultPlaceGroupUuid: s.defaultPlaceGroupUuid,
+        syncSourcePlaceGroupUuid: s.syncSourcePlaceGroupUuid,
       ),
     );
-    return uuid;
+    final activeUuid = s.activeAktivitaetUuid ?? firstUuid;
+    final aktiv = await DatabaseService.instance.loadAktivitaet(activeUuid);
+    if (aktiv != null) {
+      s.applyAktivitaet(aktiv);
+    } else {
+      s.activeAktivitaetUuid = firstUuid;
+    }
   }
 
-  Future<({String autoGroupUuid, String defaultGroupUuid})?>
-  ensureDefaultGroups() async {
+  Future<void> ensureDefaultGroups() async {
+    final s = SettingsService.instance;
     final existing = await loadAllPlaceGroups();
-    if (existing.isNotEmpty) return null;
+    if (existing.isNotEmpty) return;
 
     final autoUuid = await insertPlaceGroup(
       PlaceGroup(
@@ -2039,10 +2040,15 @@ class DatabaseService {
         isAutoGroup: true,
       ),
     );
+    s.autoPlaceGroupUuid = autoUuid;
     final defUuid = await insertPlaceGroup(
       PlaceGroup(name: 'Standard', placeType: PlaceType.public),
     );
-    return (autoGroupUuid: autoUuid, defaultGroupUuid: defUuid);
+    s.defaultPlaceGroupUuid = defUuid;
+    final syncUuid = await insertPlaceGroup(
+      PlaceGroup(name: 'Sync-Quelle', placeType: PlaceType.syncSource),
+    );
+    s.syncSourcePlaceGroupUuid = syncUuid;
   }
 
   // ── Paginated queries ────────────────────────────────────────────────────
