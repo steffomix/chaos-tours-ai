@@ -17,8 +17,7 @@ class Maidenhead {
   static const _uuid = Uuid();
 
   /// Fixed namespace for deriving deterministic place UUIDs from a locator.
-  static const String placeNamespace =
-      '00000000-0000-0000-0000-000000000000'; //'4d2c8f7e-1a3b-5c6d-9e0f-2b4a6c8d0e1f';
+  static const String placeNamespace = '00000000-0000-0000-0000-000000000000';
 
   /// Number of character pairs used for the shared cell identity (10 chars).
   static const int idPairs = 5;
