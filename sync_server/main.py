@@ -10,12 +10,10 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Security, status
 from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel
-from sqlalchemy import select
 from zeroconf import ServiceInfo
 from zeroconf.asyncio import AsyncZeroconf
 
 import database as db
-from database import get_engine, saved_places
 from sync import pull, push
 
 load_dotenv()
@@ -104,8 +102,7 @@ async def health():
 
 @app.get("/sync/pull", tags=["sync"], dependencies=[Depends(verify_api_key)])
 async def sync_pull(since: int = 0, device_id: str = ""):
-    engine = get_engine()
-    async with engine.connect() as conn:
+    async with db.connect() as conn:
         data = await pull(conn, since, device_id)
     return data
 
@@ -121,20 +118,18 @@ class PushPayload(BaseModel):
 
 @app.post("/sync/push", tags=["sync"], dependencies=[Depends(verify_api_key)])
 async def sync_push(payload: PushPayload):
-    engine = get_engine()
-    async with engine.begin() as conn:
+    async with db.connect() as conn:
         count = await push(conn, payload.data)
+        await conn.commit()
     return {"upserted": count}
 
 
 @app.get("/places/export", tags=["places"], dependencies=[Depends(verify_api_key)])
 async def export_places():
     """Returns all non-deleted saved_places as JSON (for import by other devices via info_url)."""
-    engine = get_engine()
-    async with engine.connect() as conn:
-        rows = (
-            await conn.execute(
-                select(saved_places).where(saved_places.c.deleted_at.is_(None))
-            )
-        ).mappings().all()
+    async with db.connect() as conn:
+        async with conn.execute(
+            "SELECT * FROM saved_places WHERE deleted_at IS NULL"
+        ) as cursor:
+            rows = await cursor.fetchall()
     return [dict(r) for r in rows]

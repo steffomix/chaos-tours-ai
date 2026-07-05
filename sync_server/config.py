@@ -22,7 +22,7 @@ from dataclasses import dataclass
 
 from database import SYNC_TABLES
 
-_ALL_TABLES = [name for name, _ in SYNC_TABLES]
+_ALL_TABLES = list(SYNC_TABLES)
 
 
 @dataclass
