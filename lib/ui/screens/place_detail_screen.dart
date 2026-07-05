@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
@@ -626,6 +628,14 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   }
 
   Future<void> _openInMaps() async {
+    if (!(Platform.isAndroid || Platform.isIOS)) {
+      launchUrl(
+        Uri.parse(
+          'https://maps.google.com?q=${widget.place.lat},${widget.place.lng}',
+        ),
+      );
+      return;
+    }
     final lat = widget.place.lat;
     final lng = widget.place.lng;
     final name = Uri.encodeComponent(widget.place.name);
@@ -1527,6 +1537,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               ),
               const SizedBox(height: 8),
               // ── Mit Kompass … (Bezugspunkt wählbar) ────────────────────
+              // @TODO: Opens wrong screen. Should open default places tab on places_screen.dart
+              // with all of its filter futures, but places then have to have
+              // addidtional compass navigation informations rather from here or from this place,
+              // depending on what button  (from here or from this place) is pressed.
+              // This is nessesary because there can be millions of places, so the user need an opportunity to filter or search them down to a number he can handle.
               Row(
                 children: [
                   Expanded(

@@ -53,7 +53,7 @@ class SyncSourceOptions {
     'place_experiences',
     'sync_source_experiences',
     'place_photos',
-    'messages',
+    'p2p_messages',
     'message_attachments',
   ];
 

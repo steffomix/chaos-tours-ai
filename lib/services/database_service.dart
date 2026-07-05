@@ -441,7 +441,7 @@ class DatabaseService {
     );
 
     await db.execute('''
-      CREATE TABLE IF NOT EXISTS messages (
+      CREATE TABLE IF NOT EXISTS p2p_messages (
         uuid TEXT PRIMARY KEY,
         device_id TEXT NOT NULL DEFAULT '',
         author_name TEXT NOT NULL DEFAULT '',
@@ -455,13 +455,13 @@ class DatabaseService {
       )
     ''');
     await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_messages_place ON messages(place_uuid) WHERE deleted_at IS NULL',
+      'CREATE INDEX IF NOT EXISTS idx_messages_place ON p2p_messages(place_uuid) WHERE deleted_at IS NULL',
     );
     await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_messages_reply ON messages(reply_to_uuid) WHERE deleted_at IS NULL',
+      'CREATE INDEX IF NOT EXISTS idx_messages_reply ON p2p_messages(reply_to_uuid) WHERE deleted_at IS NULL',
     );
     await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at) WHERE deleted_at IS NULL',
+      'CREATE INDEX IF NOT EXISTS idx_messages_created ON p2p_messages(created_at) WHERE deleted_at IS NULL',
     );
 
     await db.execute('''
@@ -473,7 +473,7 @@ class DatabaseService {
         created_at INTEGER NOT NULL DEFAULT 0,
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
-        FOREIGN KEY (message_uuid) REFERENCES messages(uuid) ON DELETE CASCADE,
+        FOREIGN KEY (message_uuid) REFERENCES p2p_messages(uuid) ON DELETE CASCADE,
         FOREIGN KEY (photo_uuid) REFERENCES place_photos(uuid) ON DELETE CASCADE
       )
     ''');
@@ -1703,7 +1703,7 @@ class DatabaseService {
     final db = await database;
     final map = _withSyncFields(message.toMap(), deviceId);
     await db.insert(
-      'messages',
+      'p2p_messages',
       map,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
@@ -1717,7 +1717,7 @@ class DatabaseService {
   }) async {
     final db = await database;
     final rows = await db.query(
-      'messages',
+      'p2p_messages',
       where: 'deleted_at IS NULL',
       orderBy: 'created_at DESC',
       limit: limit,
@@ -1734,7 +1734,7 @@ class DatabaseService {
   }) async {
     final db = await database;
     final rows = await db.query(
-      'messages',
+      'p2p_messages',
       where: 'place_uuid = ? AND deleted_at IS NULL',
       whereArgs: [placeUuid],
       orderBy: 'created_at DESC',
@@ -1760,7 +1760,7 @@ class DatabaseService {
     final cosLat = cos(lat * pi / 180).abs().clamp(0.001, 1.0);
     final lngDelta = radiusM / (111000 * cosLat);
     final rows = await db.rawQuery(
-      '''SELECT m.* FROM messages m
+      '''SELECT m.* FROM p2p_messages m
          JOIN saved_places p ON p.uuid = m.place_uuid
          WHERE m.deleted_at IS NULL
            AND p.deleted_at IS NULL
@@ -1784,7 +1784,7 @@ class DatabaseService {
   Future<List<Message>> loadReplies(String messageUuid) async {
     final db = await database;
     final rows = await db.query(
-      'messages',
+      'p2p_messages',
       where: 'reply_to_uuid = ? AND deleted_at IS NULL',
       whereArgs: [messageUuid],
       orderBy: 'created_at ASC',
@@ -1796,7 +1796,7 @@ class DatabaseService {
   Future<Message?> loadMessage(String uuid) async {
     final db = await database;
     final rows = await db.query(
-      'messages',
+      'p2p_messages',
       where: 'uuid = ?',
       whereArgs: [uuid],
       limit: 1,
@@ -1812,7 +1812,7 @@ class DatabaseService {
   }) async {
     final db = await database;
     await db.update(
-      'messages',
+      'p2p_messages',
       {
         'body': body,
         'updated_at': DateTime.now().millisecondsSinceEpoch,
@@ -1826,7 +1826,7 @@ class DatabaseService {
   Future<void> softDeleteMessage(String uuid, {String deviceId = ''}) async {
     final db = await database;
     await db.update(
-      'messages',
+      'p2p_messages',
       {
         'deleted_at': DateTime.now().millisecondsSinceEpoch,
         'updated_at': DateTime.now().millisecondsSinceEpoch,

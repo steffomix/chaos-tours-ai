@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/place_group.dart';
 import '../models/saved_place.dart';
@@ -10,22 +13,151 @@ import 'settings_service.dart';
 import 'sync_service.dart';
 
 /// Result of a single mesh sync opportunity.
-class MeshSyncOutcome {
-  final int nodesFound;
-  final int nodesSynced;
-  final int pulled;
-  final int pushed;
-  final String? placeUuid;
-  final String? error;
+class MeshSyncLog extends ValueNotifier<String> {
+  int? _lastSyncMs;
+  bool _isBusy = false;
+  int _nodeDiscoverTrys = 0;
+  int _secondsBusy = 0;
+  bool _isOnline = false;
+  String _connectionType = '';
+  String _responseError = '';
+  bool _nodesFoundAny = false;
+  int _nodesFound = 0;
+  int _nodesSynced = 0;
+  int _pulled = 0;
+  int _pushed = 0;
+  String _placeUuid = '';
+  String _placeSyncUuid = '';
+  String _placeName = '';
+  String _placeGps = '';
+  String _error = '';
 
-  const MeshSyncOutcome({
-    this.nodesFound = 0,
-    this.nodesSynced = 0,
-    this.pulled = 0,
-    this.pushed = 0,
-    this.placeUuid,
-    this.error,
-  });
+  MeshSyncLog(super.value);
+
+  set isBusy(bool value) {
+    _isBusy = value;
+    _setValue();
+  }
+
+  int get secondsBusy => _secondsBusy;
+  set secondsBusy(int value) {
+    _secondsBusy = value;
+    _setValue();
+  }
+
+  set isOnline(bool value) {
+    _isOnline = value;
+    _setValue();
+  }
+
+  set connectionType(String value) {
+    _connectionType = value;
+    _setValue();
+  }
+
+  int get nodeDiscoverTrys => _nodeDiscoverTrys;
+  set nodeDiscoverTrys(int value) {
+    _nodeDiscoverTrys = value;
+    _setValue();
+  }
+
+  set responseError(String value) {
+    _responseError = value;
+    _setValue();
+  }
+
+  set nodesFoundAny(bool value) {
+    _nodesFoundAny = value;
+    _setValue();
+  }
+
+  set nodesFound(int value) {
+    _nodesFound = value;
+    _setValue();
+  }
+
+  set nodesSynced(int value) {
+    _nodesSynced = value;
+    _setValue();
+  }
+
+  set pulled(int value) {
+    _pulled = value;
+    _setValue();
+  }
+
+  set pushed(int value) {
+    _pushed = value;
+    _setValue();
+  }
+
+  set placeUuid(String value) {
+    _placeUuid = value;
+    _setValue();
+  }
+
+  set placeSyncUuid(String value) {
+    _placeSyncUuid = value;
+    _setValue();
+  }
+
+  set placeName(String value) {
+    _placeName = value;
+    _setValue();
+  }
+
+  set placeGps(String value) {
+    _placeGps = value;
+    _setValue();
+  }
+
+  set error(String value) {
+    _error = value;
+    _setValue();
+  }
+
+  void _setValue() {
+    value =
+        '''P2P Sync Log:
+Last Sync: ${_lastSyncMs != null ? DateTime.fromMillisecondsSinceEpoch(_lastSyncMs!).toIso8601String() : 'unknown'}
+Busy: ${_isBusy ? 'yes, since $_secondsBusy / ${MeshSyncService.discoerTimeout} sec.' : 'no'}
+Node Discovery Attempts: $_nodeDiscoverTrys
+---
+Online: ${_isOnline ? 'yes' : 'no'}
+Connection Type: $_connectionType
+Response Error: $_responseError
+---
+Nodes Found Any: ${_nodesFoundAny ? 'yes' : 'no'}
+Nodes Found: $_nodesFound
+Nodes Synced: $_nodesSynced
+Pulled: $_pulled
+Pushed: $_pushed
+Place UUID: $_placeUuid
+Place Sync UUID: $_placeSyncUuid
+Place Name: $_placeName
+Place GPS: $_placeGps
+Error: $_error''';
+  }
+
+  void restart() {
+    _lastSyncMs = DateTime.now().millisecondsSinceEpoch;
+    _secondsBusy = 0;
+    _isBusy = true;
+    _nodeDiscoverTrys = 0;
+    _isOnline = false;
+    _connectionType = '';
+    _nodesFoundAny = false;
+    _nodesFound = 0;
+    _nodesSynced = 0;
+    _pulled = 0;
+    _pushed = 0;
+    _placeUuid = '';
+    _placeSyncUuid = '';
+    _placeName = '';
+    _placeGps = '';
+    _error = '';
+    _setValue();
+  }
 }
 
 /// Orchestrates the location-triggered "store-and-forward" mesh sync:
@@ -33,29 +165,65 @@ class MeshSyncOutcome {
 class MeshSyncService {
   MeshSyncService._();
   static final MeshSyncService instance = MeshSyncService._();
+  static final MeshSyncLog log = MeshSyncLog('');
+  static const String syncSourceGroupName = 'P2P Message Sync-Sources';
 
   bool _busy = false;
+  static const discoerTimeout = 30;
+
+  void startTimer() {
+    // Start a repeating timer to count seconds while busy.
+    log.secondsBusy = 0;
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(seconds: 1));
+      log.secondsBusy++;
+      return _busy;
+    });
+  }
 
   /// Runs one opportunistic sync sweep around ([lat], [lng]). Safe to call from
   /// the tracking engine on arrival/halt. Re-entrant calls are ignored.
-  Future<MeshSyncOutcome> onSyncOpportunity({
+  Future<void> onSyncOpportunity({
     required double lat,
     required double lng,
   }) async {
-    if (_busy) return const MeshSyncOutcome();
-    _busy = true;
+    if (_busy) {
+      return;
+    }
+    log.isBusy = _busy = true;
     try {
+      log.restart();
+      startTimer();
       // 1. Require a usable local network connection.
       final conn = await Connectivity().checkConnectivity();
       final online =
           conn.contains(ConnectivityResult.wifi) ||
           conn.contains(ConnectivityResult.ethernet) ||
           conn.contains(ConnectivityResult.vpn);
-      if (!online) return const MeshSyncOutcome();
-
-      // 2. Discover mesh nodes on the local network.
-      final nodes = await NodeDiscoveryService.instance.discover();
-      if (nodes.isEmpty) return const MeshSyncOutcome();
+      log.isOnline = online;
+      log.connectionType = conn.toString();
+      if (!online) {
+        log.error = 'No usable local network connection.';
+        log.isBusy = _busy = false;
+        return;
+      }
+      List<DiscoveredNode> nodes = [];
+      int t = DateTime.now().millisecondsSinceEpoch + discoerTimeout * 1000;
+      while (t > DateTime.now().millisecondsSinceEpoch) {
+        nodes = await NodeDiscoveryService.instance.discover();
+        log.nodesFoundAny = nodes.isNotEmpty;
+        log.nodesFound = nodes.length;
+        log.nodeDiscoverTrys++;
+        if (nodes.isNotEmpty) {
+          break;
+        }
+        await Future.delayed(const Duration(seconds: 1));
+      }
+      if (nodes.isEmpty) {
+        log.error = 'No mesh nodes found on the local network.';
+        log.isBusy = _busy = false;
+        return;
+      }
 
       // 3. Delta-sync with every discovered node FIRST. This way an already
       //    shared place for this cell (deterministic UUID) is pulled in before
@@ -70,8 +238,12 @@ class MeshSyncService {
           synced++;
           pulled += res.pulled;
           pushed += res.pushed;
+          log.nodesSynced = synced;
+          log.pulled = pulled;
+          log.pushed = pushed;
         } else {
           error ??= res.errorMessage;
+          log.responseError = res.errorMessage ?? '';
         }
       }
 
@@ -81,24 +253,18 @@ class MeshSyncService {
 
       // 5. Record the message-sync watermark on the anchor place.
       if (place != null) {
+        log.placeUuid = place.uuid;
+        log.placeName = place.name;
+        log.placeGps = '${place.lat}, ${place.lng}';
         await DatabaseService.instance.updatePlaceMessagesSyncMs(
           place.uuid,
           DateTime.now().millisecondsSinceEpoch,
         );
       }
-
-      return MeshSyncOutcome(
-        nodesFound: nodes.length,
-        nodesSynced: synced,
-        pulled: pulled,
-        pushed: pushed,
-        placeUuid: place?.uuid,
-        error: error,
-      );
     } catch (e) {
-      return MeshSyncOutcome(error: e.toString());
+      log.error = 'sync error: ${e.toString()}';
     } finally {
-      _busy = false;
+      log.isBusy = _busy = false;
     }
   }
 
@@ -141,11 +307,15 @@ class MeshSyncService {
 
     // 2. Deterministic identity for this cell.
     final placeUuid = Maidenhead.deterministicPlaceUuid(lat, lng);
+    // source for gps center calculation below
     final loc10 = Maidenhead.encodeId(lat, lng);
+
+    log.placeSyncUuid = 'Search for sync place uuid $placeUuid ...';
 
     // 3. Adopt the place if it already exists locally (e.g. just pulled).
     final existing = await db.getSavedPlace(placeUuid);
     if (existing != null) {
+      log.placeSyncUuid = 'Found existing sync place uuid $placeUuid';
       return existing;
     }
 
@@ -157,7 +327,7 @@ class MeshSyncService {
     final center = Maidenhead.decodeCenter(loc10);
     final place = SavedPlace(
       uuid: placeUuid,
-      name: 'Sync-Quelle ${Maidenhead.format(loc10)}',
+      name: '$syncSourceGroupName ${Maidenhead.format(loc10)}',
       lat: center.lat,
       lng: center.lng,
       radius: radius,
@@ -168,7 +338,7 @@ class MeshSyncService {
     return place;
   }
 
-  /// Ensures the dedicated "Sync-Quelle" place group (carrying
+  /// Ensures the dedicated "P2P Message Sync-Sources" place group (carrying
   /// [PlaceType.syncSource]) exists and returns its UUID.
   Future<String> _ensureSyncSourceGroup() async {
     final db = DatabaseService.instance;
@@ -179,7 +349,7 @@ class MeshSyncService {
       if (group != null && group.deletedAt == null) return existing;
     }
     final group = PlaceGroup(
-      name: 'Sync-Quellen',
+      name: syncSourceGroupName,
       isAutoGroup: true,
       placeType: PlaceType.syncSource,
     );

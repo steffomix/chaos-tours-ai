@@ -213,8 +213,8 @@ telegram_connections = Table(
     *_sync_cols(),
 )
 
-messages = Table(
-    "messages",
+p2p_messages = Table(
+    "p2p_messages",
     metadata,
     Column("uuid", String, primary_key=True),
     Column("author_name", String, nullable=False, default=""),
@@ -250,7 +250,7 @@ SYNC_TABLES = [
     ("sync_source_experiences", sync_source_experiences),
     ("place_photos", place_photos),
     ("telegram_connections", telegram_connections),
-    ("messages", messages),
+    ("p2p_messages", p2p_messages),
     ("message_attachments", message_attachments),
 ]
 

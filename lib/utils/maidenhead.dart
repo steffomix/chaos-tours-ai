@@ -126,5 +126,5 @@ class Maidenhead {
   /// of ([lat], [lng]). Every device in the same cell derives the same UUID, so
   /// the UUID-merge sync collapses them into a single shared place.
   static String deterministicPlaceUuid(double lat, double lng) =>
-      _uuid.v5(placeNamespace, 'geo:${encodeId(lat, lng)}');
+      _uuid.v5(placeNamespace, encodeId(lat, lng));
 }

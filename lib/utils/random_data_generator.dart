@@ -7,6 +7,8 @@ import 'package:uuid/uuid.dart';
 
 import '../models/activity.dart';
 import '../models/aktivitaet.dart';
+import '../models/message.dart';
+import '../models/message_attachment.dart';
 import '../models/person.dart';
 import '../models/place_experience.dart';
 import '../models/place_group.dart';
@@ -29,6 +31,7 @@ class RandomDataProgressNotifier extends ValueNotifier<String> {
   int _countStays = 0;
   int _countPlacePhotos = 0;
   int _countStayPhotos = 0;
+  int _countP2PMessagePhotos = 0;
   int _countPlaceExperiences = 0;
   int _countStayExperiences = 0;
   int _countAktivitaeten = 0;
@@ -39,6 +42,7 @@ class RandomDataProgressNotifier extends ValueNotifier<String> {
   int _countPlaceGroups = 0;
   int _countStayPersons = 0;
   int _countStayActivities = 0;
+  int _countP2PMessages = 0;
 
   int _totalCount = 0;
 
@@ -50,6 +54,11 @@ class RandomDataProgressNotifier extends ValueNotifier<String> {
   void setProgress(int totalCount, int doneCount) {
     // don't update value here
     _progress = (doneCount / totalCount * 100).toInt();
+  }
+
+  void addAktivitaet() {
+    _countAktivitaeten++;
+    _updateValue();
   }
 
   void addPlace() {
@@ -82,8 +91,13 @@ class RandomDataProgressNotifier extends ValueNotifier<String> {
     _updateValue();
   }
 
-  void addAktivitaet() {
-    _countAktivitaeten++;
+  void addP2PMessage() {
+    _countP2PMessages++;
+    _updateValue();
+  }
+
+  void addP2PMessagePhoto() {
+    _countP2PMessagePhotos++;
     _updateValue();
   }
 
@@ -141,7 +155,9 @@ class RandomDataProgressNotifier extends ValueNotifier<String> {
         _countSyncSources +
         _countPlaceGroups +
         _countStayPersons +
-        _countStayActivities;
+        _countStayActivities +
+        _countP2PMessages +
+        _countP2PMessagePhotos;
     value =
         '''Status: $_status
 
@@ -157,6 +173,8 @@ Place Groups: $_countPlaceGroups
 Places: $_countPlaces
 Place Photos: $_countPlacePhotos
 Place Experiences: $_countPlaceExperiences
+P2P Messages: $_countP2PMessages
+P2P Message Photos: $_countP2PMessagePhotos
 Stays: $_countStays
 Stay Photos: $_countStayPhotos
 Stay Experiences: $_countStayExperiences
@@ -378,6 +396,14 @@ class RandomDataGenerator {
     );
   }
 
+  void insertPlaceMessage(Batch batch, Message message) {
+    batch.insert(
+      'p2p_messages',
+      _withSyncFields(message.toMap(), ''),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
   void insertStay(Batch batch, Stay stay) {
     batch.insert(
       'stays',
@@ -488,6 +514,34 @@ class RandomDataGenerator {
     );
   }
 
+  Message _createMessage(String placeUuid) {
+    return Message(
+      uuid: randomUuid(),
+      authorName: 'Author ${randomString(5)}',
+      placeUuid: placeUuid,
+      body: 'Message body ${randomString(20)}',
+      createdAt: randomPastTimeStamp,
+      updatedAt: null,
+      deletedAt: null,
+      deviceId: deviceIdFromPool(),
+    );
+  }
+
+  MessageAttachment _createMessageAttachment(
+    String messageUuid,
+    String photoUuid,
+  ) {
+    return MessageAttachment(
+      uuid: randomUuid(),
+      messageUuid: messageUuid,
+      photoUuid: photoUuid,
+      createdAt: randomPastTimeStamp,
+      updatedAt: null,
+      deletedAt: null,
+      deviceId: deviceIdFromPool(),
+    );
+  }
+
   Stay _createStay(String placeUuid) {
     final stay = Stay(
       uuid: randomUuid(),
@@ -535,7 +589,7 @@ class RandomDataGenerator {
     name: 'TelegramConnection ${randomString(5)}',
     chatId: randomString(10),
     description: notes,
-    updatedAt: randomPastTimeStamp,
+    updatedAt: null,
     deletedAt: null,
     deviceId: deviceIdFromPool(),
   );
@@ -581,6 +635,8 @@ class RandomDataGenerator {
     int numActivities = 5,
     int numPlaceGroups = 2,
     int numPlacesPerGroup = 100,
+    int numMessagesPerPlace = 5,
+    int maxAttachmentsPerMessage = 3,
     int maxPhotosPerPlace = 2,
     int maxExperiencesPerPlace = 2,
     int maxStaysPerPlace = 20,
@@ -662,6 +718,31 @@ class RandomDataGenerator {
           progressNotifier.setProgress(totalCount, ++doneCount);
           progressNotifier.addPlace();
           insertPlace(batch, place);
+
+          for (int j = 0; j < numMessagesPerPlace; j++) {
+            progressNotifier.addP2PMessage();
+            Message message = _createMessage(place.uuid);
+            insertPlaceMessage(batch, message);
+
+            // Attachments for this message
+            final attachmentCount = _random.nextInt(maxAttachmentsPerMessage);
+            for (int k = 0; k < attachmentCount; k++) {
+              progressNotifier.addPlacePhoto();
+              PlacePhoto photo = await _createPhoto(place.uuid);
+              insertPhoto(batch, photo);
+
+              progressNotifier.addPlaceExperience();
+              MessageAttachment attachment = _createMessageAttachment(
+                message.uuid,
+                photo.uuid,
+              );
+              batch.insert(
+                'message_attachments',
+                _withSyncFields(attachment.toMap(), ''),
+                conflictAlgorithm: ConflictAlgorithm.replace,
+              );
+            }
+          }
 
           // Place Experiences (Batch korrigiert)
           final expCount = _random.nextInt(maxExperiencesPerPlace);

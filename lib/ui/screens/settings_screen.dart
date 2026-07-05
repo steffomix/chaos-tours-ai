@@ -13,6 +13,8 @@ import '../../models/place_group.dart';
 import '../../models/saved_place.dart';
 import '../../models/trusted_source.dart';
 import '../../services/database_service.dart';
+import '../../services/location_service.dart';
+import '../../services/mesh_sync_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/permission_helper.dart';
 import '../../utils/random_data_generator.dart';
@@ -25,9 +27,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  // Falls du ein StatefulWidget nutzt, definiere den Generator in deinem State:
-  final RandomDataGenerator _generator = RandomDataGenerator();
-
   late String _deviceId;
   late int _gpsInterval;
   late int _stayDetection;
@@ -62,8 +61,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late NodeScanMode _nodeScanMode;
   late int _nodeScanIntervalPerGps;
 
+  // Falls du ein StatefulWidget nutzt, definiere den Generator in deinem State:
+  final RandomDataGenerator _generator = RandomDataGenerator();
   // Network info for display (used by SyncSourcesScreen)
-
   // Aktivitaet management
   List<Aktivitaet> _aktivitaeten = [];
   Aktivitaet? _activeAktivitaet;
@@ -612,6 +612,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const Divider(),
             // ── P2P Messenger / Mesh-Sync ─────────────────────────────────
+            ElevatedButton.icon(
+              onPressed: () async {
+                final gps = await LocationService.instance.getCurrentPosition();
+                if (gps == null) {
+                  MeshSyncService.log.error =
+                      'Could not get GPS position for sync opportunity.';
+                  return;
+                }
+                MeshSyncService.instance.onSyncOpportunity(
+                  lat: gps.latitude,
+                  lng: gps.longitude,
+                );
+              },
+              icon: const Icon(Icons.sync),
+              label: Text('Jetzt Sync-Möglichkeit auslösen'),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
+              child: ValueListenableBuilder<String>(
+                valueListenable: MeshSyncService.log,
+                builder: (context, progressText, child) {
+                  return Text(
+                    progressText,
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  );
+                },
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
               child: Text(

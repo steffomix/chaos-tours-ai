@@ -9,7 +9,7 @@
         "request": "launch",
         "type": "dart",
         "flutterMode": "debug",
-        "deviceId": "linux"
+        "deviceId": "linux",
         },
         {
             "name": "chaos_tours_ai",
