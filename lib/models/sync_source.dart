@@ -136,6 +136,10 @@ class SyncSource {
   final int? deletedAt;
   final String deviceId;
 
+  /// Timestamp of the last successful sync against this source (device-local,
+  /// not propagated to other devices).
+  final int lastSyncMs;
+
   SyncSource({
     String? uuid,
     required this.name,
@@ -147,6 +151,7 @@ class SyncSource {
     int? updatedAt,
     this.deletedAt,
     this.deviceId = '',
+    this.lastSyncMs = 0,
   }) : syncOptions = syncOptions ?? SyncSourceOptions(),
        uuid = uuid?.isNotEmpty == true ? uuid! : _uuid.v4(),
        updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch;
@@ -171,6 +176,7 @@ class SyncSource {
           (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       deletedAt: map['deleted_at'] as int?,
       deviceId: (map['device_id'] as String?) ?? '',
+      lastSyncMs: (map['last_sync_ms'] as int?) ?? 0,
     );
   }
 
@@ -186,6 +192,7 @@ class SyncSource {
       'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
       'device_id': deviceId,
+      'last_sync_ms': lastSyncMs,
     };
   }
 
@@ -200,6 +207,7 @@ class SyncSource {
     int? updatedAt,
     int? deletedAt,
     String? deviceId,
+    int? lastSyncMs,
   }) {
     return SyncSource(
       uuid: uuid ?? this.uuid,
@@ -212,6 +220,7 @@ class SyncSource {
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
       deviceId: deviceId ?? this.deviceId,
+      lastSyncMs: lastSyncMs ?? this.lastSyncMs,
     );
   }
 }

@@ -52,9 +52,6 @@ class SyncService {
   SyncService._();
   static final SyncService instance = SyncService._();
 
-  int get lastSyncMs => SettingsService.instance.lastSyncMs;
-  void _setLastSyncMs(int ms) async => SettingsService.instance.lastSyncMs = ms;
-
   /// Returns the persistent device ID from [SettingsService].
   String get deviceId => SettingsService.instance.deviceId;
 
@@ -78,7 +75,6 @@ class SyncService {
     }
 
     if (results.isNotEmpty) {
-      _setLastSyncMs(DateTime.now().millisecondsSinceEpoch);
       await DatabaseService.instance.refreshTrustedSources();
     }
     return results;
@@ -87,7 +83,6 @@ class SyncService {
   /// Syncs with a single [SyncSource].
   Future<SyncResult> syncWithSource(SyncSource source) async {
     final result = await _syncWithSource(source);
-    _setLastSyncMs(DateTime.now().millisecondsSinceEpoch);
     await DatabaseService.instance.refreshTrustedSources();
     return result;
   }
@@ -96,6 +91,7 @@ class SyncService {
   /// [baseUrl] (e.g. `http://192.168.4.1:8000`). Uses full insert+update table
   /// options so all shared data (messages, attachments, photos, places…) is
   /// exchanged epidemically. Does not persist the node as a [SyncSource].
+  /// Always performs a full sync (since=0) because the node is ephemeral.
   Future<SyncResult> syncWithNode(String baseUrl, {String apiKey = ''}) async {
     final ephemeral = SyncSource(
       name: baseUrl,
@@ -104,7 +100,6 @@ class SyncService {
       syncOptions: SyncSourceOptions.allEnabled(),
     );
     final result = await _syncWithSource(ephemeral);
-    _setLastSyncMs(DateTime.now().millisecondsSinceEpoch);
     await DatabaseService.instance.refreshTrustedSources();
     return result;
   }
@@ -114,7 +109,7 @@ class SyncService {
   Future<SyncResult> _syncWithSource(SyncSource source) async {
     try {
       final devId = deviceId;
-      final since = lastSyncMs;
+      final since = source.lastSyncMs;
 
       // Determine which tables participate (any option enabled).
       final activeTables = SyncSourceOptions.allTables
@@ -165,7 +160,7 @@ class SyncService {
       for (final table in activeTables) {
         final rows = await DatabaseService.instance.loadChangedRows(
           table,
-          lastSyncMs,
+          since,
         );
         if (rows.isNotEmpty) {
           pushPayload[table] = rows;
@@ -197,6 +192,14 @@ class SyncService {
         for (final rows in pushPayload.values) {
           pushed += (rows as List).length;
         }
+      }
+
+      // Persist the per-source sync timestamp (device-local, not synced).
+      if (source.uuid.isNotEmpty) {
+        await DatabaseService.instance.updateSyncSourceLastSyncMs(
+          source.uuid,
+          DateTime.now().millisecondsSinceEpoch,
+        );
       }
 
       return SyncResult(

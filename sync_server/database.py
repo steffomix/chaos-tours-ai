@@ -72,7 +72,7 @@ async def connect():
     async with aiosqlite.connect(DB_PATH) as conn:
         conn.row_factory = aiosqlite.Row
         await conn.execute("PRAGMA journal_mode=WAL")
-        await conn.execute("PRAGMA foreign_keys=ON")
+#        await conn.execute("PRAGMA foreign_keys=ON")
         yield conn
 
 

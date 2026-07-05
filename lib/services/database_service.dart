@@ -39,7 +39,6 @@ class DatabaseService {
 
   Future<Database> get database async {
     _db ??= await _openDatabase();
-    _db!.execute('PRAGMA foreign_keys = ON');
     return _db!;
   }
 
@@ -58,7 +57,21 @@ class DatabaseService {
       path,
       version: 1,
       onCreate: _onCreate,
-      onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
+      onOpen: (db) async {
+        // Idempotent column additions for databases created before a schema
+        // change. ALTER TABLE ADD COLUMN fails if the column already exists,
+        // so we catch and ignore that error.
+        final migrations = [
+          'ALTER TABLE sync_sources ADD COLUMN last_sync_ms INTEGER NOT NULL DEFAULT 0',
+        ];
+        for (final sql in migrations) {
+          try {
+            await db.execute(sql);
+          } catch (_) {
+            // Column already present — safe to ignore.
+          }
+        }
+      },
     );
   }
 
@@ -251,6 +264,7 @@ class DatabaseService {
         info_url TEXT NOT NULL DEFAULT '',
         description TEXT NOT NULL DEFAULT '',
         sync_options TEXT NOT NULL DEFAULT '{}',
+        last_sync_ms INTEGER NOT NULL DEFAULT 0,
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER
       )
@@ -659,7 +673,64 @@ class DatabaseService {
 
   Future<void> deletePlace(String uuid) async {
     final db = await database;
-    await db.delete('saved_places', where: 'uuid = ?', whereArgs: [uuid]);
+    await db.transaction((txn) async {
+      // Cascade to stays and their children
+      final stayRows = await txn.query(
+        'stays',
+        columns: ['uuid'],
+        where: 'place_uuid = ?',
+        whereArgs: [uuid],
+      );
+      for (final stay in stayRows) {
+        final stayUuid = stay['uuid'] as String;
+        await txn.delete(
+          'stay_persons',
+          where: 'stay_uuid = ?',
+          whereArgs: [stayUuid],
+        );
+        await txn.delete(
+          'stay_activities',
+          where: 'stay_uuid = ?',
+          whereArgs: [stayUuid],
+        );
+        await txn.delete(
+          'place_photos',
+          where: 'stay_uuid = ?',
+          whereArgs: [stayUuid],
+        );
+      }
+      await txn.delete('stays', where: 'place_uuid = ?', whereArgs: [uuid]);
+      // Cascade to messages and their attachments
+      final msgRows = await txn.query(
+        'p2p_messages',
+        columns: ['uuid'],
+        where: 'place_uuid = ?',
+        whereArgs: [uuid],
+      );
+      for (final msg in msgRows) {
+        await txn.delete(
+          'message_attachments',
+          where: 'message_uuid = ?',
+          whereArgs: [msg['uuid']],
+        );
+      }
+      await txn.delete(
+        'p2p_messages',
+        where: 'place_uuid = ?',
+        whereArgs: [uuid],
+      );
+      await txn.delete(
+        'place_photos',
+        where: 'place_uuid = ?',
+        whereArgs: [uuid],
+      );
+      await txn.delete(
+        'place_experiences',
+        where: 'saved_place_uuid = ?',
+        whereArgs: [uuid],
+      );
+      await txn.delete('saved_places', where: 'uuid = ?', whereArgs: [uuid]);
+    });
   }
 
   /// Updates the local message-sync watermark for a place. This is device-local
@@ -785,7 +856,16 @@ class DatabaseService {
 
   Future<void> deletePlaceGroup(String uuid) async {
     final db = await database;
-    await db.delete('place_groups', where: 'uuid = ?', whereArgs: [uuid]);
+    await db.transaction((txn) async {
+      // SET NULL on saved_places.group_uuid
+      await txn.update(
+        'saved_places',
+        {'group_uuid': null},
+        where: 'group_uuid = ?',
+        whereArgs: [uuid],
+      );
+      await txn.delete('place_groups', where: 'uuid = ?', whereArgs: [uuid]);
+    });
   }
 
   // ── Stays ────────────────────────────────────────────────────────────────
@@ -870,7 +950,24 @@ class DatabaseService {
 
   Future<void> deleteStay(String uuid) async {
     final db = await database;
-    await db.delete('stays', where: 'uuid = ?', whereArgs: [uuid]);
+    await db.transaction((txn) async {
+      await txn.delete(
+        'stay_persons',
+        where: 'stay_uuid = ?',
+        whereArgs: [uuid],
+      );
+      await txn.delete(
+        'stay_activities',
+        where: 'stay_uuid = ?',
+        whereArgs: [uuid],
+      );
+      await txn.delete(
+        'place_photos',
+        where: 'stay_uuid = ?',
+        whereArgs: [uuid],
+      );
+      await txn.delete('stays', where: 'uuid = ?', whereArgs: [uuid]);
+    });
   }
 
   // ── Persons ──────────────────────────────────────────────────────────────
@@ -904,7 +1001,14 @@ class DatabaseService {
 
   Future<void> deletePerson(String uuid) async {
     final db = await database;
-    await db.delete('persons', where: 'uuid = ?', whereArgs: [uuid]);
+    await db.transaction((txn) async {
+      await txn.delete(
+        'stay_persons',
+        where: 'person_uuid = ?',
+        whereArgs: [uuid],
+      );
+      await txn.delete('persons', where: 'uuid = ?', whereArgs: [uuid]);
+    });
   }
 
   // ── Activities ───────────────────────────────────────────────────────────
@@ -938,7 +1042,16 @@ class DatabaseService {
 
   Future<void> deleteActivity(String uuid) async {
     final db = await database;
-    await db.delete('activities', where: 'uuid = ?', whereArgs: [uuid]);
+    await db.transaction((txn) async {
+      // SET NULL on stay_activities.activity_uuid
+      await txn.update(
+        'stay_activities',
+        {'activity_uuid': null},
+        where: 'activity_uuid = ?',
+        whereArgs: [uuid],
+      );
+      await txn.delete('activities', where: 'uuid = ?', whereArgs: [uuid]);
+    });
   }
 
   // ── StayPersons ──────────────────────────────────────────────────────────
@@ -1177,21 +1290,19 @@ class DatabaseService {
         .toList();
 
     await db.transaction((txn) async {
-      await txn.execute('PRAGMA foreign_keys = OFF');
       if (clearFirst) {
         final tables = await txn.rawQuery(
           "SELECT name FROM sqlite_master WHERE type='table' "
           "AND name NOT LIKE 'sqlite_%'",
         );
         for (final t in tables) {
-          await txn.execute('DELETE FROM ${t['name']}');
+          await txn.execute('DELETE FROM ${t["name"]}');
         }
       }
       for (final stmt in statements) {
         if (stmt.toUpperCase().startsWith('PRAGMA')) continue;
         await txn.execute(stmt);
       }
-      await txn.execute('PRAGMA foreign_keys = ON');
     });
   }
 
@@ -1264,14 +1375,12 @@ class DatabaseService {
   Future<void> resetAllData() async {
     final db = await database;
     await db.transaction((txn) async {
-      await txn.execute('PRAGMA foreign_keys = OFF');
       final tables = await txn.rawQuery(
         "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
       );
       for (final t in tables) {
-        await txn.execute('DELETE FROM ${t['name']}');
+        await txn.execute('DELETE FROM ${t["name"]}');
       }
-      await txn.execute('PRAGMA foreign_keys = ON');
     });
   }
 
@@ -1323,6 +1432,18 @@ class DatabaseService {
         'updated_at': DateTime.now().millisecondsSinceEpoch,
         if (deviceId.isNotEmpty) 'device_id': deviceId,
       },
+      where: 'uuid = ?',
+      whereArgs: [uuid],
+    );
+  }
+
+  /// Updates only the device-local [last_sync_ms] watermark for a sync source.
+  /// Does NOT bump [updated_at] so this change is never propagated to peers.
+  Future<void> updateSyncSourceLastSyncMs(String uuid, int ms) async {
+    final db = await database;
+    await db.update(
+      'sync_sources',
+      {'last_sync_ms': ms},
       where: 'uuid = ?',
       whereArgs: [uuid],
     );
@@ -1929,6 +2050,15 @@ class DatabaseService {
       }).toList();
     }
 
+    // sync_sources carries a device-local sync timestamp — strip it.
+    if (table == 'sync_sources') {
+      return rows.map((row) {
+        final copy = Map<String, dynamic>.from(row);
+        copy.remove('last_sync_ms');
+        return copy;
+      }).toList();
+    }
+
     if (table != 'place_photos') return rows;
 
     // Photo sync is optional and size-limited (base64 in JSON bloats transport).
@@ -1975,6 +2105,10 @@ class DatabaseService {
       localRow = Map<String, dynamic>.from(localRow)
         ..remove('last_messages_sync_ms');
     }
+    // Never let a remote peer overwrite our device-local sync timestamp.
+    if (table == 'sync_sources' && localRow.containsKey('last_sync_ms')) {
+      localRow = Map<String, dynamic>.from(localRow)..remove('last_sync_ms');
+    }
     final db = await database;
     final uuid = localRow['uuid'] as String?;
     if (uuid == null || uuid.isEmpty) return;
@@ -2016,9 +2150,25 @@ class DatabaseService {
 
   Future<void> ensureDefaultAktivitaet() async {
     final s = SettingsService.instance;
-    final all = await loadAllAktivitaeten();
-    if (all.isNotEmpty) return;
+    final activeUuid = s.activeAktivitaetUuid;
 
+    // If the stored UUID still exists in the DB, apply it and done.
+    if (activeUuid != null && activeUuid.isNotEmpty) {
+      final aktiv = await loadAktivitaet(activeUuid);
+      if (aktiv != null) {
+        s.applyAktivitaet(aktiv);
+        return;
+      }
+    }
+
+    // Fall back to any existing aktivitaet (e.g. synced from another device).
+    final all = await loadAllAktivitaeten();
+    if (all.isNotEmpty) {
+      s.applyAktivitaet(all.first);
+      return;
+    }
+
+    // Nothing exists yet — create a default one.
     final firstUuid = await insertAktivitaet(
       Aktivitaet(
         name: 'Standard',
@@ -2027,36 +2177,44 @@ class DatabaseService {
         syncSourcePlaceGroupUuid: s.syncSourcePlaceGroupUuid,
       ),
     );
-    final activeUuid = s.activeAktivitaetUuid ?? firstUuid;
-    final aktiv = await DatabaseService.instance.loadAktivitaet(activeUuid);
-    if (aktiv != null) {
-      s.applyAktivitaet(aktiv);
-    } else {
-      s.activeAktivitaetUuid = firstUuid;
-    }
+    s.activeAktivitaetUuid = firstUuid;
   }
 
   Future<void> ensureDefaultGroups() async {
     final s = SettingsService.instance;
-    final existing = await loadAllPlaceGroups();
-    if (existing.isNotEmpty) return;
+    final db = await database;
 
-    final autoUuid = await insertPlaceGroup(
-      PlaceGroup(
-        name: 'Automatisch',
-        placeType: PlaceType.private,
-        isAutoGroup: true,
-      ),
-    );
-    s.autoPlaceGroupUuid = autoUuid;
-    final defUuid = await insertPlaceGroup(
-      PlaceGroup(name: 'Standard', placeType: PlaceType.public),
-    );
-    s.defaultPlaceGroupUuid = defUuid;
-    final syncUuid = await insertPlaceGroup(
-      PlaceGroup(name: 'Sync-Quelle', placeType: PlaceType.syncSource),
-    );
-    s.syncSourcePlaceGroupUuid = syncUuid;
+    Future<bool> _groupExists(String? uuid) async {
+      if (uuid == null || uuid.isEmpty) return false;
+      final rows = await db.query(
+        'place_groups',
+        columns: ['uuid'],
+        where: 'uuid = ? AND deleted_at IS NULL',
+        whereArgs: [uuid],
+        limit: 1,
+      );
+      return rows.isNotEmpty;
+    }
+
+    if (!await _groupExists(s.autoPlaceGroupUuid)) {
+      s.autoPlaceGroupUuid = await insertPlaceGroup(
+        PlaceGroup(
+          name: 'Automatisch',
+          placeType: PlaceType.private,
+          isAutoGroup: true,
+        ),
+      );
+    }
+    if (!await _groupExists(s.defaultPlaceGroupUuid)) {
+      s.defaultPlaceGroupUuid = await insertPlaceGroup(
+        PlaceGroup(name: 'Standard', placeType: PlaceType.public),
+      );
+    }
+    if (!await _groupExists(s.syncSourcePlaceGroupUuid)) {
+      s.syncSourcePlaceGroupUuid = await insertPlaceGroup(
+        PlaceGroup(name: 'Sync-Quelle', placeType: PlaceType.syncSource),
+      );
+    }
   }
 
   // ── Paginated queries ────────────────────────────────────────────────────
