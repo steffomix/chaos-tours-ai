@@ -8,7 +8,6 @@ import '../services/database_service.dart';
 import '../services/nominatim_service.dart';
 import '../services/settings_service.dart';
 import '../services/telegram_service.dart';
-import '../services/mesh_sync_service.dart';
 import '../utils/geo_utils.dart';
 import '../utils/maidenhead.dart';
 
@@ -53,27 +52,6 @@ class TrackingEngine {
 
   /// Active stay at an unknown location (no associated [SavedPlace]).
   Stay? _unknownStay;
-
-  /// Counts GPS ticks for [NodeScanMode.perGpsInterval] mesh scanning.
-  int _meshTickCounter = 0;
-
-  /// Fire-and-forget mesh sync trigger. Respects the messenger toggle and the
-  /// configured [NodeScanMode]. The actual sync runs asynchronously and guards
-  /// against overlap, so it never blocks a tracking tick.
-  void _maybeMeshSync(double lat, double lng, {required bool halt}) {
-    final s = SettingsService.instance;
-    if (!s.messengerEnabled) return;
-    switch (s.nodeScanMode) {
-      case NodeScanMode.onHalt:
-        if (!halt) return;
-      case NodeScanMode.perGpsInterval:
-        if (halt) return; // periodic mode is driven by ticks, not halts
-        _meshTickCounter++;
-        if (_meshTickCounter < s.nodeScanIntervalPerGps) return;
-        _meshTickCounter = 0;
-    }
-    unawaited(MeshSyncService.instance.onSyncOpportunity(lat: lat, lng: lng));
-  }
 
   /// Load persisted state on service start.
   Future<void> initialize() async {
@@ -167,9 +145,6 @@ class TrackingEngine {
       TrackingPoint(lat: smoothLat, lng: smoothLng, timestamp: timestamp),
     );
 
-    // Periodic mesh sync (NodeScanMode.perGpsInterval) — runs every N ticks.
-    _maybeMeshSync(smoothLat, smoothLng, halt: false);
-
     // 2. Prune old points (keep autoPlaceSeconds + 5 interval points)
     final pruneBeforeMs =
         timestamp -
@@ -219,9 +194,6 @@ class TrackingEngine {
 
     // Short window is a full cluster → confirmed halt
     final c = GeoUtils.centroid(pts);
-
-    // Halt-triggered mesh sync (NodeScanMode.onHalt) at the confirmed location.
-    _maybeMeshSync(c.lat, c.lng, halt: true);
 
     // 5. Find ALL overlapping tracksStay places and manage per-place stays.
     //    Each place is processed independently according to its own placeType.

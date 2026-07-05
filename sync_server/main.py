@@ -2,6 +2,7 @@
 Chaos Tours – Sync Server (FastAPI)
 """
 import os
+import socket
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -10,6 +11,8 @@ from fastapi import Depends, FastAPI, HTTPException, Security, status
 from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel
 from sqlalchemy import select
+from zeroconf import ServiceInfo
+from zeroconf.asyncio import AsyncZeroconf
 
 import database as db
 from database import get_engine, saved_places
@@ -19,6 +22,9 @@ load_dotenv()
 
 API_KEY = os.getenv("API_KEY", "")
 _api_key_header = APIKeyHeader(name="X-Api-Key", auto_error=False)
+_MDNS_PORT = int(os.getenv("PORT", "8000"))
+_MDNS_SERVICE_TYPE = "_chaossync._tcp.local."
+_MDNS_SERVICE_NAME = f"chaos-tours-sync.{_MDNS_SERVICE_TYPE}"
 
 
 # ---------------------------------------------------------------------------
@@ -39,10 +45,37 @@ def verify_api_key(key: str | None = Security(_api_key_header)) -> None:
 # Lifespan
 # ---------------------------------------------------------------------------
 
+def _get_local_ip() -> str:
+    """Return the primary non-loopback IPv4 address of this machine."""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]
+    except Exception:
+        return "127.0.0.1"
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await db.create_tables()
-    yield
+
+    # Announce this server via mDNS so that Flutter clients can discover it
+    # automatically without manual IP configuration.
+    local_ip = _get_local_ip()
+    zeroconf = AsyncZeroconf()
+    service_info = ServiceInfo(
+        _MDNS_SERVICE_TYPE,
+        _MDNS_SERVICE_NAME,
+        addresses=[socket.inet_aton(local_ip)],
+        port=_MDNS_PORT,
+        properties={"version": "1"},
+    )
+    await zeroconf.async_register_service(service_info)
+    try:
+        yield
+    finally:
+        await zeroconf.async_unregister_service(service_info)
+        await zeroconf.async_close()
 
 
 # ---------------------------------------------------------------------------

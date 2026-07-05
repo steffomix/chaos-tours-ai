@@ -103,6 +103,8 @@ class DatabaseService {
         experience_rating_average REAL DEFAULT NULL,
         experience_rating_median REAL DEFAULT NULL,
         last_messages_sync_ms INTEGER NOT NULL DEFAULT 0,
+        sync_sources_uuid TEXT,
+        sync_source_interval integer NOT NULL DEFAULT 1,
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
         FOREIGN KEY (group_uuid) REFERENCES place_groups(uuid) ON DELETE SET NULL

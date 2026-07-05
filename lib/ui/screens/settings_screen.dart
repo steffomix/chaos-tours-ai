@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
@@ -13,8 +14,6 @@ import '../../models/place_group.dart';
 import '../../models/saved_place.dart';
 import '../../models/trusted_source.dart';
 import '../../services/database_service.dart';
-import '../../services/location_service.dart';
-import '../../services/mesh_sync_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/permission_helper.dart';
 import '../../utils/random_data_generator.dart';
@@ -611,6 +610,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const Divider(),
+
+            /* 
             // ── P2P Messenger / Mesh-Sync ─────────────────────────────────
             ElevatedButton.icon(
               onPressed: () async {
@@ -728,7 +729,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         setState(() => _nodeScanIntervalPerGps = v.round()),
                   ),
                 ),
-            ],
+            ], */
             const Divider(),
             // ── Kartendarstellung ─────────────────────────────────────────
             Padding(
@@ -979,7 +980,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   List<Widget> _buildDevToolsSection(AppLocalizations l10n) {
     final unlocked = SettingsService.instance.devToolsUnlocked;
 
-    if (!unlocked) {
+    if (!unlocked || kDebugMode == true) {
       return [
         const Divider(),
         Padding(
