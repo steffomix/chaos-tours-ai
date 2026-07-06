@@ -431,66 +431,6 @@ class _PlacesScreenState extends State<PlacesScreen> {
     }
   }
 
-  /// Compass reference indicator + switch (visible above the place cards).
-  Widget _buildCompassHeader(AppLocalizations l10n) {
-    final here = _currentPos;
-    final hereValue = here == null
-        ? null
-        : Maidenhead.format(Maidenhead.encodeId(here.lat, here.lng));
-    final placeName = _compassTargetPlace?.name ?? '';
-    final activeText = _compassRef == CompassReference.here
-        ? (hereValue == null
-              ? l10n.compassRefHere
-              : '${l10n.compassRefHere}: $hereValue')
-        : (placeName.isEmpty
-              ? l10n.compassRefPlace
-              : '${l10n.compassRefPlace}: $placeName');
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SegmentedButton<CompassReference>(
-            segments: [
-              ButtonSegment(
-                value: CompassReference.here,
-                icon: const Icon(Icons.my_location),
-                label: Text(l10n.compassRefHere),
-              ),
-              ButtonSegment(
-                value: CompassReference.place,
-                icon: const Icon(Icons.place),
-                label: Text(l10n.compassRefPlace),
-              ),
-            ],
-            selected: {_compassRef},
-            onSelectionChanged: (s) => setState(() => _compassRef = s.first),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Icon(
-                Icons.explore,
-                size: 16,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  activeText,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildList() {
     final l10n = AppLocalizations.of(context)!;
     if (!_listLoading && _listItems.isEmpty) {

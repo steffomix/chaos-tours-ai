@@ -1356,7 +1356,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _deleteCurrentAktivitaet() async {
     final a = _activeAktivitaet;
     if (a == null || _aktivitaeten.length <= 1) return;
-
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) {
