@@ -240,7 +240,6 @@ class _TimelineScreenState extends State<TimelineScreen> {
       final page = await DatabaseService.instance.loadSchedulerPlacesPaged(
         limit: _kChunkSize,
         offset: silent ? 0 : _schedulerItems.length,
-        groupFilter: SettingsService.instance.schedulerGroupUuidList,
       );
       if (mounted) {
         setState(() {

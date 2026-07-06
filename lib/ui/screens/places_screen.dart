@@ -222,16 +222,13 @@ class _PlacesScreenState extends State<PlacesScreen> {
         // Whole set is already bounded by the bounding box — show everything.
         final pos = _currentPos!;
         final maxM = _expFilter.maxDistanceKm * 1000;
-        final effectiveGroupFilter = _expFilter.groupFilter.isNotEmpty
-            ? _expFilter.groupFilter
-            : SettingsService.instance.schedulerGroupUuidList;
         var list = _mapPlaces;
-        if (effectiveGroupFilter.isNotEmpty) {
+        if (_expFilter.groupFilter.isNotEmpty) {
           list = list
               .where(
                 (p) =>
                     p.groupUuid != null &&
-                    effectiveGroupFilter.contains(p.groupUuid),
+                    _expFilter.groupFilter.contains(p.groupUuid),
               )
               .toList();
         }
@@ -323,11 +320,6 @@ class _PlacesScreenState extends State<PlacesScreen> {
         final offset = silent ? 0 : _listItems.length;
         final q = _searchQuery.isNotEmpty ? _searchQuery.toLowerCase() : null;
 
-        // Group filter: use panel selection if set, else fall back to scheduler.
-        final effectiveGroupFilter = _expFilter.groupFilter.isNotEmpty
-            ? _expFilter.groupFilter
-            : SettingsService.instance.schedulerGroupUuidList;
-
         // Trusted sources filter.
         if (_filterByTrusted) {
           _trustedDeviceIds = await _resolveFilterDeviceIds();
@@ -338,7 +330,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
           offset: offset,
           search: q,
           intervalOnly: _intervalOnly,
-          groupFilter: effectiveGroupFilter,
+          groupFilter: _expFilter.groupFilter,
           placeDeviceIds: _filterByTrusted ? _trustedDeviceIds : [],
           requireExperiences: _expFilter.requireExperiences,
           experienceDeviceIds: _expFilter.ownDeviceOnly
@@ -484,15 +476,12 @@ class _PlacesScreenState extends State<PlacesScreen> {
     final l10n = AppLocalizations.of(context)!;
     // Map always shows the full (map) dataset with Dart-side filtering.
     var list = _mapPlaces;
-    final effectiveGroupFilter = _expFilter.groupFilter.isNotEmpty
-        ? _expFilter.groupFilter
-        : SettingsService.instance.schedulerGroupUuidList;
-    if (effectiveGroupFilter.isNotEmpty) {
+    if (_expFilter.groupFilter.isNotEmpty) {
       list = list
           .where(
             (p) =>
                 p.groupUuid != null &&
-                effectiveGroupFilter.contains(p.groupUuid),
+                _expFilter.groupFilter.contains(p.groupUuid),
           )
           .toList();
     }

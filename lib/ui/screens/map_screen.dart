@@ -88,31 +88,23 @@ class _MapScreenState extends State<MapScreen> {
     } catch (_) {}
 
     final pos = _currentPos;
-    final List<SavedPlace> allPlaces;
+    final List<SavedPlace> places;
     if (_expFilter.distanceEnabled && pos != null) {
       final maxM = _expFilter.maxDistanceKm * 1000;
       final latDelta = maxM / 111000;
       final lngDelta =
           maxM / (111000 * cos(pos.lat * pi / 180).abs().clamp(0.001, 1.0));
-      allPlaces = await DatabaseService.instance.loadPlacesWithinBounds(
+      places = await DatabaseService.instance.loadPlacesWithinBounds(
         minLat: pos.lat - latDelta,
         maxLat: pos.lat + latDelta,
         minLng: pos.lng - lngDelta,
         maxLng: pos.lng + lngDelta,
       );
     } else {
-      allPlaces = await DatabaseService.instance.loadAllPlaces();
+      places = await DatabaseService.instance.loadAllPlaces();
     }
     final avgRatings = await DatabaseService.instance
         .loadAverageRatingsForAllPlaces();
-    final groupFilter = SettingsService.instance.schedulerGroupUuidList;
-    final places = groupFilter.isEmpty
-        ? allPlaces
-        : allPlaces
-              .where(
-                (p) => p.groupUuid != null && groupFilter.contains(p.groupUuid),
-              )
-              .toList();
 
     if (mounted) {
       setState(() {

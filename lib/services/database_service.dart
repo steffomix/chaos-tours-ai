@@ -2667,17 +2667,10 @@ class DatabaseService {
   loadSchedulerPlacesPaged({
     required int limit,
     required int offset,
-    List<String> groupFilter = const [],
   }) async {
     final db = await database;
     final where = <String>['sp.deleted_at IS NULL', 'sp.interval_enabled = 1'];
     final args = <dynamic>[];
-
-    if (groupFilter.isNotEmpty) {
-      final ph = groupFilter.map((_) => '?').join(',');
-      where.add('sp.group_uuid IN ($ph)');
-      args.addAll(groupFilter);
-    }
 
     args.addAll([limit, offset]);
     final rows = await db.rawQuery('''

@@ -2,14 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 import 'dart:math';
 
 import '../../models/aktivitaet.dart';
 import '../../models/place_group.dart';
-import '../../models/saved_place.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/permission_helper.dart';
@@ -43,7 +41,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late bool _addressOnInterval;
   final TextEditingController _nominatimUserAgentCtrl = TextEditingController();
   late int _schedulerColorRange;
-  Set<String> _schedulerGroupIds = {};
   List<PlaceGroup> _groups = [];
   late int _photoMaxWidth;
   late int _photoMaxHeight;
@@ -95,7 +92,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _addressOnInterval = s.addressOnInterval;
     _nominatimUserAgentCtrl.text = s.nominatimUserAgent;
     _schedulerColorRange = s.schedulerColorRange;
-    _schedulerGroupIds = Set<String>.from(s.schedulerGroupUuidList);
     _photoMaxWidth = s.photoMaxWidth;
     _photoMaxHeight = s.photoMaxHeight;
     _photoImageQuality = s.photoImageQuality;
@@ -147,7 +143,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _addressOnManualCreate = s.addressOnManualCreate;
     _addressOnInterval = s.addressOnInterval;
     _schedulerColorRange = s.schedulerColorRange;
-    _schedulerGroupIds = Set<String>.from(s.schedulerGroupUuidList);
     setState(() {});
   }
 
@@ -173,7 +168,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     s.addressOnInterval = _addressOnInterval;
     s.nominatimUserAgent = _nominatimUserAgentCtrl.text;
     s.schedulerColorRange = _schedulerColorRange;
-    s.schedulerGroupIds = _schedulerGroupIds.join(',');
     s.photoMaxWidth = _photoMaxWidth;
     s.photoMaxHeight = _photoMaxHeight;
     s.photoImageQuality = _photoImageQuality;
@@ -488,43 +482,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onChanged: (v) => setState(() => _syncSourcePlaceGroupUuid = v),
               ),
             ),
-            // ListTile(
-            //   title: Text(l10n.shownGroups),
-            //   subtitle: _groups.isEmpty
-            //       ? Text(l10n.noGroupsAvailable)
-            //       : Wrap(
-            //           spacing: 6,
-            //           runSpacing: 4,
-            //           children: [
-            //             FilterChip(
-            //               label: Text(l10n.all),
-            //               selected: _schedulerGroupIds.isEmpty,
-            //               onSelected: (_) =>
-            //                   setState(() => _schedulerGroupIds.clear()),
-            //             ),
-            //             ..._groups.map(
-            //               (g) => FilterChip(
-            //                 avatar: Icon(
-            //                   g.placeType.icon,
-            //                   size: 14,
-            //                   color: g.placeType.dotColor,
-            //                 ),
-            //                 label: Text(g.name),
-            //                 selected: _schedulerGroupIds.contains(g.uuid),
-            //                 onSelected: (selected) {
-            //                   setState(() {
-            //                     if (selected) {
-            //                       _schedulerGroupIds.add(g.uuid);
-            //                     } else {
-            //                       _schedulerGroupIds.remove(g.uuid);
-            //                     }
-            //                   });
-            //                 },
-            //               ),
-            //             ),
-            //           ],
-            //         ),
-            // ),
             ListTile(
               title: Text(l10n.gpsInterval(_gpsInterval)),
               subtitle: Column(

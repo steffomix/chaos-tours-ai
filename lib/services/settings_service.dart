@@ -398,21 +398,6 @@ class SettingsService {
     await _p.setString(_keyTelegramBotTokens, jsonEncode(map));
   }
 
-  /// Comma-separated group UUIDs to display in map and scheduler (empty = all).
-  String get schedulerGroupIds => _p.getString(_keySchedulerGroupIds) ?? '';
-  set schedulerGroupIds(String v) => _p.setString(_keySchedulerGroupIds, v);
-
-  /// Parses [schedulerGroupIds] into a list of UUID strings (empty = all groups).
-  List<String> get schedulerGroupUuidList {
-    final raw = schedulerGroupIds;
-    if (raw.isEmpty) return [];
-    return raw
-        .split(',')
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
-  }
-
   // ── Experience / distance filter ────────────────────────────────────────
 
   bool get filterRequireExperiences =>
@@ -474,7 +459,6 @@ class SettingsService {
     addressOnManualCreate = a.addressOnManualCreate;
     addressOnInterval = a.addressOnInterval;
     schedulerColorRange = a.schedulerColorRange;
-    schedulerGroupIds = a.schedulerGroupIds;
     filterRequireExperiences = a.filterRequireExperiences;
     filterMinAvgRating = a.filterMinAvgRating;
     filterDistanceEnabled = a.filterDistanceEnabled;
@@ -508,7 +492,6 @@ class SettingsService {
       addressOnManualCreate: addressOnManualCreate,
       addressOnInterval: addressOnInterval,
       schedulerColorRange: schedulerColorRange,
-      schedulerGroupIds: schedulerGroupIds,
       filterRequireExperiences: filterRequireExperiences,
       filterMinAvgRating: filterMinAvgRating,
       filterDistanceEnabled: filterDistanceEnabled,

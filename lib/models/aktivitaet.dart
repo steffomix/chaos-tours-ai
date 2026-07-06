@@ -46,10 +46,6 @@ class Aktivitaet {
   /// >= colorRange = green, 0 = yellow, <= -colorRange = red.
   final int schedulerColorRange;
 
-  /// Comma-separated group UUIDs to show in the map and scheduler.
-  /// Empty string means "all groups".
-  final String schedulerGroupIds;
-
   // ── Experience / distance filter ─────────────────────────────────────────
   final bool filterRequireExperiences;
   final double filterMinAvgRating;
@@ -88,7 +84,6 @@ class Aktivitaet {
     this.addressOnManualCreate = true,
     this.addressOnInterval = false,
     this.schedulerColorRange = 14,
-    this.schedulerGroupIds = '',
     this.filterRequireExperiences = false,
     this.filterMinAvgRating = 0.0,
     this.filterDistanceEnabled = false,
@@ -129,7 +124,6 @@ class Aktivitaet {
           (map['address_on_manual_create'] as int? ?? 1) == 1,
       addressOnInterval: (map['address_on_interval'] as int? ?? 0) == 1,
       schedulerColorRange: map['scheduler_color_range'] as int? ?? 14,
-      schedulerGroupIds: map['scheduler_group_ids'] as String? ?? '',
       filterRequireExperiences:
           (map['filter_require_experiences'] as int? ?? 0) == 1,
       filterMinAvgRating:
@@ -172,7 +166,6 @@ class Aktivitaet {
       'address_on_manual_create': addressOnManualCreate ? 1 : 0,
       'address_on_interval': addressOnInterval ? 1 : 0,
       'scheduler_color_range': schedulerColorRange,
-      'scheduler_group_ids': schedulerGroupIds,
       'filter_require_experiences': filterRequireExperiences ? 1 : 0,
       'filter_min_avg_rating': filterMinAvgRating,
       'filter_distance_enabled': filterDistanceEnabled ? 1 : 0,
@@ -208,7 +201,6 @@ class Aktivitaet {
     bool? addressOnManualCreate,
     bool? addressOnInterval,
     int? schedulerColorRange,
-    String? schedulerGroupIds,
     bool? filterRequireExperiences,
     double? filterMinAvgRating,
     bool? filterDistanceEnabled,
@@ -247,7 +239,6 @@ class Aktivitaet {
           addressOnManualCreate ?? this.addressOnManualCreate,
       addressOnInterval: addressOnInterval ?? this.addressOnInterval,
       schedulerColorRange: schedulerColorRange ?? this.schedulerColorRange,
-      schedulerGroupIds: schedulerGroupIds ?? this.schedulerGroupIds,
       filterRequireExperiences:
           filterRequireExperiences ?? this.filterRequireExperiences,
       filterMinAvgRating: filterMinAvgRating ?? this.filterMinAvgRating,
