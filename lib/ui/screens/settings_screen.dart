@@ -980,7 +980,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   List<Widget> _buildDevToolsSection(AppLocalizations l10n) {
     final unlocked = SettingsService.instance.devToolsUnlocked;
 
-    if (!unlocked || kDebugMode == true) {
+    if (!unlocked) {
       return [
         const Divider(),
         Padding(
@@ -1110,85 +1110,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       8,
       (_) => chars[rnd.nextInt(chars.length)],
     ).join();
-    final controller = TextEditingController();
 
     final success = await showDialog<bool>(
       context: context,
-      builder: (dialogCtx) {
-        final l10n = AppLocalizations.of(dialogCtx)!;
-        return StatefulBuilder(
-          builder: (ctx, setDialogState) {
-            final input = controller.text.trim().toUpperCase();
-            final matches = input == code;
-            return AlertDialog(
-              title: Row(
-                children: [
-                  const Icon(Icons.warning_amber_rounded, color: Colors.red),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(l10n.devToolsSectionTitle)),
-                ],
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.devToolsWarning,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(l10n.devToolsChallengeInstruction),
-                  const SizedBox(height: 8),
-                  SelectionContainer.disabled(
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        code,
-                        style: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 4,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: controller,
-                    autofocus: true,
-                    textCapitalization: TextCapitalization.characters,
-                    decoration: InputDecoration(
-                      hintText: l10n.devToolsChallengeHint,
-                      border: const OutlineInputBorder(),
-                    ),
-                    onChanged: (_) => setDialogState(() {}),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: Text(l10n.cancel),
-                ),
-                FilledButton(
-                  onPressed: matches ? () => Navigator.pop(ctx, true) : null,
-                  child: Text(l10n.ok),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (dialogCtx) => _DevToolsChallengeDialog(code: code),
     );
-
-    controller.dispose();
 
     if (success == true) {
       SettingsService.instance.devToolsUnlockedUntilMs = DateTime.now()
@@ -1468,5 +1394,102 @@ class _SettingsScreenState extends State<SettingsScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.activityDeleted(a.name))));
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Extracted dialog widget so the TextEditingController is owned by State and
+// properly disposed, avoiding the _dependents / GlobalKey crash on close.
+// ---------------------------------------------------------------------------
+class _DevToolsChallengeDialog extends StatefulWidget {
+  final String code;
+  const _DevToolsChallengeDialog({required this.code});
+
+  @override
+  State<_DevToolsChallengeDialog> createState() =>
+      _DevToolsChallengeDialogState();
+}
+
+class _DevToolsChallengeDialogState extends State<_DevToolsChallengeDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final input = _controller.text.trim().toUpperCase();
+    final matches = input == widget.code;
+    return AlertDialog(
+      title: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: Colors.red),
+          const SizedBox(width: 8),
+          Expanded(child: Text(l10n.devToolsSectionTitle)),
+        ],
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
+            Text(l10n.devToolsChallengeInstruction),
+            const SizedBox(height: 8),
+            SelectionContainer.disabled(
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  widget.code,
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 4,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              textCapitalization: TextCapitalization.characters,
+              decoration: InputDecoration(
+                hintText: l10n.devToolsChallengeHint,
+                border: const OutlineInputBorder(),
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          onPressed: matches ? () => Navigator.of(context).pop(true) : null,
+          child: Text(l10n.ok),
+        ),
+      ],
+    );
   }
 }

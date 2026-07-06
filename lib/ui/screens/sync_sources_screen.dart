@@ -43,7 +43,7 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
   Future<void> _edit(SyncSource source) async {
     final result = await _showEditDialog(source);
     if (result != null) {
-      final devId =  SyncService.instance.deviceId;
+      final devId = SyncService.instance.deviceId;
       await DatabaseService.instance.updateSyncSource(
         result.copyWith(uuid: source.uuid),
         deviceId: devId,
@@ -517,6 +517,10 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
                             _edit(src);
                           case _SourceAction.delete:
                             _delete(src);
+                          case _SourceAction.reset:
+                            DatabaseService.instance.updateSyncSource(
+                              src.copyWith(lastSyncMs: 0),
+                            );
                         }
                       },
                       itemBuilder: (ctx) {
@@ -527,6 +531,14 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
                             child: ListTile(
                               leading: const Icon(Icons.sync),
                               title: Text(l10n.syncNow),
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: _SourceAction.reset,
+                            child: ListTile(
+                              leading: const Icon(Icons.timer_off),
+                              title: Text(l10n.reset),
                               contentPadding: EdgeInsets.zero,
                             ),
                           ),
@@ -588,7 +600,7 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
   }
 }
 
-enum _SourceAction { sync, options, edit, delete }
+enum _SourceAction { sync, options, edit, delete, reset }
 
 // ── Details sheet ─────────────────────────────────────────────────────────────
 

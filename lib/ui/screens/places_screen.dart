@@ -639,31 +639,38 @@ class _PlacesScreenState extends State<PlacesScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    if (widget.compassMode) {
-      return FocusDetector(
-        onFocusGained: () {
-          _loadCurrentPosition().then((_) => _loadPlaces(silent: true));
-        },
-        onFocusLost: () {},
-        child: Scaffold(
-          appBar: AppBar(title: Text(l10n.compassTitle)),
-          body: Column(
-            children: [
-              _buildCompassHeader(l10n),
-              const Divider(height: 1),
-              Expanded(child: _buildList()),
-            ],
-          ),
-        ),
-      );
-    }
+    // if (widget.compassMode) {
+    //   return FocusDetector(
+    //     onFocusGained: () {
+    //       _loadCurrentPosition().then((_) => _loadPlaces(silent: true));
+    //     },
+    //     onFocusLost: () {},
+    //     child: Scaffold(
+    //       appBar: AppBar(title: Text(l10n.compassTitle)),
+    //       body: Column(
+    //         children: [
+    //           _buildCompassHeader(l10n),
+    //           const Divider(height: 1),
+    //           Expanded(child: _buildList()),
+    //         ],
+    //       ),
+    //     ),
+    //   );
+    // }
     return FocusDetector(
       onFocusGained: () {
         ForegroundServiceManager.addDataListener(_onServiceData);
         final silent = _listItems.isNotEmpty;
-        _loadPlaces(silent: silent).then((_) {
-          if (mounted) setState(() {});
-        });
+        if (widget.compassMode) {
+          _loadCurrentPosition().then((_) async {
+            await _loadPlaces(silent: true);
+            if (mounted) setState(() {});
+          });
+        } else {
+          _loadPlaces(silent: silent).then((_) {
+            if (mounted) setState(() {});
+          });
+        }
       },
       onFocusLost: () =>
           ForegroundServiceManager.removeDataListener(_onServiceData),
