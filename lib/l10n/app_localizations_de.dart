@@ -1865,4 +1865,66 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get compassFromPlace => 'Mit Kompass von diesem Ort';
+
+  @override
+  String get aktivitaetenScreenTitle => 'Aktivitäten';
+
+  @override
+  String aktivitaetDetailTitle(String name) {
+    return 'Aktivität: $name';
+  }
+
+  @override
+  String get switchToActivity => 'Zu dieser Aktivität wechseln';
+
+  @override
+  String get switchToActivitySubtitle =>
+      'Diese Aktivität und ihre Geräte-ID werden aktiv';
+
+  @override
+  String get activityCurrentlyActive => 'Aktuell aktiv';
+
+  @override
+  String get privateSpaceSection => 'Privater Bereich';
+
+  @override
+  String get protectFromExportLabel => 'Gegen Sync-Export schützen';
+
+  @override
+  String get protectFromExportSubtitle =>
+      'Daten dieser Aktivität werden nicht an Sync-Server übertragen (für die Außenwelt unsichtbar)';
+
+  @override
+  String get protectFromImportLabel => 'Gegen Sync-Import schützen';
+
+  @override
+  String get protectFromImportSubtitle =>
+      'Eingehende Sync-Daten mit dieser Geräte-ID werden ignoriert (schützt die Privatsphäre)';
+
+  @override
+  String get purgeDataLabel => 'Datenbankeinträge säubern';
+
+  @override
+  String get purgeDataSubtitle =>
+      'Alle Einträge mit dieser Geräte-ID aus der Datenbank entfernen (nicht die Aktivität selbst)';
+
+  @override
+  String get purgeDataConfirmTitle => 'Einträge säubern?';
+
+  @override
+  String purgeDataConfirmContent(String name) {
+    return 'Alle Datenbankeinträge der Geräte-ID von „$name“ werden unwiderruflich entfernt. Fremdschlüssel können dabei brechen.';
+  }
+
+  @override
+  String purgeDataSuccess(int count) {
+    return '$count Einträge entfernt';
+  }
+
+  @override
+  String get deleteWithCleanupCheckbox => 'Datenbank ebenfalls säubern';
+
+  @override
+  String get deleteWithCleanupCheckboxSubtitle =>
+      'Alle Einträge mit der Geräte-ID dieser Aktivität werden entfernt';
 }

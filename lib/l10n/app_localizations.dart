@@ -3403,6 +3403,108 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Mit Kompass von diesem Ort'**
   String get compassFromPlace;
+
+  /// No description provided for @aktivitaetenScreenTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Aktivitäten'**
+  String get aktivitaetenScreenTitle;
+
+  /// Activity detail screen title
+  ///
+  /// In de, this message translates to:
+  /// **'Aktivität: {name}'**
+  String aktivitaetDetailTitle(String name);
+
+  /// No description provided for @switchToActivity.
+  ///
+  /// In de, this message translates to:
+  /// **'Zu dieser Aktivität wechseln'**
+  String get switchToActivity;
+
+  /// No description provided for @switchToActivitySubtitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Diese Aktivität und ihre Geräte-ID werden aktiv'**
+  String get switchToActivitySubtitle;
+
+  /// No description provided for @activityCurrentlyActive.
+  ///
+  /// In de, this message translates to:
+  /// **'Aktuell aktiv'**
+  String get activityCurrentlyActive;
+
+  /// No description provided for @privateSpaceSection.
+  ///
+  /// In de, this message translates to:
+  /// **'Privater Bereich'**
+  String get privateSpaceSection;
+
+  /// No description provided for @protectFromExportLabel.
+  ///
+  /// In de, this message translates to:
+  /// **'Gegen Sync-Export schützen'**
+  String get protectFromExportLabel;
+
+  /// No description provided for @protectFromExportSubtitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Daten dieser Aktivität werden nicht an Sync-Server übertragen (für die Außenwelt unsichtbar)'**
+  String get protectFromExportSubtitle;
+
+  /// No description provided for @protectFromImportLabel.
+  ///
+  /// In de, this message translates to:
+  /// **'Gegen Sync-Import schützen'**
+  String get protectFromImportLabel;
+
+  /// No description provided for @protectFromImportSubtitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Eingehende Sync-Daten mit dieser Geräte-ID werden ignoriert (schützt die Privatsphäre)'**
+  String get protectFromImportSubtitle;
+
+  /// No description provided for @purgeDataLabel.
+  ///
+  /// In de, this message translates to:
+  /// **'Datenbankeinträge säubern'**
+  String get purgeDataLabel;
+
+  /// No description provided for @purgeDataSubtitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Alle Einträge mit dieser Geräte-ID aus der Datenbank entfernen (nicht die Aktivität selbst)'**
+  String get purgeDataSubtitle;
+
+  /// No description provided for @purgeDataConfirmTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Einträge säubern?'**
+  String get purgeDataConfirmTitle;
+
+  /// Purge confirmation dialog content
+  ///
+  /// In de, this message translates to:
+  /// **'Alle Datenbankeinträge der Geräte-ID von „{name}“ werden unwiderruflich entfernt. Fremdschlüssel können dabei brechen.'**
+  String purgeDataConfirmContent(String name);
+
+  /// Purge success message
+  ///
+  /// In de, this message translates to:
+  /// **'{count} Einträge entfernt'**
+  String purgeDataSuccess(int count);
+
+  /// No description provided for @deleteWithCleanupCheckbox.
+  ///
+  /// In de, this message translates to:
+  /// **'Datenbank ebenfalls säubern'**
+  String get deleteWithCleanupCheckbox;
+
+  /// No description provided for @deleteWithCleanupCheckboxSubtitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Alle Einträge mit der Geräte-ID dieser Aktivität werden entfernt'**
+  String get deleteWithCleanupCheckboxSubtitle;
 }
 
 class _AppLocalizationsDelegate

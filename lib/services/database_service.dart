@@ -63,6 +63,8 @@ class DatabaseService {
         // so we catch and ignore that error.
         final migrations = [
           'ALTER TABLE sync_sources ADD COLUMN last_sync_ms INTEGER NOT NULL DEFAULT 0',
+          'ALTER TABLE aktivitaeten ADD COLUMN sync_export_protected INTEGER NOT NULL DEFAULT 0',
+          'ALTER TABLE aktivitaeten ADD COLUMN sync_import_protected INTEGER NOT NULL DEFAULT 0',
         ];
         for (final sql in migrations) {
           try {
@@ -249,6 +251,8 @@ class DatabaseService {
         address_on_interval INTEGER NOT NULL DEFAULT 0,
         scheduler_color_range INTEGER NOT NULL DEFAULT 14,
         scheduler_group_ids TEXT NOT NULL DEFAULT '',
+        sync_export_protected INTEGER NOT NULL DEFAULT 0,
+        sync_import_protected INTEGER NOT NULL DEFAULT 0,
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER
       )
@@ -1226,6 +1230,65 @@ class DatabaseService {
     await db.delete('aktivitaeten', where: 'uuid = ?', whereArgs: [uuid]);
   }
 
+  /// Returns the set of device IDs whose Aktivitaet has sync export protection
+  /// enabled. Rows with these device IDs will be excluded from sync pushes.
+  Future<Set<String>> loadExportProtectedDeviceIds() async {
+    final db = await database;
+    final rows = await db.query(
+      'aktivitaeten',
+      columns: ['device_id'],
+      where: 'sync_export_protected = 1 AND deleted_at IS NULL',
+    );
+    return rows.map((r) => r['device_id'] as String).toSet();
+  }
+
+  /// Returns the set of device IDs whose Aktivitaet has sync import protection
+  /// enabled. Incoming sync rows with these device IDs will be skipped.
+  Future<Set<String>> loadImportProtectedDeviceIds() async {
+    final db = await database;
+    final rows = await db.query(
+      'aktivitaeten',
+      columns: ['device_id'],
+      where: 'sync_import_protected = 1 AND deleted_at IS NULL',
+    );
+    return rows.map((r) => r['device_id'] as String).toSet();
+  }
+
+  /// Deletes all rows with [deviceId] from every table that carries a
+  /// device_id column, except the aktivitaeten table itself.
+  /// Returns the total number of rows deleted.
+  /// WARNING: May leave orphaned FK references — an explicit cleanup pass
+  /// should be run afterwards.
+  Future<int> purgeByDeviceId(String deviceId) async {
+    final db = await database;
+    const tables = [
+      'place_groups',
+      'saved_places',
+      'persons',
+      'activities',
+      'stays',
+      'stay_persons',
+      'stay_activities',
+      'sync_sources',
+      'place_experiences',
+      'sync_source_experiences',
+      'place_photos',
+      'telegram_connections',
+      'p2p_messages',
+      'message_attachments',
+      'trusted_sources',
+    ];
+    int total = 0;
+    for (final table in tables) {
+      total += await db.delete(
+        table,
+        where: 'device_id = ?',
+        whereArgs: [deviceId],
+      );
+    }
+    return total;
+  }
+
   // ── Dump / Import ─────────────────────────────────────────────────────────
 
   /// Generates a complete SQL dump of the database.
@@ -2169,12 +2232,15 @@ class DatabaseService {
     }
 
     // Nothing exists yet — create a default one.
+    // By default the first aktivitaet is protected from sync imports so that
+    // its private data cannot be overwritten by remote peers.
     final firstUuid = await insertAktivitaet(
       Aktivitaet(
         name: 'Standard',
         autoPlaceGroupUuid: s.autoPlaceGroupUuid,
         defaultPlaceGroupUuid: s.defaultPlaceGroupUuid,
         syncSourcePlaceGroupUuid: s.syncSourcePlaceGroupUuid,
+        syncImportProtected: true,
       ),
     );
     s.activeAktivitaetUuid = firstUuid;

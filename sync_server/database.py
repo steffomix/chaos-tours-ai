@@ -244,6 +244,8 @@ _DDL: list[str] = [
         address_on_interval INTEGER NOT NULL DEFAULT 0,
         scheduler_color_range INTEGER NOT NULL DEFAULT 14,
         scheduler_group_ids TEXT NOT NULL DEFAULT '',
+        sync_export_protected INTEGER NOT NULL DEFAULT 0,
+        sync_import_protected INTEGER NOT NULL DEFAULT 0,
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER
     )
@@ -516,6 +518,17 @@ async def create_tables() -> None:
         await conn.execute("PRAGMA foreign_keys=ON")
         for ddl in _DDL:
             await conn.execute(ddl)
+        # Idempotent column additions for databases created before schema changes.
+        _migrations = [
+            "ALTER TABLE sync_sources ADD COLUMN last_sync_ms INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE aktivitaeten ADD COLUMN sync_export_protected INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE aktivitaeten ADD COLUMN sync_import_protected INTEGER NOT NULL DEFAULT 0",
+        ]
+        for sql in _migrations:
+            try:
+                await conn.execute(sql)
+            except Exception:
+                pass  # Column already present — safe to ignore.
         await conn.commit()
     print(f"[db] Database ready at {DB_PATH}")
 

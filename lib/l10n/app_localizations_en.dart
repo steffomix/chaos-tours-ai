@@ -1853,4 +1853,66 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get compassFromPlace => 'Compass from this place';
+
+  @override
+  String get aktivitaetenScreenTitle => 'Activities';
+
+  @override
+  String aktivitaetDetailTitle(String name) {
+    return 'Activity: $name';
+  }
+
+  @override
+  String get switchToActivity => 'Switch to this activity';
+
+  @override
+  String get switchToActivitySubtitle =>
+      'Makes this activity and its device ID active';
+
+  @override
+  String get activityCurrentlyActive => 'Currently active';
+
+  @override
+  String get privateSpaceSection => 'Private Space';
+
+  @override
+  String get protectFromExportLabel => 'Protect from sync export';
+
+  @override
+  String get protectFromExportSubtitle =>
+      'Data from this activity will not be pushed to sync servers (invisible to the outside world)';
+
+  @override
+  String get protectFromImportLabel => 'Protect from sync import';
+
+  @override
+  String get protectFromImportSubtitle =>
+      'Incoming sync data with this device ID will be ignored (protects privacy)';
+
+  @override
+  String get purgeDataLabel => 'Clean database entries';
+
+  @override
+  String get purgeDataSubtitle =>
+      'Remove all entries with this device ID from the database (not the activity itself)';
+
+  @override
+  String get purgeDataConfirmTitle => 'Clean entries?';
+
+  @override
+  String purgeDataConfirmContent(String name) {
+    return 'All database entries with the device ID of \"$name\" will be permanently removed. Foreign keys may break.';
+  }
+
+  @override
+  String purgeDataSuccess(int count) {
+    return '$count entries removed';
+  }
+
+  @override
+  String get deleteWithCleanupCheckbox => 'Also clean database';
+
+  @override
+  String get deleteWithCleanupCheckboxSubtitle =>
+      'All entries with the device ID of this activity will be removed';
 }

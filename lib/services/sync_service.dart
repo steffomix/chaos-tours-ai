@@ -120,6 +120,12 @@ class SyncService {
         return SyncResult(success: true, sourceName: source.name);
       }
 
+      // Load private-space protection sets once per sync.
+      final importProtected = await DatabaseService.instance
+          .loadImportProtectedDeviceIds();
+      final exportProtected = await DatabaseService.instance
+          .loadExportProtectedDeviceIds();
+
       // ── 1. Pull changes from server ─────────────────────────────────────
       final pullUri = Uri.parse(
         '${source.syncUrl}/sync/pull?since=$since&device_id=$deviceId',
@@ -142,9 +148,15 @@ class SyncService {
         final tableOpts = source.syncOptions.forTable(table);
         final rows = pullData[table] as List<dynamic>? ?? [];
         for (final row in rows) {
+          final rowMap = Map<String, dynamic>.from(row as Map);
+          // Skip rows whose device_id belongs to an import-protected Aktivitaet.
+          final rowDeviceId = rowMap['device_id'] as String?;
+          if (rowDeviceId != null && importProtected.contains(rowDeviceId)) {
+            continue;
+          }
           await DatabaseService.instance.upsertByUuid(
             table,
-            Map<String, dynamic>.from(row as Map),
+            rowMap,
             options: SyncOptions(
               allowInsert: tableOpts.insert,
               allowEdit: tableOpts.update,
@@ -162,8 +174,16 @@ class SyncService {
           table,
           since,
         );
-        if (rows.isNotEmpty) {
-          pushPayload[table] = rows;
+        // Filter out rows whose device_id belongs to an export-protected Aktivitaet.
+        final filtered = exportProtected.isEmpty
+            ? rows
+            : rows
+                  .where(
+                    (r) => !exportProtected.contains(r['device_id'] as String?),
+                  )
+                  .toList();
+        if (filtered.isNotEmpty) {
+          pushPayload[table] = filtered;
         }
       }
 

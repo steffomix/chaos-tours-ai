@@ -1,18 +1,15 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
-import 'package:uuid/uuid.dart';
 
 import 'dart:math';
 
 import '../../models/aktivitaet.dart';
 import '../../models/place_group.dart';
 import '../../models/saved_place.dart';
-import '../../models/trusted_source.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/permission_helper.dart';
@@ -130,6 +127,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  /// Reloads all settings UI state from [SettingsService] (e.g. after
+  /// switching to a different Aktivitaet in the AktivitaetenScreen).
+  void _reloadFromSettings() {
+    final s = SettingsService.instance;
+    _deviceId = s.deviceId;
+    _gpsInterval = s.gpsIntervalSeconds;
+    _stayDetection = s.stayDetectionSeconds;
+    _autoPlaceTime = s.autoPlaceSeconds;
+    _defaultRadius = s.defaultRadiusMeters;
+    _autoCreatePlaces = s.autoCreatePlaces;
+    _autoPlaceGroupUuid = s.autoPlaceGroupUuid;
+    _defaultPlaceGroupUuid = s.defaultPlaceGroupUuid;
+    _syncSourcePlaceGroupUuid = s.syncSourcePlaceGroupUuid;
+    _timelineHistoryDays = s.timelineHistoryDays;
+    _searchCountry = s.searchCountry;
+    _searchCountryCtrl.text = _searchCountry;
+    _addressOnAutoCreate = s.addressOnAutoCreate;
+    _addressOnManualCreate = s.addressOnManualCreate;
+    _addressOnInterval = s.addressOnInterval;
+    _schedulerColorRange = s.schedulerColorRange;
+    _schedulerGroupIds = Set<String>.from(s.schedulerGroupUuidList);
+    setState(() {});
+  }
+
   Future<void> _saveAll() async {
     final s = SettingsService.instance;
     bool gpsInterfalChanged = s.gpsIntervalSeconds != _gpsInterval;
@@ -209,33 +230,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               leading: const Icon(Icons.phone_android),
               title: Text(_activeAktivitaet?.name ?? l10n.noActivity),
               subtitle: Text(l10n.activityCount(_aktivitaeten.length)),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit_outlined),
-                    tooltip: l10n.tooltipRename,
-                    onPressed: _activeAktivitaet == null
-                        ? null
-                        : () => _renameAktivitaet(_activeAktivitaet!),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.swap_horiz),
-                    tooltip: l10n.tooltipSwitchCreate,
-                    onPressed: _showAktivitaetenPicker,
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.copy),
-              title: Text(l10n.deviceId),
-              subtitle: Text(_deviceId),
-              onTap: () {
-                Clipboard.setData(ClipboardData(text: _deviceId));
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text(l10n.deviceIdCopied)));
+              onTap: () async {
+                await _saveAll();
+                if (!mounted) return;
+                await Navigator.pushNamed(context, '/aktivitaeten');
+                await _loadAktivitaeten();
+                if (mounted) _reloadFromSettings();
               },
             ),
             ListTile(
@@ -488,43 +488,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onChanged: (v) => setState(() => _syncSourcePlaceGroupUuid = v),
               ),
             ),
-            ListTile(
-              title: Text(l10n.shownGroups),
-              subtitle: _groups.isEmpty
-                  ? Text(l10n.noGroupsAvailable)
-                  : Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: [
-                        FilterChip(
-                          label: Text(l10n.all),
-                          selected: _schedulerGroupIds.isEmpty,
-                          onSelected: (_) =>
-                              setState(() => _schedulerGroupIds.clear()),
-                        ),
-                        ..._groups.map(
-                          (g) => FilterChip(
-                            avatar: Icon(
-                              g.placeType.icon,
-                              size: 14,
-                              color: g.placeType.dotColor,
-                            ),
-                            label: Text(g.name),
-                            selected: _schedulerGroupIds.contains(g.uuid),
-                            onSelected: (selected) {
-                              setState(() {
-                                if (selected) {
-                                  _schedulerGroupIds.add(g.uuid);
-                                } else {
-                                  _schedulerGroupIds.remove(g.uuid);
-                                }
-                              });
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
+            // ListTile(
+            //   title: Text(l10n.shownGroups),
+            //   subtitle: _groups.isEmpty
+            //       ? Text(l10n.noGroupsAvailable)
+            //       : Wrap(
+            //           spacing: 6,
+            //           runSpacing: 4,
+            //           children: [
+            //             FilterChip(
+            //               label: Text(l10n.all),
+            //               selected: _schedulerGroupIds.isEmpty,
+            //               onSelected: (_) =>
+            //                   setState(() => _schedulerGroupIds.clear()),
+            //             ),
+            //             ..._groups.map(
+            //               (g) => FilterChip(
+            //                 avatar: Icon(
+            //                   g.placeType.icon,
+            //                   size: 14,
+            //                   color: g.placeType.dotColor,
+            //                 ),
+            //                 label: Text(g.name),
+            //                 selected: _schedulerGroupIds.contains(g.uuid),
+            //                 onSelected: (selected) {
+            //                   setState(() {
+            //                     if (selected) {
+            //                       _schedulerGroupIds.add(g.uuid);
+            //                     } else {
+            //                       _schedulerGroupIds.remove(g.uuid);
+            //                     }
+            //                   });
+            //                 },
+            //               ),
+            //             ),
+            //           ],
+            //         ),
+            // ),
             ListTile(
               title: Text(l10n.gpsInterval(_gpsInterval)),
               subtitle: Column(
@@ -952,19 +952,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: Text('Chaos Tours'),
               subtitle: Text('Version 2.0.0'),
             ),
-            // ── Aktivität löschen ─────────────────────────────────────────
-            if (_aktivitaeten.length > 1 && _activeAktivitaet != null) ...[
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.delete_forever, color: Colors.red),
-                title: Text(
-                  l10n.deleteActivityLabel(_activeAktivitaet!.name),
-                  style: const TextStyle(color: Colors.red),
-                ),
-                subtitle: Text(l10n.deleteActivity),
-                onTap: _deleteCurrentAktivitaet,
-              ),
-            ],
             ..._buildDevToolsSection(l10n),
           ],
         ),
@@ -1130,195 +1117,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  void _showAktivitaetenPicker() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx2, setSheetState) {
-            final l10n = AppLocalizations.of(ctx2)!;
-            return SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.bolt),
-                        const SizedBox(width: 8),
-                        Text(
-                          l10n.pickActivity,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  ..._aktivitaeten.map((a) {
-                    final isActive = a.uuid == _activeAktivitaet?.uuid;
-                    return ListTile(
-                      leading: Icon(
-                        isActive
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_off,
-                        color: isActive
-                            ? Theme.of(ctx2).colorScheme.primary
-                            : null,
-                      ),
-                      title: Text(
-                        a.name,
-                        style: isActive
-                            ? TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(ctx2).colorScheme.primary,
-                              )
-                            : null,
-                      ),
-                      onTap: () async {
-                        Navigator.pop(ctx2);
-                        await _switchAktivitaet(a);
-                      },
-                    );
-                  }),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.add_circle_outline),
-                    title: Text(l10n.newActivityCreate),
-                    onTap: () async {
-                      Navigator.pop(ctx2);
-                      await _createNewAktivitaet();
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Future<void> _switchAktivitaet(Aktivitaet a) async {
-    // Save current settings to the old active Aktivitaet first.
-    await _saveAll();
-    // Load new Aktivitaet and apply.
-    SettingsService.instance.applyAktivitaet(a);
-    if (mounted) {
-      setState(() {
-        _activeAktivitaet = a;
-        _deviceId = a.deviceId;
-        _gpsInterval = a.gpsIntervalSeconds;
-        _stayDetection = a.stayDetectionSeconds;
-        _autoPlaceTime = a.autoPlaceSeconds;
-        _defaultRadius = a.defaultRadiusMeters;
-        _autoCreatePlaces = a.autoCreatePlaces;
-        _autoPlaceGroupUuid = a.autoPlaceGroupUuid;
-        _defaultPlaceGroupUuid = a.defaultPlaceGroupUuid;
-        _syncSourcePlaceGroupUuid = a.syncSourcePlaceGroupUuid;
-      });
-    }
-  }
-
-  Future<void> _createNewAktivitaet() async {
-    final l10n = AppLocalizations.of(context)!;
-    final nameCtrl = TextEditingController(
-      text: '${l10n.sectionActivity} ${_aktivitaeten.length + 1}',
-    );
-    final deviceNameCtrl = TextEditingController();
-    // Offer to copy from an existing one as template.
-    Aktivitaet template = _activeAktivitaet ?? Aktivitaet(name: '');
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        final l10n = AppLocalizations.of(ctx)!;
-        return AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: InputDecoration(labelText: l10n.newActivityLabel),
-                autofocus: true,
-              ),
-              if (_aktivitaeten.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Text(
-                  l10n.copySettingsFrom,
-                  style: const TextStyle(fontSize: 13),
-                ),
-                StatefulBuilder(
-                  builder: (ctx2, setInner) => DropdownButton<Aktivitaet>(
-                    isExpanded: true,
-                    value: template,
-                    items: _aktivitaeten
-                        .map(
-                          (a) =>
-                              DropdownMenuItem(value: a, child: Text(a.name)),
-                        )
-                        .toList(),
-                    onChanged: (v) {
-                      if (v != null) setInner(() => template = v);
-                    },
-                  ),
-                ),
-              ],
-              const SizedBox(height: 12),
-              TextField(
-                controller: deviceNameCtrl,
-                maxLength: 20,
-                decoration: InputDecoration(
-                  labelText: l10n.deviceNameLabel,
-                  hintText: l10n.deviceNameHint,
-                  helperText: l10n.deviceNameLengthHint,
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l10n.cancel),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l10n.create),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmed != true) return;
-    final name = nameCtrl.text.trim();
-    final deviceNameInput = deviceNameCtrl.text.trim();
-    if (name.isEmpty) return;
-    if (deviceNameInput.length < 3 || deviceNameInput.length > 20) return;
-
-    const uuid = Uuid();
-    final deviceId = '$deviceNameInput@${uuid.v4()}';
-    final newA = template.copyWith(name: name, uuid: '', deviceId: deviceId);
-    final db = DatabaseService.instance;
-    final id = await db.insertAktivitaet(newA);
-    // set the new deviceId as trusted source.
-    await db.refreshTrustedSources();
-    await db.upsertTrustedSource(
-      TrustedSource(deviceId: deviceId, trusted: true),
-    );
-    final created = await db.loadAktivitaet(id);
-
-    if (created != null) await _switchAktivitaet(created);
-    await _loadAktivitaeten();
-    await _loadGroups();
-  }
-
   Future<void> _renameAktivitaet(Aktivitaet a) async {
     final ctrl = TextEditingController(text: a.name);
     final confirmed = await showDialog<bool>(
@@ -1345,54 +1143,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       },
     );
-    if (confirmed != true) return;
     final name = ctrl.text.trim();
+    ctrl.dispose();
+    if (confirmed != true || !mounted) return;
     if (name.isEmpty || name == a.name) return;
     final updated = a.copyWith(name: name);
     await DatabaseService.instance.updateAktivitaet(updated);
     await _loadAktivitaeten();
-  }
-
-  Future<void> _deleteCurrentAktivitaet() async {
-    final a = _activeAktivitaet;
-    if (a == null || _aktivitaeten.length <= 1) return;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        final l10n = AppLocalizations.of(ctx)!;
-        return AlertDialog(
-          title: Text(l10n.deleteActivityTitle),
-          content: Text(l10n.deleteActivityContent(a.name)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l10n.cancel),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(
-                l10n.delete,
-                style: const TextStyle(color: Colors.red),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-    if (confirmed != true) return;
-
-    // Switch to another Aktivitaet before deleting.
-    final next = _aktivitaeten.firstWhere((x) => x.uuid != a.uuid);
-    await _switchAktivitaet(next);
-    await DatabaseService.instance.deleteAktivitaet(a.uuid);
-    await _loadAktivitaeten();
-
-    if (mounted) {
-      final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.activityDeleted(a.name))));
-    }
   }
 }
 

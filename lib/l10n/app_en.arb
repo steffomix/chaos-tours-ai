@@ -1048,5 +1048,41 @@
   "compassRefHere": "From here",
   "compassRefPlace": "From place",
   "compassFromHere": "Compass from here",
-  "compassFromPlace": "Compass from this place"
+  "compassFromPlace": "Compass from this place",
+
+  "aktivitaetenScreenTitle": "Activities",
+  "aktivitaetDetailTitle": "Activity: {name}",
+  "@aktivitaetDetailTitle": {
+    "description": "Activity detail screen title",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "switchToActivity": "Switch to this activity",
+  "switchToActivitySubtitle": "Makes this activity and its device ID active",
+  "activityCurrentlyActive": "Currently active",
+  "privateSpaceSection": "Private Space",
+  "protectFromExportLabel": "Protect from sync export",
+  "protectFromExportSubtitle": "Data from this activity will not be pushed to sync servers (invisible to the outside world)",
+  "protectFromImportLabel": "Protect from sync import",
+  "protectFromImportSubtitle": "Incoming sync data with this device ID will be ignored (protects privacy)",
+  "purgeDataLabel": "Clean database entries",
+  "purgeDataSubtitle": "Remove all entries with this device ID from the database (not the activity itself)",
+  "purgeDataConfirmTitle": "Clean entries?",
+  "purgeDataConfirmContent": "All database entries with the device ID of \"{name}\" will be permanently removed. Foreign keys may break.",
+  "@purgeDataConfirmContent": {
+    "description": "Purge confirmation dialog content",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "purgeDataSuccess": "{count} entries removed",
+  "@purgeDataSuccess": {
+    "description": "Purge success message",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "deleteWithCleanupCheckbox": "Also clean database",
+  "deleteWithCleanupCheckboxSubtitle": "All entries with the device ID of this activity will be removed"
 }

@@ -2455,5 +2455,41 @@
   "compassRefHere": "Von hier",
   "compassRefPlace": "Von Ort",
   "compassFromHere": "Mit Kompass von hier",
-  "compassFromPlace": "Mit Kompass von diesem Ort"
+  "compassFromPlace": "Mit Kompass von diesem Ort",
+
+  "aktivitaetenScreenTitle": "Aktivitäten",
+  "aktivitaetDetailTitle": "Aktivität: {name}",
+  "@aktivitaetDetailTitle": {
+    "description": "Activity detail screen title",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "switchToActivity": "Zu dieser Aktivität wechseln",
+  "switchToActivitySubtitle": "Diese Aktivität und ihre Geräte-ID werden aktiv",
+  "activityCurrentlyActive": "Aktuell aktiv",
+  "privateSpaceSection": "Privater Bereich",
+  "protectFromExportLabel": "Gegen Sync-Export schützen",
+  "protectFromExportSubtitle": "Daten dieser Aktivität werden nicht an Sync-Server übertragen (für die Außenwelt unsichtbar)",
+  "protectFromImportLabel": "Gegen Sync-Import schützen",
+  "protectFromImportSubtitle": "Eingehende Sync-Daten mit dieser Geräte-ID werden ignoriert (schützt die Privatsphäre)",
+  "purgeDataLabel": "Datenbankeinträge säubern",
+  "purgeDataSubtitle": "Alle Einträge mit dieser Geräte-ID aus der Datenbank entfernen (nicht die Aktivität selbst)",
+  "purgeDataConfirmTitle": "Einträge säubern?",
+  "purgeDataConfirmContent": "Alle Datenbankeinträge der Geräte-ID von \u201e{name}\u201c werden unwiderruflich entfernt. Fremdschlüssel können dabei brechen.",
+  "@purgeDataConfirmContent": {
+    "description": "Purge confirmation dialog content",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "purgeDataSuccess": "{count} Einträge entfernt",
+  "@purgeDataSuccess": {
+    "description": "Purge success message",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "deleteWithCleanupCheckbox": "Datenbank ebenfalls säubern",
+  "deleteWithCleanupCheckboxSubtitle": "Alle Einträge mit der Geräte-ID dieser Aktivität werden entfernt"
 }

@@ -64,6 +64,13 @@ class Aktivitaet {
   final int? deletedAt;
   final String deviceId;
 
+  // ── Privater Bereich / Sync-Schutz ───────────────────────────────────────
+  /// When true, data rows with this device_id are excluded from sync exports.
+  final bool syncExportProtected;
+
+  /// When true, incoming sync rows with this device_id are ignored on import.
+  final bool syncImportProtected;
+
   Aktivitaet({
     String? uuid,
     required this.name,
@@ -92,6 +99,8 @@ class Aktivitaet {
     int? updatedAt,
     this.deletedAt,
     String? deviceId,
+    this.syncExportProtected = false,
+    this.syncImportProtected = false,
   }) : uuid = uuid?.isNotEmpty == true ? uuid! : _uuid.v4(),
        updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch,
        deviceId = deviceId?.isNotEmpty == true
@@ -136,6 +145,8 @@ class Aktivitaet {
       updatedAt:
           (map['updated_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       deletedAt: map['deleted_at'] as int?,
+      syncExportProtected: (map['sync_export_protected'] as int? ?? 0) == 1,
+      syncImportProtected: (map['sync_import_protected'] as int? ?? 0) == 1,
     );
   }
 
@@ -171,6 +182,8 @@ class Aktivitaet {
       'filter_use_median': filterUseMedian ? 1 : 0,
       'filter_use_specific_rating': filterUseSpecificRating ? 1 : 0,
       'filter_specific_rating_field': filterSpecificRatingField,
+      'sync_export_protected': syncExportProtected ? 1 : 0,
+      'sync_import_protected': syncImportProtected ? 1 : 0,
     };
   }
 
@@ -206,6 +219,8 @@ class Aktivitaet {
     bool? filterUseMedian,
     bool? filterUseSpecificRating,
     String? filterSpecificRatingField,
+    bool? syncExportProtected,
+    bool? syncImportProtected,
   }) {
     return Aktivitaet(
       uuid: uuid ?? this.uuid,
@@ -246,6 +261,8 @@ class Aktivitaet {
           filterUseSpecificRating ?? this.filterUseSpecificRating,
       filterSpecificRatingField:
           filterSpecificRatingField ?? this.filterSpecificRatingField,
+      syncExportProtected: syncExportProtected ?? this.syncExportProtected,
+      syncImportProtected: syncImportProtected ?? this.syncImportProtected,
     );
   }
 }
