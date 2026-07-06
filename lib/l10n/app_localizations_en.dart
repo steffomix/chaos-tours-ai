@@ -1837,7 +1837,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Note: Location-bound messages of the P2P messenger strictly require a place as reference point. If automatic place creation is off, places can still be created as \"sync source\" on synchronization opportunities (see P2P messenger).';
 
   @override
-  String get locatorCopied => 'Locator copied';
+  String get locatorCopied => 'Ham Radio QTH Locator copied';
 
   @override
   String get compassTitle => 'Compass';

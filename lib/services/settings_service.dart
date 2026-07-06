@@ -42,7 +42,6 @@ class SettingsService {
   static const String _keyNominatimUserAgent = 'nominatim_user_agent';
   static const String _keySearchCountry = 'search_country';
   static const String _keySchedulerColorRange = 'scheduler_color_range';
-  static const String _keySchedulerGroupIds = 'scheduler_group_ids';
   static const String _keyFilterRequireExperiences =
       'filter_require_experiences';
   static const String _keyFilterMinAvgRating = 'filter_min_avg_rating';

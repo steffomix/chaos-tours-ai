@@ -366,6 +366,16 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                       _ratingChip('Med', exp.ratingMedicine),
                     ],
                   ),
+
+                  const SizedBox(height: 4),
+                  Text(
+                    exp.deviceId,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -653,7 +663,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
 
   void _copyGps() {
     final text =
-        '${widget.place.lat.toStringAsFixed(6)}, ${widget.place.lng.toStringAsFixed(6)}';
+        '${widget.place.lat.toStringAsFixed(6)},${widget.place.lng.toStringAsFixed(6)}';
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(AppLocalizations.of(context)!.gpsCopied)),
@@ -1458,6 +1468,27 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                 ],
               ),
               const SizedBox(height: 4),
+              // ── Position ändern ────────────────────────────────────────
+              OutlinedButton.icon(
+                onPressed: _repositionPlace,
+                icon: const Icon(Icons.edit_location_alt),
+                label: Text(AppLocalizations.of(context)!.changePositionOnMap),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                AppLocalizations.of(
+                  context,
+                )!.radius(_radius.toStringAsFixed(0)),
+              ),
+              Slider(
+                value: _radius,
+                min: 10,
+                max: 500,
+                divisions: 49,
+                label: '${_radius.toStringAsFixed(0)} m',
+                onChanged: (v) => setState(() => _radius = v),
+              ),
+              const SizedBox(height: 12),
               // ── GPS-Koordinaten ────────────────────────────────────────
               InkWell(
                 onTap: _copyGps,
@@ -1477,16 +1508,13 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     children: [
                       Icon(
                         Icons.location_on,
-                        size: 16,
                         color: Theme.of(context).colorScheme.primary,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          '${widget.place.lat.toStringAsFixed(6)}, '
-                          '${widget.place.lng.toStringAsFixed(6)}',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(fontFamily: 'monospace'),
+                          'Lat: ${widget.place.lat.toStringAsFixed(6)}, '
+                          'Lng: ${widget.place.lng.toStringAsFixed(6)}',
                         ),
                       ),
                       const Icon(Icons.copy, size: 14, color: Colors.grey),
@@ -1514,23 +1542,15 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     children: [
                       Icon(
                         Icons.grid_on,
-                        size: 16,
                         color: Theme.of(context).colorScheme.primary,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          Maidenhead.format(
-                            Maidenhead.encodeId(
-                              widget.place.lat,
-                              widget.place.lng,
-                            ),
-                          ),
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(fontFamily: 'monospace'),
+                          'QTH: ${Maidenhead.format(Maidenhead.encodeId(widget.place.lat, widget.place.lng))}',
                         ),
                       ),
-                      const Icon(Icons.copy, size: 14, color: Colors.grey),
+                      const Icon(Icons.copy, size: 16, color: Colors.grey),
                     ],
                   ),
                 ),
@@ -1564,27 +1584,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              // ── Position ändern ────────────────────────────────────────
-              OutlinedButton.icon(
-                onPressed: _repositionPlace,
-                icon: const Icon(Icons.edit_location_alt),
-                label: Text(AppLocalizations.of(context)!.changePositionOnMap),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                AppLocalizations.of(
-                  context,
-                )!.radius(_radius.toStringAsFixed(0)),
-              ),
-              Slider(
-                value: _radius,
-                min: 10,
-                max: 500,
-                divisions: 49,
-                label: '${_radius.toStringAsFixed(0)} m',
-                onChanged: (v) => setState(() => _radius = v),
-              ),
+              const SizedBox(height: 20),
+              Divider(),
               const SizedBox(height: 12),
               // ── Aktionen ───────────────────────────────────────────────
               Row(

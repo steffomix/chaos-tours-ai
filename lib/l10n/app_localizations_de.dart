@@ -1849,7 +1849,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Hinweis: Ortsgebundene Nachrichten des P2P-Messengers benötigen zwingend einen Ort als Bezugspunkt. Ist die automatische Ortserstellung aus, können bei Synchronisationsgelegenheiten dennoch Orte als „Sync-Quelle\" angelegt werden (siehe P2P-Messenger).';
 
   @override
-  String get locatorCopied => 'Locator kopiert';
+  String get locatorCopied => 'Amateurfunk QTH Locator kopiert';
 
   @override
   String get compassTitle => 'Kompass';
