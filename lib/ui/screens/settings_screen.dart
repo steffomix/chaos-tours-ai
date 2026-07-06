@@ -206,7 +206,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             // ── Aktivität ─────────────────────────────────────────────────
             ListTile(
-              leading: const Icon(Icons.bolt),
+              leading: const Icon(Icons.phone_android),
               title: Text(_activeAktivitaet?.name ?? l10n.noActivity),
               subtitle: Text(l10n.activityCount(_aktivitaeten.length)),
               trailing: Row(

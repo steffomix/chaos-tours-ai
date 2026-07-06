@@ -4,6 +4,8 @@ import '../services/settings_service.dart';
 
 const _uuid = Uuid();
 
+/// A missleading name, but this is actually a "virtual device" profile,
+/// which contains all the settings for the entire application.
 /// A named settings profile. At most one is "active" at a time;
 /// its settings are used by the tracking engine and are also
 /// shown/edited in the Settings screen.
