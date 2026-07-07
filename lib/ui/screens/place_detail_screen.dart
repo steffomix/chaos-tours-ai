@@ -9,7 +9,9 @@ import '../../models/place_experience.dart';
 import '../../models/place_group.dart';
 import '../../models/saved_place.dart';
 import '../../models/stay.dart';
+import '../../models/sync_source.dart';
 import '../../services/database_service.dart';
+import '../../services/sync_service.dart';
 import '../../services/telegram_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/maidenhead.dart';
@@ -18,6 +20,7 @@ import 'place_visits_screen.dart';
 import 'messages_screen.dart';
 import 'places_screen.dart';
 import '../widgets/place_photos_section.dart';
+import '../widgets/sync_options_dialog.dart';
 
 class PlaceDetailScreen extends StatefulWidget {
   final SavedPlace place;
@@ -49,6 +52,15 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   bool _intervalEnabled = false;
   late TextEditingController _intervalDaysCtrl;
 
+  // ── P2P Sync fields ─────────────────────────────────────────────────────
+  late TextEditingController _syncUrlCtrl;
+  late TextEditingController _syncPortCtrl;
+  late TextEditingController _syncApiKeyCtrl;
+  late TextEditingController _syncNotesCtrl;
+  late SyncSourceOptions _syncOptions;
+  int _syncIntervalMinutes = 0;
+  bool _isSyncing = false;
+
   int _visitCount = 0;
   int? _lastVisitedAt;
 
@@ -75,6 +87,14 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     _intervalDaysCtrl = TextEditingController(
       text: widget.place.intervalDays?.toString() ?? '',
     );
+    _syncUrlCtrl = TextEditingController(text: widget.place.syncUrl);
+    _syncPortCtrl = TextEditingController(
+      text: widget.place.syncPort.toString(),
+    );
+    _syncApiKeyCtrl = TextEditingController(text: widget.place.syncApiKey);
+    _syncNotesCtrl = TextEditingController(text: widget.place.syncNotes);
+    _syncOptions = widget.place.syncOptions;
+    _syncIntervalMinutes = widget.place.syncIntervalMinutes;
     _loadGroups();
     _loadVisitStats();
   }
@@ -450,6 +470,10 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     _emailCtrl.dispose();
     _phoneCtrl.dispose();
     _intervalDaysCtrl.dispose();
+    _syncUrlCtrl.dispose();
+    _syncPortCtrl.dispose();
+    _syncApiKeyCtrl.dispose();
+    _syncNotesCtrl.dispose();
     super.dispose();
   }
 
@@ -565,10 +589,24 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     );
   }
 
+  /// Returns a short summary of the active sync options for display.
+  String _syncOptionsSummary(SyncSourceOptions opts) {
+    final active = opts.tables.entries
+        .where((e) => e.value.anyEnabled)
+        .map((e) => e.key.replaceAll('_', ' '))
+        .take(3)
+        .join(', ');
+    final total = opts.tables.values.where((o) => o.anyEnabled).length;
+    if (total == 0) return 'Keine Optionen aktiv';
+    if (total > 3) return '$active … ($total Tabellen)';
+    return active.isEmpty ? 'Keine Optionen aktiv' : active;
+  }
+
   Future<void> _save() async {
     final groupUuid = _groupUuid;
     final intervalDaysText = _intervalDaysCtrl.text.trim();
     final parsedIntervalDays = int.tryParse(intervalDaysText);
+    final syncPort = int.tryParse(_syncPortCtrl.text.trim()) ?? 8000;
     final updated = widget.place.copyWith(
       name: _nameCtrl.text.trim(),
       notes: _notesCtrl.text.trim(),
@@ -581,6 +619,12 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
       intervalEnabled: _intervalEnabled,
       intervalDays: parsedIntervalDays,
       clearIntervalDays: intervalDaysText.isEmpty,
+      syncUrl: _syncUrlCtrl.text.trim(),
+      syncPort: syncPort,
+      syncApiKey: _syncApiKeyCtrl.text.trim(),
+      syncNotes: _syncNotesCtrl.text.trim(),
+      syncOptions: _syncOptions,
+      syncIntervalMinutes: _syncIntervalMinutes,
     );
     await DatabaseService.instance.updatePlace(updated);
     widget.onUpdated();
@@ -1455,6 +1499,194 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                   ),
                 ),
               ],
+              const SizedBox(height: 4),
+              // ── HR P2P Sync ────────────────────────────────────────────────────────
+              Row(
+                children: <Widget>[
+                  Expanded(child: Divider()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      'P2P Sync',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                  Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 4),
+              // ── P2P Sync Konfiguration ─────────────────────────────────
+              ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                leading: const Icon(Icons.sync),
+                title: const Text('P2P Sync konfigurieren'),
+                subtitle: widget.place.syncUrl.isEmpty
+                    ? const Text(
+                        'Nicht konfiguriert',
+                        style: TextStyle(fontSize: 12),
+                      )
+                    : Text(
+                        '${widget.place.syncUrl}:${widget.place.syncPort}',
+                        style: const TextStyle(fontSize: 12),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                children: [
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _syncUrlCtrl,
+                    keyboardType: TextInputType.url,
+                    decoration: const InputDecoration(
+                      labelText: 'Server URL',
+                      hintText: 'http://192.168.4.1',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.link),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _syncPortCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Port',
+                      hintText: '8000',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.settings_ethernet),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _syncApiKeyCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'API Key',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.key),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _syncNotesCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Notizen',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.notes),
+                    ),
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 8),
+                  // ── Sync-Optionen ──────────────────────────────────────
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.tune),
+                    title: const Text('Sync-Optionen'),
+                    subtitle: Text(
+                      _syncOptionsSummary(_syncOptions),
+                      style: const TextStyle(fontSize: 12),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () async {
+                      final result = await showSyncOptionsDialog(
+                        context,
+                        _syncOptions,
+                      );
+                      if (result != null && mounted) {
+                        setState(() => _syncOptions = result);
+                      }
+                    },
+                  ),
+                  // ── Auto-Sync Intervall ────────────────────────────────
+                  const SizedBox(height: 4),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.timer_outlined),
+                    title: Text(
+                      _syncIntervalMinutes == 0
+                          ? 'Auto-Sync: Aus'
+                          : 'Auto-Sync: alle $_syncIntervalMinutes Min',
+                    ),
+                    subtitle: const Text(
+                      '0 = deaktiviert, sonst 10–600 Min',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                  Slider(
+                    value: _syncIntervalMinutes.toDouble(),
+                    min: 0,
+                    max: 600,
+                    divisions: 60,
+                    label: _syncIntervalMinutes == 0
+                        ? 'Aus'
+                        : '$_syncIntervalMinutes Min',
+                    onChanged: (v) => setState(
+                      () => _syncIntervalMinutes = (v / 10).round() * 10,
+                    ),
+                  ),
+                  if (widget.place.syncLastMs > 0) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        'Letzter Sync: ${_formatDate(widget.place.syncLastMs)}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  // ── Jetzt Synchronisieren ─────────────────────────────
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: (_isSyncing || _syncUrlCtrl.text.isEmpty)
+                              ? null
+                              : () async {
+                                  // Save current URL/port/key changes first
+                                  final syncPort =
+                                      int.tryParse(_syncPortCtrl.text.trim()) ??
+                                      8000;
+                                  final tempPlace = widget.place.copyWith(
+                                    syncUrl: _syncUrlCtrl.text.trim(),
+                                    syncPort: syncPort,
+                                    syncApiKey: _syncApiKeyCtrl.text.trim(),
+                                    syncOptions: _syncOptions,
+                                  );
+                                  setState(() => _isSyncing = true);
+                                  final result = await SyncService.instance
+                                      .syncWithPlaceConfig(tempPlace);
+                                  if (!mounted) return;
+                                  setState(() => _isSyncing = false);
+                                  final msg = result.success
+                                      ? '✓ ${result.sourceName}: ↓${result.pulled} ↑${result.pushed}'
+                                      : '✗ ${result.errorMessage ?? 'Fehler'}';
+                                  // ignore: use_build_context_synchronously
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(msg),
+                                      backgroundColor: result.success
+                                          ? null
+                                          : Colors.red,
+                                    ),
+                                  );
+                                },
+                          icon: _isSyncing
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.sync),
+                          label: const Text('Jetzt Synchronisieren'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
               const SizedBox(height: 4),
               // ── HR GPS Einstellungen ─────────────────────────────────────────────────
               Row(

@@ -65,6 +65,14 @@ class DatabaseService {
           'ALTER TABLE sync_sources ADD COLUMN last_sync_ms INTEGER NOT NULL DEFAULT 0',
           'ALTER TABLE aktivitaeten ADD COLUMN sync_export_protected INTEGER NOT NULL DEFAULT 0',
           'ALTER TABLE aktivitaeten ADD COLUMN sync_import_protected INTEGER NOT NULL DEFAULT 0',
+          'ALTER TABLE saved_places ADD COLUMN sync_url TEXT NOT NULL DEFAULT ""',
+          'ALTER TABLE saved_places ADD COLUMN sync_port INTEGER NOT NULL DEFAULT 8000',
+          'ALTER TABLE saved_places ADD COLUMN sync_api_key TEXT NOT NULL DEFAULT ""',
+          'ALTER TABLE saved_places ADD COLUMN sync_notes TEXT NOT NULL DEFAULT ""',
+          "ALTER TABLE saved_places ADD COLUMN sync_options TEXT NOT NULL DEFAULT '{}'",
+          'ALTER TABLE saved_places ADD COLUMN sync_messages_last_ms INTEGER NOT NULL DEFAULT 0',
+          'ALTER TABLE saved_places ADD COLUMN sync_last_ms INTEGER NOT NULL DEFAULT 0',
+          'ALTER TABLE saved_places ADD COLUMN sync_intervall INTEGER NOT NULL DEFAULT 0',
         ];
         for (final sql in migrations) {
           try {
@@ -117,14 +125,13 @@ class DatabaseService {
         phone TEXT NOT NULL DEFAULT '',
         experience_rating_average REAL DEFAULT NULL,
         experience_rating_median REAL DEFAULT NULL,
-        last_messages_sync_ms INTEGER NOT NULL DEFAULT 0,
-        sync_sources_uuid TEXT,
         sync_url TEXT NOT NULL DEFAULT '',
         sync_port INTEGER NOT NULL DEFAULT 8000,
-        sync_source_api_key TEXT NOT NULL DEFAULT '',
-        sync_source_interval integer NOT NULL DEFAULT 1,
-        sync_source_last_sync_ms INTEGER NOT NULL DEFAULT 0,
-        sync_source_options TEXT,
+        sync_api_key TEXT NOT NULL DEFAULT '',
+        sync_notes TEXT NOT NULL DEFAULT '',
+        sync_options TEXT NOT NULL DEFAULT '{}',
+        sync_last_ms INTEGER NOT NULL DEFAULT 0,
+        sync_intervall INTEGER NOT NULL DEFAULT 0,
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
         FOREIGN KEY (group_uuid) REFERENCES place_groups(uuid) ON DELETE SET NULL
@@ -673,6 +680,34 @@ class DatabaseService {
       where: 'uuid = ?',
       whereArgs: [place.uuid],
     );
+  }
+
+  /// Updates only the P2P sync timestamp for a place (lightweight,
+  /// does not change [updated_at] to avoid triggering a full delta-sync push).
+  Future<void> updatePlaceSyncLastMs(String placeUuid, int ms) async {
+    final db = await database;
+    await db.update(
+      'saved_places',
+      {'sync_last_ms': ms},
+      where: 'uuid = ?',
+      whereArgs: [placeUuid],
+    );
+  }
+
+  /// Returns all non-deleted places that have a sync URL and a sync interval
+  /// configured (i.e. automatic P2P sync is enabled).
+  Future<List<SavedPlace>> loadPlacesWithAutoSync() async {
+    final db = await database;
+    final rows = await db.rawQuery('''
+      SELECT sp.*,
+             COALESCE(pg.place_type, 0) AS place_type
+      FROM saved_places sp
+      LEFT JOIN place_groups pg ON sp.group_uuid = pg.uuid
+      WHERE sp.deleted_at IS NULL
+        AND sp.sync_url != ''
+        AND sp.sync_intervall > 0
+    ''');
+    return rows.map(SavedPlace.fromMap).toList();
   }
 
   Future<void> deletePlace(String uuid) async {

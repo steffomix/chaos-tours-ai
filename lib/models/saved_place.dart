@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 import '../services/settings_service.dart';
+import 'sync_source.dart';
 
 const _uuid = Uuid();
 
@@ -155,9 +156,28 @@ class SavedPlace {
   /// Null when no experiences exist.
   final double? experienceRatingMedian;
 
-  /// Delta-sync watermark for location-bound P2P messages anchored to this
-  /// place. Milliseconds since epoch of the last successful message sync.
-  final int lastMessagesSyncMs;
+  // ── P2P Sync fields ─────────────────────────────────────────────────────
+
+  /// P2P sync server URL without port (e.g. http://192.168.4.1).
+  final String syncUrl;
+
+  /// P2P sync server port (default: 8000).
+  final int syncPort;
+
+  /// API key for authenticating against the P2P sync server.
+  final String syncApiKey;
+
+  /// Free-text notes about this sync configuration.
+  final String syncNotes;
+
+  /// Per-table sync options. Defaults to [SyncSourceOptions.p2pDefault].
+  final SyncSourceOptions syncOptions;
+
+  /// Automatic sync interval in minutes. 0 = auto-sync disabled. Range: 10–600 (steps of 10).
+  final int syncIntervalMinutes;
+
+  /// Timestamp of the last successful P2P sync (ms since epoch, 0 = never).
+  final int syncLastMs;
 
   SavedPlace({
     String? uuid,
@@ -181,11 +201,18 @@ class SavedPlace {
     this.phone = '',
     this.experienceRatingAverage,
     this.experienceRatingMedian,
-    int? lastMessagesSyncMs,
+    this.syncUrl = '',
+    this.syncPort = 8000,
+    this.syncApiKey = '',
+    this.syncNotes = '',
+    SyncSourceOptions? syncOptions,
+    this.syncIntervalMinutes = 0,
+    int? syncLastMs,
   }) : uuid = uuid?.isNotEmpty == true ? uuid! : _uuid.v4(),
        createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch,
        updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch,
-       lastMessagesSyncMs = lastMessagesSyncMs ?? 0,
+       syncOptions = syncOptions ?? SyncSourceOptions.p2pDefault(),
+       syncLastMs = syncLastMs ?? 0,
        deviceId = deviceId?.isNotEmpty == true
            ? deviceId!
            : SettingsService.instance.deviceId;
@@ -222,8 +249,21 @@ class SavedPlace {
           ?.toDouble(),
       experienceRatingMedian: (map['experience_rating_median'] as num?)
           ?.toDouble(),
-      lastMessagesSyncMs: (map['last_messages_sync_ms'] as int?) ?? 0,
+      syncUrl: (map['sync_url'] as String?) ?? '',
+      syncPort: (map['sync_port'] as int?) ?? 8000,
+      syncApiKey: (map['sync_api_key'] as String?) ?? '',
+      syncNotes: (map['sync_notes'] as String?) ?? '',
+      syncOptions: _parseSyncOptions(map['sync_options'] as String?),
+      syncIntervalMinutes: (map['sync_intervall'] as int?) ?? 0,
+      syncLastMs: (map['sync_last_ms'] as int?) ?? 0,
     );
+  }
+
+  static SyncSourceOptions _parseSyncOptions(String? raw) {
+    if (raw == null || raw.isEmpty || raw == '{}') {
+      return SyncSourceOptions.p2pDefault();
+    }
+    return SyncSourceOptions.fromJson(raw);
   }
 
   Map<String, dynamic> toMap() {
@@ -246,7 +286,13 @@ class SavedPlace {
       'website': website,
       'email': email,
       'phone': phone,
-      'last_messages_sync_ms': lastMessagesSyncMs,
+      'sync_url': syncUrl,
+      'sync_port': syncPort,
+      'sync_api_key': syncApiKey,
+      'sync_notes': syncNotes,
+      'sync_options': syncOptions.toJson(),
+      'sync_intervall': syncIntervalMinutes,
+      'sync_last_ms': syncLastMs,
     };
   }
 
@@ -276,7 +322,13 @@ class SavedPlace {
     String? phone,
     double? experienceRatingAverage,
     double? experienceRatingMedian,
-    int? lastMessagesSyncMs,
+    String? syncUrl,
+    int? syncPort,
+    String? syncApiKey,
+    String? syncNotes,
+    SyncSourceOptions? syncOptions,
+    int? syncIntervalMinutes,
+    int? syncLastMs,
   }) {
     return SavedPlace(
       uuid: uuid ?? this.uuid,
@@ -306,7 +358,13 @@ class SavedPlace {
           experienceRatingAverage ?? this.experienceRatingAverage,
       experienceRatingMedian:
           experienceRatingMedian ?? this.experienceRatingMedian,
-      lastMessagesSyncMs: lastMessagesSyncMs ?? this.lastMessagesSyncMs,
+      syncUrl: syncUrl ?? this.syncUrl,
+      syncPort: syncPort ?? this.syncPort,
+      syncApiKey: syncApiKey ?? this.syncApiKey,
+      syncNotes: syncNotes ?? this.syncNotes,
+      syncOptions: syncOptions ?? this.syncOptions,
+      syncIntervalMinutes: syncIntervalMinutes ?? this.syncIntervalMinutes,
+      syncLastMs: syncLastMs ?? this.syncLastMs,
     );
   }
 }

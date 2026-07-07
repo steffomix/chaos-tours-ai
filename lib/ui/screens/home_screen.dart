@@ -134,6 +134,10 @@ class _HomeScreenState extends State<HomeScreen>
   // ending stay takes a while so we wait more than one interval to be safe
   int _endingStay = 0;
 
+  // Last P2P sync info (read from SettingsService)
+  String _lastPlaceSyncText = '';
+  int _lastPlaceSyncMs = 0;
+
   // Recent visits
   List<Stay> _recentStays = [];
   Map<String, SavedPlace> _placesByUuid = {};
@@ -230,6 +234,7 @@ class _HomeScreenState extends State<HomeScreen>
           text = _l10n?.trackingActive ?? '';
       }
       _relaodStays();
+      _reloadLastPlaceSync();
       if (mounted) {
         setState(() {
           _trackingStatusText = text;
@@ -237,6 +242,17 @@ class _HomeScreenState extends State<HomeScreen>
           _endingStay--;
         });
       }
+    }
+  }
+
+  void _reloadLastPlaceSync() {
+    final text = SettingsService.instance.lastPlaceSyncText;
+    final ms = SettingsService.instance.lastPlaceSyncMs;
+    if (mounted && (text != _lastPlaceSyncText || ms != _lastPlaceSyncMs)) {
+      setState(() {
+        _lastPlaceSyncText = text;
+        _lastPlaceSyncMs = ms;
+      });
     }
   }
 
@@ -438,6 +454,7 @@ class _HomeScreenState extends State<HomeScreen>
             });
           }
         });
+        _reloadLastPlaceSync();
       },
       onFocusLost: () =>
           ForegroundServiceManager.removeDataListener(_onServiceData),
@@ -723,6 +740,31 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ],
             const Divider(height: 1),
+            // ── Letzter P2P Sync ───────────────────────────────────
+            if (_lastPlaceSyncText.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 6, 16, 4),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.sync,
+                      size: 14,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        _lastPlaceSyncText,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.outline,
+                          fontStyle: FontStyle.italic,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             // ── Letzte Besuche ─────────────────────────────────────
             Expanded(
               child: _recentStays.isEmpty

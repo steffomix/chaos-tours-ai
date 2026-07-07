@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../models/saved_place.dart';
 import '../models/sync_source.dart';
 import 'database_service.dart';
 import 'settings_service.dart';
@@ -101,6 +102,39 @@ class SyncService {
     );
     final result = await _syncWithSource(ephemeral);
     await DatabaseService.instance.refreshTrustedSources();
+    return result;
+  }
+
+  /// Syncs with the server configured on [place] (url, port, api-key,
+  /// sync-options).  Wraps [_syncWithSource] by building an ephemeral
+  /// [SyncSource] so the same delta-sync path is used for both sync-sources
+  /// and place-bound P2P syncs.
+  ///
+  /// On success the place's [SavedPlace.syncLastMs] watermark is persisted to
+  /// the database and the global last-sync text in [SettingsService] is updated.
+  Future<SyncResult> syncWithPlaceConfig(SavedPlace place) async {
+    if (place.syncUrl.isEmpty) {
+      return SyncResult(
+        success: false,
+        errorMessage: 'Keine URL konfiguriert',
+        sourceName: place.name,
+      );
+    }
+    final ephemeral = SyncSource(
+      name: place.name,
+      syncUrl: '${place.syncUrl}:${place.syncPort}',
+      apiKey: place.syncApiKey,
+      syncOptions: place.syncOptions,
+      lastSyncMs: place.syncLastMs,
+    );
+    final result = await _syncWithSource(ephemeral);
+    if (result.success && place.uuid.isNotEmpty) {
+      final nowMs = DateTime.now().millisecondsSinceEpoch;
+      await DatabaseService.instance.updatePlaceSyncLastMs(place.uuid, nowMs);
+      SettingsService.instance.lastPlaceSyncMs = nowMs;
+      SettingsService.instance.lastPlaceSyncText =
+          '${place.name}: \u2193${result.pulled} \u2191${result.pushed}';
+    }
     return result;
   }
 

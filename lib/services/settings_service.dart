@@ -54,6 +54,8 @@ class SettingsService {
       'filter_specific_rating_field';
   static const String _keyLastSyncMs = 'sync_last_ms';
   static const String _keyDeviceId = 'device_id';
+  static const String _keyLastPlaceSyncText = 'last_place_sync_text';
+  static const String _keyLastPlaceSyncMs = 'last_place_sync_ms';
   static const String _keyPhotoMaxWidth = 'photo_max_width';
   static const String _keyPhotoMaxHeight = 'photo_max_height';
   static const String _keyPhotoImageQuality = 'photo_image_quality';
@@ -101,6 +103,14 @@ class SettingsService {
   /// Timestamp of the last successful sync in milliseconds since epoch (0 = never).
   int get lastSyncMs => _p.getInt(_keyLastSyncMs) ?? 0;
   set lastSyncMs(int v) => _p.setInt(_keyLastSyncMs, v);
+
+  /// Short human-readable description of the last place-based P2P sync result.
+  String get lastPlaceSyncText => _p.getString(_keyLastPlaceSyncText) ?? '';
+  set lastPlaceSyncText(String v) => _p.setString(_keyLastPlaceSyncText, v);
+
+  /// Timestamp of the last place-based P2P sync attempt (ms since epoch, 0 = never).
+  int get lastPlaceSyncMs => _p.getInt(_keyLastPlaceSyncMs) ?? 0;
+  set lastPlaceSyncMs(int v) => _p.setInt(_keyLastPlaceSyncMs, v);
 
   /// Timestamp (ms since epoch) until which the potentially destructive
   /// developer tools remain unlocked (0 = locked).

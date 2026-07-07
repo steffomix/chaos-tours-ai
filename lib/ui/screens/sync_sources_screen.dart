@@ -6,6 +6,7 @@ import '../../models/sync_source.dart';
 import '../../models/sync_source_experience.dart';
 import '../../services/database_service.dart';
 import '../../services/sync_service.dart';
+import '../widgets/sync_options_dialog.dart';
 
 class SyncSourcesScreen extends StatefulWidget {
   const SyncSourcesScreen({super.key});
@@ -289,143 +290,7 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
   // ── Sync Options Dialog ────────────────────────────────────────────────────
 
   Future<void> _editSyncOptions(SyncSource source) async {
-    final l10n = AppLocalizations.of(context)!;
-    // Create a mutable copy of options.
-    var opts = source.syncOptions;
-
-    final labels = {
-      'place_groups': l10n.placeGroups,
-      'saved_places': l10n.tabPlaces,
-      'persons': l10n.persons,
-      'activities': l10n.activities,
-      'stays': l10n.visitsTitle,
-      'stay_persons': l10n.stayPersons,
-      'stay_activities': l10n.stayActivities,
-      'aktivitaeten': l10n.sectionActivity,
-      'sync_sources': l10n.syncSources,
-      'place_experiences': l10n.placeExperiences,
-      'sync_source_experiences': l10n.sourceExperiences,
-    };
-
-    final saved = await showDialog<SyncSourceOptions>(
-      context: context,
-      builder: (ctx) {
-        final l10n = AppLocalizations.of(ctx)!;
-        return StatefulBuilder(
-          builder: (ctx, setDlgState) => AlertDialog(
-            title: Text(l10n.syncOptionsTitle),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.syncOptionsWarning,
-                    style: const TextStyle(fontSize: 12, color: Colors.orange),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const SizedBox(width: 130),
-                      Expanded(
-                        child: Center(
-                          child: Text(
-                            l10n.insert,
-                            style: const TextStyle(fontSize: 11),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Center(
-                          child: Text(
-                            l10n.edit,
-                            style: const TextStyle(fontSize: 11),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Center(
-                          child: Text(
-                            l10n.delete,
-                            style: const TextStyle(fontSize: 11),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: SyncSourceOptions.allTables.map((table) {
-                          final tableOpts = opts.forTable(table);
-                          return Row(
-                            children: [
-                              SizedBox(
-                                width: 130,
-                                child: Text(
-                                  labels[table] ?? table,
-                                  style: const TextStyle(fontSize: 12),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              Expanded(
-                                child: Checkbox(
-                                  value: tableOpts.insert,
-                                  onChanged: (v) => setDlgState(() {
-                                    opts = opts.copyWithTable(
-                                      table,
-                                      tableOpts.copyWith(insert: v ?? false),
-                                    );
-                                  }),
-                                ),
-                              ),
-                              Expanded(
-                                child: Checkbox(
-                                  value: tableOpts.update,
-                                  onChanged: (v) => setDlgState(() {
-                                    opts = opts.copyWithTable(
-                                      table,
-                                      tableOpts.copyWith(update: v ?? false),
-                                    );
-                                  }),
-                                ),
-                              ),
-                              Expanded(
-                                child: Checkbox(
-                                  value: tableOpts.delete,
-                                  onChanged: (v) => setDlgState(() {
-                                    opts = opts.copyWithTable(
-                                      table,
-                                      tableOpts.copyWith(delete: v ?? false),
-                                    );
-                                  }),
-                                ),
-                              ),
-                            ],
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text(l10n.cancel),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx, opts),
-                child: Text(l10n.save),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-
+    final saved = await showSyncOptionsDialog(context, source.syncOptions);
     if (saved != null) {
       final devId = SyncService.instance.deviceId;
       await DatabaseService.instance.updateSyncSource(

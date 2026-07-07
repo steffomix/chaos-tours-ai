@@ -4,9 +4,11 @@ import 'dart:io';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../models/saved_place.dart';
 import '../services/settings_service.dart';
 import '../services/tracking_engine.dart';
 import '../services/nominatim_service.dart';
+import '../services/sync_service.dart';
 import 'location_service.dart';
 
 /// Keys used when communicating via SendPort.
@@ -25,6 +27,9 @@ class GpsForegroundTaskHandler extends TaskHandler {
   StreamSubscription<Position>? _positionSub;
   bool _trackingEnabled = false;
   final TrackingEngine _engine = TrackingEngine();
+
+  /// UUID of the place last synced; used to detect fresh arrivals.
+  String? _lastSyncedPlaceUuid;
 
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
@@ -97,9 +102,33 @@ class GpsForegroundTaskHandler extends TaskHandler {
         'lng': position.longitude,
         'ts': position.timestamp.millisecondsSinceEpoch,
       });
+
+      // P2P message sync for the currently detected place
+      if (result.currentPlace != null) {
+        await _maybeRunPlaceSync(result.currentPlace!);
+      }
     } catch (_) {
       // GPS unavailable — silently skip this tick
     }
+  }
+
+  /// Triggers a P2P message sync for [place] if:
+  ///   a) we just arrived (place uuid changed), or
+  ///   b) the configured interval has elapsed since the last sync.
+  Future<void> _maybeRunPlaceSync(SavedPlace place) async {
+    if (place.syncUrl.isEmpty) return;
+    if (!place.syncOptions.tables.values.any((o) => o.anyEnabled)) return;
+
+    final freshArrival = _lastSyncedPlaceUuid != place.uuid;
+    _lastSyncedPlaceUuid = place.uuid;
+
+    final intervalMs = place.syncIntervalMinutes * 60 * 1000;
+    final elapsed = DateTime.now().millisecondsSinceEpoch - place.syncLastMs;
+    final intervalDue = intervalMs > 0 && elapsed >= intervalMs;
+
+    if (!freshArrival && !intervalDue) return;
+
+    await SyncService.instance.syncWithPlaceConfig(place);
   }
 
   @override
@@ -217,9 +246,32 @@ class ForegroundServiceManager {
         'lng': position.longitude,
         'ts': position.timestamp.millisecondsSinceEpoch,
       });
+
+      // P2P message sync for the currently detected place
+      if (result.currentPlace != null) {
+        await _linuxMaybeRunPlaceSync(result.currentPlace!);
+      }
     } catch (_) {
       // GPS unavailable — silently skip this tick
     }
+  }
+
+  static String? _linuxLastSyncedPlaceUuid;
+
+  static Future<void> _linuxMaybeRunPlaceSync(SavedPlace place) async {
+    if (place.syncUrl.isEmpty) return;
+    if (!place.syncOptions.tables.values.any((o) => o.anyEnabled)) return;
+
+    final freshArrival = _linuxLastSyncedPlaceUuid != place.uuid;
+    _linuxLastSyncedPlaceUuid = place.uuid;
+
+    final intervalMs = place.syncIntervalMinutes * 60 * 1000;
+    final elapsed = DateTime.now().millisecondsSinceEpoch - place.syncLastMs;
+    final intervalDue = intervalMs > 0 && elapsed >= intervalMs;
+
+    if (!freshArrival && !intervalDue) return;
+
+    await SyncService.instance.syncWithPlaceConfig(place);
   }
 
   // ── Public API ────────────────────────────────────────────────────────────

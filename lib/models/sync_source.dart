@@ -78,6 +78,17 @@ class SyncSourceOptions {
     },
   );
 
+  /// Default for a place-bound P2P sync: only [p2p_messages] insert+update
+  /// pre-selected, everything else disabled.
+  factory SyncSourceOptions.p2pDefault() => SyncSourceOptions(
+    tables: {
+      for (final t in allTables)
+        t: t == 'p2p_messages'
+            ? const SyncTableOptions(insert: true, update: true)
+            : const SyncTableOptions(),
+    },
+  );
+
   factory SyncSourceOptions.fromJson(String json) {
     try {
       final m = jsonDecode(json) as Map<String, dynamic>;

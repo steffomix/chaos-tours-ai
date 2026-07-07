@@ -68,7 +68,7 @@ async def lifespan(app: FastAPI):
         port=_MDNS_PORT,
         properties={"version": "1"},
     )
-    await zeroconf.async_register_service(service_info)
+    await zeroconf.async_register_service(service_info, allow_name_change=True)
     try:
         yield
     finally:
