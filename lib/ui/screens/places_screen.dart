@@ -14,7 +14,6 @@ import '../../services/foreground_service_handler.dart';
 import '../../services/settings_service.dart';
 import '../../services/location_service.dart';
 import '../../utils/geo_utils.dart';
-import '../../utils/maidenhead.dart';
 import '../../utils/place_creation_helper.dart';
 import 'place_detail_screen.dart';
 import '../widgets/experience_filter_panel.dart';

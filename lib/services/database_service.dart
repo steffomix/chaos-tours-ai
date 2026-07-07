@@ -2250,7 +2250,7 @@ class DatabaseService {
     final s = SettingsService.instance;
     final db = await database;
 
-    Future<bool> _groupExists(String? uuid) async {
+    Future<bool> checkGroupExists(String? uuid) async {
       if (uuid == null || uuid.isEmpty) return false;
       final rows = await db.query(
         'place_groups',
@@ -2262,7 +2262,7 @@ class DatabaseService {
       return rows.isNotEmpty;
     }
 
-    if (!await _groupExists(s.autoPlaceGroupUuid)) {
+    if (!await checkGroupExists(s.autoPlaceGroupUuid)) {
       s.autoPlaceGroupUuid = await insertPlaceGroup(
         PlaceGroup(
           name: 'Automatisch',
@@ -2271,12 +2271,12 @@ class DatabaseService {
         ),
       );
     }
-    if (!await _groupExists(s.defaultPlaceGroupUuid)) {
+    if (!await checkGroupExists(s.defaultPlaceGroupUuid)) {
       s.defaultPlaceGroupUuid = await insertPlaceGroup(
         PlaceGroup(name: 'Standard', placeType: PlaceType.public),
       );
     }
-    if (!await _groupExists(s.syncSourcePlaceGroupUuid)) {
+    if (!await checkGroupExists(s.syncSourcePlaceGroupUuid)) {
       s.syncSourcePlaceGroupUuid = await insertPlaceGroup(
         PlaceGroup(name: 'Sync-Quelle', placeType: PlaceType.syncSource),
       );
@@ -2664,10 +2664,7 @@ class DatabaseService {
   /// Loads a page of interval-enabled places for the scheduler, sorted by
   /// urgency (days_remaining ASC) computed entirely in SQL.
   Future<List<({SavedPlace place, int daysRemaining})>>
-  loadSchedulerPlacesPaged({
-    required int limit,
-    required int offset,
-  }) async {
+  loadSchedulerPlacesPaged({required int limit, required int offset}) async {
     final db = await database;
     final where = <String>['sp.deleted_at IS NULL', 'sp.interval_enabled = 1'];
     final args = <dynamic>[];

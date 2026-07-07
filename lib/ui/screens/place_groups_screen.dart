@@ -92,7 +92,7 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
     // Load available telegram connections for the picker
     final telegramConnections = await DatabaseService.instance
         .loadAllTelegramConnections();
-
+    if (!mounted) return null;
     return showDialog<(PlaceGroup, String?)>(
       context: context,
       builder: (ctx) => StatefulBuilder(

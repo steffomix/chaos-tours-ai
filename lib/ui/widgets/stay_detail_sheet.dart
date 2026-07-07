@@ -530,7 +530,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                   FilledButton.icon(
                     onPressed: () async {
                       await _save();
-                      if (mounted) {
+                      if (context.mounted) {
                         Navigator.pop(context);
                       }
                     },

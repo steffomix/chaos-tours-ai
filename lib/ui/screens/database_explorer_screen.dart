@@ -239,16 +239,15 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
                   '$_primaryKey = ?',
                   [pkValue],
                 );
-
-                if (!mounted) return;
+              } catch (e) {
+                _showSnackBar("Fehler beim Speichern: $e");
+              }
+              if (context.mounted) {
                 setState(() {
                   _rows[rowIndex][column] = newValue;
                 });
-
-                if (mounted) Navigator.pop(context);
+                Navigator.pop(context);
                 _showSnackBar(AppLocalizations.of(context)!.databaseUpdated);
-              } catch (e) {
-                _showSnackBar("Fehler beim Speichern: $e");
               }
             },
             child: Text(AppLocalizations.of(context)!.save),

@@ -140,7 +140,7 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
     final l10n = AppLocalizations.of(context)!;
     final allAktivitaeten = await DatabaseService.instance
         .loadAllAktivitaeten();
-    if (allAktivitaeten.length <= 1) {
+    if (allAktivitaeten.length <= 1 && mounted) {
       // Don't allow deleting the last aktivitaet.
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -151,7 +151,7 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
     }
 
     bool withCleanup = false;
-
+    if (!mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) {

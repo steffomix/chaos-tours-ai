@@ -206,7 +206,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextButton(
             onPressed: () async {
               await _saveAll();
-              if (mounted) {
+              if (context.mounted) {
                 ScaffoldMessenger.of(
                   context,
                 ).showSnackBar(SnackBar(content: Text(l10n.settingsSaved)));
@@ -226,10 +226,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: Text(l10n.activityCount(_aktivitaeten.length)),
               onTap: () async {
                 await _saveAll();
-                if (!mounted) return;
+                if (!context.mounted) return;
                 await Navigator.pushNamed(context, '/aktivitaeten');
                 await _loadAktivitaeten();
-                if (mounted) _reloadFromSettings();
+                if (context.mounted) _reloadFromSettings();
               },
             ),
             ListTile(
@@ -1072,41 +1072,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ).showSnackBar(SnackBar(content: Text(l10n.devToolsUnlockSuccess)));
       }
     }
-  }
-
-  Future<void> _renameAktivitaet(Aktivitaet a) async {
-    final ctrl = TextEditingController(text: a.name);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        final l10n = AppLocalizations.of(ctx)!;
-        return AlertDialog(
-          title: Text(l10n.renameActivity),
-          content: TextField(
-            controller: ctrl,
-            decoration: InputDecoration(labelText: l10n.name),
-            autofocus: true,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l10n.cancel),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l10n.save),
-            ),
-          ],
-        );
-      },
-    );
-    final name = ctrl.text.trim();
-    ctrl.dispose();
-    if (confirmed != true || !mounted) return;
-    if (name.isEmpty || name == a.name) return;
-    final updated = a.copyWith(name: name);
-    await DatabaseService.instance.updateAktivitaet(updated);
-    await _loadAktivitaeten();
   }
 }
 
