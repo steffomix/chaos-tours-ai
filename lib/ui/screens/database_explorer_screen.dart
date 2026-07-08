@@ -16,6 +16,7 @@ class _ColMeta {
     required this.isPrimaryKey,
     required this.isForeignKey,
     required this.isOtherKey,
+    this.forceReadOnly = false,
   });
 
   final String name;
@@ -23,11 +24,13 @@ class _ColMeta {
   final bool isPrimaryKey;
   final bool isForeignKey;
   final bool isOtherKey;
+  final bool forceReadOnly;
 
   bool get isBlob => type.toLowerCase() == 'blob';
 
   /// Protected columns may not be edited inline.
-  bool get isReadOnly => isBlob || isPrimaryKey || isForeignKey || isOtherKey;
+  bool get isReadOnly =>
+      forceReadOnly || isBlob || isPrimaryKey || isForeignKey || isOtherKey;
 }
 
 // ---------------------------------------------------------------------------
@@ -41,6 +44,9 @@ class DatabaseExplorerScreen extends StatefulWidget {
   State<DatabaseExplorerScreen> createState() => _DatabaseExplorerScreenState();
 }
 
+// Special dropdown entry for ad-hoc SELECT results.
+const String _kQueryResultEntry = '🔍 Query-Ergebnis';
+
 class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
   // ── Init state ────────────────────────────────────────────────────────────
 
@@ -52,6 +58,10 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
   List<String> _tables = [];
   String? _selectedTable;
 
+  // ── Query result (ad-hoc SELECT) ──────────────────────────────────────────
+
+  List<Map<String, dynamic>>? _queryResultRows;
+
   // ── Schema ────────────────────────────────────────────────────────────────
 
   List<_ColMeta> _columns = [];
@@ -61,7 +71,7 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
 
   final List<Map<String, dynamic>> _rows = [];
   int _offset = 0;
-  static const int _pageSize = 30;
+  static const int _pageSize = 300;
   bool _hasMore = true;
   bool _loadingMore = false;
 
@@ -130,7 +140,32 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
     }
   }
 
+  /// Tables shown in the dropdown: real tables plus the query-result entry
+  /// when a result is available.
+  List<String> get _effectiveTables => [
+    if (_queryResultRows != null) _kQueryResultEntry,
+    ..._tables,
+  ];
+
   Future<void> _selectTable(String tableName) async {
+    if (tableName == _kQueryResultEntry) {
+      final rows = _queryResultRows!;
+      final cols = _colsFromRows(rows);
+      setState(() {
+        _selectedTable = tableName;
+        _columns = cols;
+        _rows
+          ..clear()
+          ..addAll(rows.map(Map<String, dynamic>.from));
+        _offset = rows.length;
+        _hasMore = false;
+        _primaryKey = null;
+        _searchQuery = '';
+        _searchController.clear();
+      });
+      return;
+    }
+
     setState(() {
       _selectedTable = tableName;
       _columns = [];
@@ -143,6 +178,44 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
 
     await _loadSchema(tableName);
     await _loadNextPage();
+  }
+
+  /// Builds read-only [_ColMeta] list from the keys of the first row.
+  List<_ColMeta> _colsFromRows(List<Map<String, dynamic>> rows) {
+    if (rows.isEmpty) return [];
+    return rows.first.keys
+        .map(
+          (name) => _ColMeta(
+            name: name,
+            type: '',
+            isPrimaryKey: false,
+            isForeignKey: false,
+            isOtherKey: false,
+            forceReadOnly: true,
+          ),
+        )
+        .toList();
+  }
+
+  /// Called when the SQL editor has executed a SELECT and got rows back.
+  void _onQueryResult(List<Map<String, dynamic>> rows) {
+    if (rows.isEmpty) {
+      _showSnackBar('Query erfolgreich, aber keine Zeilen zurückgegeben.');
+      return;
+    }
+    setState(() {
+      _queryResultRows = rows;
+      _selectedTable = _kQueryResultEntry;
+      _columns = _colsFromRows(rows);
+      _rows
+        ..clear()
+        ..addAll(rows.map(Map<String, dynamic>.from));
+      _offset = rows.length;
+      _hasMore = false;
+      _primaryKey = null;
+      _searchQuery = '';
+      _searchController.clear();
+    });
   }
 
   Future<void> _loadSchema(String tableName) async {
@@ -310,8 +383,10 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
       builder: (ctx) => _SqlEditorDialog(
         controller: _sqlController,
         onMutated: () {
-          if (_selectedTable != null) _selectTable(_selectedTable!);
+          final t = _selectedTable;
+          if (t != null && t != _kQueryResultEntry) _selectTable(t);
         },
+        onSelectResult: _onQueryResult,
       ),
     );
   }
@@ -359,7 +434,7 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
             : Column(
                 children: [
                   _TableSelector(
-                    tables: _tables,
+                    tables: _effectiveTables,
                     selected: _selectedTable,
                     label: l10n.databaseExplorerTableLabel,
                     onChanged: _selectTable,
@@ -384,7 +459,7 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
                             hasMore: _hasMore,
                             loadingMore: _loadingMore,
                             onLoadMore: _loadNextPage,
-                            onEditCell: _editCell,
+                            onEditCell: _primaryKey != null ? _editCell : null,
                             onViewPhoto: _openPhoto,
                             loadMoreLabel: l10n.loadMoreRows,
                             endOfTableLabel: l10n.endOfTableReached,
@@ -499,7 +574,7 @@ class _TableView extends StatelessWidget {
   final bool hasMore;
   final bool loadingMore;
   final VoidCallback onLoadMore;
-  final Future<void> Function(_ColMeta col, Map<String, dynamic> row)
+  final Future<void> Function(_ColMeta col, Map<String, dynamic> row)?
   onEditCell;
   final void Function(Uint8List bytes) onViewPhoto;
   final String loadMoreLabel;
@@ -599,8 +674,10 @@ class _TableView extends StatelessWidget {
           color: textColor,
         ),
       ),
-      showEditIcon: !col.isReadOnly,
-      onTap: col.isReadOnly ? null : () => onEditCell(col, rowData),
+      showEditIcon: !col.isReadOnly && onEditCell != null,
+      onTap: (!col.isReadOnly && onEditCell != null)
+          ? () => onEditCell!(col, rowData)
+          : null,
     );
   }
 
@@ -640,10 +717,15 @@ class _TableView extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _SqlEditorDialog extends StatefulWidget {
-  const _SqlEditorDialog({required this.controller, required this.onMutated});
+  const _SqlEditorDialog({
+    required this.controller,
+    required this.onMutated,
+    required this.onSelectResult,
+  });
 
   final TextEditingController controller;
   final VoidCallback onMutated;
+  final void Function(List<Map<String, dynamic>> rows) onSelectResult;
 
   @override
   State<_SqlEditorDialog> createState() => _SqlEditorDialogState();
@@ -675,15 +757,7 @@ class _SqlEditorDialogState extends State<_SqlEditorDialog> {
         final results = await db.rawQuery(sql);
         if (!mounted) return;
         Navigator.of(context).pop();
-        widget
-            .onMutated(); // harmless for reads – caller decides what to refresh
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Query erfolgreich. ${results.length} Zeile(n) zurückgegeben.',
-            ),
-          ),
-        );
+        widget.onSelectResult(results.map(Map<String, dynamic>.from).toList());
       } else {
         await db.execute(sql);
         if (!mounted) return;
