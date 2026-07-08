@@ -26,7 +26,6 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
   List<String> _columns = [];
   Map<String, bool> _columnIsBlob = {};
   Map<String, String> _columnTypes = {};
-  Map<String, bool> _columnIsProtected = {};
   Map<String, bool> _columnIsPrimaryKey = {};
   Map<String, bool> _columnIsForeignKey = {};
   Map<String, bool> _columnIsOtherKey = {};
@@ -134,7 +133,6 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
         _columnIsPrimaryKey = isPrimaryKey;
         _columnIsForeignKey = isForeignKey;
         _columnIsOtherKey = isOtherKey;
-        _columnIsProtected = isProtected;
         _primaryKey = pkColumn;
       });
     } catch (e) {
@@ -270,7 +268,7 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.databaseExplorerScreenHeader),
-        backgroundColor: Colors.teal,
+        backgroundColor: Colors.red,
       ),
       body: SafeArea(
         child: Column(
@@ -359,8 +357,6 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
                                   cells: _columns.map((colName) {
                                     final isBlob =
                                         _columnIsBlob[colName] == true;
-                                    final isProtected =
-                                        _columnIsProtected[colName] == true;
                                     final isPrimaryKey =
                                         _columnIsPrimaryKey[colName] == true;
                                     final isForeignKey =
@@ -410,16 +406,10 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
                                                 fontWeight: isPrimaryKey
                                                     ? FontWeight.bold
                                                     : FontWeight.normal,
-                                                fontStyle:
-                                                    cellValue == null ||
-                                                        isProtected
-                                                    ? FontStyle.italic
-                                                    : FontStyle.normal,
+                                                fontStyle: FontStyle.normal,
                                                 color: cellValue == null
                                                     ? Colors.grey
-                                                    : isProtected ||
-                                                          isPrimaryKey ||
-                                                          isBlob
+                                                    : isBlob
                                                     ? Colors.green
                                                     : isForeignKey
                                                     ? Colors.teal.shade500
@@ -439,8 +429,8 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
                                                 child: imageWidget,
                                               ),
                                             ),
-                                      showEditIcon: !isProtected,
-                                      onTap: !isProtected
+                                      showEditIcon: !isBlob,
+                                      onTap: !isBlob
                                           ? () => _updateCell(
                                               colName,
                                               cellValue,
@@ -450,10 +440,16 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
                                                 bytes != null &&
                                                 bytes.isNotEmpty
                                           ? () {
-                                              final photo = PlacePhoto(
-                                                photoData: bytes!,
-                                              );
-                                              _openViewer([photo], 0);
+                                              try {
+                                                final photo = PlacePhoto(
+                                                  photoData: bytes!,
+                                                );
+                                                _openViewer([photo], 0);
+                                              } catch (e) {
+                                                _showSnackBar(
+                                                  "Fehler beim Anzeigen des Bildes: $e",
+                                                );
+                                              }
                                             }
                                           : null,
                                     );

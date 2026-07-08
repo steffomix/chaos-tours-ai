@@ -208,7 +208,7 @@ class _SharedPrefsExplorerScreenState extends State<SharedPrefsExplorerScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.sharedPrefsExplorerScreenHeader),
-        backgroundColor: Colors.teal,
+        backgroundColor: Colors.red,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
