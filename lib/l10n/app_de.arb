@@ -2075,6 +2075,26 @@
   "@copyReportHint": {
     "description": "Copy report hint text"
   },
+  "copyToProtectedArea": "In geschützten Bereich kopieren",
+  "@copyToProtectedArea": {
+    "description": "Button to copy a place into a protected area"
+  },
+  "copyToProtectedAreaHint": "Erstellt eine Kopie dieses Ortes mit neuer UUID und der Device-ID eines geschützten Bereichs, sodass er vor Sync-Importen geschützt ist.",
+  "@copyToProtectedAreaHint": {
+    "description": "Hint text for copy to protected area"
+  },
+  "copyToProtectedAreaSelectTitle": "Geschützten Bereich wählen",
+  "@copyToProtectedAreaSelectTitle": {
+    "description": "Dialog title for selecting a protected Aktivitaet"
+  },
+  "copyToProtectedAreaSelectSubtitle": "Die Kopie erhält die Device-ID der gewählten Aktivität.",
+  "@copyToProtectedAreaSelectSubtitle": {
+    "description": "Subtitle in the select protected area dialog"
+  },
+  "copyToProtectedAreaSuccess": "Ort in geschützten Bereich kopiert.",
+  "@copyToProtectedAreaSuccess": {
+    "description": "Snackbar message after successfully copying a place to a protected area"
+  },
   "gpsSettings": "GPS Einstellungen",
   "@gpsSettings": {
     "description": "GPS settings section divider label"

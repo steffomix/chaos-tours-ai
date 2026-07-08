@@ -892,6 +892,11 @@
     }
   },
   "copyReportHint": "Copies a full report of the place including all visits and survival experiences in Markdown format to the clipboard.",
+  "copyToProtectedArea": "Copy to protected area",
+  "copyToProtectedAreaHint": "Creates a copy of this place with a new UUID and the device ID of a protected area, shielding it from sync imports.",
+  "copyToProtectedAreaSelectTitle": "Select protected area",
+  "copyToProtectedAreaSelectSubtitle": "The copy will receive the device ID of the selected activity.",
+  "copyToProtectedAreaSuccess": "Place copied to protected area.",
   "gpsSettings": "GPS Settings",
   "telegramSent": "Report sent to Telegram",
   "telegramError": "Error: {error}",

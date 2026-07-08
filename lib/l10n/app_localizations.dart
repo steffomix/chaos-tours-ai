@@ -2750,6 +2750,36 @@ abstract class AppLocalizations {
   /// **'Kopiert einen vollständigen Bericht des Ortes einschließlich aller Besuche und Survival-Erfahrungen im Markdown Format in die Zwischenablage.'**
   String get copyReportHint;
 
+  /// Button to copy a place into a protected area
+  ///
+  /// In de, this message translates to:
+  /// **'In geschützten Bereich kopieren'**
+  String get copyToProtectedArea;
+
+  /// Hint text for copy to protected area
+  ///
+  /// In de, this message translates to:
+  /// **'Erstellt eine Kopie dieses Ortes mit neuer UUID und der Device-ID eines geschützten Bereichs, sodass er vor Sync-Importen geschützt ist.'**
+  String get copyToProtectedAreaHint;
+
+  /// Dialog title for selecting a protected Aktivitaet
+  ///
+  /// In de, this message translates to:
+  /// **'Geschützten Bereich wählen'**
+  String get copyToProtectedAreaSelectTitle;
+
+  /// Subtitle in the select protected area dialog
+  ///
+  /// In de, this message translates to:
+  /// **'Die Kopie erhält die Device-ID der gewählten Aktivität.'**
+  String get copyToProtectedAreaSelectSubtitle;
+
+  /// Snackbar message after successfully copying a place to a protected area
+  ///
+  /// In de, this message translates to:
+  /// **'Ort in geschützten Bereich kopiert.'**
+  String get copyToProtectedAreaSuccess;
+
   /// GPS settings section divider label
   ///
   /// In de, this message translates to:

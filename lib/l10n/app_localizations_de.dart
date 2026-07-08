@@ -1501,6 +1501,24 @@ class AppLocalizationsDe extends AppLocalizations {
       'Kopiert einen vollständigen Bericht des Ortes einschließlich aller Besuche und Survival-Erfahrungen im Markdown Format in die Zwischenablage.';
 
   @override
+  String get copyToProtectedArea => 'In geschützten Bereich kopieren';
+
+  @override
+  String get copyToProtectedAreaHint =>
+      'Erstellt eine Kopie dieses Ortes mit neuer UUID und der Device-ID eines geschützten Bereichs, sodass er vor Sync-Importen geschützt ist.';
+
+  @override
+  String get copyToProtectedAreaSelectTitle => 'Geschützten Bereich wählen';
+
+  @override
+  String get copyToProtectedAreaSelectSubtitle =>
+      'Die Kopie erhält die Device-ID der gewählten Aktivität.';
+
+  @override
+  String get copyToProtectedAreaSuccess =>
+      'Ort in geschützten Bereich kopiert.';
+
+  @override
   String get gpsSettings => 'GPS Einstellungen';
 
   @override

@@ -1491,6 +1491,23 @@ class AppLocalizationsEn extends AppLocalizations {
       'Copies a full report of the place including all visits and survival experiences in Markdown format to the clipboard.';
 
   @override
+  String get copyToProtectedArea => 'Copy to protected area';
+
+  @override
+  String get copyToProtectedAreaHint =>
+      'Creates a copy of this place with a new UUID and the device ID of a protected area, shielding it from sync imports.';
+
+  @override
+  String get copyToProtectedAreaSelectTitle => 'Select protected area';
+
+  @override
+  String get copyToProtectedAreaSelectSubtitle =>
+      'The copy will receive the device ID of the selected activity.';
+
+  @override
+  String get copyToProtectedAreaSuccess => 'Place copied to protected area.';
+
+  @override
   String get gpsSettings => 'GPS Settings';
 
   @override

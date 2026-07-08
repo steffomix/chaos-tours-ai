@@ -1289,6 +1289,18 @@ class DatabaseService {
     return rows.map((r) => r['device_id'] as String).toSet();
   }
 
+  /// Returns all non-deleted [Aktivitaet] objects that have sync import
+  /// protection enabled (i.e. belong to a "Geschützter Bereich").
+  Future<List<Aktivitaet>> loadImportProtectedAktivitaeten() async {
+    final db = await database;
+    final rows = await db.query(
+      'aktivitaeten',
+      where: 'sync_import_protected = 1 AND deleted_at IS NULL',
+      orderBy: 'name ASC',
+    );
+    return rows.map(Aktivitaet.fromMap).toList();
+  }
+
   /// Deletes all rows with [deviceId] from every table that carries a
   /// device_id column, except the aktivitaeten table itself.
   /// Returns the total number of rows deleted.

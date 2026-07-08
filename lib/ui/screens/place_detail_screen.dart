@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../models/aktivitaet.dart';
 import '../../models/place_experience.dart';
 import '../../models/place_group.dart';
 import '../../models/saved_place.dart';
@@ -61,6 +62,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   int _syncIntervalMinutes = 0;
   bool _isSyncing = false;
 
+  List<Aktivitaet> _importProtectedAktivitaeten = [];
+
   int _visitCount = 0;
   int? _lastVisitedAt;
 
@@ -97,11 +100,18 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     _syncIntervalMinutes = widget.place.syncIntervalMinutes;
     _loadGroups();
     _loadVisitStats();
+    _loadImportProtectedAktivitaeten();
   }
 
   Future<void> _loadGroups() async {
     final groups = await DatabaseService.instance.loadAllPlaceGroups();
     if (mounted) setState(() => _groups = groups);
+  }
+
+  Future<void> _loadImportProtectedAktivitaeten() async {
+    final list = await DatabaseService.instance
+        .loadImportProtectedAktivitaeten();
+    if (mounted) setState(() => _importProtectedAktivitaeten = list);
   }
 
   Future<void> _loadExperiences() async {
@@ -629,6 +639,111 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     await DatabaseService.instance.updatePlace(updated);
     widget.onUpdated();
     if (mounted) Navigator.pop(context);
+  }
+
+  /// Shows a dialog to pick one of the import-protected Aktivitaeten, then
+  /// inserts a copy of the current place with a new UUID and the selected
+  /// device ID, effectively moving it into the "Geschützter Bereich".
+  Future<void> _copyToProtectedArea() async {
+    if (_importProtectedAktivitaeten.isEmpty) return;
+    final l10n = AppLocalizations.of(context)!;
+
+    Aktivitaet? selected;
+
+    if (_importProtectedAktivitaeten.length == 1) {
+      // Only one option — use it directly after confirmation.
+      selected = _importProtectedAktivitaeten.first;
+    } else {
+      // Let the user choose which protected area.
+      selected = await showDialog<Aktivitaet>(
+        context: context,
+        builder: (ctx) => SimpleDialog(
+          title: Text(l10n.copyToProtectedAreaSelectTitle),
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+              child: Text(
+                l10n.copyToProtectedAreaSelectSubtitle,
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+            ),
+            ..._importProtectedAktivitaeten.map(
+              (a) => SimpleDialogOption(
+                onPressed: () => Navigator.pop(ctx, a),
+                child: Row(
+                  children: [
+                    const Icon(Icons.lock, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(a.name)),
+                  ],
+                ),
+              ),
+            ),
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l10n.cancel),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (selected == null || !mounted) return;
+
+    final chosenAktivitaet = selected;
+
+    // Confirm the operation.
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.copyToProtectedAreaSelectTitle),
+        content: Text(l10n.copyToProtectedAreaSelectSubtitle),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.create),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    // Create a fresh SavedPlace with a new UUID by omitting the uuid parameter
+    // (the constructor auto-generates one when uuid is null/empty).
+    final copy = SavedPlace(
+      name: widget.place.name,
+      lat: widget.place.lat,
+      lng: widget.place.lng,
+      radius: widget.place.radius,
+      placeType: widget.place.placeType,
+      notes: widget.place.notes,
+      groupUuid: widget.place.groupUuid,
+      createdAt: now,
+      intervalEnabled: widget.place.intervalEnabled,
+      intervalDays: widget.place.intervalDays,
+      updatedAt: now,
+      deviceId: chosenAktivitaet.deviceId,
+      originType: widget.place.originType,
+      originSourceUuid: widget.place.originSourceUuid,
+      website: widget.place.website,
+      email: widget.place.email,
+      phone: widget.place.phone,
+    );
+    await DatabaseService.instance.insertPlace(
+      copy,
+      deviceId: chosenAktivitaet.deviceId,
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.copyToProtectedAreaSuccess)));
+    }
   }
 
   Future<void> _delete() async {
@@ -1496,6 +1611,27 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                   icon: const Icon(Icons.send),
                   label: Text(
                     AppLocalizations.of(context)!.sendReportToTelegram,
+                  ),
+                ),
+              ],
+              // ── In geschützten Bereich kopieren ───────────────────────
+              if (_importProtectedAktivitaeten.isNotEmpty &&
+                  !_importProtectedAktivitaeten
+                      .map((a) => a.deviceId)
+                      .contains(widget.place.deviceId)) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _copyToProtectedArea,
+                  icon: const Icon(Icons.shield_outlined),
+                  label: Text(
+                    AppLocalizations.of(context)!.copyToProtectedArea,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Text(
+                    AppLocalizations.of(context)!.copyToProtectedAreaHint,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ),
               ],
