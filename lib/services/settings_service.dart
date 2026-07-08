@@ -74,6 +74,10 @@ class SettingsService {
   static const String _keyNodeScanIntervalPerGps = 'node_scan_interval_per_gps';
   static const String _keyRegionMessageRadiusKm = 'region_message_radius_km';
 
+  // ── Sync protection (Geschützter Bereich) ────────────────────────────────
+  static const String _keySyncExportProtected = 'sync_export_protected';
+  static const String _keySyncImportProtected = 'sync_import_protected';
+
   SharedPreferences? _prefs;
 
   /// Broadcasts the GPS interval whenever it is changed via the setter.
@@ -438,6 +442,14 @@ class SettingsService {
   set filterSpecificRatingField(String v) =>
       _p.setString(_keyFilterSpecificRatingField, v);
 
+  // ── Sync protection (Geschützter Bereich) ────────────────────────────────
+
+  bool get syncExportProtected => _p.getBool(_keySyncExportProtected) ?? false;
+  set syncExportProtected(bool v) => _p.setBool(_keySyncExportProtected, v);
+
+  bool get syncImportProtected => _p.getBool(_keySyncImportProtected) ?? false;
+  set syncImportProtected(bool v) => _p.setBool(_keySyncImportProtected, v);
+
   // ── Aktivitaet binding ───────────────────────────────────────────────────
 
   /// The UUID of the currently selected [Aktivitaet].
@@ -477,6 +489,8 @@ class SettingsService {
     filterSpecificRatingField = a.filterSpecificRatingField;
     activeAktivitaetUuid = a.uuid;
     deviceId = a.deviceId;
+    syncExportProtected = a.syncExportProtected;
+    syncImportProtected = a.syncImportProtected;
   }
 
   /// Builds an [Aktivitaet] snapshot of the current SharedPreferences values.
@@ -509,6 +523,8 @@ class SettingsService {
       filterUseSpecificRating: filterUseSpecificRating,
       filterSpecificRatingField: filterSpecificRatingField,
       deviceId: deviceId,
+      syncExportProtected: syncExportProtected,
+      syncImportProtected: syncImportProtected,
     );
   }
 }

@@ -29,32 +29,32 @@ class AktivitaetDetailScreen extends StatefulWidget {
 }
 
 class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
-  late Aktivitaet _a;
+  late Aktivitaet _aktivitaet;
   late bool _isActive;
 
   @override
   void initState() {
     super.initState();
-    _a = widget.aktivitaet;
-    _isActive = _a.uuid == widget.activeAktivitaetUuid;
+    _aktivitaet = widget.aktivitaet;
+    _isActive = _aktivitaet.uuid == widget.activeAktivitaetUuid;
   }
 
   // ── helpers ──────────────────────────────────────────────────────────────
 
   Future<void> _save(Aktivitaet updated) async {
     await DatabaseService.instance.updateAktivitaet(updated);
-    if (mounted) setState(() => _a = updated);
+    if (mounted) setState(() => _aktivitaet = updated);
   }
 
   // ── 1. Switch ─────────────────────────────────────────────────────────────
 
   Future<void> _switchToThis() async {
-    SettingsService.instance.applyAktivitaet(_a);
+    SettingsService.instance.applyAktivitaet(_aktivitaet);
     if (mounted) {
       setState(() => _isActive = true);
       final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.aktivitaetDetailTitle(_a.name))),
+        SnackBar(content: Text(l10n.aktivitaetDetailTitle(_aktivitaet.name))),
       );
     }
   }
@@ -63,7 +63,7 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
 
   Future<void> _rename() async {
     final l10n = AppLocalizations.of(context)!;
-    final ctrl = TextEditingController(text: _a.name);
+    final ctrl = TextEditingController(text: _aktivitaet.name);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -86,20 +86,20 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
       ),
     );
     final newName = ctrl.text.trim();
-    ctrl.dispose();
     if (confirmed != true || !mounted) return;
-    if (newName.isEmpty || newName == _a.name) return;
-    await _save(_a.copyWith(name: newName));
+    if (newName.isEmpty || newName == _aktivitaet.name) return;
+    await _save(_aktivitaet.copyWith(name: newName));
+    ctrl.dispose();
   }
 
   // ── 3. Private space toggles ──────────────────────────────────────────────
 
   Future<void> _toggleExportProtected(bool value) async {
-    await _save(_a.copyWith(syncExportProtected: value));
+    await _save(_aktivitaet.copyWith(syncExportProtected: value));
   }
 
   Future<void> _toggleImportProtected(bool value) async {
-    await _save(_a.copyWith(syncImportProtected: value));
+    await _save(_aktivitaet.copyWith(syncImportProtected: value));
   }
 
   // ── 4. Purge data ─────────────────────────────────────────────────────────
@@ -110,7 +110,7 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(l10n.purgeDataConfirmTitle),
-        content: Text(l10n.purgeDataConfirmContent(_a.name)),
+        content: Text(l10n.purgeDataConfirmContent(_aktivitaet.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -127,7 +127,9 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
       ),
     );
     if (confirmed != true || !mounted) return;
-    final count = await DatabaseService.instance.purgeByDeviceId(_a.deviceId);
+    final count = await DatabaseService.instance.purgeByDeviceId(
+      _aktivitaet.deviceId,
+    );
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,
@@ -163,7 +165,7 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(l10n.deleteActivityContent(_a.name)),
+                  Text(l10n.deleteActivityContent(_aktivitaet.name)),
                   const SizedBox(height: 16),
                   CheckboxListTile(
                     contentPadding: EdgeInsets.zero,
@@ -200,19 +202,21 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
 
     // If this is the active aktivitaet, switch to another before deleting.
     if (_isActive) {
-      final next = allAktivitaeten.firstWhere((x) => x.uuid != _a.uuid);
+      final next = allAktivitaeten.firstWhere(
+        (x) => x.uuid != _aktivitaet.uuid,
+      );
       SettingsService.instance.applyAktivitaet(next);
     }
 
     if (withCleanup) {
-      await DatabaseService.instance.purgeByDeviceId(_a.deviceId);
+      await DatabaseService.instance.purgeByDeviceId(_aktivitaet.deviceId);
     }
-    await DatabaseService.instance.deleteAktivitaet(_a.uuid);
+    await DatabaseService.instance.deleteAktivitaet(_aktivitaet.uuid);
 
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.activityDeleted(_a.name))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.activityDeleted(_aktivitaet.name))),
+      );
       Navigator.pop(context);
     }
   }
@@ -226,7 +230,7 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.aktivitaetDetailTitle(_a.name)),
+        title: Text(l10n.aktivitaetDetailTitle(_aktivitaet.name)),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
@@ -267,9 +271,12 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
           ListTile(
             leading: const Icon(Icons.copy),
             title: Text(l10n.deviceId),
-            subtitle: Text(_a.deviceId, style: const TextStyle(fontSize: 12)),
+            subtitle: Text(
+              _aktivitaet.deviceId,
+              style: const TextStyle(fontSize: 12),
+            ),
             onTap: () {
-              Clipboard.setData(ClipboardData(text: _a.deviceId));
+              Clipboard.setData(ClipboardData(text: _aktivitaet.deviceId));
               ScaffoldMessenger.of(
                 context,
               ).showSnackBar(SnackBar(content: Text(l10n.deviceIdCopied)));
@@ -301,21 +308,25 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
           SwitchListTile(
             secondary: Icon(
               Icons.cloud_off,
-              color: _a.syncExportProtected ? colorScheme.tertiary : null,
+              color: _aktivitaet.syncExportProtected
+                  ? colorScheme.tertiary
+                  : null,
             ),
             title: Text(l10n.protectFromExportLabel),
             subtitle: Text(l10n.protectFromExportSubtitle),
-            value: _a.syncExportProtected,
+            value: _aktivitaet.syncExportProtected,
             onChanged: _toggleExportProtected,
           ),
           SwitchListTile(
             secondary: Icon(
               Icons.shield_outlined,
-              color: _a.syncImportProtected ? colorScheme.tertiary : null,
+              color: _aktivitaet.syncImportProtected
+                  ? colorScheme.tertiary
+                  : null,
             ),
             title: Text(l10n.protectFromImportLabel),
             subtitle: Text(l10n.protectFromImportSubtitle),
-            value: _a.syncImportProtected,
+            value: _aktivitaet.syncImportProtected,
             onChanged: _toggleImportProtected,
           ),
           const Divider(),
@@ -340,7 +351,7 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
           ListTile(
             leading: const Icon(Icons.delete_forever, color: Colors.red),
             title: Text(
-              l10n.deleteActivityLabel(_a.name),
+              l10n.deleteActivityLabel(_aktivitaet.name),
               style: const TextStyle(color: Colors.red),
             ),
             subtitle: Text(l10n.deleteActivity),
