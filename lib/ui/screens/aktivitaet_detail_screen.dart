@@ -96,10 +96,20 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
 
   Future<void> _toggleExportProtected(bool value) async {
     await _save(_aktivitaet.copyWith(syncExportProtected: value));
+    if (_aktivitaet.uuid == SettingsService.instance.activeAktivitaetUuid) {
+      SettingsService.instance.applyAktivitaet(
+        _aktivitaet.copyWith(syncExportProtected: value),
+      );
+    }
   }
 
   Future<void> _toggleImportProtected(bool value) async {
     await _save(_aktivitaet.copyWith(syncImportProtected: value));
+    if (_aktivitaet.uuid == SettingsService.instance.activeAktivitaetUuid) {
+      SettingsService.instance.applyAktivitaet(
+        _aktivitaet.copyWith(syncImportProtected: value),
+      );
+    }
   }
 
   // ── 4. Purge data ─────────────────────────────────────────────────────────
