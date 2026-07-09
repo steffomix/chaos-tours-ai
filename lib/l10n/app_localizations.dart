@@ -518,6 +518,12 @@ abstract class AppLocalizations {
   /// **'Geräte ID Kopiert'**
   String get deviceIdCopied;
 
+  /// No description provided for @uuidCopied.
+  ///
+  /// In de, this message translates to:
+  /// **'UUID Kopiert'**
+  String get uuidCopied;
+
   /// Tracking section header
   ///
   /// In de, this message translates to:
@@ -3182,6 +3188,12 @@ abstract class AppLocalizations {
   /// **'Nachrichten'**
   String get messagesTitle;
 
+  /// No description provided for @messageAttachments.
+  ///
+  /// In de, this message translates to:
+  /// **'Nachrichten Anhänge'**
+  String get messageAttachments;
+
   /// No description provided for @messagesPlaceTitle.
   ///
   /// In de, this message translates to:
@@ -3275,7 +3287,7 @@ abstract class AppLocalizations {
   /// No description provided for @placeMessagesButton.
   ///
   /// In de, this message translates to:
-  /// **'Nachrichten zum Ort'**
+  /// **'P2P Nachrichten zum Ort'**
   String get placeMessagesButton;
 
   /// No description provided for @createPlace.

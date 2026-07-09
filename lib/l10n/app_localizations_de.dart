@@ -239,6 +239,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get deviceIdCopied => 'Geräte ID Kopiert';
 
   @override
+  String get uuidCopied => 'UUID Kopiert';
+
+  @override
   String get sectionTracking => 'Tracking';
 
   @override
@@ -1748,6 +1751,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get messagesTitle => 'Nachrichten';
 
   @override
+  String get messageAttachments => 'Nachrichten Anhänge';
+
+  @override
   String get messagesPlaceTitle => 'Ort-Nachrichten';
 
   @override
@@ -1796,7 +1802,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get messageHint => 'Nachricht…';
 
   @override
-  String get placeMessagesButton => 'Nachrichten zum Ort';
+  String get placeMessagesButton => 'P2P Nachrichten zum Ort';
 
   @override
   String get createPlace => 'Ort erstellen';

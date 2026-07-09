@@ -740,6 +740,18 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     );
 
     if (mounted) {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => PlaceDetailScreen(
+            place: copy,
+            onUpdated: () {},
+            onDeleted: () {},
+          ),
+        ),
+      );
+    }
+
+    if (mounted) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.copyToProtectedAreaSuccess)));
@@ -1284,6 +1296,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               // ── Origin badge ────────────────────────────────────────────
               if (widget.place.originType != PlaceOriginType.self)
                 Row(
+                  mainAxisSize: MainAxisSize.max,
                   children: [
                     Chip(
                       avatar: Icon(
@@ -1365,8 +1378,65 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                   await launchUrl(uri);
                 },
               ),
+              // ── Fotos ──────────────────────────────────────────────────
+              ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                leading: const Icon(Icons.photo_library_outlined),
+                title: Text(AppLocalizations.of(context)!.photos),
+                children: [
+                  PlacePhotosSection(
+                    placeUuid: widget.place.uuid,
+                    deviceId: widget.place.deviceId,
+                    completedStays: _completedStays,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // ── Besuche ────────────────────────────────────────────────
+              OutlinedButton.icon(
+                onPressed: widget.place.uuid.isEmpty
+                    ? null
+                    : () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              PlaceVisitsScreen(place: widget.place),
+                        ),
+                      ),
+                icon: const Icon(Icons.history),
+                label: Text(
+                  _visitCount == 0
+                      ? AppLocalizations.of(context)!.showVisits
+                      : AppLocalizations.of(
+                          context,
+                        )!.showVisitsCount(_visitCount),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // ── Jetzt besuchen ─────────────────────────────────────────
+              OutlinedButton.icon(
+                onPressed: widget.place.uuid.isEmpty
+                    ? null
+                    : _createManualVisit,
+                icon: const Icon(Icons.add_location_alt),
+                label: Text(AppLocalizations.of(context)!.visitNow),
+              ),
               const SizedBox(height: 8),
               // ── Besuchs-Intervall ──────────────────────────────────────
+              const SizedBox(height: 8),
+              Row(
+                children: <Widget>[
+                  Expanded(child: Divider()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      AppLocalizations.of(context)!.intervalVisit,
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                  Expanded(child: Divider()),
+                ],
+              ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(AppLocalizations.of(context)!.visitInterval),
@@ -1394,6 +1464,20 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               ],
               const SizedBox(height: 12),
               // ── Gruppe ─────────────────────────────────────────────────
+              Row(
+                children: <Widget>[
+                  Expanded(child: Divider()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      AppLocalizations.of(context)!.placeGroupsTitle,
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                  Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 8),
               DropdownButtonFormField<String?>(
                 initialValue: _groupUuid == null
                     ? null
@@ -1440,6 +1524,37 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                 },
               ),
               const SizedBox(height: 12),
+              // ── Bericht an Telegram ────────────────────────────────────
+              if (_groupUuid != null &&
+                  _groups
+                          .where((g) => g.uuid == _groupUuid)
+                          .firstOrNull
+                          ?.telegramConnectionUuid !=
+                      null) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _sendToTelegram,
+                  icon: const Icon(Icons.send),
+                  label: Text(
+                    AppLocalizations.of(context)!.sendReportToTelegram,
+                  ),
+                ),
+              ],
+              // ── HR P2P Sync ────────────────────────────────────────────────────────
+              Row(
+                children: <Widget>[
+                  Expanded(child: Divider()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      'P2P Sync',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                  Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 4),
               // ── Survival-Erfahrungen ─────────────────────────────────────
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
@@ -1451,111 +1566,6 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                 children: [_buildExperiencesSection()],
               ),
               const SizedBox(height: 12),
-              // ── Fotos ──────────────────────────────────────────────────
-              ExpansionTile(
-                tilePadding: EdgeInsets.zero,
-                leading: const Icon(Icons.photo_library_outlined),
-                title: Text(AppLocalizations.of(context)!.photos),
-                children: [
-                  PlacePhotosSection(
-                    placeUuid: widget.place.uuid,
-                    deviceId: widget.place.deviceId,
-                    completedStays: _completedStays,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // ── HR Statistik ─────────────────────────────────────────────────
-              Row(
-                children: <Widget>[
-                  Expanded(child: Divider()),
-                  Text(
-                    AppLocalizations.of(context)!.infoAndStats,
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                  Expanded(child: Divider()),
-                ],
-              ),
-              const SizedBox(height: 4),
-              // ── Besuchsstatistik ───────────────────────────────────────
-              Row(
-                children: [
-                  const Icon(Icons.history, size: 16, color: Colors.grey),
-                  const SizedBox(width: 4),
-                  Text(
-                    _visitCount == 0
-                        ? AppLocalizations.of(context)!.neverVisited
-                        : (_visitCount == 1
-                              ? AppLocalizations.of(
-                                  context,
-                                )!.visitCount(_visitCount)
-                              : AppLocalizations.of(
-                                  context,
-                                )!.visitCountPlural(_visitCount)),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  if (_lastVisitedAt != null) ...[
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        AppLocalizations.of(
-                          context,
-                        )!.lastVisitedAt(_formatDate(_lastVisitedAt!)),
-                        style: Theme.of(context).textTheme.bodySmall,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.add_circle_outline,
-                    size: 16,
-                    color: Colors.grey,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    AppLocalizations.of(
-                      context,
-                    )!.placeCreatedAt(_formatDate(widget.place.createdAt)),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              // ── Statistik ───────────────────────────────────────────────
-              ExpansionTile(
-                tilePadding: EdgeInsets.zero,
-                leading: const Icon(Icons.bar_chart),
-                title: Text(AppLocalizations.of(context)!.statistics),
-                onExpansionChanged: (expanded) {
-                  if (expanded && !_statsLoaded) _loadStatistics();
-                },
-                children: [_buildStats()],
-              ),
-              // ── Besuche ────────────────────────────────────────────────
-              OutlinedButton.icon(
-                onPressed: widget.place.uuid.isEmpty
-                    ? null
-                    : () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              PlaceVisitsScreen(place: widget.place),
-                        ),
-                      ),
-                icon: const Icon(Icons.history),
-                label: Text(
-                  _visitCount == 0
-                      ? AppLocalizations.of(context)!.showVisits
-                      : AppLocalizations.of(
-                          context,
-                        )!.showVisitsCount(_visitCount),
-                ),
-              ),
-              const SizedBox(height: 8),
               // ── Nachrichten zum Ort ────────────────────────────────────
               if (SettingsService.instance.messengerEnabled)
                 OutlinedButton.icon(
@@ -1577,81 +1587,6 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                 ),
               if (SettingsService.instance.messengerEnabled)
                 const SizedBox(height: 8),
-              // ── Jetzt besuchen ─────────────────────────────────────────
-              OutlinedButton.icon(
-                onPressed: widget.place.uuid.isEmpty
-                    ? null
-                    : _createManualVisit,
-                icon: const Icon(Icons.add_location_alt),
-                label: Text(AppLocalizations.of(context)!.visitNow),
-              ),
-              const SizedBox(height: 8),
-              // ── Bericht kopieren ───────────────────────────────────────
-              OutlinedButton.icon(
-                onPressed: _copyReport,
-                icon: const Icon(Icons.copy_all),
-                label: Text(AppLocalizations.of(context)!.copyFullReport),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Text(
-                  AppLocalizations.of(context)!.copyReportHint,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ),
-              // ── Bericht an Telegram ────────────────────────────────────
-              if (_groupUuid != null &&
-                  _groups
-                          .where((g) => g.uuid == _groupUuid)
-                          .firstOrNull
-                          ?.telegramConnectionUuid !=
-                      null) ...[
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _sendToTelegram,
-                  icon: const Icon(Icons.send),
-                  label: Text(
-                    AppLocalizations.of(context)!.sendReportToTelegram,
-                  ),
-                ),
-              ],
-              // ── In geschützten Bereich kopieren ───────────────────────
-              if (_importProtectedAktivitaeten.isNotEmpty &&
-                  !_importProtectedAktivitaeten
-                      .map((a) => a.deviceId)
-                      .contains(widget.place.deviceId)) ...[
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _copyToProtectedArea,
-                  icon: const Icon(Icons.shield_outlined),
-                  label: Text(
-                    AppLocalizations.of(context)!.copyToProtectedArea,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Text(
-                    AppLocalizations.of(context)!.copyToProtectedAreaHint,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 4),
-              // ── HR P2P Sync ────────────────────────────────────────────────────────
-              Row(
-                children: <Widget>[
-                  Expanded(child: Divider()),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      'P2P Sync',
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                  Expanded(child: Divider()),
-                ],
-              ),
-              const SizedBox(height: 4),
               // ── P2P Sync Konfiguration ─────────────────────────────────
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
@@ -1837,13 +1772,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                 ],
               ),
               const SizedBox(height: 4),
-              // ── Position ändern ────────────────────────────────────────
-              OutlinedButton.icon(
-                onPressed: _repositionPlace,
-                icon: const Icon(Icons.edit_location_alt),
-                label: Text(AppLocalizations.of(context)!.changePositionOnMap),
-              ),
-              const SizedBox(height: 12),
+              // ── Radius ändern ────────────────────────────────────────
               Text(
                 AppLocalizations.of(
                   context,
@@ -1856,6 +1785,13 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                 divisions: 49,
                 label: '${_radius.toStringAsFixed(0)} m',
                 onChanged: (v) => setState(() => _radius = v),
+              ),
+              const SizedBox(height: 12),
+              // ── Position ändern ────────────────────────────────────────
+              OutlinedButton.icon(
+                onPressed: _repositionPlace,
+                icon: const Icon(Icons.edit_location_alt),
+                label: Text(AppLocalizations.of(context)!.changePositionOnMap),
               ),
               const SizedBox(height: 12),
               // ── GPS-Koordinaten ────────────────────────────────────────
@@ -1954,6 +1890,188 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                 ],
               ),
               const SizedBox(height: 20),
+              // ── HR Statistik ─────────────────────────────────────────────────
+              Row(
+                children: <Widget>[
+                  Expanded(child: Divider()),
+                  Text(
+                    AppLocalizations.of(context)!.infoAndStats,
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                  Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 4),
+              // ── Besuchsstatistik ───────────────────────────────────────
+              Row(
+                children: [
+                  const Icon(Icons.history, size: 16, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    _visitCount == 0
+                        ? AppLocalizations.of(context)!.neverVisited
+                        : (_visitCount == 1
+                              ? AppLocalizations.of(
+                                  context,
+                                )!.visitCount(_visitCount)
+                              : AppLocalizations.of(
+                                  context,
+                                )!.visitCountPlural(_visitCount)),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  if (_lastVisitedAt != null) ...[
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        AppLocalizations.of(
+                          context,
+                        )!.lastVisitedAt(_formatDate(_lastVisitedAt!)),
+                        style: Theme.of(context).textTheme.bodySmall,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.add_circle_outline,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    AppLocalizations.of(
+                      context,
+                    )!.placeCreatedAt(_formatDate(widget.place.createdAt)),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              // ── Statistik ───────────────────────────────────────────────
+              ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                leading: const Icon(Icons.bar_chart),
+                title: Text(AppLocalizations.of(context)!.statistics),
+                onExpansionChanged: (expanded) {
+                  if (expanded && !_statsLoaded) _loadStatistics();
+                },
+                children: [_buildStats()],
+              ),
+              // ── Bericht kopieren ───────────────────────────────────────
+              OutlinedButton.icon(
+                onPressed: _copyReport,
+                icon: const Icon(Icons.copy_all),
+                label: Text(AppLocalizations.of(context)!.copyFullReport),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Text(
+                  AppLocalizations.of(context)!.copyReportHint,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ),
+              Divider(),
+              const SizedBox(height: 12),
+              // ── UUID ────────────────────────────────────────────
+              Text(
+                "UUID",
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.place.uuid,
+                      style: const TextStyle(fontSize: 10),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: widget.place.uuid));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            AppLocalizations.of(context)!.uuidCopied,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.copy),
+                    iconSize: 16,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              // ── Device ID ────────────────────────────────────────────
+              Text(
+                "Device ID",
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.place.deviceId,
+                      style: const TextStyle(fontSize: 10),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      Clipboard.setData(
+                        ClipboardData(text: widget.place.deviceId),
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            AppLocalizations.of(context)!.deviceIdCopied,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.copy),
+                    iconSize: 16,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+              // ── In geschützten Bereich kopieren ───────────────────────
+              if (_importProtectedAktivitaeten.isNotEmpty &&
+                  !_importProtectedAktivitaeten
+                      .map((a) => a.deviceId)
+                      .contains(widget.place.deviceId)) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _copyToProtectedArea,
+                  icon: const Icon(Icons.shield_outlined),
+                  label: Text(
+                    AppLocalizations.of(context)!.copyToProtectedArea,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Text(
+                    AppLocalizations.of(context)!.copyToProtectedAreaHint,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ),
+              ],
               Divider(),
               const SizedBox(height: 12),
               // ── Aktionen ───────────────────────────────────────────────

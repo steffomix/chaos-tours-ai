@@ -302,6 +302,7 @@
   },
   "deviceId": "Geräte ID",
   "deviceIdCopied": "Geräte ID Kopiert",
+  "uuidCopied": "UUID Kopiert",
   "sectionTracking": "Tracking",
   "@sectionTracking": {
     "description": "Tracking section header"
@@ -2415,6 +2416,7 @@
     "description": "Button to immediately re-lock the developer tools"
   },
   "messagesTitle": "Nachrichten",
+  "messageAttachments": "Nachrichten Anhänge",
   "messagesPlaceTitle": "Ort-Nachrichten",
   "messagesRegionTitle": "Nachrichten der Region",
   "messagesEmpty": "Noch keine Nachrichten.",
@@ -2437,7 +2439,7 @@
   "gallery": "Galerie",
   "existingPlacePhoto": "Vorhandenes Foto des Ortes",
   "messageHint": "Nachricht…",
-  "placeMessagesButton": "Nachrichten zum Ort",
+  "placeMessagesButton": "P2P Nachrichten zum Ort",
   "createPlace": "Ort erstellen",
   "showRegionMessages": "Nachrichten der Region zeigen",
   "regionRadiusTitle": "Radius der Region",
