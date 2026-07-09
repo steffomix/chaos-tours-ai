@@ -789,7 +789,7 @@ class _SqlEditorDialogState extends State<_SqlEditorDialog> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: MainAxisSize.max,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Title bar
@@ -897,12 +897,15 @@ class _ErrorBanner extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.error_outline, color: Colors.red, size: 18),
-          const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(color: Colors.red, fontSize: 13),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 80),
+              child: SingleChildScrollView(
+                child: Text(
+                  message,
+                  style: const TextStyle(color: Colors.red, fontSize: 13),
+                ),
+              ),
             ),
           ),
           IconButton(
