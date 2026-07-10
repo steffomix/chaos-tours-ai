@@ -3547,6 +3547,24 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Alle Einträge mit der Geräte-ID dieser Aktivität werden entfernt'**
   String get deleteWithCleanupCheckboxSubtitle;
+
+  /// No description provided for @movePlacesTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Orte verschieben'**
+  String get movePlacesTitle;
+
+  /// No description provided for @moveButton.
+  ///
+  /// In de, this message translates to:
+  /// **'Verschieben'**
+  String get moveButton;
+
+  /// Snackbar after moving places to another group
+  ///
+  /// In de, this message translates to:
+  /// **'{count} Orte verschoben'**
+  String placesMovedCount(int count);
 }
 
 class _AppLocalizationsDelegate

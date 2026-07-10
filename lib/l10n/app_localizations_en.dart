@@ -1938,4 +1938,15 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deleteWithCleanupCheckboxSubtitle =>
       'All entries with the device ID of this activity will be removed';
+
+  @override
+  String get movePlacesTitle => 'Move places';
+
+  @override
+  String get moveButton => 'Move';
+
+  @override
+  String placesMovedCount(int count) {
+    return '$count places moved';
+  }
 }

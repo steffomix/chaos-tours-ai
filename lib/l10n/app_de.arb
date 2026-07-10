@@ -2513,5 +2513,15 @@
     }
   },
   "deleteWithCleanupCheckbox": "Datenbank ebenfalls säubern",
-  "deleteWithCleanupCheckboxSubtitle": "Alle Einträge mit der Geräte-ID dieser Aktivität werden entfernt"
+  "deleteWithCleanupCheckboxSubtitle": "Alle Einträge mit der Geräte-ID dieser Aktivität werden entfernt",
+  "movePlacesTitle": "Orte verschieben",
+  "noGroup": "Keine Gruppe",
+  "moveButton": "Verschieben",
+  "placesMovedCount": "{count} Orte verschoben",
+  "@placesMovedCount": {
+    "description": "Snackbar after moving places to another group",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  }
 }

@@ -1091,5 +1091,15 @@
     }
   },
   "deleteWithCleanupCheckbox": "Also clean database",
-  "deleteWithCleanupCheckboxSubtitle": "All entries with the device ID of this activity will be removed"
+  "deleteWithCleanupCheckboxSubtitle": "All entries with the device ID of this activity will be removed",
+  "movePlacesTitle": "Move places",
+  "noGroup": "No group",
+  "moveButton": "Move",
+  "placesMovedCount": "{count} places moved",
+  "@placesMovedCount": {
+    "description": "Snackbar after moving places to another group",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  }
 }

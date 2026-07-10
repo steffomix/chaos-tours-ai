@@ -1951,4 +1951,15 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get deleteWithCleanupCheckboxSubtitle =>
       'Alle Einträge mit der Geräte-ID dieser Aktivität werden entfernt';
+
+  @override
+  String get movePlacesTitle => 'Orte verschieben';
+
+  @override
+  String get moveButton => 'Verschieben';
+
+  @override
+  String placesMovedCount(int count) {
+    return '$count Orte verschoben';
+  }
 }
