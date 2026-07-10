@@ -274,6 +274,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: () => Navigator.pushNamed(context, '/database-dump'),
             ),
             ListTile(
+              leading: const Icon(Icons.cleaning_services),
+              title: Text(l10n.dbCleanupTitle),
+              subtitle: Text(l10n.dbCleanupSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text(l10n.dbCleanupConfirmTitle),
+                    content: Text(l10n.dbCleanupConfirmContent),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: Text(l10n.cancel),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        child: Text(l10n.ok),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed != true) return;
+                if (!context.mounted) return;
+                final count = await DatabaseService.instance
+                    .cleanupOrphanedRecords();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.dbCleanupSuccess(count))),
+                  );
+                }
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.public),
               title: Text(l10n.syncSources),
               subtitle: Text(l10n.syncSourcesSubtitle),

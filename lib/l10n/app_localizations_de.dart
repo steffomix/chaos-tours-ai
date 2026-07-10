@@ -427,6 +427,24 @@ class AppLocalizationsDe extends AppLocalizations {
   String get databaseDumpSubtitle => 'Dump erstellen, laden & teilen';
 
   @override
+  String get dbCleanupTitle => 'Datenbank bereinigen';
+
+  @override
+  String get dbCleanupSubtitle => 'Herrenlose Einträge entfernen';
+
+  @override
+  String get dbCleanupConfirmTitle => 'Datenbank bereinigen?';
+
+  @override
+  String get dbCleanupConfirmContent =>
+      'Alle verwaisten Einträge (ohne gültigen Elterndatensatz) werden dauerhaft entfernt. Geräte-ID-Felder bleiben dabei unberührt.';
+
+  @override
+  String dbCleanupSuccess(int count) {
+    return '$count Einträge bereinigt';
+  }
+
+  @override
   String get syncSources => 'Sync-Quellen';
 
   @override

@@ -422,6 +422,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get databaseDumpSubtitle => 'Create, load & share dump';
 
   @override
+  String get dbCleanupTitle => 'Clean up database';
+
+  @override
+  String get dbCleanupSubtitle => 'Remove orphaned entries';
+
+  @override
+  String get dbCleanupConfirmTitle => 'Clean up database?';
+
+  @override
+  String get dbCleanupConfirmContent =>
+      'All orphaned entries (without a valid parent record) will be permanently removed. Device ID fields are not affected.';
+
+  @override
+  String dbCleanupSuccess(int count) {
+    return '$count entries cleaned up';
+  }
+
+  @override
   String get syncSources => 'Sync sources';
 
   @override

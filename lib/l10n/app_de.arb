@@ -559,6 +559,29 @@
   "@databaseDumpSubtitle": {
     "description": "Database dump subtitle"
   },
+  "dbCleanupTitle": "Datenbank bereinigen",
+  "@dbCleanupTitle": {
+    "description": "Database cleanup button title"
+  },
+  "dbCleanupSubtitle": "Herrenlose Einträge entfernen",
+  "@dbCleanupSubtitle": {
+    "description": "Database cleanup subtitle"
+  },
+  "dbCleanupConfirmTitle": "Datenbank bereinigen?",
+  "@dbCleanupConfirmTitle": {
+    "description": "Database cleanup confirmation dialog title"
+  },
+  "dbCleanupConfirmContent": "Alle verwaisten Einträge (ohne gültigen Elterndatensatz) werden dauerhaft entfernt. Geräte-ID-Felder bleiben dabei unberührt.",
+  "@dbCleanupConfirmContent": {
+    "description": "Database cleanup confirmation dialog content"
+  },
+  "dbCleanupSuccess": "{count} Einträge bereinigt",
+  "@dbCleanupSuccess": {
+    "description": "Database cleanup success message",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "syncSources": "Sync-Quellen",
   "@syncSources": {
     "description": "Sync sources"

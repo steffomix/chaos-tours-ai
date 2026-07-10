@@ -818,6 +818,36 @@ abstract class AppLocalizations {
   /// **'Dump erstellen, laden & teilen'**
   String get databaseDumpSubtitle;
 
+  /// Database cleanup button title
+  ///
+  /// In de, this message translates to:
+  /// **'Datenbank bereinigen'**
+  String get dbCleanupTitle;
+
+  /// Database cleanup subtitle
+  ///
+  /// In de, this message translates to:
+  /// **'Herrenlose Einträge entfernen'**
+  String get dbCleanupSubtitle;
+
+  /// Database cleanup confirmation dialog title
+  ///
+  /// In de, this message translates to:
+  /// **'Datenbank bereinigen?'**
+  String get dbCleanupConfirmTitle;
+
+  /// Database cleanup confirmation dialog content
+  ///
+  /// In de, this message translates to:
+  /// **'Alle verwaisten Einträge (ohne gültigen Elterndatensatz) werden dauerhaft entfernt. Geräte-ID-Felder bleiben dabei unberührt.'**
+  String get dbCleanupConfirmContent;
+
+  /// Database cleanup success message
+  ///
+  /// In de, this message translates to:
+  /// **'{count} Einträge bereinigt'**
+  String dbCleanupSuccess(int count);
+
   /// Sync sources
   ///
   /// In de, this message translates to:

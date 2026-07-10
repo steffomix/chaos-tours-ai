@@ -2966,6 +2966,107 @@ class DatabaseService {
     return added;
   }
 
+  // ── Orphan cleanup ────────────────────────────────────────────────────────
+
+  /// Removes or nullifies broken UUID foreign-key references caused by
+  /// hard-deleted parent records (e.g. after [purgeByDeviceId]).
+  ///
+  /// Device-ID fields are intentionally excluded — they are not referential-
+  /// integrity foreign keys but device-ownership markers.
+  ///
+  /// Returns the total number of rows affected (deleted or updated).
+  Future<int> cleanupOrphanedRecords() async {
+    final db = await database;
+    int total = 0;
+
+    // ── Nullify broken optional FK references ──────────────────────────────
+    total += await db.rawUpdate('''
+      UPDATE saved_places SET group_uuid = NULL
+      WHERE group_uuid IS NOT NULL
+        AND group_uuid NOT IN (SELECT uuid FROM place_groups)
+    ''');
+    total += await db.rawUpdate('''
+      UPDATE place_groups SET telegram_connection_uuid = NULL
+      WHERE telegram_connection_uuid IS NOT NULL
+        AND telegram_connection_uuid NOT IN (SELECT uuid FROM telegram_connections)
+    ''');
+    total += await db.rawUpdate('''
+      UPDATE stays SET place_uuid = NULL
+      WHERE place_uuid IS NOT NULL
+        AND place_uuid NOT IN (SELECT uuid FROM saved_places)
+    ''');
+    total += await db.rawUpdate('''
+      UPDATE stay_persons SET person_uuid = NULL
+      WHERE person_uuid IS NOT NULL
+        AND person_uuid NOT IN (SELECT uuid FROM persons)
+    ''');
+    total += await db.rawUpdate('''
+      UPDATE stay_activities SET activity_uuid = NULL
+      WHERE activity_uuid IS NOT NULL
+        AND activity_uuid NOT IN (SELECT uuid FROM activities)
+    ''');
+    total += await db.rawUpdate('''
+      UPDATE place_experiences SET stay_uuid = NULL
+      WHERE stay_uuid IS NOT NULL
+        AND stay_uuid NOT IN (SELECT uuid FROM stays)
+    ''');
+    total += await db.rawUpdate('''
+      UPDATE place_photos SET place_uuid = NULL
+      WHERE place_uuid IS NOT NULL
+        AND place_uuid NOT IN (SELECT uuid FROM saved_places)
+    ''');
+    total += await db.rawUpdate('''
+      UPDATE place_photos SET stay_uuid = NULL
+      WHERE stay_uuid IS NOT NULL
+        AND stay_uuid NOT IN (SELECT uuid FROM stays)
+    ''');
+    total += await db.rawUpdate('''
+      UPDATE aktivitaeten SET auto_place_group_uuid = NULL
+      WHERE auto_place_group_uuid IS NOT NULL
+        AND auto_place_group_uuid NOT IN (SELECT uuid FROM place_groups)
+    ''');
+    total += await db.rawUpdate('''
+      UPDATE aktivitaeten SET default_place_group_uuid = NULL
+      WHERE default_place_group_uuid IS NOT NULL
+        AND default_place_group_uuid NOT IN (SELECT uuid FROM place_groups)
+    ''');
+    total += await db.rawUpdate('''
+      UPDATE aktivitaeten SET sync_source_place_group_uuid = NULL
+      WHERE sync_source_place_group_uuid IS NOT NULL
+        AND sync_source_place_group_uuid NOT IN (SELECT uuid FROM place_groups)
+    ''');
+
+    // ── Delete records whose mandatory parent no longer exists ─────────────
+    // message_attachments first (depends on p2p_messages and place_photos)
+    total += await db.rawDelete('''
+      DELETE FROM message_attachments
+      WHERE message_uuid NOT IN (SELECT uuid FROM p2p_messages)
+         OR photo_uuid NOT IN (SELECT uuid FROM place_photos)
+    ''');
+    total += await db.rawDelete('''
+      DELETE FROM stay_persons
+      WHERE stay_uuid NOT IN (SELECT uuid FROM stays)
+    ''');
+    total += await db.rawDelete('''
+      DELETE FROM stay_activities
+      WHERE stay_uuid NOT IN (SELECT uuid FROM stays)
+    ''');
+    total += await db.rawDelete('''
+      DELETE FROM place_experiences
+      WHERE saved_place_uuid NOT IN (SELECT uuid FROM saved_places)
+    ''');
+    total += await db.rawDelete('''
+      DELETE FROM sync_source_experiences
+      WHERE sync_source_uuid NOT IN (SELECT uuid FROM sync_sources)
+    ''');
+    total += await db.rawDelete('''
+      DELETE FROM p2p_messages
+      WHERE place_uuid NOT IN (SELECT uuid FROM saved_places)
+    ''');
+
+    return total;
+  }
+
   /// Returns device IDs of all non-deleted [TrustedSource] entries where
   /// [trusted] is true.
   Future<List<String>> loadTrustedDeviceIds() async {
