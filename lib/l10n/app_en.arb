@@ -1110,5 +1110,20 @@
     "placeholders": {
       "count": { "type": "int" }
     }
-  }
+  },
+  "placeDetailPhotoCount": "Photos inline: {n}",
+  "@placeDetailPhotoCount": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "placeDetailPhotoCountSubtitle": "Number of photos shown directly in place details",
+  "showAllPhotosButton": "Show all {count} photos",
+  "@showAllPhotosButton": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "allPhotosScreenTitle": "All photos",
+  "openVisitButton": "Open visit"
 }

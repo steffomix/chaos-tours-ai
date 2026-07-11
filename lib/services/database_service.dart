@@ -1655,6 +1655,24 @@ class DatabaseService {
     return rows.map(PlaceExperience.fromMap).toList();
   }
 
+  /// Returns a page of [PlaceExperience] for [savedPlaceUuid], newest first.
+  Future<List<PlaceExperience>> loadExperiencesForPlacePaged(
+    String savedPlaceUuid, {
+    required int limit,
+    required int offset,
+  }) async {
+    final db = await database;
+    final rows = await db.query(
+      'place_experiences',
+      where: 'saved_place_uuid = ? AND deleted_at IS NULL',
+      whereArgs: [savedPlaceUuid],
+      orderBy: 'created_at DESC',
+      limit: limit,
+      offset: offset,
+    );
+    return rows.map(PlaceExperience.fromMap).toList();
+  }
+
   /// Returns a map from place UUID to cached average rating.
   /// Uses the pre-computed [experience_rating_average] column.
   Future<Map<String, double>> loadAverageRatingsForAllPlaces() async {
@@ -1902,6 +1920,60 @@ class DatabaseService {
       orderBy: 'taken_at DESC',
     );
     return rows.map(PlacePhoto.fromMap).toList();
+  }
+
+  /// Returns a page of photos for [placeUuid] (place-level and stay-level),
+  /// sorted by [taken_at] descending.
+  Future<List<PlacePhoto>> loadPhotosForPlacePaged(
+    String placeUuid, {
+    required int limit,
+    required int offset,
+  }) async {
+    final db = await database;
+    // Collect stay UUIDs for this place.
+    final stayRows = await db.query(
+      'stays',
+      columns: ['uuid'],
+      where: 'place_uuid = ? AND deleted_at IS NULL',
+      whereArgs: [placeUuid],
+    );
+    final stayUuids = stayRows.map((r) => r['uuid'] as String).toList();
+
+    if (stayUuids.isEmpty) {
+      final rows = await db.query(
+        'place_photos',
+        where: 'place_uuid = ? AND deleted_at IS NULL',
+        whereArgs: [placeUuid],
+        orderBy: 'taken_at DESC',
+        limit: limit,
+        offset: offset,
+      );
+      return rows.map(PlacePhoto.fromMap).toList();
+    }
+
+    final placeholders = stayUuids.map((_) => '?').join(',');
+    final rows = await db.rawQuery(
+      '''SELECT * FROM place_photos
+         WHERE deleted_at IS NULL
+           AND (place_uuid = ? OR stay_uuid IN ($placeholders))
+         ORDER BY taken_at DESC
+         LIMIT ? OFFSET ?''',
+      [placeUuid, ...stayUuids, limit, offset],
+    );
+    return rows.map(PlacePhoto.fromMap).toList();
+  }
+
+  /// Loads a single [Stay] by its UUID, or null if not found.
+  Future<Stay?> loadStayByUuid(String uuid) async {
+    final db = await database;
+    final rows = await db.query(
+      'stays',
+      where: 'uuid = ?',
+      whereArgs: [uuid],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return Stay.fromMap(rows.first);
   }
 
   Future<void> updatePlacePhotoCaption(

@@ -78,6 +78,9 @@ class SettingsService {
   static const String _keySyncExportProtected = 'sync_export_protected';
   static const String _keySyncImportProtected = 'sync_import_protected';
 
+  // ── Place detail photos ───────────────────────────────────────────────────
+  static const String _keyPlaceDetailPhotoCount = 'place_detail_photo_count';
+
   SharedPreferences? _prefs;
 
   /// Broadcasts the GPS interval whenever it is changed via the setter.
@@ -449,6 +452,13 @@ class SettingsService {
 
   bool get syncImportProtected => _p.getBool(_keySyncImportProtected) ?? false;
   set syncImportProtected(bool v) => _p.setBool(_keySyncImportProtected, v);
+
+  // ── Place detail photos ───────────────────────────────────────────────────
+
+  /// Number of photos shown inline in the place detail screen (default: 5, range 1-20).
+  int get placeDetailPhotoCount => _p.getInt(_keyPlaceDetailPhotoCount) ?? 5;
+  set placeDetailPhotoCount(int v) =>
+      _p.setInt(_keyPlaceDetailPhotoCount, v.clamp(1, 20));
 
   // ── VirtualDevice binding ───────────────────────────────────────────────────
 

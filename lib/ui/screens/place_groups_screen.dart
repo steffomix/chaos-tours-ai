@@ -16,17 +16,42 @@ class PlaceGroupsScreen extends StatefulWidget {
 }
 
 class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
-  List<PlaceGroup> _groups = [];
+  static const int _chunkSize = 20;
+
+  final ScrollController _scrollCtrl = ScrollController();
+  List<PlaceGroup> _allGroups = [];
+  int _displayCount = _chunkSize;
 
   @override
   void initState() {
     super.initState();
+    _scrollCtrl.addListener(_onScroll);
     _load();
+  }
+
+  @override
+  void dispose() {
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollCtrl.hasClients) return;
+    final pos = _scrollCtrl.position;
+    if (pos.pixels >= pos.maxScrollExtent - 200 &&
+        _displayCount < _allGroups.length) {
+      setState(() => _displayCount += _chunkSize);
+    }
   }
 
   Future<void> _load() async {
     final groups = await DatabaseService.instance.loadAllPlaceGroups();
-    if (mounted) setState(() => _groups = groups);
+    if (mounted) {
+      setState(() {
+        _allGroups = groups;
+        _displayCount = _chunkSize;
+      });
+    }
   }
 
   Future<void> _addGroup() async {
@@ -97,14 +122,23 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final displayed = _allGroups.take(_displayCount).toList();
+    final hasMore = _displayCount < _allGroups.length;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.placeGroupsTitle)),
-      body: _groups.isEmpty
+      body: _allGroups.isEmpty
           ? Center(child: Text(l10n.noGroupsYet))
           : ListView.builder(
-              itemCount: _groups.length,
+              controller: _scrollCtrl,
+              itemCount: displayed.length + (hasMore ? 1 : 0),
               itemBuilder: (ctx, i) {
-                final g = _groups[i];
+                if (i >= displayed.length) {
+                  return const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                final g = displayed[i];
                 return ListTile(
                   leading: Icon(
                     g.isAutoGroup ? Icons.auto_awesome : Icons.folder,

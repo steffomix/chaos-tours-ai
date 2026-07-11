@@ -2,16 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../models/place_photo.dart';
 import '../../models/stay.dart';
 import '../../services/database_service.dart';
-import '../../services/settings_service.dart';
-import '../screens/all_photos_screen.dart';
-import 'stay_detail_sheet.dart';
+import '../widgets/stay_detail_sheet.dart';
 
 String _fmtMs(int ms) {
   final dt = DateTime.fromMillisecondsSinceEpoch(ms);
@@ -19,116 +16,95 @@ String _fmtMs(int ms) {
       '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 }
 
-/// Shows the newest [n] photos for a place inline, combined (place + stay),
-/// sorted by date (newest first), in card style with BoxFit.contain.
-///
-/// If there are more than [n] photos, shows a "Show all X photos" button
-/// that opens [AllPhotosScreen].
-class PlacePhotosSection extends StatefulWidget {
+/// Full-screen view of all photos for a place, with chunk loader.
+class AllPhotosScreen extends StatefulWidget {
   final String placeUuid;
   final String placeName;
-  final String deviceId;
 
-  const PlacePhotosSection({
+  const AllPhotosScreen({
     super.key,
     required this.placeUuid,
     required this.placeName,
-    required this.deviceId,
   });
 
   @override
-  State<PlacePhotosSection> createState() => _PlacePhotosSectionState();
+  State<AllPhotosScreen> createState() => _AllPhotosScreenState();
 }
 
-class _PlacePhotosSectionState extends State<PlacePhotosSection> {
-  /// All photos (place + stay), sorted newest-first.
-  List<PlacePhoto> _allPhotos = [];
+class _AllPhotosScreenState extends State<AllPhotosScreen> {
+  static const int _chunkSize = 20;
 
-  /// Stay metadata keyed by stay UUID.
+  final ScrollController _scrollCtrl = ScrollController();
+  final List<PlacePhoto> _photos = [];
   final Map<String, Stay> _stayCache = {};
 
-  bool _loading = true;
+  bool _loading = false;
+  bool _hasMore = true;
+  int _offset = 0;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _scrollCtrl.addListener(_onScroll);
+    _loadNextChunk();
   }
 
   @override
-  void didUpdateWidget(PlacePhotosSection oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.placeUuid != widget.placeUuid) {
-      _load();
+  void dispose() {
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollCtrl.hasClients) return;
+    final pos = _scrollCtrl.position;
+    if (pos.pixels >= pos.maxScrollExtent - 400 && _hasMore && !_loading) {
+      _loadNextChunk();
     }
   }
 
-  Future<void> _load() async {
+  Future<void> _loadNextChunk() async {
+    if (_loading || !_hasMore) return;
     setState(() => _loading = true);
-    final db = DatabaseService.instance;
-    final all = await db.loadPhotosForPlace(widget.placeUuid);
-
-    // Pre-cache stay metadata for stay photos.
-    final stayUuids = all
-        .where((p) => p.stayUuid != null)
-        .map((p) => p.stayUuid!)
-        .toSet();
-    for (final uuid in stayUuids) {
-      if (!_stayCache.containsKey(uuid)) {
-        final stay = await db.loadStayByUuid(uuid);
-        if (stay != null) _stayCache[uuid] = stay;
+    final chunk = await DatabaseService.instance.loadPhotosForPlacePaged(
+      widget.placeUuid,
+      limit: _chunkSize,
+      offset: _offset,
+    );
+    // Prefetch stay metadata for any new stayUuids.
+    for (final p in chunk) {
+      final stayUuid = p.stayUuid;
+      if (stayUuid != null && !_stayCache.containsKey(stayUuid)) {
+        final stay = await DatabaseService.instance.loadStayByUuid(stayUuid);
+        if (stay != null) _stayCache[stayUuid] = stay;
       }
     }
-
-    if (mounted) {
-      setState(() {
-        _allPhotos = all;
-        _loading = false;
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _photos.addAll(chunk);
+      _offset += chunk.length;
+      _hasMore = chunk.length == _chunkSize;
+      _loading = false;
+    });
   }
 
-  Future<void> _addPhoto({required ImageSource source}) async {
-    final s = SettingsService.instance;
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: source,
-      imageQuality: s.photoImageQuality,
-      maxWidth: s.photoMaxWidth == 0 ? null : s.photoMaxWidth.toDouble(),
-      maxHeight: s.photoMaxHeight == 0 ? null : s.photoMaxHeight.toDouble(),
-    );
-    if (picked == null || !mounted) return;
-    final bytes = await picked.readAsBytes();
-    final photo = PlacePhoto(
-      placeUuid: widget.placeUuid,
-      photoData: bytes,
-      takenAt: DateTime.now().millisecondsSinceEpoch,
-    );
-    await DatabaseService.instance.insertPlacePhoto(
-      photo,
-      deviceId: widget.deviceId,
-    );
-    await _load();
+  Future<void> _reload() async {
+    setState(() {
+      _photos.clear();
+      _stayCache.clear();
+      _offset = 0;
+      _hasMore = true;
+    });
+    await _loadNextChunk();
   }
 
-  void _openFullViewer(int index) {
+  void _openPhoto(int index) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => _InlineFullScreenViewer(
-          photos: _allPhotos,
+        builder: (_) => _FullScreenViewer(
+          photos: _photos,
           initialIndex: index,
-          onChanged: _load,
-        ),
-      ),
-    );
-  }
-
-  void _openAllPhotosScreen() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => AllPhotosScreen(
-          placeUuid: widget.placeUuid,
-          placeName: widget.placeName,
+          onChanged: _reload,
         ),
       ),
     );
@@ -138,85 +114,88 @@ class _PlacePhotosSectionState extends State<PlacePhotosSection> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => StayDetailSheet(stay: stay, onUpdated: _load),
+      builder: (_) => StayDetailSheet(stay: stay, onUpdated: _reload),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final n = SettingsService.instance.placeDetailPhotoCount;
-
-    if (_loading) {
-      return const Padding(
-        padding: EdgeInsets.all(16),
-        child: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    final inlinePhotos = _allPhotos.take(n).toList();
-    final totalCount = _allPhotos.length;
-    final hasMore = totalCount > n;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // ── Add photo buttons ─────────────────────────────────────────────
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
+    return Scaffold(
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            IconButton(
-              icon: const Icon(Icons.camera_alt, size: 20),
-              tooltip: l10n.camera,
-              onPressed: () => _addPhoto(source: ImageSource.camera),
-            ),
-            IconButton(
-              icon: const Icon(Icons.add_photo_alternate, size: 20),
-              tooltip: l10n.fromGallery,
-              onPressed: () => _addPhoto(source: ImageSource.gallery),
+            Text(l10n.allPhotosScreenTitle),
+            Text(
+              widget.placeName,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.normal,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
-        if (_allPhotos.isEmpty)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-            child: Text(
-              l10n.noPlacePhotos,
-              style: const TextStyle(color: Colors.grey, fontSize: 13),
-            ),
-          )
-        else ...[
-          // ── Inline photo cards ──────────────────────────────────────────
-          ...inlinePhotos.asMap().entries.map((entry) {
-            final index = entry.key;
-            final photo = entry.value;
-            final stay = photo.stayUuid != null
-                ? _stayCache[photo.stayUuid]
-                : null;
-            return _PhotoCard(
-              photo: photo,
-              stay: stay,
-              onTap: () => _openFullViewer(index),
-              onOpenStay: stay != null ? () => _openStay(stay) : null,
-            );
-          }),
-          // ── "Show all" button ───────────────────────────────────────────
-          if (hasMore)
-            Padding(
-              padding: const EdgeInsets.only(top: 4, bottom: 8),
-              child: OutlinedButton.icon(
-                onPressed: _openAllPhotosScreen,
-                icon: const Icon(Icons.photo_library_outlined),
-                label: Text(l10n.showAllPhotosButton(totalCount)),
+      ),
+      body: _photos.isEmpty && !_loading
+          ? Center(child: Text(l10n.noPhotosAtPlace))
+          : RefreshIndicator(
+              onRefresh: _reload,
+              child: ListView.builder(
+                controller: _scrollCtrl,
+                padding: const EdgeInsets.all(8),
+                itemCount: _photos.length + (_hasMore ? 1 : 0),
+                itemBuilder: (ctx, i) {
+                  if (i >= _photos.length) {
+                    return const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  final photo = _photos[i];
+                  final stay = photo.stayUuid != null
+                      ? _stayCache[photo.stayUuid]
+                      : null;
+                  return _PhotoCard(
+                    photo: photo,
+                    stay: stay,
+                    onTap: () => _openPhoto(i),
+                    onOpenStay: stay != null ? () => _openStay(stay) : null,
+                  );
+                },
               ),
             ),
-        ],
-      ],
     );
   }
 }
 
-// ── Photo card ───────────────────────────────────────────────────────────────
+// ── Shared photo card widget ─────────────────────────────────────────────────
+
+class PhotoCard extends StatelessWidget {
+  final PlacePhoto photo;
+  final Stay? stay;
+  final VoidCallback onTap;
+  final VoidCallback? onOpenStay;
+
+  const PhotoCard({
+    super.key,
+    required this.photo,
+    this.stay,
+    required this.onTap,
+    this.onOpenStay,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _PhotoCard(
+      photo: photo,
+      stay: stay,
+      onTap: onTap,
+      onOpenStay: onOpenStay,
+    );
+  }
+}
 
 class _PhotoCard extends StatelessWidget {
   final PlacePhoto photo;
@@ -258,7 +237,7 @@ class _PhotoCard extends StatelessWidget {
                     child: const Center(child: Icon(Icons.broken_image)),
                   ),
           ),
-          // ── Date + caption ─────────────────────────────────────────────
+          // ── Date + caption ────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
             child: Text(
@@ -271,7 +250,7 @@ class _PhotoCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
               child: Text(photo.caption, style: const TextStyle(fontSize: 13)),
             ),
-          // ── Visit button ───────────────────────────────────────────────
+          // ── Visit button ──────────────────────────────────────────────
           if (onOpenStay != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
@@ -293,25 +272,24 @@ class _PhotoCard extends StatelessWidget {
   }
 }
 
-// ── Full-screen viewer (for inline tap) ─────────────────────────────────────
+// ── Full-screen photo viewer ─────────────────────────────────────────────────
 
-class _InlineFullScreenViewer extends StatefulWidget {
+class _FullScreenViewer extends StatefulWidget {
   final List<PlacePhoto> photos;
   final int initialIndex;
   final VoidCallback onChanged;
 
-  const _InlineFullScreenViewer({
+  const _FullScreenViewer({
     required this.photos,
     required this.initialIndex,
     required this.onChanged,
   });
 
   @override
-  State<_InlineFullScreenViewer> createState() =>
-      _InlineFullScreenViewerState();
+  State<_FullScreenViewer> createState() => _FullScreenViewerState();
 }
 
-class _InlineFullScreenViewerState extends State<_InlineFullScreenViewer> {
+class _FullScreenViewerState extends State<_FullScreenViewer> {
   late PageController _ctrl;
   late int _index;
 

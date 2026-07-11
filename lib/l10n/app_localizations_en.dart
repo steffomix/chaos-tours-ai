@@ -1982,4 +1982,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String placesMovedCount(int count) {
     return '$count places moved';
   }
+
+  @override
+  String placeDetailPhotoCount(int n) {
+    return 'Photos inline: $n';
+  }
+
+  @override
+  String get placeDetailPhotoCountSubtitle =>
+      'Number of photos shown directly in place details';
+
+  @override
+  String showAllPhotosButton(int count) {
+    return 'Show all $count photos';
+  }
+
+  @override
+  String get allPhotosScreenTitle => 'All photos';
+
+  @override
+  String get openVisitButton => 'Open visit';
 }

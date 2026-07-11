@@ -3619,6 +3619,36 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'{count} Orte verschoben'**
   String placesMovedCount(int count);
+
+  /// No description provided for @placeDetailPhotoCount.
+  ///
+  /// In de, this message translates to:
+  /// **'Fotos direkt anzeigen: {n}'**
+  String placeDetailPhotoCount(int n);
+
+  /// No description provided for @placeDetailPhotoCountSubtitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Anzahl der Fotos, die direkt in den Ortsdetails angezeigt werden'**
+  String get placeDetailPhotoCountSubtitle;
+
+  /// No description provided for @showAllPhotosButton.
+  ///
+  /// In de, this message translates to:
+  /// **'Alle {count} Fotos anzeigen'**
+  String showAllPhotosButton(int count);
+
+  /// No description provided for @allPhotosScreenTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Alle Fotos'**
+  String get allPhotosScreenTitle;
+
+  /// No description provided for @openVisitButton.
+  ///
+  /// In de, this message translates to:
+  /// **'Besuch öffnen'**
+  String get openVisitButton;
 }
 
 class _AppLocalizationsDelegate

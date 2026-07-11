@@ -2563,5 +2563,20 @@
     "placeholders": {
       "count": { "type": "int" }
     }
-  }
+  },
+  "placeDetailPhotoCount": "Fotos direkt anzeigen: {n}",
+  "@placeDetailPhotoCount": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "placeDetailPhotoCountSubtitle": "Anzahl der Fotos, die direkt in den Ortsdetails angezeigt werden",
+  "showAllPhotosButton": "Alle {count} Fotos anzeigen",
+  "@showAllPhotosButton": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "allPhotosScreenTitle": "Alle Fotos",
+  "openVisitButton": "Besuch öffnen"
 }

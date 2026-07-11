@@ -1997,4 +1997,24 @@ class AppLocalizationsDe extends AppLocalizations {
   String placesMovedCount(int count) {
     return '$count Orte verschoben';
   }
+
+  @override
+  String placeDetailPhotoCount(int n) {
+    return 'Fotos direkt anzeigen: $n';
+  }
+
+  @override
+  String get placeDetailPhotoCountSubtitle =>
+      'Anzahl der Fotos, die direkt in den Ortsdetails angezeigt werden';
+
+  @override
+  String showAllPhotosButton(int count) {
+    return 'Alle $count Fotos anzeigen';
+  }
+
+  @override
+  String get allPhotosScreenTitle => 'Alle Fotos';
+
+  @override
+  String get openVisitButton => 'Besuch öffnen';
 }

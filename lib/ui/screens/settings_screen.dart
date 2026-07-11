@@ -45,6 +45,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _photoMaxWidth;
   late int _photoMaxHeight;
   late int _photoImageQuality;
+  late int _placeDetailPhotoCount;
 
   // P2P Messenger / mesh sync
   late bool _messengerEnabled;
@@ -95,6 +96,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _photoMaxWidth = s.photoMaxWidth;
     _photoMaxHeight = s.photoMaxHeight;
     _photoImageQuality = s.photoImageQuality;
+    _placeDetailPhotoCount = s.placeDetailPhotoCount;
     _messengerEnabled = s.messengerEnabled;
     _createPlaceOnSyncOpportunity = s.createPlaceOnSyncOpportunity;
     _syncPhotosEnabled = s.syncPhotosEnabled;
@@ -171,6 +173,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     s.photoMaxWidth = _photoMaxWidth;
     s.photoMaxHeight = _photoMaxHeight;
     s.photoImageQuality = _photoImageQuality;
+    s.placeDetailPhotoCount = _placeDetailPhotoCount;
     s.messengerEnabled = _messengerEnabled;
     s.createPlaceOnSyncOpportunity = _createPlaceOnSyncOpportunity;
     s.syncPhotosEnabled = _syncPhotosEnabled;
@@ -724,6 +727,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 label: '$_photoImageQuality %',
                 onChanged: (v) =>
                     setState(() => _photoImageQuality = v.round()),
+              ),
+            ),
+            ListTile(
+              title: Text(l10n.placeDetailPhotoCount(_placeDetailPhotoCount)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Slider(
+                    value: _placeDetailPhotoCount.toDouble(),
+                    min: 1,
+                    max: 20,
+                    divisions: 19,
+                    label: '$_placeDetailPhotoCount',
+                    onChanged: (v) =>
+                        setState(() => _placeDetailPhotoCount = v.round()),
+                  ),
+                  Text(
+                    l10n.placeDetailPhotoCountSubtitle,
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
               ),
             ),
             const Divider(),
