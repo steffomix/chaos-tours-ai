@@ -845,8 +845,8 @@ abstract class AppLocalizations {
   /// Database cleanup success message
   ///
   /// In de, this message translates to:
-  /// **'{count} Einträge bereinigt'**
-  String dbCleanupSuccess(int count);
+  /// **'{nullified} IDs nullified, {deleted} Einträge bereinigt'**
+  String dbCleanupSuccess(int nullified, int deleted);
 
   /// Sync sources
   ///

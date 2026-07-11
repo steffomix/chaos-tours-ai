@@ -2974,9 +2974,10 @@ class DatabaseService {
   /// Device-ID fields are intentionally excluded — they are not referential-
   /// integrity foreign keys but device-ownership markers.
   ///
-  /// Returns the total number of rows affected (deleted or updated).
-  Future<int> cleanupOrphanedRecords() async {
+  /// Returns a map with the total number of rows affected (deleted or updated) for each operation.
+  Future<Map<String, int>> cleanupOrphanedRecords() async {
     final db = await database;
+    Map<String, int> result = {};
     int total = 0;
 
     // ── Nullify broken optional FK references ──────────────────────────────
@@ -3036,6 +3037,9 @@ class DatabaseService {
         AND sync_source_place_group_uuid NOT IN (SELECT uuid FROM place_groups)
     ''');
 
+    result['nullified'] = total;
+    total = 0;
+
     // ── Delete records whose mandatory parent no longer exists ─────────────
     // message_attachments first (depends on p2p_messages and place_photos)
     total += await db.rawDelete('''
@@ -3064,7 +3068,9 @@ class DatabaseService {
       WHERE place_uuid NOT IN (SELECT uuid FROM saved_places)
     ''');
 
-    return total;
+    result['deleted'] = total;
+
+    return result;
   }
 
   /// Returns device IDs of all non-deleted [TrustedSource] entries where

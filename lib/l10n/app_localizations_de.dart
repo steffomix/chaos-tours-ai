@@ -440,8 +440,8 @@ class AppLocalizationsDe extends AppLocalizations {
       'Alle verwaisten Einträge (ohne gültigen Elterndatensatz) werden dauerhaft entfernt. Geräte-ID-Felder bleiben dabei unberührt.';
 
   @override
-  String dbCleanupSuccess(int count) {
-    return '$count Einträge bereinigt';
+  String dbCleanupSuccess(int nullified, int deleted) {
+    return '$nullified IDs nullified, $deleted Einträge bereinigt';
   }
 
   @override

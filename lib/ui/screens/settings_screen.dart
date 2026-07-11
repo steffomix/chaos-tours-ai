@@ -298,11 +298,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
                 if (confirmed != true) return;
                 if (!context.mounted) return;
-                final count = await DatabaseService.instance
+                final result = await DatabaseService.instance
                     .cleanupOrphanedRecords();
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.dbCleanupSuccess(count))),
+                    SnackBar(
+                      content: Text(
+                        l10n.dbCleanupSuccess(
+                          result['nullified'] ?? 0,
+                          result['deleted'] ?? 0,
+                        ),
+                      ),
+                    ),
                   );
                 }
               },
