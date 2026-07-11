@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 
 import '../../models/trusted_source.dart';
+import '../../models/virtual_device.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
 
@@ -13,23 +14,68 @@ class TrustedSourcesScreen extends StatefulWidget {
 }
 
 class _TrustedSourcesScreenState extends State<TrustedSourcesScreen> {
+  static const _pageSize = 50;
+
   List<TrustedSource> _all = [];
   bool _loading = false;
+  bool _loadingMore = false;
+  bool _hasMore = true;
+  late final ScrollController _scrollCtrl;
 
   @override
   void initState() {
     super.initState();
+    _scrollCtrl = ScrollController()..addListener(_onScroll);
     _refresh();
   }
 
+  @override
+  void dispose() {
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollCtrl.position.pixels >=
+            _scrollCtrl.position.maxScrollExtent - 200 &&
+        !_loadingMore &&
+        _hasMore) {
+      _loadNextPage();
+    }
+  }
+
   Future<void> _refresh() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _all = [];
+      _hasMore = true;
+    });
     await DatabaseService.instance.refreshTrustedSources();
-    final list = await DatabaseService.instance.loadAllTrustedSources();
+    final page = await DatabaseService.instance.loadTrustedSourcesPage(
+      0,
+      _pageSize,
+    );
     if (mounted) {
       setState(() {
-        _all = list;
+        _all = page;
+        _hasMore = page.length == _pageSize;
         _loading = false;
+      });
+    }
+  }
+
+  Future<void> _loadNextPage() async {
+    if (_loadingMore || !_hasMore) return;
+    setState(() => _loadingMore = true);
+    final page = await DatabaseService.instance.loadTrustedSourcesPage(
+      _all.length,
+      _pageSize,
+    );
+    if (mounted) {
+      setState(() {
+        _all.addAll(page);
+        _hasMore = page.length == _pageSize;
+        _loadingMore = false;
       });
     }
   }
@@ -146,6 +192,7 @@ class _TrustedSourcesScreenState extends State<TrustedSourcesScreen> {
                 ),
               )
             : ListView(
+                controller: _scrollCtrl,
                 children: [
                   if (trusted.isNotEmpty) ...[
                     _sectionHeader(l10n.trustedDevicesSection),
@@ -169,6 +216,11 @@ class _TrustedSourcesScreenState extends State<TrustedSourcesScreen> {
                       ),
                     ),
                   ],
+                  if (_loadingMore)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
                 ],
               ),
       ),
@@ -221,6 +273,7 @@ class _TrustedSourceEditSheetState extends State<_TrustedSourceEditSheet> {
   late final TextEditingController _urlCtrl;
   late final TextEditingController _emailCtrl;
   late final TextEditingController _addressCtrl;
+  bool _creatingDevice = false;
 
   @override
   void initState() {
@@ -249,6 +302,41 @@ class _TrustedSourceEditSheetState extends State<_TrustedSourceEditSheet> {
       address: _addressCtrl.text.trim(),
     );
     Navigator.pop(context, result);
+  }
+
+  Future<void> _createVirtualDevice() async {
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _creatingDevice = true);
+    try {
+      final deviceId = widget.source.deviceId;
+      final all = await DatabaseService.instance.loadAllVirtualDevices();
+      if (!mounted) return;
+      if (all.any((v) => v.deviceId == deviceId)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.virtualDeviceAlreadyExistsForSource)),
+        );
+        return;
+      }
+      final activeUuid = SettingsService.instance.activeVirtualDeviceUuid;
+      final template =
+          all.where((v) => v.uuid == activeUuid).firstOrNull ?? all.firstOrNull;
+      final name = _noteCtrl.text.trim().isNotEmpty
+          ? _noteCtrl.text.trim()
+          : deviceId;
+      final VirtualDevice newDevice;
+      if (template != null) {
+        newDevice = template.copyWith(uuid: '', name: name, deviceId: deviceId);
+      } else {
+        newDevice = VirtualDevice(name: name, deviceId: deviceId);
+      }
+      await DatabaseService.instance.insertVirtualDevice(newDevice);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.virtualDeviceCreatedFromTemplate)),
+      );
+    } finally {
+      if (mounted) setState(() => _creatingDevice = false);
+    }
   }
 
   @override
@@ -308,6 +396,18 @@ class _TrustedSourceEditSheetState extends State<_TrustedSourceEditSheet> {
               ),
             ),
             const SizedBox(height: 20),
+            OutlinedButton.icon(
+              onPressed: _creatingDevice ? null : _createVirtualDevice,
+              icon: _creatingDevice
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.devices_other),
+              label: Text(l10n.createVirtualDeviceForSource),
+            ),
+            const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [

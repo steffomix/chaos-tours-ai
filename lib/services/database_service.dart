@@ -2857,6 +2857,22 @@ class DatabaseService {
     return rows.map(TrustedSource.fromMap).toList();
   }
 
+  /// Returns a page of non-deleted sources with [limit] entries starting at
+  /// [offset]. Same ordering as [loadAllTrustedSources].
+  Future<List<TrustedSource>> loadTrustedSourcesPage(
+    int offset,
+    int limit,
+  ) async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      'SELECT * FROM trusted_sources WHERE deleted_at IS NULL'
+      ' ORDER BY trusted DESC, trusted_device_id ASC'
+      ' LIMIT ? OFFSET ?',
+      [limit, offset],
+    );
+    return rows.map(TrustedSource.fromMap).toList();
+  }
+
   Future<void> upsertTrustedSource(TrustedSource ts) async {
     final db = await database;
     await db.insert(

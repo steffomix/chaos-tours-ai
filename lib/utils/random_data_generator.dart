@@ -27,6 +27,8 @@ class RandomDataProgressNotifier extends ValueNotifier<String> {
 
   String _status = 'Ready';
   int _progress = 0;
+  int _orphantDeviceIds = 0;
+  int _orphantUuids = 0;
   int _countPlaces = 0;
   int _countStays = 0;
   int _countPlacePhotos = 0;
@@ -54,6 +56,16 @@ class RandomDataProgressNotifier extends ValueNotifier<String> {
   void setProgress(int totalCount, int doneCount) {
     // don't update value here
     _progress = (doneCount / totalCount * 100).toInt();
+  }
+
+  void addOrphantDeviceIds() {
+    _orphantDeviceIds++;
+    _updateValue();
+  }
+
+  void addOrphantUuids() {
+    _orphantUuids++;
+    _updateValue();
   }
 
   void addVirtualDevice() {
@@ -158,6 +170,8 @@ class RandomDataProgressNotifier extends ValueNotifier<String> {
         _countStayActivities +
         _countP2PMessages +
         _countP2PMessagePhotos;
+
+    // set the value to a formatted string
     value =
         '''Status: $_status
 
@@ -165,6 +179,8 @@ Fortschritt: $_progress%
 Total: $_totalCount
 
 Virtual Devices: $_countVirtualDevices
+Orphant Device IDs: $_orphantDeviceIds
+Orphant UUIDs: $_orphantUuids
 Persons: $_countPersons
 Activities: $_countActivities
 Telegram Connections: $_countTelegramConnections
@@ -246,6 +262,9 @@ class RandomDataGenerator {
   static final stayDuration = Duration(minutes: 30).inMilliseconds;
   static int stayCounter = 0;
 
+  static int _percentOrphantDeviceIds = 5;
+  static int _percentOrphantUuids = 5;
+
   RandomDataGenerator();
 
   String randomUuid() => _uuid.v4();
@@ -258,11 +277,15 @@ class RandomDataGenerator {
 
   String deviceIdFromPool() {
     if (deviceIdPool.isEmpty) {
-      deviceIdPool.addAll(
-        List.generate(25, (_) => '${randomString(5)}@${randomUuid()}'),
-      );
+      deviceIdPool.addAll(List.generate(25, (_) => generateDeviceId()));
     }
-    return deviceIdPool[_random.nextInt(deviceIdPool.length)];
+    return _random.nextInt(100) < _percentOrphantDeviceIds
+        ? generateDeviceId()
+        : deviceIdPool[_random.nextInt(deviceIdPool.length)];
+  }
+
+  String maybeOrphantUuid(String uuid) {
+    return _random.nextInt(100) < _percentOrphantUuids ? randomUuid() : uuid;
   }
 
   bool randomBool() => _random.nextBool();
@@ -499,7 +522,7 @@ class RandomDataGenerator {
       lng: longitude,
       intervalEnabled: randomBool(),
       intervalDays: intervalDays,
-      groupUuid: groupUuid,
+      groupUuid: groupUuid == null ? null : maybeOrphantUuid(groupUuid),
       deviceId: deviceIdFromPool(),
     );
   }
@@ -518,7 +541,7 @@ class RandomDataGenerator {
     return Message(
       uuid: randomUuid(),
       authorName: 'Author ${randomString(5)}',
-      placeUuid: placeUuid,
+      placeUuid: maybeOrphantUuid(placeUuid),
       body: 'Message body ${randomString(20)}',
       createdAt: randomPastTimeStamp,
       updatedAt: null,
@@ -533,8 +556,8 @@ class RandomDataGenerator {
   ) {
     return MessageAttachment(
       uuid: randomUuid(),
-      messageUuid: messageUuid,
-      photoUuid: photoUuid,
+      messageUuid: maybeOrphantUuid(messageUuid),
+      photoUuid: maybeOrphantUuid(photoUuid),
       createdAt: randomPastTimeStamp,
       updatedAt: null,
       deletedAt: null,
@@ -545,7 +568,7 @@ class RandomDataGenerator {
   Stay _createStay(String placeUuid) {
     final stay = Stay(
       uuid: randomUuid(),
-      placeUuid: placeUuid,
+      placeUuid: maybeOrphantUuid(placeUuid),
       startTime: firstStayStartTime + (stayCounter * stayStepTime),
       endTime: firstStayStartTime + (stayCounter * stayStepTime) + stayDuration,
       address: address,
@@ -571,16 +594,16 @@ class RandomDataGenerator {
   StayActivity _createStayActivity(String stayUuid, String activityUuid) =>
       StayActivity(
         uuid: randomUuid(),
-        stayUuid: stayUuid,
-        activityUuid: activityUuid,
+        stayUuid: maybeOrphantUuid(stayUuid),
+        activityUuid: maybeOrphantUuid(activityUuid),
         description: notes,
         deviceId: deviceIdFromPool(),
       );
   StayPerson _createStayPerson(String stayUuid, String personUuid) =>
       StayPerson(
         uuid: randomUuid(),
-        stayUuid: stayUuid,
-        personUuid: personUuid,
+        stayUuid: maybeOrphantUuid(stayUuid),
+        personUuid: maybeOrphantUuid(personUuid),
         name: 'StayPerson ${randomString(5)}',
         deviceId: deviceIdFromPool(),
       );
@@ -617,8 +640,8 @@ class RandomDataGenerator {
     final Uint8List pngBytes = byteData!.buffer.asUint8List();
     return PlacePhoto(
       uuid: randomUuid(),
-      placeUuid: placeUuid,
-      stayUuid: stayUuid,
+      placeUuid: maybeOrphantUuid(placeUuid),
+      stayUuid: stayUuid == null ? null : maybeOrphantUuid(stayUuid),
       photoData: pngBytes,
       createdAt: randomPastTimeStamp,
       updatedAt: randomTimeStampAfter(randomPastTimeStamp),
@@ -628,6 +651,8 @@ class RandomDataGenerator {
   }
 
   Future<void> generateRandomData({
+    int percentOrphantDeviceIds = 5,
+    int percentOrphantUuids = 5,
     int numVirtualDevices = 2,
     int numTelegramConnections = 2,
     int numSyncSources = 2,
@@ -649,6 +674,8 @@ class RandomDataGenerator {
       debugPrint('Random data generation is already in progress.');
       return;
     }
+    _percentOrphantDeviceIds = percentOrphantDeviceIds;
+    _percentOrphantUuids = percentOrphantUuids;
 
     final deviceId = SettingsService.instance.deviceId;
     if (deviceIdPool.isEmpty) {

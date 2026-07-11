@@ -160,9 +160,7 @@ class _VirtualDeviceDetailScreenState extends State<VirtualDeviceDetailScreen> {
     if (allVirtualDevices.length <= 1 && mounted) {
       // Don't allow deleting the last VirtualDevice.
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Die letzte Aktivität kann nicht gelöscht werden.'),
-        ),
+        SnackBar(content: Text(l10n.deleteLastVirtualDeviceNotAllowed)),
       );
       return;
     }

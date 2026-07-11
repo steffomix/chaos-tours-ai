@@ -671,6 +671,10 @@
   "@calendarDenied": {
     "description": "Calendar permission denied"
   },
+  "deleteLastVirtualDeviceNotAllowed": "Das letzte Virtuelle Gerät kann nicht gelöscht werden",
+  "@deleteLastVirtualDeviceNotAllowed": {
+    "description": "Last virtual device can not be deleted"
+  },
   "deleteVirtualDevice": "Aktuelles virtuelles Gerät dauerhaft entfernen",
   "@deleteVirtualDevice": {
     "description": "Delete current virtual Device"
@@ -2112,7 +2116,7 @@
   "@copyToProtectedAreaSelectTitle": {
     "description": "Dialog title for selecting a protected Virtual Device"
   },
-  "copyToProtectedAreaSelectSubtitle": "Die Kopie erhält die Device-ID der gewählten Aktivität.",
+  "copyToProtectedAreaSelectSubtitle": "Die Kopie erhält die Device-ID des gewählten virtuellen Gerätes.",
   "@copyToProtectedAreaSelectSubtitle": {
     "description": "Subtitle in the select protected area dialog"
   },
@@ -2268,6 +2272,18 @@
   "knownDevicesSection": "Bekannte Geräte",
   "@knownDevicesSection": {
     "description": "Section header for known but untrusted devices"
+  },
+  "createVirtualDeviceForSource": "Virtuelles Gerät für diese Quelle erstellen",
+  "@createVirtualDeviceForSource": {
+    "description": "Button to create a virtual device profile for the selected trusted source device"
+  },
+  "virtualDeviceAlreadyExistsForSource": "Für diese Geräte-ID existiert bereits ein virtuelles Gerät",
+  "@virtualDeviceAlreadyExistsForSource": {
+    "description": "Snackbar when a virtual device for this device ID already exists"
+  },
+  "virtualDeviceCreatedFromTemplate": "Virtuelles Gerät wurde erstellt",
+  "@virtualDeviceCreatedFromTemplate": {
+    "description": "Snackbar after successfully creating a virtual device from the active template"
   },
   "confirmMarkTrustedTitle": "Als vertrauenswürdig markieren?",
   "@confirmMarkTrustedTitle": {
@@ -2520,7 +2536,7 @@
   "protectFromImportLabel": "Gegen Sync-Import schützen",
   "protectFromImportSubtitle": "Eingehende Sync-Daten mit diesem virtuellen Gerät werden ignoriert (schützt die Privatsphäre)",
   "purgeDataLabel": "Datenbankeinträge säubern",
-  "purgeDataSubtitle": "Alle Einträge mit dieser Geräte-ID aus der Datenbank entfernen (nicht die Aktivität selbst)",
+  "purgeDataSubtitle": "Alle Einträge mit dieser Geräte-ID aus der Datenbank entfernen (nicht das virtuelle Gerät selbst)",
   "purgeDataConfirmTitle": "Einträge säubern?",
   "purgeDataConfirmContent": "Alle Datenbankeinträge der Geräte-ID von \u201e{name}\u201c werden unwiderruflich entfernt.",
   "@purgeDataConfirmContent": {
@@ -2537,7 +2553,7 @@
     }
   },
   "deleteWithCleanupCheckbox": "Datenbank ebenfalls säubern",
-  "deleteWithCleanupCheckboxSubtitle": "Alle Einträge mit der Geräte-ID dieser Aktivität werden entfernt",
+  "deleteWithCleanupCheckboxSubtitle": "Alle Einträge mit der Geräte-ID dieses virtuellen Geräts werden entfernt",
   "movePlacesTitle": "Orte verschieben",
   "noGroup": "Keine Gruppe",
   "moveButton": "Verschieben",

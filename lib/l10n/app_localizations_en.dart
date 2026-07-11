@@ -508,6 +508,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarDenied => 'Calendar denied';
 
   @override
+  String get deleteLastVirtualDeviceNotAllowed =>
+      'The last Virtual Device can not be deleted';
+
+  @override
   String get deleteVirtualDevice => 'Permanently remove current Virtual Device';
 
   @override
@@ -1631,6 +1635,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get knownDevicesSection => 'Known Devices';
+
+  @override
+  String get createVirtualDeviceForSource =>
+      'Create virtual device for this source';
+
+  @override
+  String get virtualDeviceAlreadyExistsForSource =>
+      'A virtual device for this device ID already exists';
+
+  @override
+  String get virtualDeviceCreatedFromTemplate => 'Virtual device created';
 
   @override
   String get confirmMarkTrustedTitle => 'Mark as trusted?';

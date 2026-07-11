@@ -100,7 +100,7 @@ class SettingsService {
   }
 
   /// Full device ID used in all database records: "name@uuid".
-  /// Set once at Aktivität creation and never changed individually.
+  /// Set once at Virtual Device creation and never changed individually.
   String get deviceId => _p.getString(_keyDeviceId) ?? '';
   set deviceId(String v) => _p.setString(_keyDeviceId, v);
 

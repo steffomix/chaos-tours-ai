@@ -513,6 +513,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get calendarDenied => 'Kalender verweigert';
 
   @override
+  String get deleteLastVirtualDeviceNotAllowed =>
+      'Das letzte Virtuelle Gerät kann nicht gelöscht werden';
+
+  @override
   String get deleteVirtualDevice =>
       'Aktuelles virtuelles Gerät dauerhaft entfernen';
 
@@ -1534,7 +1538,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get copyToProtectedAreaSelectSubtitle =>
-      'Die Kopie erhält die Device-ID der gewählten Aktivität.';
+      'Die Kopie erhält die Device-ID des gewählten virtuellen Gerätes.';
 
   @override
   String get copyToProtectedAreaSuccess =>
@@ -1643,6 +1647,18 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get knownDevicesSection => 'Bekannte Geräte';
+
+  @override
+  String get createVirtualDeviceForSource =>
+      'Virtuelles Gerät für diese Quelle erstellen';
+
+  @override
+  String get virtualDeviceAlreadyExistsForSource =>
+      'Für diese Geräte-ID existiert bereits ein virtuelles Gerät';
+
+  @override
+  String get virtualDeviceCreatedFromTemplate =>
+      'Virtuelles Gerät wurde erstellt';
 
   @override
   String get confirmMarkTrustedTitle => 'Als vertrauenswürdig markieren?';
@@ -1949,7 +1965,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get purgeDataSubtitle =>
-      'Alle Einträge mit dieser Geräte-ID aus der Datenbank entfernen (nicht die Aktivität selbst)';
+      'Alle Einträge mit dieser Geräte-ID aus der Datenbank entfernen (nicht das virtuelle Gerät selbst)';
 
   @override
   String get purgeDataConfirmTitle => 'Einträge säubern?';
@@ -1969,7 +1985,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get deleteWithCleanupCheckboxSubtitle =>
-      'Alle Einträge mit der Geräte-ID dieser Aktivität werden entfernt';
+      'Alle Einträge mit der Geräte-ID dieses virtuellen Geräts werden entfernt';
 
   @override
   String get movePlacesTitle => 'Orte verschieben';

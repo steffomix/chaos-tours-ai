@@ -980,6 +980,12 @@ abstract class AppLocalizations {
   /// **'Kalender verweigert'**
   String get calendarDenied;
 
+  /// Last virtual device can not be deleted
+  ///
+  /// In de, this message translates to:
+  /// **'Das letzte Virtuelle Gerät kann nicht gelöscht werden'**
+  String get deleteLastVirtualDeviceNotAllowed;
+
   /// Delete current virtual Device
   ///
   /// In de, this message translates to:
@@ -2807,7 +2813,7 @@ abstract class AppLocalizations {
   /// Subtitle in the select protected area dialog
   ///
   /// In de, this message translates to:
-  /// **'Die Kopie erhält die Device-ID der gewählten Aktivität.'**
+  /// **'Die Kopie erhält die Device-ID des gewählten virtuellen Gerätes.'**
   String get copyToProtectedAreaSelectSubtitle;
 
   /// Snackbar message after successfully copying a place to a protected area
@@ -3001,6 +3007,24 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Bekannte Geräte'**
   String get knownDevicesSection;
+
+  /// Button to create a virtual device profile for the selected trusted source device
+  ///
+  /// In de, this message translates to:
+  /// **'Virtuelles Gerät für diese Quelle erstellen'**
+  String get createVirtualDeviceForSource;
+
+  /// Snackbar when a virtual device for this device ID already exists
+  ///
+  /// In de, this message translates to:
+  /// **'Für diese Geräte-ID existiert bereits ein virtuelles Gerät'**
+  String get virtualDeviceAlreadyExistsForSource;
+
+  /// Snackbar after successfully creating a virtual device from the active template
+  ///
+  /// In de, this message translates to:
+  /// **'Virtuelles Gerät wurde erstellt'**
+  String get virtualDeviceCreatedFromTemplate;
 
   /// Confirm dialog title when marking a device trusted
   ///
@@ -3545,7 +3569,7 @@ abstract class AppLocalizations {
   /// No description provided for @purgeDataSubtitle.
   ///
   /// In de, this message translates to:
-  /// **'Alle Einträge mit dieser Geräte-ID aus der Datenbank entfernen (nicht die Aktivität selbst)'**
+  /// **'Alle Einträge mit dieser Geräte-ID aus der Datenbank entfernen (nicht das virtuelle Gerät selbst)'**
   String get purgeDataSubtitle;
 
   /// No description provided for @purgeDataConfirmTitle.
@@ -3575,7 +3599,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteWithCleanupCheckboxSubtitle.
   ///
   /// In de, this message translates to:
-  /// **'Alle Einträge mit der Geräte-ID dieser Aktivität werden entfernt'**
+  /// **'Alle Einträge mit der Geräte-ID dieses virtuellen Geräts werden entfernt'**
   String get deleteWithCleanupCheckboxSubtitle;
 
   /// No description provided for @movePlacesTitle.
