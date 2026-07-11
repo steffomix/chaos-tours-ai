@@ -1,8 +1,11 @@
-import 'dart:typed_data';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../models/message.dart';
 import '../../models/message_attachment.dart';
@@ -207,6 +210,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                         showPlace: widget.filter != MessagesFilter.place,
                         onReply: () => setState(() => _replyTo = _messages[i]),
                         onDelete: () => _deleteMessage(_messages[i]),
+                        onDeletePhoto: _reload,
                       );
                     },
                   ),
@@ -303,6 +307,7 @@ class _MessageCard extends StatelessWidget {
   final bool showPlace;
   final VoidCallback onReply;
   final VoidCallback onDelete;
+  final VoidCallback? onDeletePhoto;
 
   const _MessageCard({
     required this.message,
@@ -311,6 +316,7 @@ class _MessageCard extends StatelessWidget {
     required this.showPlace,
     required this.onReply,
     required this.onDelete,
+    this.onDeletePhoto,
   });
 
   String _authorLabel(AppLocalizations l10n) {
@@ -388,27 +394,44 @@ class _MessageCard extends StatelessWidget {
             if (message.body.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 6),
-                child: Text(message.body),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.copy, size: 16, color: theme.hintColor),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: message.body));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(l10n.messageCopied)),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(child: Text(message.body)),
+                  ],
+                ),
               ),
+
             if (photos.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: photos
-                      .map(
-                        (p) => ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: Image.memory(
-                            p.photoData,
-                            width: 90,
-                            height: 90,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      )
-                      .toList(),
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => _MessagePhotoViewer(
+                        photo: photos.first,
+                        isOwn: own,
+                        onDeleted: onDeletePhoto,
+                      ),
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.memory(
+                      photos.first.photoData,
+                      width: double.infinity,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
               ),
             Row(
@@ -524,6 +547,7 @@ class _ComposerState extends State<_Composer> {
   }
 
   Future<void> _pickNewPhoto(ImageSource source) async {
+    if (_pendingPhotos.isNotEmpty) return;
     final s = SettingsService.instance;
     final picker = ImagePicker();
     final picked = await picker.pickImage(
@@ -541,6 +565,7 @@ class _ComposerState extends State<_Composer> {
   /// Lets the user reference an existing photo of the anchored place / its
   /// visits. The referenced image bytes are attached as a new message photo.
   Future<void> _referenceExistingPhoto() async {
+    if (_pendingPhotos.isNotEmpty) return;
     final placeUuid = widget.replyTo?.placeUuid ?? widget.defaultPlaceUuid;
     if (placeUuid == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -678,27 +703,31 @@ class _ComposerState extends State<_Composer> {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             child: Row(
               children: [
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.add_photo_alternate_outlined),
-                  onSelected: (v) {
-                    switch (v) {
-                      case 'camera':
-                        _pickNewPhoto(ImageSource.camera);
-                      case 'gallery':
-                        _pickNewPhoto(ImageSource.gallery);
-                      case 'existing':
-                        _referenceExistingPhoto();
-                    }
-                  },
-                  itemBuilder: (ctx) => [
-                    PopupMenuItem(value: 'camera', child: Text(l10n.camera)),
-                    PopupMenuItem(value: 'gallery', child: Text(l10n.gallery)),
-                    PopupMenuItem(
-                      value: 'existing',
-                      child: Text(l10n.existingPlacePhoto),
-                    ),
-                  ],
-                ),
+                if (_pendingPhotos.isEmpty)
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.add_photo_alternate_outlined),
+                    onSelected: (v) {
+                      switch (v) {
+                        case 'camera':
+                          _pickNewPhoto(ImageSource.camera);
+                        case 'gallery':
+                          _pickNewPhoto(ImageSource.gallery);
+                        case 'existing':
+                          _referenceExistingPhoto();
+                      }
+                    },
+                    itemBuilder: (ctx) => [
+                      PopupMenuItem(value: 'camera', child: Text(l10n.camera)),
+                      PopupMenuItem(
+                        value: 'gallery',
+                        child: Text(l10n.gallery),
+                      ),
+                      PopupMenuItem(
+                        value: 'existing',
+                        child: Text(l10n.existingPlacePhoto),
+                      ),
+                    ],
+                  ),
                 Expanded(
                   child: TextField(
                     controller: _ctrl,
@@ -725,6 +754,90 @@ class _ComposerState extends State<_Composer> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Message photo viewer ─────────────────────────────────────────────────────
+
+class _MessagePhotoViewer extends StatelessWidget {
+  final PlacePhoto photo;
+  final bool isOwn;
+  final VoidCallback? onDeleted;
+
+  const _MessagePhotoViewer({
+    required this.photo,
+    required this.isOwn,
+    this.onDeleted,
+  });
+
+  Future<void> _share(BuildContext context) async {
+    final bytes = photo.photoData;
+    if (bytes.isEmpty) return;
+    final tmp = await getTemporaryDirectory();
+    final file = File('${tmp.path}/share_msg_${photo.uuid}.jpg');
+    await file.writeAsBytes(bytes);
+    await SharePlus.instance.share(
+      ShareParams(files: [XFile(file.path, mimeType: 'image/jpeg')]),
+    );
+  }
+
+  Future<void> _delete(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.photoDeleteTitle),
+        content: Text(l10n.photoDeleteContent),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    await DatabaseService.instance.softDeletePlacePhoto(photo.uuid);
+    if (context.mounted) Navigator.pop(context);
+    onDeleted?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share, color: Colors.white),
+            tooltip: l10n.sharePhoto,
+            onPressed: () => _share(context),
+          ),
+          if (isOwn)
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.white),
+              onPressed: () => _delete(context),
+            ),
+        ],
+      ),
+      body: InteractiveViewer(
+        child: Center(
+          child: photo.photoData.isNotEmpty
+              ? Image.memory(photo.photoData)
+              : const Icon(Icons.broken_image, color: Colors.white, size: 64),
+        ),
       ),
     );
   }

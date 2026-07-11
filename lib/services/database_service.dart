@@ -1878,6 +1878,40 @@ class DatabaseService {
     return rows.map(PlacePhoto.fromMap).toList();
   }
 
+  /// Returns a page of ALL photos, newest first.
+  Future<List<PlacePhoto>> loadAllPhotosPaged({
+    required int limit,
+    required int offset,
+  }) async {
+    final db = await database;
+    final rows = await db.query(
+      'place_photos',
+      where: 'deleted_at IS NULL',
+      orderBy: 'taken_at DESC',
+      limit: limit,
+      offset: offset,
+    );
+    return rows.map(PlacePhoto.fromMap).toList();
+  }
+
+  /// Returns a page of photos for a specific stay, newest first.
+  Future<List<PlacePhoto>> loadPhotosForStayPaged(
+    String stayUuid, {
+    required int limit,
+    required int offset,
+  }) async {
+    final db = await database;
+    final rows = await db.query(
+      'place_photos',
+      where: 'stay_uuid = ? AND deleted_at IS NULL',
+      whereArgs: [stayUuid],
+      orderBy: 'taken_at DESC',
+      limit: limit,
+      offset: offset,
+    );
+    return rows.map(PlacePhoto.fromMap).toList();
+  }
+
   /// All photos for a place, including photos of its stays.
   Future<List<PlacePhoto>> loadPhotosForPlace(String placeUuid) async {
     final db = await database;

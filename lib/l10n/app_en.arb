@@ -115,6 +115,7 @@
   "deviceId": "Device ID",
   "deviceIdCopied": "Device ID copied",
   "uuidCopied": "UUID copied",
+  "messageCopied": "Message text copied",
   "sectionTracking": "Tracking",
   "gpsInterval": "GPS interval: {value}s",
   "@gpsInterval": {
@@ -1125,5 +1126,10 @@
     }
   },
   "allPhotosScreenTitle": "All photos",
-  "openVisitButton": "Open visit"
+  "openVisitButton": "Open visit",
+  "openPlaceButton": "Open place",
+  "placeNotFoundTitle": "Place not found",
+  "placeNotFoundContent": "This place no longer exists in the database. It may have been deleted or not yet synced.",
+  "visitNotFoundTitle": "Visit not found",
+  "visitNotFoundContent": "This visit no longer exists in the database. It may have been deleted or not yet synced."
 }

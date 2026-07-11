@@ -16,16 +16,36 @@ String _fmtMs(int ms) {
       '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 }
 
-/// Full-screen view of all photos for a place, with chunk loader.
+/// Full-screen view of all photos for a place or a single stay, with chunk loader.
+///
+/// Use [AllPhotosScreen] for a place (loads all photos incl. stay photos).
+/// Use [AllPhotosScreen.forStay] for a single stay's photos.
 class AllPhotosScreen extends StatefulWidget {
-  final String placeUuid;
-  final String placeName;
+  /// Non-null when showing photos for a place.
+  final String? placeUuid;
+
+  /// Non-null when showing photos for a specific stay only.
+  final String? stayUuid;
+
+  /// Primary title shown in the AppBar.
+  final String title;
+
+  /// Optional subtitle (e.g. place name when in stay mode).
+  final String? subtitle;
 
   const AllPhotosScreen({
     super.key,
     required this.placeUuid,
-    required this.placeName,
-  });
+    required this.title,
+    this.subtitle,
+  }) : stayUuid = null;
+
+  const AllPhotosScreen.forStay({
+    super.key,
+    required String this.stayUuid,
+    required this.title,
+    this.subtitle,
+  }) : placeUuid = null;
 
   @override
   State<AllPhotosScreen> createState() => _AllPhotosScreenState();
@@ -66,11 +86,20 @@ class _AllPhotosScreenState extends State<AllPhotosScreen> {
   Future<void> _loadNextChunk() async {
     if (_loading || !_hasMore) return;
     setState(() => _loading = true);
-    final chunk = await DatabaseService.instance.loadPhotosForPlacePaged(
-      widget.placeUuid,
-      limit: _chunkSize,
-      offset: _offset,
-    );
+    final List<PlacePhoto> chunk;
+    if (widget.stayUuid != null) {
+      chunk = await DatabaseService.instance.loadPhotosForStayPaged(
+        widget.stayUuid!,
+        limit: _chunkSize,
+        offset: _offset,
+      );
+    } else {
+      chunk = await DatabaseService.instance.loadPhotosForPlacePaged(
+        widget.placeUuid!,
+        limit: _chunkSize,
+        offset: _offset,
+      );
+    }
     // Prefetch stay metadata for any new stayUuids.
     for (final p in chunk) {
       final stayUuid = p.stayUuid;
@@ -126,15 +155,16 @@ class _AllPhotosScreenState extends State<AllPhotosScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l10n.allPhotosScreenTitle),
-            Text(
-              widget.placeName,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.normal,
+            Text(widget.title),
+            if (widget.subtitle != null)
+              Text(
+                widget.subtitle!,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.normal,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
-              overflow: TextOverflow.ellipsis,
-            ),
           ],
         ),
       ),

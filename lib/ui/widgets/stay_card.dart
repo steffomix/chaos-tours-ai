@@ -137,7 +137,7 @@ class StayCard extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   stay.notes,
-                  maxLines: 2,
+                  maxLines: 20,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),

@@ -567,24 +567,6 @@ class _PlacesScreenState extends State<PlacesScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    // if (widget.compassMode) {
-    //   return FocusDetector(
-    //     onFocusGained: () {
-    //       _loadCurrentPosition().then((_) => _loadPlaces(silent: true));
-    //     },
-    //     onFocusLost: () {},
-    //     child: Scaffold(
-    //       appBar: AppBar(title: Text(l10n.compassTitle)),
-    //       body: Column(
-    //         children: [
-    //           _buildCompassHeader(l10n),
-    //           const Divider(height: 1),
-    //           Expanded(child: _buildList()),
-    //         ],
-    //       ),
-    //     ),
-    //   );
-    // }
     return FocusDetector(
       onFocusGained: () {
         ForegroundServiceManager.addDataListener(_onServiceData);
@@ -1083,7 +1065,7 @@ class _PlaceCardState extends State<_PlaceCard> {
                 const SizedBox(height: 6),
                 Text(
                   widget.place.notes,
-                  maxLines: 2,
+                  maxLines: 20,
                   overflow: TextOverflow.ellipsis,
                   style: textTheme.bodySmall,
                 ),

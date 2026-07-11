@@ -240,6 +240,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uuidCopied => 'UUID copied';
 
   @override
+  String get messageCopied => 'Message text copied';
+
+  @override
   String get sectionTracking => 'Tracking';
 
   @override
@@ -2002,4 +2005,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get openVisitButton => 'Open visit';
+
+  @override
+  String get openPlaceButton => 'Open place';
+
+  @override
+  String get placeNotFoundTitle => 'Place not found';
+
+  @override
+  String get placeNotFoundContent =>
+      'This place no longer exists in the database. It may have been deleted or not yet synced.';
+
+  @override
+  String get visitNotFoundTitle => 'Visit not found';
+
+  @override
+  String get visitNotFoundContent =>
+      'This visit no longer exists in the database. It may have been deleted or not yet synced.';
 }

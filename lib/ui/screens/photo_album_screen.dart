@@ -1,12 +1,27 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
-import 'package:focus_detector/focus_detector.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../models/place_photo.dart';
+import '../../models/saved_place.dart';
+import '../../models/stay.dart';
 import '../../services/database_service.dart';
-import '../widgets/album_photo_viewer.dart';
+import '../screens/place_detail_screen.dart';
+import '../widgets/stay_detail_sheet.dart';
 
-/// Global photo album — shows all photos grouped by place.
+String _fmtMs(int ms) {
+  final dt = DateTime.fromMillisecondsSinceEpoch(ms);
+  final d = '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}';
+  final t = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  return '$d  $t';
+}
+
+/// Global photo album — shows all photos (chronological, newest first) with
+/// chunk loader. Each photo card shows "Ort öffnen" and "Besuch öffnen" buttons
+/// with DB existence checks (alert on missing).
 class PhotoAlbumScreen extends StatefulWidget {
   const PhotoAlbumScreen({super.key});
 
@@ -15,261 +30,466 @@ class PhotoAlbumScreen extends StatefulWidget {
 }
 
 class _PhotoAlbumScreenState extends State<PhotoAlbumScreen> {
-  // ── Group metadata (DB-paginated, accumulated) ───────────────────────────
-  List<({String? placeUuid, int photoCount, String? placeName})> _groups = [];
-  bool _groupsHasMore = false;
-  bool _groupsLoading = false;
+  static const int _chunkSize = 20;
 
-  // ── Photo cache: keyed by placeUuid or '' for the null group ─────────────
-  final Map<String, List<PlacePhoto>> _photoCache = {};
+  final ScrollController _scrollCtrl = ScrollController();
+  final List<PlacePhoto> _photos = [];
+  final Map<String, SavedPlace> _placeCache = {};
+  final Map<String, Stay> _stayCache = {};
 
-  static const int _kChunkSize = 20;
-  final ScrollController _albumScrollCtrl = ScrollController();
+  bool _loading = false;
+  bool _hasMore = true;
+  int _offset = 0;
 
   @override
   void initState() {
     super.initState();
-    _albumScrollCtrl.addListener(_onAlbumScroll);
-    _load();
-  }
-
-  void _onAlbumScroll() {
-    if (!_albumScrollCtrl.hasClients) return;
-    final pos = _albumScrollCtrl.position;
-    if (pos.pixels >= pos.maxScrollExtent - 300 &&
-        _groupsHasMore &&
-        !_groupsLoading) {
-      _loadNextGroupChunk();
-    }
+    _scrollCtrl.addListener(_onScroll);
+    _loadNextChunk();
   }
 
   @override
   void dispose() {
-    _albumScrollCtrl.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _load({bool silent = false}) async {
-    if (!silent) {
-      setState(() {
-        _groups = [];
-        _groupsHasMore = false;
-        _groupsLoading = true;
-        _photoCache.clear();
-      });
-    }
-    await _loadNextGroupChunk(silent: silent);
-  }
-
-  Future<void> _loadNextGroupChunk({bool silent = false}) async {
-    if (!silent && _groupsLoading && _groups.isNotEmpty) return;
-    if (!mounted) return;
-    if (!silent) setState(() => _groupsLoading = true);
-    try {
-      final page = await DatabaseService.instance.loadPhotoGroupsPaged(
-        limit: _kChunkSize,
-        offset: silent ? 0 : _groups.length,
-      );
-      if (mounted) {
-        setState(() {
-          _groups = silent ? page : [..._groups, ...page];
-          _groupsHasMore = page.length == _kChunkSize;
-          if (!silent) _groupsLoading = false;
-          if (silent) _photoCache.clear();
-        });
-      }
-    } catch (_) {
-      if (mounted && !silent) setState(() => _groupsLoading = false);
+  void _onScroll() {
+    if (!_scrollCtrl.hasClients) return;
+    final pos = _scrollCtrl.position;
+    if (pos.pixels >= pos.maxScrollExtent - 400 && _hasMore && !_loading) {
+      _loadNextChunk();
     }
   }
 
-  /// Returns (and caches) the photos for a group identified by [placeUuid].
-  Future<List<PlacePhoto>> _photosForGroup(String? placeUuid) async {
-    final key = placeUuid ?? '';
-    if (_photoCache.containsKey(key)) return _photoCache[key]!;
-    final photos = await DatabaseService.instance.loadPhotosForEffectivePlace(
-      placeUuid,
+  Future<void> _loadNextChunk() async {
+    if (_loading || !_hasMore) return;
+    setState(() => _loading = true);
+    final chunk = await DatabaseService.instance.loadAllPhotosPaged(
+      limit: _chunkSize,
+      offset: _offset,
     );
-    _photoCache[key] = photos;
-    return photos;
+    for (final p in chunk) {
+      // Resolve place via direct placeUuid.
+      if (p.placeUuid != null && !_placeCache.containsKey(p.placeUuid)) {
+        final place = await DatabaseService.instance.getSavedPlace(p.placeUuid);
+        if (place != null) _placeCache[p.placeUuid!] = place;
+      }
+      // Resolve stay + its place.
+      if (p.stayUuid != null && !_stayCache.containsKey(p.stayUuid)) {
+        final stay = await DatabaseService.instance.loadStayByUuid(p.stayUuid!);
+        if (stay != null) {
+          _stayCache[p.stayUuid!] = stay;
+          if (stay.placeUuid != null &&
+              !_placeCache.containsKey(stay.placeUuid)) {
+            final place =
+                await DatabaseService.instance.getSavedPlace(stay.placeUuid);
+            if (place != null) _placeCache[stay.placeUuid!] = place;
+          }
+        }
+      }
+    }
+    if (!mounted) return;
+    setState(() {
+      _photos.addAll(chunk);
+      _offset += chunk.length;
+      _hasMore = chunk.length == _chunkSize;
+      _loading = false;
+    });
+  }
+
+  Future<void> _reload() async {
+    setState(() {
+      _photos.clear();
+      _placeCache.clear();
+      _stayCache.clear();
+      _offset = 0;
+      _hasMore = true;
+    });
+    await _loadNextChunk();
+  }
+
+  void _openPhoto(int index) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => _FullScreenViewer(
+          photos: _photos,
+          initialIndex: index,
+          onChanged: _reload,
+        ),
+      ),
+    );
+  }
+
+  /// Resolves the effective place UUID for a photo (direct or via stay).
+  String? _effectivePlaceUuid(PlacePhoto photo) {
+    if (photo.placeUuid != null) return photo.placeUuid;
+    if (photo.stayUuid != null) return _stayCache[photo.stayUuid]?.placeUuid;
+    return null;
+  }
+
+  Future<void> _openPlace(BuildContext ctx, PlacePhoto photo) async {
+    final l10n = AppLocalizations.of(ctx)!;
+    String? placeUuid = _effectivePlaceUuid(photo);
+    SavedPlace? place = placeUuid != null ? _placeCache[placeUuid] : null;
+    // Fallback: query DB directly.
+    if (place == null && placeUuid != null) {
+      place = await DatabaseService.instance.getSavedPlace(placeUuid);
+    }
+    if (!ctx.mounted) return;
+    if (place == null) {
+      await showDialog<void>(
+        context: ctx,
+        builder: (_) => AlertDialog(
+          title: Text(l10n.placeNotFoundTitle),
+          content: Text(l10n.placeNotFoundContent),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l10n.ok),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    if (ctx.mounted) {
+      await Navigator.of(ctx).push(
+        MaterialPageRoute<void>(
+          builder: (_) => PlaceDetailScreen(
+            place: place!,
+            onUpdated: _reload,
+            onDeleted: _reload,
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _openVisit(BuildContext ctx, PlacePhoto photo) async {
+    final l10n = AppLocalizations.of(ctx)!;
+    if (photo.stayUuid == null) return;
+    Stay? stay = _stayCache[photo.stayUuid];
+    stay ??= await DatabaseService.instance.loadStayByUuid(photo.stayUuid!);
+    if (!ctx.mounted) return;
+    if (stay == null) {
+      await showDialog<void>(
+        context: ctx,
+        builder: (_) => AlertDialog(
+          title: Text(l10n.visitNotFoundTitle),
+          content: Text(l10n.visitNotFoundContent),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l10n.ok),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    if (ctx.mounted) {
+      await showModalBottomSheet<void>(
+        context: ctx,
+        isScrollControlled: true,
+        builder: (_) => StayDetailSheet(stay: stay!, onUpdated: _reload),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return FocusDetector(
-      onFocusGained: () {
-        final silent = _groups.isNotEmpty;
-        _load(silent: silent);
-      },
-      child: Scaffold(
-        appBar: AppBar(title: Text(l10n.photoAlbumTitle)),
-        body: _groupsLoading && _groups.isEmpty
-            ? const Center(child: CircularProgressIndicator())
-            : !_groupsLoading && _groups.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.photo_library_outlined,
-                      size: 64,
-                      color: Colors.grey,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      l10n.noPhotosYet,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      l10n.noPhotosHint,
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              )
-            : _buildGroupedList(l10n),
-      ),
-    );
-  }
-
-  Widget _buildGroupedList(AppLocalizations l10n) {
-    return ListView.builder(
-      controller: _albumScrollCtrl,
-      itemCount: _groups.length + (_groupsHasMore || _groupsLoading ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index == _groups.length) {
-          return const Padding(
-            padding: EdgeInsets.all(16),
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
-        final group = _groups[index];
-        final placeName = group.placeName ?? l10n.withoutPlace;
-        return _LazyPlacePhotoGroup(
-          key: ValueKey(group.placeUuid),
-          placeUuid: group.placeUuid,
-          placeName: placeName,
-          photoCount: group.photoCount,
-          loadPhotos: () => _photosForGroup(group.placeUuid),
-          onViewerOpen: (photos, idx) => _openViewer(photos, idx),
-        );
-      },
-    );
-  }
-
-  void _openViewer(List<PlacePhoto> photos, int index) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => AlbumPhotoViewer(
-          photos: photos,
-          initialIndex: index,
-          onChanged: _load,
-          deleteEnabled: () => true,
-        ),
-      ),
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.photoAlbumTitle)),
+      body: _photos.isEmpty && !_loading
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.photo_library_outlined,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    l10n.noPhotosYet,
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.noPhotosHint,
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _reload,
+              child: ListView.builder(
+                controller: _scrollCtrl,
+                padding: const EdgeInsets.all(8),
+                itemCount: _photos.length + (_hasMore ? 1 : 0),
+                itemBuilder: (ctx, i) {
+                  if (i >= _photos.length) {
+                    return const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  final photo = _photos[i];
+                  final effectivePlaceUuid = _effectivePlaceUuid(photo);
+                  final placeName = effectivePlaceUuid != null
+                      ? _placeCache[effectivePlaceUuid]?.name
+                      : null;
+                  return _AlbumPhotoCard(
+                    photo: photo,
+                    placeName: placeName,
+                    onTap: () => _openPhoto(i),
+                    onOpenPlace: () => _openPlace(ctx, photo),
+                    onOpenVisit: photo.stayUuid != null
+                        ? () => _openVisit(ctx, photo)
+                        : null,
+                  );
+                },
+              ),
+            ),
     );
   }
 }
 
-/// A photo group row that loads its photos lazily via [loadPhotos].
-class _LazyPlacePhotoGroup extends StatefulWidget {
-  final String? placeUuid;
-  final String placeName;
-  final int photoCount;
-  final Future<List<PlacePhoto>> Function() loadPhotos;
-  final void Function(List<PlacePhoto> photos, int index) onViewerOpen;
+// ── Photo card ───────────────────────────────────────────────────────────────
 
-  const _LazyPlacePhotoGroup({
-    super.key,
-    required this.placeUuid,
-    required this.placeName,
-    required this.photoCount,
-    required this.loadPhotos,
-    required this.onViewerOpen,
+class _AlbumPhotoCard extends StatelessWidget {
+  final PlacePhoto photo;
+  final String? placeName;
+  final VoidCallback onTap;
+  final VoidCallback onOpenPlace;
+  final VoidCallback? onOpenVisit;
+
+  const _AlbumPhotoCard({
+    required this.photo,
+    this.placeName,
+    required this.onTap,
+    required this.onOpenPlace,
+    this.onOpenVisit,
   });
 
   @override
-  State<_LazyPlacePhotoGroup> createState() => _LazyPlacePhotoGroupState();
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final bytes = photo.photoData;
+    final hasData = bytes.isNotEmpty;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── Photo ────────────────────────────────────────────────────
+          GestureDetector(
+            onTap: onTap,
+            child: hasData
+                ? Image.memory(
+                    bytes,
+                    fit: BoxFit.contain,
+                    width: double.infinity,
+                  )
+                : Container(
+                    height: 120,
+                    color: Colors.grey[300],
+                    child: const Center(child: Icon(Icons.broken_image)),
+                  ),
+          ),
+          // ── Date + caption ────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+            child: Text(
+              _fmtMs(photo.takenAt),
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ),
+          if (photo.caption.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+              child: Text(
+                photo.caption,
+                style: const TextStyle(fontSize: 13),
+              ),
+            ),
+          // ── Action buttons ────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextButton.icon(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    icon: const Icon(Icons.place_outlined, size: 16),
+                    label: Text(
+                      placeName ?? l10n.openPlaceButton,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    onPressed: onOpenPlace,
+                  ),
+                ),
+                if (onOpenVisit != null)
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    icon: const Icon(Icons.open_in_new, size: 16),
+                    label: Text(l10n.openVisitButton),
+                    onPressed: onOpenVisit,
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _LazyPlacePhotoGroupState extends State<_LazyPlacePhotoGroup> {
-  List<PlacePhoto>? _photos;
+// ── Full-screen photo viewer ─────────────────────────────────────────────────
+
+class _FullScreenViewer extends StatefulWidget {
+  final List<PlacePhoto> photos;
+  final int initialIndex;
+  final VoidCallback onChanged;
+
+  const _FullScreenViewer({
+    required this.photos,
+    required this.initialIndex,
+    required this.onChanged,
+  });
+
+  @override
+  State<_FullScreenViewer> createState() => _FullScreenViewerState();
+}
+
+class _FullScreenViewerState extends State<_FullScreenViewer> {
+  late PageController _ctrl;
+  late int _index;
 
   @override
   void initState() {
     super.initState();
-    widget.loadPhotos().then((photos) {
-      if (mounted) setState(() => _photos = photos);
-    });
+    _index = widget.initialIndex;
+    _ctrl = PageController(initialPage: _index);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _share() async {
+    final photo = widget.photos[_index];
+    final bytes = photo.photoData;
+    if (bytes.isEmpty || !mounted) return;
+    final tmp = await getTemporaryDirectory();
+    final file = File('${tmp.path}/share_${photo.uuid}.jpg');
+    await file.writeAsBytes(bytes);
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path, mimeType: 'image/jpeg')],
+        text: photo.caption.isNotEmpty ? photo.caption : null,
+      ),
+    );
+  }
+
+  Future<void> _delete() async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.photoDeleteTitle),
+        content: Text(l10n.photoDeleteContent),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await DatabaseService.instance.softDeletePlacePhoto(
+      widget.photos[_index].uuid,
+    );
+    widget.onChanged();
+    if (mounted) Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final photos = _photos;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Row(
-            children: [
-              const Icon(Icons.place_outlined, size: 16),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  widget.placeName,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                ),
-              ),
-              Text(
-                widget.photoCount == 1
-                    ? l10n.photoCount(widget.photoCount)
-                    : l10n.photoCountPlural(widget.photoCount),
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: Colors.grey),
-              ),
-            ],
+    final photo = widget.photos[_index];
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${_index + 1} / ${widget.photos.length}',
+              style: const TextStyle(color: Colors.white),
+            ),
+            Text(
+              _fmtMs(photo.takenAt),
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share, color: Colors.white),
+            tooltip: l10n.sharePhoto,
+            onPressed: _share,
           ),
-        ),
-        SizedBox(
-          height: 120,
-          child: photos == null
-              ? const Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  itemCount: photos.length,
-                  itemBuilder: (context, index) {
-                    final bytes = photos[index].photoData;
-                    return GestureDetector(
-                      onTap: () => widget.onViewerOpen(photos, index),
-                      child: Container(
-                        width: 110,
-                        margin: const EdgeInsets.only(right: 6),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: bytes.isNotEmpty
-                              ? Image.memory(bytes, fit: BoxFit.cover)
-                              : Container(
-                                  color: Colors.grey[300],
-                                  child: const Icon(Icons.broken_image),
-                                ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-        ),
-        const SizedBox(height: 8),
-        const Divider(height: 1),
-      ],
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.white),
+            onPressed: _delete,
+          ),
+        ],
+      ),
+      body: PageView.builder(
+        controller: _ctrl,
+        itemCount: widget.photos.length,
+        onPageChanged: (i) => setState(() => _index = i),
+        itemBuilder: (_, i) {
+          final b = widget.photos[i].photoData;
+          return InteractiveViewer(
+            child: Center(
+              child: b.isNotEmpty
+                  ? Image.memory(b)
+                  : const Icon(
+                      Icons.broken_image,
+                      color: Colors.white,
+                      size: 64,
+                    ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

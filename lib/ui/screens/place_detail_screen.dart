@@ -1002,7 +1002,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                   labelText: AppLocalizations.of(context)!.noteName,
                   border: const OutlineInputBorder(),
                 ),
-                maxLines: 3,
+                minLines: 3,
+                maxLines: 20,
               ),
               const SizedBox(height: 12),
               // ── Website / Email / Telefon ──────────────────────────────
@@ -1430,6 +1431,23 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 8),
+                  // ── P2P Nachrichten ────────────────────────────────────
+                  OutlinedButton.icon(
+                    onPressed: widget.place.uuid.isEmpty
+                        ? null
+                        : () => Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (_) => MessagesScreen.place(
+                                placeUuid: widget.place.uuid,
+                                title: widget.place.name,
+                              ),
+                            ),
+                          ),
+                    icon: const Icon(Icons.forum),
+                    label: const Text('P2P Nachrichten'),
                   ),
                   const SizedBox(height: 8),
                 ],

@@ -524,6 +524,12 @@ abstract class AppLocalizations {
   /// **'UUID Kopiert'**
   String get uuidCopied;
 
+  /// No description provided for @messageCopied.
+  ///
+  /// In de, this message translates to:
+  /// **'Nachrichtentext kopiert'**
+  String get messageCopied;
+
   /// Tracking section header
   ///
   /// In de, this message translates to:
@@ -3649,6 +3655,36 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Besuch öffnen'**
   String get openVisitButton;
+
+  /// No description provided for @openPlaceButton.
+  ///
+  /// In de, this message translates to:
+  /// **'Ort öffnen'**
+  String get openPlaceButton;
+
+  /// No description provided for @placeNotFoundTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Ort nicht gefunden'**
+  String get placeNotFoundTitle;
+
+  /// No description provided for @placeNotFoundContent.
+  ///
+  /// In de, this message translates to:
+  /// **'Dieser Ort existiert nicht mehr in der Datenbank. Er wurde möglicherweise gelöscht oder noch nicht synchronisiert.'**
+  String get placeNotFoundContent;
+
+  /// No description provided for @visitNotFoundTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Besuch nicht gefunden'**
+  String get visitNotFoundTitle;
+
+  /// No description provided for @visitNotFoundContent.
+  ///
+  /// In de, this message translates to:
+  /// **'Dieser Besuch existiert nicht mehr in der Datenbank. Er wurde möglicherweise gelöscht oder noch nicht synchronisiert.'**
+  String get visitNotFoundContent;
 }
 
 class _AppLocalizationsDelegate

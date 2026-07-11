@@ -124,11 +124,13 @@ class _PlacePhotosSectionState extends State<PlacePhotosSection> {
   }
 
   void _openAllPhotosScreen() {
+    final l10n = AppLocalizations.of(context)!;
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => AllPhotosScreen(
           placeUuid: widget.placeUuid,
-          placeName: widget.placeName,
+          title: l10n.allPhotosScreenTitle,
+          subtitle: widget.placeName,
         ),
       ),
     );

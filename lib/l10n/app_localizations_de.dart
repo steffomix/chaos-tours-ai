@@ -242,6 +242,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get uuidCopied => 'UUID Kopiert';
 
   @override
+  String get messageCopied => 'Nachrichtentext kopiert';
+
+  @override
   String get sectionTracking => 'Tracking';
 
   @override
@@ -2017,4 +2020,21 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get openVisitButton => 'Besuch öffnen';
+
+  @override
+  String get openPlaceButton => 'Ort öffnen';
+
+  @override
+  String get placeNotFoundTitle => 'Ort nicht gefunden';
+
+  @override
+  String get placeNotFoundContent =>
+      'Dieser Ort existiert nicht mehr in der Datenbank. Er wurde möglicherweise gelöscht oder noch nicht synchronisiert.';
+
+  @override
+  String get visitNotFoundTitle => 'Besuch nicht gefunden';
+
+  @override
+  String get visitNotFoundContent =>
+      'Dieser Besuch existiert nicht mehr in der Datenbank. Er wurde möglicherweise gelöscht oder noch nicht synchronisiert.';
 }

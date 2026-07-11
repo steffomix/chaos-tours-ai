@@ -303,6 +303,7 @@
   "deviceId": "Geräte ID",
   "deviceIdCopied": "Geräte ID Kopiert",
   "uuidCopied": "UUID Kopiert",
+  "messageCopied": "Nachrichtentext kopiert",
   "sectionTracking": "Tracking",
   "@sectionTracking": {
     "description": "Tracking section header"
@@ -2578,5 +2579,10 @@
     }
   },
   "allPhotosScreenTitle": "Alle Fotos",
-  "openVisitButton": "Besuch öffnen"
+  "openVisitButton": "Besuch öffnen",
+  "openPlaceButton": "Ort öffnen",
+  "placeNotFoundTitle": "Ort nicht gefunden",
+  "placeNotFoundContent": "Dieser Ort existiert nicht mehr in der Datenbank. Er wurde möglicherweise gelöscht oder noch nicht synchronisiert.",
+  "visitNotFoundTitle": "Besuch nicht gefunden",
+  "visitNotFoundContent": "Dieser Besuch existiert nicht mehr in der Datenbank. Er wurde möglicherweise gelöscht oder noch nicht synchronisiert."
 }
