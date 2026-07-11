@@ -2,59 +2,62 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 
-import '../../models/aktivitaet.dart';
+import '../../models/virtual_device.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
 
-/// Detail screen for a single [Aktivitaet].
+/// Detail screen for a single [VirtualDevice].
 ///
 /// Allows the user to:
-///  1. Switch to this Aktivitaet (make it the active one).
-///  2. Rename the Aktivitaet.
+///  1. Switch to this VirtualDevice (make it the active one).
+///  2. Rename the VirtualDevice.
 ///  3. Configure private-space sync protection (import / export).
 ///  4. Purge all database entries associated with this device ID.
-///  5. Delete the Aktivitaet (optionally with a database purge).
-class AktivitaetDetailScreen extends StatefulWidget {
-  final Aktivitaet aktivitaet;
-  final String? activeAktivitaetUuid;
+///  5. Delete the VirtualDevice (optionally with a database purge).
+class VirtualDeviceDetailScreen extends StatefulWidget {
+  final VirtualDevice virtualDevice;
+  final String? activeVirtualDeviceUuid;
 
-  const AktivitaetDetailScreen({
+  const VirtualDeviceDetailScreen({
     super.key,
-    required this.aktivitaet,
-    required this.activeAktivitaetUuid,
+    required this.virtualDevice,
+    required this.activeVirtualDeviceUuid,
   });
 
   @override
-  State<AktivitaetDetailScreen> createState() => _AktivitaetDetailScreenState();
+  State<VirtualDeviceDetailScreen> createState() =>
+      _VirtualDeviceDetailScreenState();
 }
 
-class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
-  late Aktivitaet _aktivitaet;
+class _VirtualDeviceDetailScreenState extends State<VirtualDeviceDetailScreen> {
+  late VirtualDevice _virtualDevice;
   late bool _isActive;
 
   @override
   void initState() {
     super.initState();
-    _aktivitaet = widget.aktivitaet;
-    _isActive = _aktivitaet.uuid == widget.activeAktivitaetUuid;
+    _virtualDevice = widget.virtualDevice;
+    _isActive = _virtualDevice.uuid == widget.activeVirtualDeviceUuid;
   }
 
   // ── helpers ──────────────────────────────────────────────────────────────
 
-  Future<void> _save(Aktivitaet updated) async {
-    await DatabaseService.instance.updateAktivitaet(updated);
-    if (mounted) setState(() => _aktivitaet = updated);
+  Future<void> _save(VirtualDevice updated) async {
+    await DatabaseService.instance.updateVirtualDevice(updated);
+    if (mounted) setState(() => _virtualDevice = updated);
   }
 
   // ── 1. Switch ─────────────────────────────────────────────────────────────
 
   Future<void> _switchToThis() async {
-    SettingsService.instance.applyAktivitaet(_aktivitaet);
+    SettingsService.instance.applyVirtualDevice(_virtualDevice);
     if (mounted) {
       setState(() => _isActive = true);
       final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.aktivitaetDetailTitle(_aktivitaet.name))),
+        SnackBar(
+          content: Text(l10n.virtualDeviceDetailTitle(_virtualDevice.name)),
+        ),
       );
     }
   }
@@ -63,11 +66,11 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
 
   Future<void> _rename() async {
     final l10n = AppLocalizations.of(context)!;
-    final ctrl = TextEditingController(text: _aktivitaet.name);
+    final ctrl = TextEditingController(text: _virtualDevice.name);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(l10n.renameActivity),
+        title: Text(l10n.renameVirtualDevice),
         content: TextField(
           controller: ctrl,
           decoration: InputDecoration(labelText: l10n.name),
@@ -87,27 +90,29 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
     );
     final newName = ctrl.text.trim();
     if (confirmed != true || !mounted) return;
-    if (newName.isEmpty || newName == _aktivitaet.name) return;
-    await _save(_aktivitaet.copyWith(name: newName));
+    if (newName.isEmpty || newName == _virtualDevice.name) return;
+    await _save(_virtualDevice.copyWith(name: newName));
     ctrl.dispose();
   }
 
   // ── 3. Private space toggles ──────────────────────────────────────────────
 
   Future<void> _toggleExportProtected(bool value) async {
-    await _save(_aktivitaet.copyWith(syncExportProtected: value));
-    if (_aktivitaet.uuid == SettingsService.instance.activeAktivitaetUuid) {
-      SettingsService.instance.applyAktivitaet(
-        _aktivitaet.copyWith(syncExportProtected: value),
+    await _save(_virtualDevice.copyWith(syncExportProtected: value));
+    if (_virtualDevice.uuid ==
+        SettingsService.instance.activeVirtualDeviceUuid) {
+      SettingsService.instance.applyVirtualDevice(
+        _virtualDevice.copyWith(syncExportProtected: value),
       );
     }
   }
 
   Future<void> _toggleImportProtected(bool value) async {
-    await _save(_aktivitaet.copyWith(syncImportProtected: value));
-    if (_aktivitaet.uuid == SettingsService.instance.activeAktivitaetUuid) {
-      SettingsService.instance.applyAktivitaet(
-        _aktivitaet.copyWith(syncImportProtected: value),
+    await _save(_virtualDevice.copyWith(syncImportProtected: value));
+    if (_virtualDevice.uuid ==
+        SettingsService.instance.activeVirtualDeviceUuid) {
+      SettingsService.instance.applyVirtualDevice(
+        _virtualDevice.copyWith(syncImportProtected: value),
       );
     }
   }
@@ -120,7 +125,7 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(l10n.purgeDataConfirmTitle),
-        content: Text(l10n.purgeDataConfirmContent(_aktivitaet.name)),
+        content: Text(l10n.purgeDataConfirmContent(_virtualDevice.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -138,7 +143,7 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
     );
     if (confirmed != true || !mounted) return;
     final count = await DatabaseService.instance.purgeByDeviceId(
-      _aktivitaet.deviceId,
+      _virtualDevice.deviceId,
     );
     if (!mounted) return;
     ScaffoldMessenger.of(
@@ -150,10 +155,10 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
 
   Future<void> _delete() async {
     final l10n = AppLocalizations.of(context)!;
-    final allAktivitaeten = await DatabaseService.instance
-        .loadAllAktivitaeten();
-    if (allAktivitaeten.length <= 1 && mounted) {
-      // Don't allow deleting the last aktivitaet.
+    final allVirtualDevices = await DatabaseService.instance
+        .loadAllVirtualDevices();
+    if (allVirtualDevices.length <= 1 && mounted) {
+      // Don't allow deleting the last VirtualDevice.
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Die letzte Aktivität kann nicht gelöscht werden.'),
@@ -170,12 +175,12 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
         return StatefulBuilder(
           builder: (ctx2, setInner) {
             return AlertDialog(
-              title: Text(l10n.deleteActivityTitle),
+              title: Text(l10n.deleteVirtualDeviceTitle),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(l10n.deleteActivityContent(_aktivitaet.name)),
+                  Text(l10n.deleteVirtualDeviceContent(_virtualDevice.name)),
                   const SizedBox(height: 16),
                   CheckboxListTile(
                     contentPadding: EdgeInsets.zero,
@@ -210,22 +215,22 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
 
     if (confirmed != true || !mounted) return;
 
-    // If this is the active aktivitaet, switch to another before deleting.
+    // If this is the active VirtualDevice, switch to another before deleting.
     if (_isActive) {
-      final next = allAktivitaeten.firstWhere(
-        (x) => x.uuid != _aktivitaet.uuid,
+      final next = allVirtualDevices.firstWhere(
+        (x) => x.uuid != _virtualDevice.uuid,
       );
-      SettingsService.instance.applyAktivitaet(next);
+      SettingsService.instance.applyVirtualDevice(next);
     }
 
     if (withCleanup) {
-      await DatabaseService.instance.purgeByDeviceId(_aktivitaet.deviceId);
+      await DatabaseService.instance.purgeByDeviceId(_virtualDevice.deviceId);
     }
-    await DatabaseService.instance.deleteAktivitaet(_aktivitaet.uuid);
+    await DatabaseService.instance.deleteVirtualDevice(_virtualDevice.uuid);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.activityDeleted(_aktivitaet.name))),
+        SnackBar(content: Text(l10n.virtualDeviceDeleted(_virtualDevice.name))),
       );
       Navigator.pop(context);
     }
@@ -240,11 +245,11 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.aktivitaetDetailTitle(_aktivitaet.name)),
+        title: Text(l10n.virtualDeviceDetailTitle(_virtualDevice.name)),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            tooltip: l10n.renameActivity,
+            tooltip: l10n.renameVirtualDevice,
             onPressed: _rename,
           ),
         ],
@@ -269,7 +274,7 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    l10n.activityCurrentlyActive,
+                    l10n.virtualDeviceCurrentlyActive,
                     style: TextStyle(
                       color: colorScheme.onPrimaryContainer,
                       fontWeight: FontWeight.bold,
@@ -282,11 +287,11 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
             leading: const Icon(Icons.copy),
             title: Text(l10n.deviceId),
             subtitle: Text(
-              _aktivitaet.deviceId,
+              _virtualDevice.deviceId,
               style: const TextStyle(fontSize: 12),
             ),
             onTap: () {
-              Clipboard.setData(ClipboardData(text: _aktivitaet.deviceId));
+              Clipboard.setData(ClipboardData(text: _virtualDevice.deviceId));
               ScaffoldMessenger.of(
                 context,
               ).showSnackBar(SnackBar(content: Text(l10n.deviceIdCopied)));
@@ -300,8 +305,8 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
               Icons.swap_horiz,
               color: _isActive ? Colors.grey : colorScheme.primary,
             ),
-            title: Text(l10n.switchToActivity),
-            subtitle: Text(l10n.switchToActivitySubtitle),
+            title: Text(l10n.switchToVirtualDevice),
+            subtitle: Text(l10n.switchToVirtualDeviceSubtitle),
             enabled: !_isActive,
             onTap: _isActive ? null : _switchToThis,
           ),
@@ -318,25 +323,25 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
           SwitchListTile(
             secondary: Icon(
               Icons.cloud_off,
-              color: _aktivitaet.syncExportProtected
+              color: _virtualDevice.syncExportProtected
                   ? colorScheme.tertiary
                   : null,
             ),
             title: Text(l10n.protectFromExportLabel),
             subtitle: Text(l10n.protectFromExportSubtitle),
-            value: _aktivitaet.syncExportProtected,
+            value: _virtualDevice.syncExportProtected,
             onChanged: _toggleExportProtected,
           ),
           SwitchListTile(
             secondary: Icon(
               Icons.shield_outlined,
-              color: _aktivitaet.syncImportProtected
+              color: _virtualDevice.syncImportProtected
                   ? colorScheme.tertiary
                   : null,
             ),
             title: Text(l10n.protectFromImportLabel),
             subtitle: Text(l10n.protectFromImportSubtitle),
-            value: _aktivitaet.syncImportProtected,
+            value: _virtualDevice.syncImportProtected,
             onChanged: _toggleImportProtected,
           ),
           const Divider(),
@@ -361,10 +366,10 @@ class _AktivitaetDetailScreenState extends State<AktivitaetDetailScreen> {
           ListTile(
             leading: const Icon(Icons.delete_forever, color: Colors.red),
             title: Text(
-              l10n.deleteActivityLabel(_aktivitaet.name),
+              l10n.deleteVirtualDeviceLabel(_virtualDevice.name),
               style: const TextStyle(color: Colors.red),
             ),
-            subtitle: Text(l10n.deleteActivity),
+            subtitle: Text(l10n.deleteVirtualDevice),
             onTap: _delete,
           ),
           const SizedBox(height: 24),

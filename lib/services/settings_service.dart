@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../models/aktivitaet.dart';
+import '../models/virtual_device.dart';
 
 /// When the app scans the local network for P2P mesh nodes.
 enum NodeScanMode {
@@ -28,7 +28,7 @@ class SettingsService {
       'sync_source_place_group_uuid';
   static const String _keyDefaultPlaceGroup = 'default_place_group_uuid';
   static const String _keyTrackingEnabled = 'tracking_enabled';
-  static const String _keyActiveAktivitaetId = 'active_aktivitaet_uuid';
+  static const String _keyActiveVirtualDeviceId = 'active_virtual_device_uuid';
   static const String _keyShowForbiddenPlaces = 'show_forbidden_places';
   static const String _keyShowTrackingPoints = 'show_tracking_points';
   static const String _keyTrackingPointRadius = 'tracking_point_radius';
@@ -450,22 +450,23 @@ class SettingsService {
   bool get syncImportProtected => _p.getBool(_keySyncImportProtected) ?? false;
   set syncImportProtected(bool v) => _p.setBool(_keySyncImportProtected, v);
 
-  // ── Aktivitaet binding ───────────────────────────────────────────────────
+  // ── VirtualDevice binding ───────────────────────────────────────────────────
 
-  /// The UUID of the currently selected [Aktivitaet].
-  String? get activeAktivitaetUuid => _p.getString(_keyActiveAktivitaetId);
-  set activeAktivitaetUuid(String? v) {
+  /// The UUID of the currently selected [VirtualDevice].
+  String? get activeVirtualDeviceUuid =>
+      _p.getString(_keyActiveVirtualDeviceId);
+  set activeVirtualDeviceUuid(String? v) {
     if (v == null || v.isEmpty) {
-      _p.remove(_keyActiveAktivitaetId);
+      _p.remove(_keyActiveVirtualDeviceId);
     } else {
-      _p.setString(_keyActiveAktivitaetId, v);
+      _p.setString(_keyActiveVirtualDeviceId, v);
     }
   }
 
   /// Copies all settings from [a] into SharedPreferences so that the rest of
   /// the app picks them up synchronously, and remembers [a.id] as the active
-  /// Aktivitaet.
-  void applyAktivitaet(Aktivitaet a) {
+  /// VirtualDevice.
+  void applyVirtualDevice(VirtualDevice a) {
     gpsIntervalSeconds = a.gpsIntervalSeconds;
     stayDetectionSeconds = a.stayDetectionSeconds;
     autoPlaceSeconds = a.autoPlaceSeconds;
@@ -487,18 +488,18 @@ class SettingsService {
     filterUseMedian = a.filterUseMedian;
     filterUseSpecificRating = a.filterUseSpecificRating;
     filterSpecificRatingField = a.filterSpecificRatingField;
-    activeAktivitaetUuid = a.uuid;
+    activeVirtualDeviceUuid = a.uuid;
     deviceId = a.deviceId;
     syncExportProtected = a.syncExportProtected;
     syncImportProtected = a.syncImportProtected;
   }
 
-  /// Builds an [Aktivitaet] snapshot of the current SharedPreferences values.
-  Aktivitaet snapshotAsAktivitaet({
+  /// Builds an [VirtualDevice] snapshot of the current SharedPreferences values.
+  VirtualDevice snapshotAsVirtualDevice({
     required String uuid,
     required String name,
   }) {
-    return Aktivitaet(
+    return VirtualDevice(
       uuid: uuid,
       name: name,
       gpsIntervalSeconds: gpsIntervalSeconds,

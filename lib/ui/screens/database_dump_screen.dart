@@ -212,7 +212,7 @@ class _DatabaseDumpScreenState extends State<DatabaseDumpScreen>
       'stays': l10n.visitsTitle,
       'stay_persons': l10n.stayPersons,
       'stay_activities': l10n.stayActivities,
-      'aktivitaeten': l10n.sectionActivity,
+      'virtual_devices': l10n.sectionVirtualDevices,
       'sync_sources': l10n.syncSources,
       'place_experiences': l10n.placeExperiences,
       'sync_source_experiences': l10n.sourceExperiences,

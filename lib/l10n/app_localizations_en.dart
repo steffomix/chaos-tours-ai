@@ -136,7 +136,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackingCollecting => 'Tracking collecting GPS data…';
 
   @override
-  String get aktivitaetLoading => 'Loading activity…';
+  String get virtualDeviceLoading => 'Loading Virtual Device…';
 
   @override
   String get unknownPlace => 'Unknown place';
@@ -208,18 +208,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsSaved => 'Settings saved';
 
   @override
-  String get sectionActivity => 'Activity';
+  String get sectionVirtualDevices => 'Virtual Devices';
 
   @override
-  String get noActivity => 'No activity';
+  String get noVirtualDevices => 'No Virtual Devices';
 
   @override
-  String activityCount(int count) {
+  String virtualDevicesCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count activities',
-      one: '$count activity',
+      other: '$count Virtual Devices',
+      one: '$count Virtual Device',
     );
     return '$_temp0';
   }
@@ -508,38 +508,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarDenied => 'Calendar denied';
 
   @override
-  String get deleteActivity => 'Permanently remove current activity';
+  String get deleteVirtualDevice => 'Permanently remove current Virtual Device';
 
   @override
-  String get pickActivity => 'Select activity';
+  String get pickVirtualDevice => 'Select Virtual Device';
 
   @override
-  String get newActivityCreate => 'Create new activity';
+  String get newVirtualDeviceCreate => 'Create new Virtual Device';
 
   @override
-  String get newActivityLabel => 'New activity';
+  String get newVirtualDeviceLabel => 'New Virtual Device';
 
   @override
   String get copySettingsFrom => 'Copy settings from:';
 
   @override
-  String get renameActivity => 'Rename activity';
+  String get renameVirtualDevice => 'Rename Virtual Device';
 
   @override
-  String get deleteActivityTitle => 'Delete activity?';
+  String get deleteVirtualDeviceTitle => 'Delete Virtual Device?';
 
   @override
-  String deleteActivityContent(String name) {
-    return 'Really delete \"$name\"?\n\nThe settings of this activity will be permanently removed.';
+  String deleteVirtualDeviceContent(String name) {
+    return 'Really delete \"$name\"?\n\nThe settings of this Virtual Device will be permanently removed.';
   }
 
   @override
-  String activityDeleted(String name) {
+  String virtualDeviceDeleted(String name) {
     return '\"$name\" deleted';
   }
 
   @override
-  String deleteActivityLabel(String name) {
+  String deleteVirtualDeviceLabel(String name) {
     return 'Delete \"$name\"';
   }
 
@@ -1523,7 +1523,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get copyToProtectedAreaSelectSubtitle =>
-      'The copy will receive the device ID of the selected activity.';
+      'The copy will receive the device ID of the selected Virtual Device.';
 
   @override
   String get copyToProtectedAreaSuccess => 'Place copied to protected area.';
@@ -1896,22 +1896,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get compassFromPlace => 'Compass from this place';
 
   @override
-  String get aktivitaetenScreenTitle => 'Activities';
+  String get virtualDevicesScreenTitle => 'Virtual Deviced';
 
   @override
-  String aktivitaetDetailTitle(String name) {
-    return 'Activity: $name';
+  String virtualDeviceDetailTitle(String name) {
+    return 'V-Device: $name';
   }
 
   @override
-  String get switchToActivity => 'Switch to this activity';
+  String get switchToVirtualDevice => 'Switch to this Virtual Device';
 
   @override
-  String get switchToActivitySubtitle =>
-      'Makes this activity and its device ID active';
+  String get switchToVirtualDeviceSubtitle =>
+      'Makes this Virtual Device and its device ID active';
 
   @override
-  String get activityCurrentlyActive => 'Currently active';
+  String get virtualDeviceCurrentlyActive => 'Currently active';
 
   @override
   String get privateSpaceSection => 'Private Space';
@@ -1921,7 +1921,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get protectFromExportSubtitle =>
-      'Data from this activity will not be pushed to sync servers (invisible to the outside world)';
+      'Data from this Virtual Device will not be pushed to sync servers (invisible to the outside world)';
 
   @override
   String get protectFromImportLabel => 'Protect from sync import';
@@ -1935,14 +1935,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get purgeDataSubtitle =>
-      'Remove all entries with this device ID from the database (not the activity itself)';
+      'Remove all entries with this device ID from the database (not the Virtual Device itself)';
 
   @override
   String get purgeDataConfirmTitle => 'Clean entries?';
 
   @override
   String purgeDataConfirmContent(String name) {
-    return 'All database entries with the device ID of \"$name\" will be permanently removed. Foreign keys may break.';
+    return 'All database entries with the device ID of \"$name\" will be permanently removed.';
   }
 
   @override

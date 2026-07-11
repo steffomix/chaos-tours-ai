@@ -6,7 +6,7 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 import 'dart:math';
 
-import '../../models/aktivitaet.dart';
+import '../../models/virtual_device.dart';
 import '../../models/place_group.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
@@ -57,9 +57,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Falls du ein StatefulWidget nutzt, definiere den Generator in deinem State:
   final RandomDataGenerator _generator = RandomDataGenerator();
   // Network info for display (used by SyncSourcesScreen)
-  // Aktivitaet management
-  List<Aktivitaet> _aktivitaeten = [];
-  Aktivitaet? _activeAktivitaet;
+  // VirtualDevice management
+  List<VirtualDevice> _virtualDevices = [];
+  VirtualDevice? _activeVirtualDevice;
 
   @override
   void dispose() {
@@ -102,7 +102,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _nodeScanMode = s.nodeScanMode;
     _nodeScanIntervalPerGps = s.nodeScanIntervalPerGps;
     _loadGroups();
-    _loadAktivitaeten();
+    _loadVirtualDevices();
   }
 
   Future<void> _loadGroups() async {
@@ -110,13 +110,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) setState(() => _groups = groups);
   }
 
-  Future<void> _loadAktivitaeten() async {
-    final list = await DatabaseService.instance.loadAllAktivitaeten();
-    final activeUuid = SettingsService.instance.activeAktivitaetUuid;
+  Future<void> _loadVirtualDevices() async {
+    final list = await DatabaseService.instance.loadAllVirtualDevices();
+    final activeUuid = SettingsService.instance.activeVirtualDeviceUuid;
     if (mounted) {
       setState(() {
-        _aktivitaeten = list;
-        _activeAktivitaet =
+        _virtualDevices = list;
+        _activeVirtualDevice =
             list.where((a) => a.uuid == activeUuid).firstOrNull ??
             list.firstOrNull;
       });
@@ -124,7 +124,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   /// Reloads all settings UI state from [SettingsService] (e.g. after
-  /// switching to a different Aktivitaet in the AktivitaetenScreen).
+  /// switching to a different VirtualDevice in the VirtualDevicesScreen).
   void _reloadFromSettings() {
     final s = SettingsService.instance;
     _deviceId = s.deviceId;
@@ -187,11 +187,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       );
     }
-    // Persist settings back into the active Aktivitaet.
-    final a = _activeAktivitaet;
+    // Persist settings back into the active VirtualDevice.
+    final a = _activeVirtualDevice;
     if (a != null) {
-      await DatabaseService.instance.updateAktivitaet(
-        s.snapshotAsAktivitaet(uuid: a.uuid, name: a.name),
+      await DatabaseService.instance.updateVirtualDevice(
+        s.snapshotAsVirtualDevice(uuid: a.uuid, name: a.name),
       );
     }
   }
@@ -222,13 +222,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // ── Aktivität ─────────────────────────────────────────────────
             ListTile(
               leading: const Icon(Icons.phone_android),
-              title: Text(_activeAktivitaet?.name ?? l10n.noActivity),
-              subtitle: Text(l10n.activityCount(_aktivitaeten.length)),
+              title: Text(_activeVirtualDevice?.name ?? l10n.noVirtualDevices),
+              subtitle: Text(l10n.virtualDevicesCount(_virtualDevices.length)),
               onTap: () async {
                 await _saveAll();
                 if (!context.mounted) return;
-                await Navigator.pushNamed(context, '/aktivitaeten');
-                await _loadAktivitaeten();
+                await Navigator.pushNamed(context, '/virtual-devices');
+                await _loadVirtualDevices();
                 if (context.mounted) _reloadFromSettings();
               },
             ),
@@ -957,7 +957,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ── Aktivitaet helpers ────────────────────────────────────────────────────
+  // ── VirtualDevice helpers ────────────────────────────────────────────────────
 
   /// Builds the potentially destructive developer tools, always rendered at the
   /// very bottom of the settings list. The tools are only visible while unlocked

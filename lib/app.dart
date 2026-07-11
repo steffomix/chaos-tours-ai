@@ -6,7 +6,7 @@ import 'models/trusted_source.dart';
 import 'services/database_service.dart';
 import 'services/settings_service.dart';
 import 'ui/screens/activities_screen.dart';
-import 'ui/screens/aktivitaeten_screen.dart';
+import 'ui/screens/virtual_devices_screen.dart';
 import 'ui/screens/database_explorer_screen.dart';
 import 'ui/screens/home_screen.dart';
 import 'ui/screens/map_screen.dart';
@@ -46,7 +46,7 @@ class _AppState extends State<App> {
         '/place-groups': (_) => const PlaceGroupsScreen(),
         '/persons': (_) => const PersonsScreen(),
         '/activities': (_) => const ActivitiesScreen(),
-        '/aktivitaeten': (_) => const AktivitaetenScreen(),
+        '/virtual-devices': (_) => const VirtualDevicesScreen(),
         '/database-dump': (_) => const DatabaseDumpScreen(),
         '/sync-sources': (_) => const SyncSourcesScreen(),
         '/telegram-connections': (_) => const TelegramConnectionsScreen(),
@@ -142,9 +142,9 @@ class _AppHomeState extends State<_AppHome> {
         final s = SettingsService.instance;
         s.deviceId = '$name@${uuid.v4()}';
         final db = DatabaseService.instance;
-        final activity = (await db.loadAllAktivitaeten()).firstOrNull;
+        final activity = (await db.loadAllVirtualDevices()).firstOrNull;
         if (activity != null) {
-          await db.updateAktivitaet(activity.copyWith(deviceId: s.deviceId));
+          await db.updateVirtualDevice(activity.copyWith(deviceId: s.deviceId));
           await db.refreshTrustedSources();
           await db.upsertTrustedSource(
             TrustedSource(deviceId: s.deviceId, trusted: true),

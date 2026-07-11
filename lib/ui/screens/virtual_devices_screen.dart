@@ -2,21 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 
-import '../../models/aktivitaet.dart';
+import '../../models/virtual_device.dart';
 import '../../models/trusted_source.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
-import 'aktivitaet_detail_screen.dart';
+import 'virtual_device_detail_screen.dart';
 
-class AktivitaetenScreen extends StatefulWidget {
-  const AktivitaetenScreen({super.key});
+class VirtualDevicesScreen extends StatefulWidget {
+  const VirtualDevicesScreen({super.key});
 
   @override
-  State<AktivitaetenScreen> createState() => _AktivitaetenScreenState();
+  State<VirtualDevicesScreen> createState() => _VirtualDevicesScreenState();
 }
 
-class _AktivitaetenScreenState extends State<AktivitaetenScreen> {
-  List<Aktivitaet> _aktivitaeten = [];
+class _VirtualDevicesScreenState extends State<VirtualDevicesScreen> {
+  List<VirtualDevice> _virtualDevices = [];
   String? _activeUuid;
 
   @override
@@ -26,25 +26,25 @@ class _AktivitaetenScreenState extends State<AktivitaetenScreen> {
   }
 
   Future<void> _load() async {
-    final list = await DatabaseService.instance.loadAllAktivitaeten();
-    final activeUuid = SettingsService.instance.activeAktivitaetUuid;
+    final list = await DatabaseService.instance.loadAllVirtualDevices();
+    final activeUuid = SettingsService.instance.activeVirtualDeviceUuid;
     if (mounted) {
       setState(() {
-        _aktivitaeten = list;
+        _virtualDevices = list;
         _activeUuid = activeUuid;
       });
     }
   }
 
-  Future<void> _createNewAktivitaet() async {
+  Future<void> _createNewVirtualDevice() async {
     final l10n = AppLocalizations.of(context)!;
     final nameCtrl = TextEditingController(
-      text: '${l10n.sectionActivity} ${_aktivitaeten.length + 1}',
+      text: '${l10n.sectionVirtualDevices} ${_virtualDevices.length + 1}',
     );
     final deviceNameCtrl = TextEditingController();
-    Aktivitaet template = _aktivitaeten.isNotEmpty
-        ? _aktivitaeten.first
-        : Aktivitaet(name: '');
+    VirtualDevice template = _virtualDevices.isNotEmpty
+        ? _virtualDevices.first
+        : VirtualDevice(name: '');
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -59,20 +59,20 @@ class _AktivitaetenScreenState extends State<AktivitaetenScreen> {
                   TextField(
                     controller: nameCtrl,
                     decoration: InputDecoration(
-                      labelText: l10n2.newActivityLabel,
+                      labelText: l10n2.newVirtualDeviceLabel,
                     ),
                     autofocus: true,
                   ),
-                  if (_aktivitaeten.isNotEmpty) ...[
+                  if (_virtualDevices.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     Text(
                       l10n2.copySettingsFrom,
                       style: const TextStyle(fontSize: 13),
                     ),
-                    DropdownButton<Aktivitaet>(
+                    DropdownButton<VirtualDevice>(
                       isExpanded: true,
                       value: template,
-                      items: _aktivitaeten
+                      items: _virtualDevices
                           .map(
                             (a) =>
                                 DropdownMenuItem(value: a, child: Text(a.name)),
@@ -127,22 +127,22 @@ class _AktivitaetenScreenState extends State<AktivitaetenScreen> {
       syncImportProtected: false,
     );
     final db = DatabaseService.instance;
-    final id = await db.insertAktivitaet(newA);
+    final id = await db.insertVirtualDevice(newA);
     await db.refreshTrustedSources();
     await db.upsertTrustedSource(
       TrustedSource(deviceId: deviceId, trusted: true),
     );
-    final created = await db.loadAktivitaet(id);
+    final created = await db.loadVirtualDevice(id);
     await _load();
 
-    // Navigate directly to the detail screen of the new aktivitaet.
+    // Navigate directly to the detail screen of the new VirtualDevice.
     if (created != null && mounted) {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => AktivitaetDetailScreen(
-            aktivitaet: created,
-            activeAktivitaetUuid: _activeUuid,
+          builder: (_) => VirtualDeviceDetailScreen(
+            virtualDevice: created,
+            activeVirtualDeviceUuid: _activeUuid,
           ),
         ),
       );
@@ -154,27 +154,27 @@ class _AktivitaetenScreenState extends State<AktivitaetenScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.aktivitaetenScreenTitle)),
+      appBar: AppBar(title: Text(l10n.virtualDevicesScreenTitle)),
       body: ListView(
         children: [
           ListTile(
             leading: const Icon(Icons.add_circle_outline),
             title: Text(
-              l10n.newActivityCreate,
+              l10n.newVirtualDeviceCreate,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             onTap: () async {
-              await _createNewAktivitaet();
+              await _createNewVirtualDevice();
             },
           ),
           const Divider(),
-          if (_aktivitaeten.isEmpty)
+          if (_virtualDevices.isEmpty)
             Padding(
               padding: const EdgeInsets.all(32),
-              child: Center(child: Text(l10n.noActivity)),
+              child: Center(child: Text(l10n.noVirtualDevices)),
             )
           else
-            ..._aktivitaeten.map((a) {
+            ..._virtualDevices.map((a) {
               final isActive = a.uuid == _activeUuid;
               return ListTile(
                 leading: Icon(
@@ -215,9 +215,9 @@ class _AktivitaetenScreenState extends State<AktivitaetenScreen> {
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => AktivitaetDetailScreen(
-                        aktivitaet: a,
-                        activeAktivitaetUuid: _activeUuid,
+                      builder: (_) => VirtualDeviceDetailScreen(
+                        virtualDevice: a,
+                        activeVirtualDeviceUuid: _activeUuid,
                       ),
                     ),
                   );

@@ -281,6 +281,7 @@ class _PlaceGroupEditScreenState extends State<_PlaceGroupEditScreen> {
                     onChanged: (v) => setDlg(() => picked = v),
                   ),
                   ...otherGroups.map(
+                    // replace with new radio list tile for each group
                     (g) => RadioListTile<String?>(
                       value: g.uuid,
                       groupValue: picked,

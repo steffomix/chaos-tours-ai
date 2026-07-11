@@ -7,7 +7,7 @@ import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:uuid/uuid.dart';
 
-import '../models/aktivitaet.dart';
+import '../models/virtual_device.dart';
 import '../models/activity.dart';
 import '../models/person.dart';
 import '../models/place_experience.dart';
@@ -63,8 +63,8 @@ class DatabaseService {
         // so we catch and ignore that error.
         final migrations = [
           'ALTER TABLE sync_sources ADD COLUMN last_sync_ms INTEGER NOT NULL DEFAULT 0',
-          'ALTER TABLE aktivitaeten ADD COLUMN sync_export_protected INTEGER NOT NULL DEFAULT 0',
-          'ALTER TABLE aktivitaeten ADD COLUMN sync_import_protected INTEGER NOT NULL DEFAULT 0',
+          'ALTER TABLE virtual_devices ADD COLUMN sync_export_protected INTEGER NOT NULL DEFAULT 0',
+          'ALTER TABLE virtual_devices ADD COLUMN sync_import_protected INTEGER NOT NULL DEFAULT 0',
           'ALTER TABLE saved_places ADD COLUMN sync_url TEXT NOT NULL DEFAULT ""',
           'ALTER TABLE saved_places ADD COLUMN sync_port INTEGER NOT NULL DEFAULT 8000',
           'ALTER TABLE saved_places ADD COLUMN sync_api_key TEXT NOT NULL DEFAULT ""',
@@ -231,7 +231,7 @@ class DatabaseService {
     ''');
 
     await db.execute('''
-      CREATE TABLE aktivitaeten (
+      CREATE TABLE virtual_devices (
         uuid TEXT PRIMARY KEY,
         device_id TEXT NOT NULL,
         name TEXT NOT NULL,
@@ -1220,89 +1220,89 @@ class DatabaseService {
     return TrackingPoint.fromMap(rows.first);
   }
 
-  // ── Aktivitaeten ─────────────────────────────────────────────────────────
+  // ── VirtualDevices ─────────────────────────────────────────────────────────
 
-  Future<String> insertAktivitaet(Aktivitaet a) async {
+  Future<String> insertVirtualDevice(VirtualDevice a) async {
     final db = await database;
     final map = _withSyncFields(a.toMap(), a.deviceId);
     await db.insert(
-      'aktivitaeten',
+      'virtual_devices',
       map,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
     return map['uuid'] as String;
   }
 
-  Future<List<Aktivitaet>> loadAllAktivitaeten() async {
+  Future<List<VirtualDevice>> loadAllVirtualDevices() async {
     final db = await database;
-    final rows = await db.query('aktivitaeten', orderBy: 'name ASC');
-    return rows.map(Aktivitaet.fromMap).toList();
+    final rows = await db.query('virtual_devices', orderBy: 'name ASC');
+    return rows.map(VirtualDevice.fromMap).toList();
   }
 
-  Future<Aktivitaet?> loadAktivitaet(String uuid) async {
+  Future<VirtualDevice?> loadVirtualDevice(String uuid) async {
     final db = await database;
     final rows = await db.query(
-      'aktivitaeten',
+      'virtual_devices',
       where: 'uuid = ?',
       whereArgs: [uuid],
     );
     if (rows.isEmpty) return null;
-    return Aktivitaet.fromMap(rows.first);
+    return VirtualDevice.fromMap(rows.first);
   }
 
-  Future<void> updateAktivitaet(Aktivitaet a) async {
+  Future<void> updateVirtualDevice(VirtualDevice a) async {
     final db = await database;
     await db.update(
-      'aktivitaeten',
+      'virtual_devices',
       _withSyncFields(a.toMap(), a.deviceId),
       where: 'uuid = ?',
       whereArgs: [a.uuid],
     );
   }
 
-  Future<void> deleteAktivitaet(String uuid) async {
+  Future<void> deleteVirtualDevice(String uuid) async {
     final db = await database;
-    await db.delete('aktivitaeten', where: 'uuid = ?', whereArgs: [uuid]);
+    await db.delete('virtual_devices', where: 'uuid = ?', whereArgs: [uuid]);
   }
 
-  /// Returns the set of device IDs whose Aktivitaet has sync export protection
+  /// Returns the set of device IDs whose VirtualDevice has sync export protection
   /// enabled. Rows with these device IDs will be excluded from sync pushes.
   Future<Set<String>> loadExportProtectedDeviceIds() async {
     final db = await database;
     final rows = await db.query(
-      'aktivitaeten',
+      'virtual_devices',
       columns: ['device_id'],
       where: 'sync_export_protected = 1 AND deleted_at IS NULL',
     );
     return rows.map((r) => r['device_id'] as String).toSet();
   }
 
-  /// Returns the set of device IDs whose Aktivitaet has sync import protection
+  /// Returns the set of device IDs whose VirtualDevice has sync import protection
   /// enabled. Incoming sync rows with these device IDs will be skipped.
   Future<Set<String>> loadImportProtectedDeviceIds() async {
     final db = await database;
     final rows = await db.query(
-      'aktivitaeten',
+      'virtual_devices',
       columns: ['device_id'],
       where: 'sync_import_protected = 1 AND deleted_at IS NULL',
     );
     return rows.map((r) => r['device_id'] as String).toSet();
   }
 
-  /// Returns all non-deleted [Aktivitaet] objects that have sync import
+  /// Returns all non-deleted [VirtualDevice] objects that have sync import
   /// protection enabled (i.e. belong to a "Geschützter Bereich").
-  Future<List<Aktivitaet>> loadImportProtectedAktivitaeten() async {
+  Future<List<VirtualDevice>> loadImportProtectedVirtualDevices() async {
     final db = await database;
     final rows = await db.query(
-      'aktivitaeten',
+      'virtual_devices',
       where: 'sync_import_protected = 1 AND deleted_at IS NULL',
       orderBy: 'name ASC',
     );
-    return rows.map(Aktivitaet.fromMap).toList();
+    return rows.map(VirtualDevice.fromMap).toList();
   }
 
   /// Deletes all rows with [deviceId] from every table that carries a
-  /// device_id column, except the aktivitaeten table itself.
+  /// device_id column, except the virtual_devices table itself.
   /// Returns the total number of rows deleted.
   /// WARNING: May leave orphaned FK references — an explicit cleanup pass
   /// should be run afterwards.
@@ -2256,33 +2256,33 @@ class DatabaseService {
     }
   }
 
-  // ── ensureDefaultAktivitaet / ensureDefaultGroups ─────────────────────────
+  // ── ensureDefaultVirtualDevices / ensureDefaultGroups ─────────────────────────
 
-  Future<void> ensureDefaultAktivitaet() async {
+  Future<void> ensureDefaultVirtualDevice() async {
     final s = SettingsService.instance;
-    final activeUuid = s.activeAktivitaetUuid;
+    final activeUuid = s.activeVirtualDeviceUuid;
 
     // If the stored UUID still exists in the DB, apply it and done.
     if (activeUuid != null && activeUuid.isNotEmpty) {
-      final aktiv = await loadAktivitaet(activeUuid);
+      final aktiv = await loadVirtualDevice(activeUuid);
       if (aktiv != null) {
-        s.applyAktivitaet(aktiv);
+        s.applyVirtualDevice(aktiv);
         return;
       }
     }
 
-    // Fall back to any existing aktivitaet (e.g. synced from another device).
-    final all = await loadAllAktivitaeten();
+    // Fall back to any existing VirtualDevice (e.g. synced from another device).
+    final all = await loadAllVirtualDevices();
     if (all.isNotEmpty) {
-      s.applyAktivitaet(all.first);
+      s.applyVirtualDevice(all.first);
       return;
     }
 
     // Nothing exists yet — create a default one.
-    // By default the first aktivitaet is protected from sync imports so that
+    // By default the first VirtualDevice is protected from sync imports so that
     // its private data cannot be overwritten by remote peers.
-    final firstUuid = await insertAktivitaet(
-      Aktivitaet(
+    final firstUuid = await insertVirtualDevice(
+      VirtualDevice(
         name: 'Standard',
         autoPlaceGroupUuid: s.autoPlaceGroupUuid,
         defaultPlaceGroupUuid: s.defaultPlaceGroupUuid,
@@ -2290,7 +2290,7 @@ class DatabaseService {
         syncImportProtected: true,
       ),
     );
-    s.activeAktivitaetUuid = firstUuid;
+    s.activeVirtualDeviceUuid = firstUuid;
   }
 
   Future<void> ensureDefaultGroups() async {
@@ -2893,7 +2893,7 @@ class DatabaseService {
       'place_groups',
       'persons',
       'activities',
-      'aktivitaeten',
+      'virtual_devices',
       'sync_sources',
       'sync_source_experiences',
       'place_photos',
@@ -3022,17 +3022,17 @@ class DatabaseService {
         AND stay_uuid NOT IN (SELECT uuid FROM stays)
     ''');
     total += await db.rawUpdate('''
-      UPDATE aktivitaeten SET auto_place_group_uuid = NULL
+      UPDATE virtual_devices SET auto_place_group_uuid = NULL
       WHERE auto_place_group_uuid IS NOT NULL
         AND auto_place_group_uuid NOT IN (SELECT uuid FROM place_groups)
     ''');
     total += await db.rawUpdate('''
-      UPDATE aktivitaeten SET default_place_group_uuid = NULL
+      UPDATE virtual_devices SET default_place_group_uuid = NULL
       WHERE default_place_group_uuid IS NOT NULL
         AND default_place_group_uuid NOT IN (SELECT uuid FROM place_groups)
     ''');
     total += await db.rawUpdate('''
-      UPDATE aktivitaeten SET sync_source_place_group_uuid = NULL
+      UPDATE virtual_devices SET sync_source_place_group_uuid = NULL
       WHERE sync_source_place_group_uuid IS NOT NULL
         AND sync_source_place_group_uuid NOT IN (SELECT uuid FROM place_groups)
     ''');

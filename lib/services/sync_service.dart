@@ -183,7 +183,7 @@ class SyncService {
         final rows = pullData[table] as List<dynamic>? ?? [];
         for (final row in rows) {
           final rowMap = Map<String, dynamic>.from(row as Map);
-          // Skip rows whose device_id belongs to an import-protected Aktivitaet.
+          // Skip rows whose device_id belongs to an import-protected VirtualDevice.
           final rowDeviceId = rowMap['device_id'] as String?;
           if (rowDeviceId != null && importProtected.contains(rowDeviceId)) {
             continue;
@@ -208,7 +208,7 @@ class SyncService {
           table,
           since,
         );
-        // Filter out rows whose device_id belongs to an export-protected Aktivitaet.
+        // Filter out rows whose device_id belongs to an export-protected VirtualDevice.
         final filtered = exportProtected.isEmpty
             ? rows
             : rows

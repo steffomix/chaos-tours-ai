@@ -344,11 +344,11 @@ abstract class AppLocalizations {
   /// **'Tracking sammelt GPS Daten…'**
   String get trackingCollecting;
 
-  /// Loading activity
+  /// Loading Virtual Device
   ///
   /// In de, this message translates to:
-  /// **'Aktivität laden…'**
-  String get aktivitaetLoading;
+  /// **'Virtuelles Gerät laden…'**
+  String get virtualDeviceLoading;
 
   /// Unknown place
   ///
@@ -476,23 +476,23 @@ abstract class AppLocalizations {
   /// **'Einstellungen gespeichert'**
   String get settingsSaved;
 
-  /// Activity section header
+  /// VirtualDevices section header
   ///
   /// In de, this message translates to:
-  /// **'Aktivität'**
-  String get sectionActivity;
+  /// **'Virtuelle Geräte'**
+  String get sectionVirtualDevices;
 
-  /// No activity
+  /// No Virtual Device
   ///
   /// In de, this message translates to:
-  /// **'Keine Aktivität'**
-  String get noActivity;
+  /// **'Kein Virtuelles Gerät'**
+  String get noVirtualDevices;
 
-  /// Activity count
+  /// Virtual Devices count
   ///
   /// In de, this message translates to:
-  /// **'{count, plural, one{{count} Aktivität vorhanden} other{{count} Aktivitäten vorhanden}}'**
-  String activityCount(int count);
+  /// **'{count, plural, one{{count} virtuelles Gerät vorhanden} other{{count} virtuelle Geräte vorhanden}}'**
+  String virtualDevicesCount(int count);
 
   /// Rename tooltip
   ///
@@ -980,29 +980,29 @@ abstract class AppLocalizations {
   /// **'Kalender verweigert'**
   String get calendarDenied;
 
-  /// Delete current activity
+  /// Delete current virtual Device
   ///
   /// In de, this message translates to:
-  /// **'Aktuelle Aktivität dauerhaft entfernen'**
-  String get deleteActivity;
+  /// **'Aktuelles virtuelles Gerät dauerhaft entfernen'**
+  String get deleteVirtualDevice;
 
-  /// Pick activity
+  /// Pick virtual Device
   ///
   /// In de, this message translates to:
-  /// **'Aktivität wählen'**
-  String get pickActivity;
+  /// **'Virtuelles Gerät wählen'**
+  String get pickVirtualDevice;
 
-  /// Create new activity
+  /// Create new virtual Device
   ///
   /// In de, this message translates to:
-  /// **'Neue Aktivität erstellen'**
-  String get newActivityCreate;
+  /// **'Neues virtuelles Gerät erstellen'**
+  String get newVirtualDeviceCreate;
 
-  /// New activity label
+  /// New virtual Device label
   ///
   /// In de, this message translates to:
-  /// **'Neue Aktivität'**
-  String get newActivityLabel;
+  /// **'Neues virtuelles Gerät'**
+  String get newVirtualDeviceLabel;
 
   /// Copy settings from
   ///
@@ -1010,35 +1010,35 @@ abstract class AppLocalizations {
   /// **'Einstellungen kopieren von:'**
   String get copySettingsFrom;
 
-  /// Rename activity
+  /// Rename virtual device
   ///
   /// In de, this message translates to:
-  /// **'Aktivität umbenennen'**
-  String get renameActivity;
+  /// **'Virtuelles Gerät umbenennen'**
+  String get renameVirtualDevice;
 
-  /// Delete activity dialog title
+  /// Delete virtual device dialog title
   ///
   /// In de, this message translates to:
-  /// **'Aktivität löschen?'**
-  String get deleteActivityTitle;
+  /// **'Virtuelles Gerät löschen?'**
+  String get deleteVirtualDeviceTitle;
 
-  /// Delete activity dialog content
+  /// Delete virtual device dialog content
   ///
   /// In de, this message translates to:
-  /// **'„{name}\" wirklich löschen?\n\nDie Einstellungen dieser Aktivität werden unwiderruflich entfernt.'**
-  String deleteActivityContent(String name);
+  /// **'„{name}\" wirklich löschen?\n\nDie Einstellungen dieses virtuellen Gerätes werden unwiderruflich entfernt.'**
+  String deleteVirtualDeviceContent(String name);
 
-  /// Activity deleted snackbar
+  /// Virtual device deleted snackbar
   ///
   /// In de, this message translates to:
   /// **'„{name}\" gelöscht'**
-  String activityDeleted(String name);
+  String virtualDeviceDeleted(String name);
 
-  /// Delete activity button label
+  /// Delete virtual Device button label
   ///
   /// In de, this message translates to:
   /// **'„{name}\" löschen'**
-  String deleteActivityLabel(String name);
+  String deleteVirtualDeviceLabel(String name);
 
   /// Visits screen title
   ///
@@ -2798,7 +2798,7 @@ abstract class AppLocalizations {
   /// **'Erstellt eine Kopie dieses Ortes mit neuer UUID und der Device-ID eines geschützten Bereichs, sodass er vor Sync-Importen geschützt ist.'**
   String get copyToProtectedAreaHint;
 
-  /// Dialog title for selecting a protected Aktivitaet
+  /// Dialog title for selecting a protected Virtual Device
   ///
   /// In de, this message translates to:
   /// **'Geschützten Bereich wählen'**
@@ -3476,35 +3476,35 @@ abstract class AppLocalizations {
   /// **'Mit Kompass von diesem Ort'**
   String get compassFromPlace;
 
-  /// No description provided for @aktivitaetenScreenTitle.
+  /// No description provided for @virtualDevicesScreenTitle.
   ///
   /// In de, this message translates to:
-  /// **'Aktivitäten'**
-  String get aktivitaetenScreenTitle;
+  /// **'Virtuelle Geräte'**
+  String get virtualDevicesScreenTitle;
 
-  /// Activity detail screen title
+  /// Virtual Device detail screen title
   ///
   /// In de, this message translates to:
-  /// **'Aktivität: {name}'**
-  String aktivitaetDetailTitle(String name);
+  /// **'V-Gerät: {name}'**
+  String virtualDeviceDetailTitle(String name);
 
-  /// No description provided for @switchToActivity.
+  /// No description provided for @switchToVirtualDevice.
   ///
   /// In de, this message translates to:
-  /// **'Zu dieser Aktivität wechseln'**
-  String get switchToActivity;
+  /// **'Zu diesem virtuellen Gerät wechseln'**
+  String get switchToVirtualDevice;
 
-  /// No description provided for @switchToActivitySubtitle.
+  /// No description provided for @switchToVirtualDeviceSubtitle.
   ///
   /// In de, this message translates to:
-  /// **'Diese Aktivität und ihre Geräte-ID werden aktiv'**
-  String get switchToActivitySubtitle;
+  /// **'Dieses virtuelle Gerät und ihre Geräte-ID werden aktiv'**
+  String get switchToVirtualDeviceSubtitle;
 
-  /// No description provided for @activityCurrentlyActive.
+  /// No description provided for @virtualDeviceCurrentlyActive.
   ///
   /// In de, this message translates to:
   /// **'Aktuell aktiv'**
-  String get activityCurrentlyActive;
+  String get virtualDeviceCurrentlyActive;
 
   /// No description provided for @privateSpaceSection.
   ///
@@ -3521,7 +3521,7 @@ abstract class AppLocalizations {
   /// No description provided for @protectFromExportSubtitle.
   ///
   /// In de, this message translates to:
-  /// **'Daten dieser Aktivität werden nicht an Sync-Server übertragen (für die Außenwelt unsichtbar)'**
+  /// **'Daten dieses virtuellen Gerätes werden nicht an Sync-Server übertragen (für die Außenwelt unsichtbar)'**
   String get protectFromExportSubtitle;
 
   /// No description provided for @protectFromImportLabel.
@@ -3533,7 +3533,7 @@ abstract class AppLocalizations {
   /// No description provided for @protectFromImportSubtitle.
   ///
   /// In de, this message translates to:
-  /// **'Eingehende Sync-Daten mit dieser Geräte-ID werden ignoriert (schützt die Privatsphäre)'**
+  /// **'Eingehende Sync-Daten mit diesem virtuellen Gerät werden ignoriert (schützt die Privatsphäre)'**
   String get protectFromImportSubtitle;
 
   /// No description provided for @purgeDataLabel.
@@ -3557,7 +3557,7 @@ abstract class AppLocalizations {
   /// Purge confirmation dialog content
   ///
   /// In de, this message translates to:
-  /// **'Alle Datenbankeinträge der Geräte-ID von „{name}“ werden unwiderruflich entfernt. Fremdschlüssel können dabei brechen.'**
+  /// **'Alle Datenbankeinträge der Geräte-ID von „{name}“ werden unwiderruflich entfernt.'**
   String purgeDataConfirmContent(String name);
 
   /// Purge success message

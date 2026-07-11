@@ -136,7 +136,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackingCollecting => 'Tracking sammelt GPS Daten…';
 
   @override
-  String get aktivitaetLoading => 'Aktivität laden…';
+  String get virtualDeviceLoading => 'Virtuelles Gerät laden…';
 
   @override
   String get unknownPlace => 'Unbekannter Ort';
@@ -210,18 +210,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsSaved => 'Einstellungen gespeichert';
 
   @override
-  String get sectionActivity => 'Aktivität';
+  String get sectionVirtualDevices => 'Virtuelle Geräte';
 
   @override
-  String get noActivity => 'Keine Aktivität';
+  String get noVirtualDevices => 'Kein Virtuelles Gerät';
 
   @override
-  String activityCount(int count) {
+  String virtualDevicesCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count Aktivitäten vorhanden',
-      one: '$count Aktivität vorhanden',
+      other: '$count virtuelle Geräte vorhanden',
+      one: '$count virtuelles Gerät vorhanden',
     );
     return '$_temp0';
   }
@@ -513,38 +513,39 @@ class AppLocalizationsDe extends AppLocalizations {
   String get calendarDenied => 'Kalender verweigert';
 
   @override
-  String get deleteActivity => 'Aktuelle Aktivität dauerhaft entfernen';
+  String get deleteVirtualDevice =>
+      'Aktuelles virtuelles Gerät dauerhaft entfernen';
 
   @override
-  String get pickActivity => 'Aktivität wählen';
+  String get pickVirtualDevice => 'Virtuelles Gerät wählen';
 
   @override
-  String get newActivityCreate => 'Neue Aktivität erstellen';
+  String get newVirtualDeviceCreate => 'Neues virtuelles Gerät erstellen';
 
   @override
-  String get newActivityLabel => 'Neue Aktivität';
+  String get newVirtualDeviceLabel => 'Neues virtuelles Gerät';
 
   @override
   String get copySettingsFrom => 'Einstellungen kopieren von:';
 
   @override
-  String get renameActivity => 'Aktivität umbenennen';
+  String get renameVirtualDevice => 'Virtuelles Gerät umbenennen';
 
   @override
-  String get deleteActivityTitle => 'Aktivität löschen?';
+  String get deleteVirtualDeviceTitle => 'Virtuelles Gerät löschen?';
 
   @override
-  String deleteActivityContent(String name) {
-    return '„$name\" wirklich löschen?\n\nDie Einstellungen dieser Aktivität werden unwiderruflich entfernt.';
+  String deleteVirtualDeviceContent(String name) {
+    return '„$name\" wirklich löschen?\n\nDie Einstellungen dieses virtuellen Gerätes werden unwiderruflich entfernt.';
   }
 
   @override
-  String activityDeleted(String name) {
+  String virtualDeviceDeleted(String name) {
     return '„$name\" gelöscht';
   }
 
   @override
-  String deleteActivityLabel(String name) {
+  String deleteVirtualDeviceLabel(String name) {
     return '„$name\" löschen';
   }
 
@@ -1909,22 +1910,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get compassFromPlace => 'Mit Kompass von diesem Ort';
 
   @override
-  String get aktivitaetenScreenTitle => 'Aktivitäten';
+  String get virtualDevicesScreenTitle => 'Virtuelle Geräte';
 
   @override
-  String aktivitaetDetailTitle(String name) {
-    return 'Aktivität: $name';
+  String virtualDeviceDetailTitle(String name) {
+    return 'V-Gerät: $name';
   }
 
   @override
-  String get switchToActivity => 'Zu dieser Aktivität wechseln';
+  String get switchToVirtualDevice => 'Zu diesem virtuellen Gerät wechseln';
 
   @override
-  String get switchToActivitySubtitle =>
-      'Diese Aktivität und ihre Geräte-ID werden aktiv';
+  String get switchToVirtualDeviceSubtitle =>
+      'Dieses virtuelle Gerät und ihre Geräte-ID werden aktiv';
 
   @override
-  String get activityCurrentlyActive => 'Aktuell aktiv';
+  String get virtualDeviceCurrentlyActive => 'Aktuell aktiv';
 
   @override
   String get privateSpaceSection => 'Privater Bereich';
@@ -1934,14 +1935,14 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get protectFromExportSubtitle =>
-      'Daten dieser Aktivität werden nicht an Sync-Server übertragen (für die Außenwelt unsichtbar)';
+      'Daten dieses virtuellen Gerätes werden nicht an Sync-Server übertragen (für die Außenwelt unsichtbar)';
 
   @override
   String get protectFromImportLabel => 'Gegen Sync-Import schützen';
 
   @override
   String get protectFromImportSubtitle =>
-      'Eingehende Sync-Daten mit dieser Geräte-ID werden ignoriert (schützt die Privatsphäre)';
+      'Eingehende Sync-Daten mit diesem virtuellen Gerät werden ignoriert (schützt die Privatsphäre)';
 
   @override
   String get purgeDataLabel => 'Datenbankeinträge säubern';
@@ -1955,7 +1956,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String purgeDataConfirmContent(String name) {
-    return 'Alle Datenbankeinträge der Geräte-ID von „$name“ werden unwiderruflich entfernt. Fremdschlüssel können dabei brechen.';
+    return 'Alle Datenbankeinträge der Geräte-ID von „$name“ werden unwiderruflich entfernt.';
   }
 
   @override

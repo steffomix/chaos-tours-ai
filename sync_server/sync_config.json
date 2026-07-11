@@ -7,7 +7,7 @@
   "stays":                      { "pull": true,  "push": true  },
   "stay_persons":               { "pull": true,  "push": true  },
   "stay_activities":            { "pull": true,  "push": true  },
-  "aktivitaeten":               { "pull": true,  "push": true  },
+  "virtual_devices":               { "pull": true,  "push": true  },
   "sync_sources":               { "pull": true,  "push": true  },
   "place_experiences":          { "pull": true,  "push": true  },
   "sync_source_experiences":    { "pull": true,  "push": true  },

@@ -174,9 +174,9 @@
   "@trackingCollecting": {
     "description": "Tracking collecting GPS data"
   },
-  "aktivitaetLoading": "Aktivität laden…",
-  "@aktivitaetLoading": {
-    "description": "Loading activity"
+  "virtualDeviceLoading": "Virtuelles Gerät laden…",
+  "@virtualDeviceLoading": {
+    "description": "Loading Virtual Device"
   },
   "unknownPlace": "Unbekannter Ort",
   "@unknownPlace": {
@@ -275,17 +275,17 @@
   "@settingsSaved": {
     "description": "Settings saved snackbar"
   },
-  "sectionActivity": "Aktivität",
-  "@sectionActivity": {
-    "description": "Activity section header"
+  "sectionVirtualDevices": "Virtuelle Geräte",
+  "@sectionVirtualDevices": {
+    "description": "VirtualDevices section header"
   },
-  "noActivity": "Keine Aktivität",
-  "@noActivity": {
-    "description": "No activity"
+  "noVirtualDevices": "Kein Virtuelles Gerät",
+  "@noVirtualDevices": {
+    "description": "No Virtual Device"
   },
-  "activityCount": "{count, plural, one{{count} Aktivität vorhanden} other{{count} Aktivitäten vorhanden}}",
-  "@activityCount": {
-    "description": "Activity count",
+  "virtualDevicesCount": "{count, plural, one{{count} virtuelles Gerät vorhanden} other{{count} virtuelle Geräte vorhanden}}",
+  "@virtualDevicesCount": {
+    "description": "Virtual Devices count",
     "placeholders": {
       "count": {
         "type": "int"
@@ -671,55 +671,55 @@
   "@calendarDenied": {
     "description": "Calendar permission denied"
   },
-  "deleteActivity": "Aktuelle Aktivität dauerhaft entfernen",
-  "@deleteActivity": {
-    "description": "Delete current activity"
+  "deleteVirtualDevice": "Aktuelles virtuelles Gerät dauerhaft entfernen",
+  "@deleteVirtualDevice": {
+    "description": "Delete current virtual Device"
   },
-  "pickActivity": "Aktivität wählen",
-  "@pickActivity": {
-    "description": "Pick activity"
+  "pickVirtualDevice": "Virtuelles Gerät wählen",
+  "@pickVirtualDevice": {
+    "description": "Pick virtual Device"
   },
-  "newActivityCreate": "Neue Aktivität erstellen",
-  "@newActivityCreate": {
-    "description": "Create new activity"
+  "newVirtualDeviceCreate": "Neues virtuelles Gerät erstellen",
+  "@newVirtualDeviceCreate": {
+    "description": "Create new virtual Device"
   },
-  "newActivityLabel": "Neue Aktivität",
-  "@newActivityLabel": {
-    "description": "New activity label"
+  "newVirtualDeviceLabel": "Neues virtuelles Gerät",
+  "@newVirtualDeviceLabel": {
+    "description": "New virtual Device label"
   },
   "copySettingsFrom": "Einstellungen kopieren von:",
   "@copySettingsFrom": {
     "description": "Copy settings from"
   },
-  "renameActivity": "Aktivität umbenennen",
-  "@renameActivity": {
-    "description": "Rename activity"
+  "renameVirtualDevice": "Virtuelles Gerät umbenennen",
+  "@renameVirtualDevice": {
+    "description": "Rename virtual device"
   },
-  "deleteActivityTitle": "Aktivität löschen?",
-  "@deleteActivityTitle": {
-    "description": "Delete activity dialog title"
+  "deleteVirtualDeviceTitle": "Virtuelles Gerät löschen?",
+  "@deleteVirtualDeviceTitle": {
+    "description": "Delete virtual device dialog title"
   },
-  "deleteActivityContent": "„{name}\" wirklich löschen?\n\nDie Einstellungen dieser Aktivität werden unwiderruflich entfernt.",
-  "@deleteActivityContent": {
-    "description": "Delete activity dialog content",
+  "deleteVirtualDeviceContent": "„{name}\" wirklich löschen?\n\nDie Einstellungen dieses virtuellen Gerätes werden unwiderruflich entfernt.",
+  "@deleteVirtualDeviceContent": {
+    "description": "Delete virtual device dialog content",
     "placeholders": {
       "name": {
         "type": "String"
       }
     }
   },
-  "activityDeleted": "„{name}\" gelöscht",
-  "@activityDeleted": {
-    "description": "Activity deleted snackbar",
+  "virtualDeviceDeleted": "„{name}\" gelöscht",
+  "@virtualDeviceDeleted": {
+    "description": "Virtual device deleted snackbar",
     "placeholders": {
       "name": {
         "type": "String"
       }
     }
   },
-  "deleteActivityLabel": "„{name}\" löschen",
-  "@deleteActivityLabel": {
-    "description": "Delete activity button label",
+  "deleteVirtualDeviceLabel": "„{name}\" löschen",
+  "@deleteVirtualDeviceLabel": {
+    "description": "Delete virtual Device button label",
     "placeholders": {
       "name": {
         "type": "String"
@@ -2110,7 +2110,7 @@
   },
   "copyToProtectedAreaSelectTitle": "Geschützten Bereich wählen",
   "@copyToProtectedAreaSelectTitle": {
-    "description": "Dialog title for selecting a protected Aktivitaet"
+    "description": "Dialog title for selecting a protected Virtual Device"
   },
   "copyToProtectedAreaSelectSubtitle": "Die Kopie erhält die Device-ID der gewählten Aktivität.",
   "@copyToProtectedAreaSelectSubtitle": {
@@ -2503,26 +2503,26 @@
   "compassFromHere": "Mit Kompass von hier",
   "compassFromPlace": "Mit Kompass von diesem Ort",
 
-  "aktivitaetenScreenTitle": "Aktivitäten",
-  "aktivitaetDetailTitle": "Aktivität: {name}",
-  "@aktivitaetDetailTitle": {
-    "description": "Activity detail screen title",
+  "virtualDevicesScreenTitle": "Virtuelle Geräte",
+  "virtualDeviceDetailTitle": "V-Gerät: {name}",
+  "@virtualDeviceDetailTitle": {
+    "description": "Virtual Device detail screen title",
     "placeholders": {
       "name": { "type": "String" }
     }
   },
-  "switchToActivity": "Zu dieser Aktivität wechseln",
-  "switchToActivitySubtitle": "Diese Aktivität und ihre Geräte-ID werden aktiv",
-  "activityCurrentlyActive": "Aktuell aktiv",
+  "switchToVirtualDevice": "Zu diesem virtuellen Gerät wechseln",
+  "switchToVirtualDeviceSubtitle": "Dieses virtuelle Gerät und ihre Geräte-ID werden aktiv",
+  "virtualDeviceCurrentlyActive": "Aktuell aktiv",
   "privateSpaceSection": "Privater Bereich",
   "protectFromExportLabel": "Gegen Sync-Export schützen",
-  "protectFromExportSubtitle": "Daten dieser Aktivität werden nicht an Sync-Server übertragen (für die Außenwelt unsichtbar)",
+  "protectFromExportSubtitle": "Daten dieses virtuellen Gerätes werden nicht an Sync-Server übertragen (für die Außenwelt unsichtbar)",
   "protectFromImportLabel": "Gegen Sync-Import schützen",
-  "protectFromImportSubtitle": "Eingehende Sync-Daten mit dieser Geräte-ID werden ignoriert (schützt die Privatsphäre)",
+  "protectFromImportSubtitle": "Eingehende Sync-Daten mit diesem virtuellen Gerät werden ignoriert (schützt die Privatsphäre)",
   "purgeDataLabel": "Datenbankeinträge säubern",
   "purgeDataSubtitle": "Alle Einträge mit dieser Geräte-ID aus der Datenbank entfernen (nicht die Aktivität selbst)",
   "purgeDataConfirmTitle": "Einträge säubern?",
-  "purgeDataConfirmContent": "Alle Datenbankeinträge der Geräte-ID von \u201e{name}\u201c werden unwiderruflich entfernt. Fremdschlüssel können dabei brechen.",
+  "purgeDataConfirmContent": "Alle Datenbankeinträge der Geräte-ID von \u201e{name}\u201c werden unwiderruflich entfernt.",
   "@purgeDataConfirmContent": {
     "description": "Purge confirmation dialog content",
     "placeholders": {

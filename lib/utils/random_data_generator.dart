@@ -6,7 +6,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/activity.dart';
-import '../models/aktivitaet.dart';
+import '../models/virtual_device.dart';
 import '../models/message.dart';
 import '../models/message_attachment.dart';
 import '../models/person.dart';
@@ -34,7 +34,7 @@ class RandomDataProgressNotifier extends ValueNotifier<String> {
   int _countP2PMessagePhotos = 0;
   int _countPlaceExperiences = 0;
   int _countStayExperiences = 0;
-  int _countAktivitaeten = 0;
+  int _countVirtualDevices = 0;
   int _countPersons = 0;
   int _countActivities = 0;
   int _countTelegramConnections = 0;
@@ -56,8 +56,8 @@ class RandomDataProgressNotifier extends ValueNotifier<String> {
     _progress = (doneCount / totalCount * 100).toInt();
   }
 
-  void addAktivitaet() {
-    _countAktivitaeten++;
+  void addVirtualDevice() {
+    _countVirtualDevices++;
     _updateValue();
   }
 
@@ -148,7 +148,7 @@ class RandomDataProgressNotifier extends ValueNotifier<String> {
         _countStayPhotos +
         _countPlaceExperiences +
         _countStayExperiences +
-        _countAktivitaeten +
+        _countVirtualDevices +
         _countPersons +
         _countActivities +
         _countTelegramConnections +
@@ -164,7 +164,7 @@ class RandomDataProgressNotifier extends ValueNotifier<String> {
 Fortschritt: $_progress%
 Total: $_totalCount
 
-Aktivitaeten: $_countAktivitaeten
+Virtual Devices: $_countVirtualDevices
 Persons: $_countPersons
 Activities: $_countActivities
 Telegram Connections: $_countTelegramConnections
@@ -372,9 +372,9 @@ class RandomDataGenerator {
   }
 
   // Hilfsmethoden für Batch-Inserts (Rückgabetyp zu void geändert, da im Generator nicht benötigt)
-  void insertAktivitaet(Batch batch, Aktivitaet a) {
+  void insertVirtualDevice(Batch batch, VirtualDevice a) {
     batch.insert(
-      'aktivitaeten',
+      'virtual_devices',
       _withSyncFields(a.toMap(), a.deviceId),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
@@ -477,12 +477,12 @@ class RandomDataGenerator {
   }
 
   // Objekt-Erstellungen
-  Aktivitaet _createAktivitaet() {
+  VirtualDevice _createVirtualDevice() {
     final deviceId = generateDeviceId();
     deviceIdPool.add(deviceId);
-    return Aktivitaet(
+    return VirtualDevice(
       uuid: randomUuid(),
-      name: 'Aktivitaet ${randomString(5)}',
+      name: 'VirtualDevice ${randomString(5)}',
       deviceId: deviceId,
     );
   }
@@ -628,7 +628,7 @@ class RandomDataGenerator {
   }
 
   Future<void> generateRandomData({
-    int numAktivitaeten = 2,
+    int numVirtualDevices = 2,
     int numTelegramConnections = 2,
     int numSyncSources = 2,
     int numPersons = 5,
@@ -666,13 +666,13 @@ class RandomDataGenerator {
       final batch = db.batch();
 
       // create top level objects
-      List<Aktivitaet> aktivitaetPool = List.generate(
-        numAktivitaeten,
-        (_) => _createAktivitaet(),
+      List<VirtualDevice> virtualDevicesPool = List.generate(
+        numVirtualDevices,
+        (_) => _createVirtualDevice(),
       );
-      for (var a in aktivitaetPool) {
-        progressNotifier.addAktivitaet();
-        insertAktivitaet(batch, a);
+      for (var a in virtualDevicesPool) {
+        progressNotifier.addVirtualDevice();
+        insertVirtualDevice(batch, a);
       }
 
       for (int i = 0; i < numTelegramConnections; i++) {

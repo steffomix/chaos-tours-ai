@@ -14,7 +14,7 @@ void main() async {
   final db = DatabaseService.instance;
   await db.cleanupOldTrackingPoints();
   await db.ensureDefaultGroups();
-  await db.ensureDefaultAktivitaet();
+  await db.ensureDefaultVirtualDevice();
 
   if (Platform.isAndroid || Platform.isIOS) {
     ForegroundServiceManager.init();

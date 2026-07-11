@@ -50,7 +50,7 @@ SYNC_TABLES: list[str] = [
     "stays",
     "stay_persons",
     "stay_activities",
-    "aktivitaeten",
+    "virtual_devices",
     "sync_sources",
     "place_experiences",
     "sync_source_experiences",
@@ -217,7 +217,7 @@ _DDL: list[str] = [
     """,
 
     """
-    CREATE TABLE IF NOT EXISTS aktivitaeten (
+    CREATE TABLE IF NOT EXISTS virtual_devices (
         uuid TEXT PRIMARY KEY,
         device_id TEXT NOT NULL,
         name TEXT NOT NULL,
@@ -521,8 +521,8 @@ async def create_tables() -> None:
         # Idempotent column additions for databases created before schema changes.
         _migrations = [
             "ALTER TABLE sync_sources ADD COLUMN last_sync_ms INTEGER NOT NULL DEFAULT 0",
-            "ALTER TABLE aktivitaeten ADD COLUMN sync_export_protected INTEGER NOT NULL DEFAULT 0",
-            "ALTER TABLE aktivitaeten ADD COLUMN sync_import_protected INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE virtual_devices ADD COLUMN sync_export_protected INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE virtual_devices ADD COLUMN sync_import_protected INTEGER NOT NULL DEFAULT 0",
         ]
         for sql in _migrations:
             try:

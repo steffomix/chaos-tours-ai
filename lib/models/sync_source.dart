@@ -48,7 +48,7 @@ class SyncSourceOptions {
     'stays',
     'stay_persons',
     'stay_activities',
-    'aktivitaeten',
+    'virtual_devices',
     'sync_sources',
     'place_experiences',
     'sync_source_experiences',

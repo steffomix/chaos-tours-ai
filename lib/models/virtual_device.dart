@@ -9,7 +9,7 @@ const _uuid = Uuid();
 /// A named settings profile. At most one is "active" at a time;
 /// its settings are used by the tracking engine and are also
 /// shown/edited in the Settings screen.
-class Aktivitaet {
+class VirtualDevice {
   final String uuid;
   final String name;
   final int gpsIntervalSeconds;
@@ -67,7 +67,7 @@ class Aktivitaet {
   /// When true, incoming sync rows with this device_id are ignored on import.
   final bool syncImportProtected;
 
-  Aktivitaet({
+  VirtualDevice({
     String? uuid,
     required this.name,
     this.gpsIntervalSeconds = 15,
@@ -102,8 +102,8 @@ class Aktivitaet {
            ? deviceId!
            : SettingsService.instance.deviceId;
 
-  factory Aktivitaet.fromMap(Map<String, dynamic> map) {
-    return Aktivitaet(
+  factory VirtualDevice.fromMap(Map<String, dynamic> map) {
+    return VirtualDevice(
       uuid: map['uuid'] as String?,
       name: map['name'] as String,
       deviceId:
@@ -180,7 +180,7 @@ class Aktivitaet {
     };
   }
 
-  Aktivitaet copyWith({
+  VirtualDevice copyWith({
     String? uuid,
     String? name,
     String? deviceId,
@@ -214,7 +214,7 @@ class Aktivitaet {
     bool? syncExportProtected,
     bool? syncImportProtected,
   }) {
-    return Aktivitaet(
+    return VirtualDevice(
       uuid: uuid ?? this.uuid,
       name: name ?? this.name,
       deviceId: deviceId ?? this.deviceId,

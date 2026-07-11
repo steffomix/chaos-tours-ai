@@ -61,7 +61,7 @@
   "trackingStatusHalt": "Staying",
   "trackingStatusDetecting": "Detecting stay…",
   "trackingCollecting": "Tracking collecting GPS data…",
-  "aktivitaetLoading": "Loading activity…",
+  "virtualDeviceLoading": "Loading Virtual Device…",
   "unknownPlace": "Unknown place",
   "sinceHoursMinutes": "For {h}h {m}min",
   "@sinceHoursMinutes": {
@@ -100,10 +100,10 @@
   "openSettings": "Open settings",
   "settingsTitle": "Settings",
   "settingsSaved": "Settings saved",
-  "sectionActivity": "Activity",
-  "noActivity": "No activity",
-  "activityCount": "{count, plural, one{{count} activity} other{{count} activities}}",
-  "@activityCount": {
+  "sectionVirtualDevices": "Virtual Devices",
+  "noVirtualDevices": "No Virtual Devices",
+  "virtualDevicesCount": "{count, plural, one{{count} Virtual Device} other{{count} Virtual Devices}}",
+  "@virtualDevicesCount": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -275,22 +275,22 @@
   "notificationsDenied": "Notifications denied",
   "calendarGranted": "Calendar granted",
   "calendarDenied": "Calendar denied",
-  "deleteActivity": "Permanently remove current activity",
-  "pickActivity": "Select activity",
-  "newActivityCreate": "Create new activity",
-  "newActivityLabel": "New activity",
+  "deleteVirtualDevice": "Permanently remove current Virtual Device",
+  "pickVirtualDevice": "Select Virtual Device",
+  "newVirtualDeviceCreate": "Create new Virtual Device",
+  "newVirtualDeviceLabel": "New Virtual Device",
   "copySettingsFrom": "Copy settings from:",
-  "renameActivity": "Rename activity",
-  "deleteActivityTitle": "Delete activity?",
-  "deleteActivityContent": "Really delete \"{name}\"?\n\nThe settings of this activity will be permanently removed.",
-  "@deleteActivityContent": {
+  "renameVirtualDevice": "Rename Virtual Device",
+  "deleteVirtualDeviceTitle": "Delete Virtual Device?",
+  "deleteVirtualDeviceContent": "Really delete \"{name}\"?\n\nThe settings of this Virtual Device will be permanently removed.",
+  "@deleteVirtualDeviceContent": {
     "placeholders": {
       "name": {
         "type": "String"
       }
     }
   },
-  "activityDeleted": "\"{name}\" deleted",
+  "virtualDeviceDeleted": "\"{name}\" deleted",
   "@activityDeleted": {
     "placeholders": {
       "name": {
@@ -298,8 +298,8 @@
       }
     }
   },
-  "deleteActivityLabel": "Delete \"{name}\"",
-  "@deleteActivityLabel": {
+  "deleteVirtualDeviceLabel": "Delete \"{name}\"",
+  "@deleteVirtualDeviceLabel": {
     "placeholders": {
       "name": {
         "type": "String"
@@ -901,7 +901,7 @@
   "copyToProtectedArea": "Copy to protected area",
   "copyToProtectedAreaHint": "Creates a copy of this place with a new UUID and the device ID of a protected area, shielding it from sync imports.",
   "copyToProtectedAreaSelectTitle": "Select protected area",
-  "copyToProtectedAreaSelectSubtitle": "The copy will receive the device ID of the selected activity.",
+  "copyToProtectedAreaSelectSubtitle": "The copy will receive the device ID of the selected Virtual Device.",
   "copyToProtectedAreaSuccess": "Place copied to protected area.",
   "gpsSettings": "GPS Settings",
   "telegramSent": "Report sent to Telegram",
@@ -1062,26 +1062,26 @@
   "compassFromHere": "Compass from here",
   "compassFromPlace": "Compass from this place",
 
-  "aktivitaetenScreenTitle": "Activities",
-  "aktivitaetDetailTitle": "Activity: {name}",
-  "@aktivitaetDetailTitle": {
-    "description": "Activity detail screen title",
+  "virtualDevicesScreenTitle": "Virtual Deviced",
+  "virtualDeviceDetailTitle": "V-Device: {name}",
+  "@virtualDeviceDetailTitle": {
+    "description": "Virtual Device detail screen title",
     "placeholders": {
       "name": { "type": "String" }
     }
   },
-  "switchToActivity": "Switch to this activity",
-  "switchToActivitySubtitle": "Makes this activity and its device ID active",
-  "activityCurrentlyActive": "Currently active",
+  "switchToVirtualDevice": "Switch to this Virtual Device",
+  "switchToVirtualDeviceSubtitle": "Makes this Virtual Device and its device ID active",
+  "virtualDeviceCurrentlyActive": "Currently active",
   "privateSpaceSection": "Private Space",
   "protectFromExportLabel": "Protect from sync export",
-  "protectFromExportSubtitle": "Data from this activity will not be pushed to sync servers (invisible to the outside world)",
+  "protectFromExportSubtitle": "Data from this Virtual Device will not be pushed to sync servers (invisible to the outside world)",
   "protectFromImportLabel": "Protect from sync import",
   "protectFromImportSubtitle": "Incoming sync data with this device ID will be ignored (protects privacy)",
   "purgeDataLabel": "Clean database entries",
-  "purgeDataSubtitle": "Remove all entries with this device ID from the database (not the activity itself)",
+  "purgeDataSubtitle": "Remove all entries with this device ID from the database (not the Virtual Device itself)",
   "purgeDataConfirmTitle": "Clean entries?",
-  "purgeDataConfirmContent": "All database entries with the device ID of \"{name}\" will be permanently removed. Foreign keys may break.",
+  "purgeDataConfirmContent": "All database entries with the device ID of \"{name}\" will be permanently removed.",
   "@purgeDataConfirmContent": {
     "description": "Purge confirmation dialog content",
     "placeholders": {

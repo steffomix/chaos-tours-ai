@@ -6,7 +6,7 @@ import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:focus_detector/focus_detector.dart';
 
-import '../../models/aktivitaet.dart';
+import '../../models/virtual_device.dart';
 import '../../models/saved_place.dart';
 import '../../models/stay.dart';
 import '../../services/database_service.dart';
@@ -117,8 +117,8 @@ class _HomeScreenState extends State<HomeScreen>
 
   _GpsCountdownNotifier nextGpsNotifier = _GpsCountdownNotifier();
 
-  // Active Aktivitaet
-  Aktivitaet? _currentAktivitaet;
+  // Active VirtualDevice
+  VirtualDevice? _currentVirtualDevice;
 
   // Tracking state
   bool _trackingEnabled = false;
@@ -155,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen>
     // Do NOT trust the persisted flag alone — the service may have been killed.
     // Resolve the actual service state asynchronously and correct if needed.
     _checkActualTrackingState();
-    _loadCurrentAktivitaet();
+    _loadCurrentVirtualDevice();
     _relaodStays();
     if (SettingsService.instance.trackingEnabled) {
       nextGpsNotifier.startGpsCountdown();
@@ -274,11 +274,11 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  Future<void> _loadCurrentAktivitaet() async {
-    final uuid = SettingsService.instance.activeAktivitaetUuid;
+  Future<void> _loadCurrentVirtualDevice() async {
+    final uuid = SettingsService.instance.activeVirtualDeviceUuid;
     if (uuid == null) return;
-    final a = await DatabaseService.instance.loadAktivitaet(uuid);
-    if (mounted) setState(() => _currentAktivitaet = a);
+    final a = await DatabaseService.instance.loadVirtualDevice(uuid);
+    if (mounted) setState(() => _currentVirtualDevice = a);
   }
 
   Future<void> _loadActiveStay() async {
@@ -487,13 +487,13 @@ class _HomeScreenState extends State<HomeScreen>
         ),
         body: Column(
           children: [
-            // ── Active Aktivitaet banner ───────────────────────────
+            // ── Active VirtualDevice banner ───────────────────────────
             Material(
               color: Theme.of(context).colorScheme.primaryContainer,
               child: InkWell(
                 onTap: () async {
                   await Navigator.pushNamed(context, '/settings');
-                  _loadCurrentAktivitaet();
+                  _loadCurrentVirtualDevice();
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
@@ -510,7 +510,7 @@ class _HomeScreenState extends State<HomeScreen>
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          _currentAktivitaet?.name ?? 'Aktivität laden…',
+                          _currentVirtualDevice?.name ?? 'Aktivität laden…',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Theme.of(

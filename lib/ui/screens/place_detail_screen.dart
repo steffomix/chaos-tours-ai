@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../models/aktivitaet.dart';
+import '../../models/virtual_device.dart';
 import '../../models/place_experience.dart';
 import '../../models/place_group.dart';
 import '../../models/saved_place.dart';
@@ -62,7 +62,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   int _syncIntervalMinutes = 0;
   bool _isSyncing = false;
 
-  List<Aktivitaet> _importProtectedAktivitaeten = [];
+  List<VirtualDevice> _importProtectedVirtualDevices = [];
 
   int _visitCount = 0;
   int? _lastVisitedAt;
@@ -100,7 +100,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     _syncIntervalMinutes = widget.place.syncIntervalMinutes;
     _loadGroups();
     _loadVisitStats();
-    _loadImportProtectedAktivitaeten();
+    _loadImportProtectedVirtualDevices();
   }
 
   Future<void> _loadGroups() async {
@@ -108,10 +108,10 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     if (mounted) setState(() => _groups = groups);
   }
 
-  Future<void> _loadImportProtectedAktivitaeten() async {
+  Future<void> _loadImportProtectedVirtualDevices() async {
     final list = await DatabaseService.instance
-        .loadImportProtectedAktivitaeten();
-    if (mounted) setState(() => _importProtectedAktivitaeten = list);
+        .loadImportProtectedVirtualDevices();
+    if (mounted) setState(() => _importProtectedVirtualDevices = list);
   }
 
   Future<void> _loadExperiences() async {
@@ -641,21 +641,21 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     if (mounted) Navigator.pop(context);
   }
 
-  /// Shows a dialog to pick one of the import-protected Aktivitaeten, then
+  /// Shows a dialog to pick one of the import-protected VirtualDevices, then
   /// inserts a copy of the current place with a new UUID and the selected
   /// device ID, effectively moving it into the "Geschützter Bereich".
   Future<void> _copyToProtectedArea() async {
-    if (_importProtectedAktivitaeten.isEmpty) return;
+    if (_importProtectedVirtualDevices.isEmpty) return;
     final l10n = AppLocalizations.of(context)!;
 
-    Aktivitaet? selected;
+    VirtualDevice? selected;
 
-    if (_importProtectedAktivitaeten.length == 1) {
+    if (_importProtectedVirtualDevices.length == 1) {
       // Only one option — use it directly after confirmation.
-      selected = _importProtectedAktivitaeten.first;
+      selected = _importProtectedVirtualDevices.first;
     } else {
       // Let the user choose which protected area.
-      selected = await showDialog<Aktivitaet>(
+      selected = await showDialog<VirtualDevice>(
         context: context,
         builder: (ctx) => SimpleDialog(
           title: Text(l10n.copyToProtectedAreaSelectTitle),
@@ -667,7 +667,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                 style: const TextStyle(fontSize: 13, color: Colors.grey),
               ),
             ),
-            ..._importProtectedAktivitaeten.map(
+            ..._importProtectedVirtualDevices.map(
               (a) => SimpleDialogOption(
                 onPressed: () => Navigator.pop(ctx, a),
                 child: Row(
@@ -690,7 +690,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
 
     if (selected == null || !mounted) return;
 
-    final chosenAktivitaet = selected;
+    final chosenVirtualDevice = selected;
 
     // Confirm the operation.
     final confirmed = await showDialog<bool>(
@@ -727,7 +727,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
       intervalEnabled: widget.place.intervalEnabled,
       intervalDays: widget.place.intervalDays,
       updatedAt: now,
-      deviceId: chosenAktivitaet.deviceId,
+      deviceId: chosenVirtualDevice.deviceId,
       originType: widget.place.originType,
       originSourceUuid: widget.place.originSourceUuid,
       website: widget.place.website,
@@ -736,7 +736,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     );
     await DatabaseService.instance.insertPlace(
       copy,
-      deviceId: chosenAktivitaet.deviceId,
+      deviceId: chosenVirtualDevice.deviceId,
     );
 
     if (mounted) {
@@ -2052,8 +2052,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
 
               const SizedBox(height: 12),
               // ── In geschützten Bereich kopieren ───────────────────────
-              if (_importProtectedAktivitaeten.isNotEmpty &&
-                  !_importProtectedAktivitaeten
+              if (_importProtectedVirtualDevices.isNotEmpty &&
+                  !_importProtectedVirtualDevices
                       .map((a) => a.deviceId)
                       .contains(widget.place.deviceId)) ...[
                 const SizedBox(height: 8),
