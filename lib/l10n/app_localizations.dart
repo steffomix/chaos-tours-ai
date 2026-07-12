@@ -860,6 +860,36 @@ abstract class AppLocalizations {
   /// **'{nullified} IDs nullified, {deleted} Einträge bereinigt'**
   String dbCleanupSuccess(int nullified, int deleted);
 
+  /// Purge foreign device entries button title
+  ///
+  /// In de, this message translates to:
+  /// **'Fremde Geräteeinträge entfernen'**
+  String get dbPurgeForeignDevicesTitle;
+
+  /// Purge foreign device entries subtitle
+  ///
+  /// In de, this message translates to:
+  /// **'Einträge aller Tabellen von nicht vertrauenswürdigen Geräten löschen'**
+  String get dbPurgeForeignDevicesSubtitle;
+
+  /// Purge foreign device entries confirmation dialog title
+  ///
+  /// In de, this message translates to:
+  /// **'Fremde Geräteeinträge entfernen?'**
+  String get dbPurgeForeignDevicesConfirmTitle;
+
+  /// Purge foreign device entries confirmation dialog content
+  ///
+  /// In de, this message translates to:
+  /// **'Alle Einträge in sämtlichen Tabellen, deren Geräte-ID weder dem aktuellen Gerät noch einem als vertrauenswürdig markierten Gerät entspricht, werden dauerhaft gelöscht. Das aktuell aktive Gerät gilt grundsätzlich als vertrauenswürdig. Gebrochene Fremdschlüsselreferenzen werden nicht korrigiert.'**
+  String get dbPurgeForeignDevicesConfirmContent;
+
+  /// Purge foreign device entries success message
+  ///
+  /// In de, this message translates to:
+  /// **'{deleted} Einträge gelöscht'**
+  String dbPurgeForeignDevicesSuccess(int deleted);
+
   /// Sync sources
   ///
   /// In de, this message translates to:

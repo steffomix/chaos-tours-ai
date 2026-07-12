@@ -446,6 +446,26 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get dbPurgeForeignDevicesTitle => 'Remove foreign device entries';
+
+  @override
+  String get dbPurgeForeignDevicesSubtitle =>
+      'Delete all records from untrusted devices across all tables';
+
+  @override
+  String get dbPurgeForeignDevicesConfirmTitle =>
+      'Remove foreign device entries?';
+
+  @override
+  String get dbPurgeForeignDevicesConfirmContent =>
+      'All records in every table whose device ID is neither the current device nor listed as trusted will be permanently deleted. The currently active device is always treated as trusted. Broken foreign key references are not corrected.';
+
+  @override
+  String dbPurgeForeignDevicesSuccess(int deleted) {
+    return '$deleted entries deleted';
+  }
+
+  @override
   String get syncSources => 'Sync sources';
 
   @override

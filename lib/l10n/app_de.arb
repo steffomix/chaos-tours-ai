@@ -588,6 +588,29 @@
       "deleted": { "type": "int" }
     }
   },
+  "dbPurgeForeignDevicesTitle": "Fremde Geräteeinträge entfernen",
+  "@dbPurgeForeignDevicesTitle": {
+    "description": "Purge foreign device entries button title"
+  },
+  "dbPurgeForeignDevicesSubtitle": "Einträge aller Tabellen von nicht vertrauenswürdigen Geräten löschen",
+  "@dbPurgeForeignDevicesSubtitle": {
+    "description": "Purge foreign device entries subtitle"
+  },
+  "dbPurgeForeignDevicesConfirmTitle": "Fremde Geräteeinträge entfernen?",
+  "@dbPurgeForeignDevicesConfirmTitle": {
+    "description": "Purge foreign device entries confirmation dialog title"
+  },
+  "dbPurgeForeignDevicesConfirmContent": "Alle Einträge in sämtlichen Tabellen, deren Geräte-ID weder dem aktuellen Gerät noch einem als vertrauenswürdig markierten Gerät entspricht, werden dauerhaft gelöscht. Das aktuell aktive Gerät gilt grundsätzlich als vertrauenswürdig. Gebrochene Fremdschlüsselreferenzen werden nicht korrigiert.",
+  "@dbPurgeForeignDevicesConfirmContent": {
+    "description": "Purge foreign device entries confirmation dialog content"
+  },
+  "dbPurgeForeignDevicesSuccess": "{deleted} Einträge gelöscht",
+  "@dbPurgeForeignDevicesSuccess": {
+    "description": "Purge foreign device entries success message",
+    "placeholders": {
+      "deleted": { "type": "int" }
+    }
+  },
   "syncSources": "Sync-Quellen",
   "@syncSources": {
     "description": "Sync sources"

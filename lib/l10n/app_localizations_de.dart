@@ -451,6 +451,26 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get dbPurgeForeignDevicesTitle => 'Fremde Geräteeinträge entfernen';
+
+  @override
+  String get dbPurgeForeignDevicesSubtitle =>
+      'Einträge aller Tabellen von nicht vertrauenswürdigen Geräten löschen';
+
+  @override
+  String get dbPurgeForeignDevicesConfirmTitle =>
+      'Fremde Geräteeinträge entfernen?';
+
+  @override
+  String get dbPurgeForeignDevicesConfirmContent =>
+      'Alle Einträge in sämtlichen Tabellen, deren Geräte-ID weder dem aktuellen Gerät noch einem als vertrauenswürdig markierten Gerät entspricht, werden dauerhaft gelöscht. Das aktuell aktive Gerät gilt grundsätzlich als vertrauenswürdig. Gebrochene Fremdschlüsselreferenzen werden nicht korrigiert.';
+
+  @override
+  String dbPurgeForeignDevicesSuccess(int deleted) {
+    return '$deleted Einträge gelöscht';
+  }
+
+  @override
   String get syncSources => 'Sync-Quellen';
 
   @override

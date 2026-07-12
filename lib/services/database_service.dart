@@ -3168,6 +3168,63 @@ class DatabaseService {
     return result;
   }
 
+  /// Deletes all rows from every table that carries a [device_id] column where
+  /// that [device_id] is neither the currently active device's ID nor listed as
+  /// trusted (trusted = 1) in [trusted_sources].
+  ///
+  /// Rows with an empty [device_id] are intentionally left untouched.
+  /// The set of trusted IDs is read once before any deletion begins, so the
+  /// [trusted_sources] subquery is not affected by its own deletion.
+  /// Broken foreign-key references that may result are not repaired.
+  Future<int> deleteUntrustedDeviceEntries() async {
+    final db = await database;
+    final currentDeviceId = SettingsService.instance.deviceId;
+
+    // Read trusted device IDs before touching any table.
+    final trustedRows = await db.rawQuery(
+      'SELECT trusted_device_id FROM trusted_sources'
+      ' WHERE trusted = 1 AND deleted_at IS NULL',
+    );
+    final trustedIds = <String>{
+      currentDeviceId,
+      ...trustedRows.map((r) => r['trusted_device_id'] as String),
+    };
+
+    final placeholders = List.filled(trustedIds.length, '?').join(', ');
+    final args = trustedIds.toList();
+
+    // Delete dependents before parents to reduce dangling-reference noise,
+    // though FK enforcement is intentionally not applied.
+    const tables = [
+      'message_attachments',
+      'stay_persons',
+      'stay_activities',
+      'place_experiences',
+      'sync_source_experiences',
+      'p2p_messages',
+      'place_photos',
+      'stays',
+      'saved_places',
+      'place_groups',
+      'persons',
+      'activities',
+      'sync_sources',
+      'telegram_connections',
+      'trusted_sources',
+      'virtual_devices',
+    ];
+
+    int total = 0;
+    for (final table in tables) {
+      total += await db.rawDelete(
+        "DELETE FROM $table"
+        " WHERE device_id = '' OR device_id NOT IN ($placeholders)",
+        args,
+      );
+    }
+    return total;
+  }
+
   /// Returns device IDs of all non-deleted [TrustedSource] entries where
   /// [trusted] is true.
   Future<List<String>> loadTrustedDeviceIds() async {

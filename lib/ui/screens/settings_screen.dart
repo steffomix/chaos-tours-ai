@@ -675,6 +675,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: () => Navigator.pushNamed(context, '/database-dump'),
             ),
             ListTile(
+              leading: const Icon(Icons.no_accounts),
+              title: Text(l10n.dbPurgeForeignDevicesTitle),
+              subtitle: Text(l10n.dbPurgeForeignDevicesSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text(l10n.dbPurgeForeignDevicesConfirmTitle),
+                    content: Text(l10n.dbPurgeForeignDevicesConfirmContent),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: Text(l10n.cancel),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        child: Text(l10n.ok),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed != true) return;
+                if (!context.mounted) return;
+                final deleted = await DatabaseService.instance
+                    .deleteUntrustedDeviceEntries();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(l10n.dbPurgeForeignDevicesSuccess(deleted)),
+                    ),
+                  );
+                }
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.cleaning_services),
               title: Text(l10n.dbCleanupTitle),
               subtitle: Text(l10n.dbCleanupSubtitle),
