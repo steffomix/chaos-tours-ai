@@ -552,6 +552,10 @@
   "@activities": {
     "description": "Activities"
   },
+  "sectionDatabase": "Datenbank Wartung",
+  "@sectionDatabase": {
+    "description": "Database section header"
+  },
   "databaseDump": "Datenbank-Dump",
   "@databaseDump": {
     "description": "Database dump"

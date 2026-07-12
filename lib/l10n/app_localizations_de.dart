@@ -424,6 +424,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get activities => 'Tätigkeiten';
 
   @override
+  String get sectionDatabase => 'Datenbank Wartung';
+
+  @override
   String get databaseDump => 'Datenbank-Dump';
 
   @override

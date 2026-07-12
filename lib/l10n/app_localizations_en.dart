@@ -419,6 +419,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activities => 'Activities';
 
   @override
+  String get sectionDatabase => 'Database maintenance';
+
+  @override
   String get databaseDump => 'Database dump';
 
   @override

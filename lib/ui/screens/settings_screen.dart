@@ -266,52 +266,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: () => Navigator.pushNamed(context, '/activities'),
             ),
             ListTile(
-              leading: const Icon(Icons.storage),
-              title: Text(l10n.databaseDump),
-              subtitle: Text(l10n.databaseDumpSubtitle),
+              leading: const Icon(Icons.send),
+              title: Text(l10n.telegramConnections),
+              subtitle: Text(l10n.telegramConnectionsSubtitle),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.pushNamed(context, '/database-dump'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.cleaning_services),
-              title: Text(l10n.dbCleanupTitle),
-              subtitle: Text(l10n.dbCleanupSubtitle),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () async {
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: Text(l10n.dbCleanupConfirmTitle),
-                    content: Text(l10n.dbCleanupConfirmContent),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        child: Text(l10n.cancel),
-                      ),
-                      FilledButton(
-                        onPressed: () => Navigator.of(ctx).pop(true),
-                        child: Text(l10n.ok),
-                      ),
-                    ],
-                  ),
-                );
-                if (confirmed != true) return;
-                if (!context.mounted) return;
-                final result = await DatabaseService.instance
-                    .cleanupOrphanedRecords();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        l10n.dbCleanupSuccess(
-                          result['nullified'] ?? 0,
-                          result['deleted'] ?? 0,
-                        ),
-                      ),
-                    ),
-                  );
-                }
-              },
+              onTap: () =>
+                  Navigator.pushNamed(context, '/telegram-connections'),
             ),
             ListTile(
               leading: const Icon(Icons.public),
@@ -320,13 +280,132 @@ class _SettingsScreenState extends State<SettingsScreen> {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.pushNamed(context, '/sync-sources'),
             ),
+
+            // ── Fotos ────────────────────────────────────────────────────
+            UnifiedWidget(context).namedDivider(l10n.sectionPhotos),
             ListTile(
-              leading: const Icon(Icons.send),
-              title: Text(l10n.telegramConnections),
-              subtitle: Text(l10n.telegramConnectionsSubtitle),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () =>
-                  Navigator.pushNamed(context, '/telegram-connections'),
+              title: Text(l10n.photoMaxWidth(_photoMaxWidth)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Slider(
+                    value: _photoMaxWidth.toDouble(),
+                    min: 0,
+                    max: 4096,
+                    divisions: 64,
+                    label: _photoMaxWidth == 0 ? '∞' : '$_photoMaxWidth',
+                    onChanged: (v) =>
+                        setState(() => _photoMaxWidth = (v / 64).round() * 64),
+                  ),
+                  Text(
+                    l10n.photoMaxDimensionSubtitle,
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              title: Text(l10n.photoMaxHeight(_photoMaxHeight)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Slider(
+                    value: _photoMaxHeight.toDouble(),
+                    min: 0,
+                    max: 4096,
+                    divisions: 64,
+                    label: _photoMaxHeight == 0 ? '∞' : '$_photoMaxHeight',
+                    onChanged: (v) =>
+                        setState(() => _photoMaxHeight = (v / 64).round() * 64),
+                  ),
+                  Text(
+                    l10n.photoMaxDimensionSubtitle,
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              title: Text(l10n.photoImageQuality(_photoImageQuality)),
+              subtitle: Slider(
+                value: _photoImageQuality.toDouble(),
+                min: 10,
+                max: 100,
+                divisions: 18,
+                label: '$_photoImageQuality %',
+                onChanged: (v) =>
+                    setState(() => _photoImageQuality = v.round()),
+              ),
+            ),
+            ListTile(
+              title: Text(l10n.placeDetailPhotoCount(_placeDetailPhotoCount)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Slider(
+                    value: _placeDetailPhotoCount.toDouble(),
+                    min: 1,
+                    max: 20,
+                    divisions: 19,
+                    label: '$_placeDetailPhotoCount',
+                    onChanged: (v) =>
+                        setState(() => _placeDetailPhotoCount = v.round()),
+                  ),
+                  Text(
+                    l10n.placeDetailPhotoCountSubtitle,
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            // ── Kartendarstellung ─────────────────────────────────────────
+            UnifiedWidget(context).namedDivider(l10n.sectionMapDisplay),
+            SwitchListTile(
+              title: Text(l10n.showGpsPoints),
+              subtitle: Text(l10n.showGpsPointsSubtitle),
+              value: _showTrackingPoints,
+              onChanged: (v) => setState(() => _showTrackingPoints = v),
+            ),
+            if (_showTrackingPoints)
+              ListTile(
+                title: Text(
+                  l10n.pointSize(_trackingPointRadius.toStringAsFixed(1)),
+                ),
+                subtitle: Slider(
+                  value: _trackingPointRadius,
+                  min: 1,
+                  max: 20,
+                  divisions: 19,
+                  label: '${_trackingPointRadius.toStringAsFixed(1)} m',
+                  onChanged: (v) => setState(() => _trackingPointRadius = v),
+                ),
+              ),
+            ListTile(
+              title: Text(
+                l10n.visitHistory(
+                  _timelineHistoryDays == 1
+                      ? l10n.visitHistoryDay(_timelineHistoryDays)
+                      : l10n.visitHistoryDays(_timelineHistoryDays),
+                ),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Slider(
+                    value: _timelineHistoryDays.toDouble(),
+                    min: 7,
+                    max: 90,
+                    //divisions: 29,
+                    label: '$_timelineHistoryDays',
+                    onChanged: (v) =>
+                        setState(() => _timelineHistoryDays = v.round()),
+                  ),
+                  Text(
+                    l10n.visitHistoryHint,
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
+              ),
             ),
             // ── Planer ──────────────────────────────────────────────────
             UnifiedWidget(context).namedDivider(l10n.sectionPlanner),
@@ -414,132 +493,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 4),
                   Text(
                     l10n.nominatimUserAgentSubtitle,
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-            // ── Kartendarstellung ─────────────────────────────────────────
-            UnifiedWidget(context).namedDivider(l10n.sectionMapDisplay),
-            SwitchListTile(
-              title: Text(l10n.showGpsPoints),
-              subtitle: Text(l10n.showGpsPointsSubtitle),
-              value: _showTrackingPoints,
-              onChanged: (v) => setState(() => _showTrackingPoints = v),
-            ),
-            if (_showTrackingPoints)
-              ListTile(
-                title: Text(
-                  l10n.pointSize(_trackingPointRadius.toStringAsFixed(1)),
-                ),
-                subtitle: Slider(
-                  value: _trackingPointRadius,
-                  min: 1,
-                  max: 20,
-                  divisions: 19,
-                  label: '${_trackingPointRadius.toStringAsFixed(1)} m',
-                  onChanged: (v) => setState(() => _trackingPointRadius = v),
-                ),
-              ),
-            ListTile(
-              title: Text(
-                l10n.visitHistory(
-                  _timelineHistoryDays == 1
-                      ? l10n.visitHistoryDay(_timelineHistoryDays)
-                      : l10n.visitHistoryDays(_timelineHistoryDays),
-                ),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Slider(
-                    value: _timelineHistoryDays.toDouble(),
-                    min: 7,
-                    max: 90,
-                    //divisions: 29,
-                    label: '$_timelineHistoryDays',
-                    onChanged: (v) =>
-                        setState(() => _timelineHistoryDays = v.round()),
-                  ),
-                  Text(
-                    l10n.visitHistoryHint,
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-            // ── Fotos ────────────────────────────────────────────────────
-            UnifiedWidget(context).namedDivider(l10n.sectionPhotos),
-            ListTile(
-              title: Text(l10n.photoMaxWidth(_photoMaxWidth)),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Slider(
-                    value: _photoMaxWidth.toDouble(),
-                    min: 0,
-                    max: 4096,
-                    divisions: 64,
-                    label: _photoMaxWidth == 0 ? '∞' : '$_photoMaxWidth',
-                    onChanged: (v) =>
-                        setState(() => _photoMaxWidth = (v / 64).round() * 64),
-                  ),
-                  Text(
-                    l10n.photoMaxDimensionSubtitle,
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              title: Text(l10n.photoMaxHeight(_photoMaxHeight)),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Slider(
-                    value: _photoMaxHeight.toDouble(),
-                    min: 0,
-                    max: 4096,
-                    divisions: 64,
-                    label: _photoMaxHeight == 0 ? '∞' : '$_photoMaxHeight',
-                    onChanged: (v) =>
-                        setState(() => _photoMaxHeight = (v / 64).round() * 64),
-                  ),
-                  Text(
-                    l10n.photoMaxDimensionSubtitle,
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              title: Text(l10n.photoImageQuality(_photoImageQuality)),
-              subtitle: Slider(
-                value: _photoImageQuality.toDouble(),
-                min: 10,
-                max: 100,
-                divisions: 18,
-                label: '$_photoImageQuality %',
-                onChanged: (v) =>
-                    setState(() => _photoImageQuality = v.round()),
-              ),
-            ),
-            ListTile(
-              title: Text(l10n.placeDetailPhotoCount(_placeDetailPhotoCount)),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Slider(
-                    value: _placeDetailPhotoCount.toDouble(),
-                    min: 1,
-                    max: 20,
-                    divisions: 19,
-                    label: '$_placeDetailPhotoCount',
-                    onChanged: (v) =>
-                        setState(() => _placeDetailPhotoCount = v.round()),
-                  ),
-                  Text(
-                    l10n.placeDetailPhotoCountSubtitle,
                     style: const TextStyle(fontSize: 11),
                   ),
                 ],
@@ -710,6 +663,57 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 label: '${_defaultRadius.toStringAsFixed(0)} m',
                 onChanged: (v) => setState(() => _defaultRadius = v),
               ),
+            ),
+            // ───── Database ──────────────────────────────────────────────────
+            UnifiedWidget(context).namedDivider(l10n.sectionDatabase),
+
+            ListTile(
+              leading: const Icon(Icons.storage),
+              title: Text(l10n.databaseDump),
+              subtitle: Text(l10n.databaseDumpSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.pushNamed(context, '/database-dump'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.cleaning_services),
+              title: Text(l10n.dbCleanupTitle),
+              subtitle: Text(l10n.dbCleanupSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text(l10n.dbCleanupConfirmTitle),
+                    content: Text(l10n.dbCleanupConfirmContent),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: Text(l10n.cancel),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        child: Text(l10n.ok),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed != true) return;
+                if (!context.mounted) return;
+                final result = await DatabaseService.instance
+                    .cleanupOrphanedRecords();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        l10n.dbCleanupSuccess(
+                          result['nullified'] ?? 0,
+                          result['deleted'] ?? 0,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+              },
             ),
             // ── Berechtigungen ───────────────────────────────────────────
             UnifiedWidget(context).namedDivider(l10n.sectionPermissions),

@@ -812,6 +812,12 @@ abstract class AppLocalizations {
   /// **'Tätigkeiten'**
   String get activities;
 
+  /// Database section header
+  ///
+  /// In de, this message translates to:
+  /// **'Datenbank Wartung'**
+  String get sectionDatabase;
+
   /// Database dump
   ///
   /// In de, this message translates to:

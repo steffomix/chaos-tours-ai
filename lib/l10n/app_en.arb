@@ -247,6 +247,7 @@
   "placeGroups": "Place groups",
   "persons": "Persons",
   "activities": "Activities",
+  "sectionDatabase": "Database maintenance",
   "databaseDump": "Database dump",
   "databaseDumpSubtitle": "Create, load & share dump",
   "dbCleanupTitle": "Clean up database",
