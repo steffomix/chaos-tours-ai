@@ -536,6 +536,12 @@ class _PlacesScreenState extends State<PlacesScreen> {
               latlng,
               onCreated: _loadPlaces,
             ),
+            onSecondaryTap: (tap, latlng) => handleMapLongPress(
+              context,
+              tap,
+              latlng,
+              onCreated: _loadPlaces,
+            ),
           ),
           children: [
             TileLayer(

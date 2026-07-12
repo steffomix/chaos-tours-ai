@@ -116,6 +116,7 @@ class _PlaceRepositionScreenState extends State<PlaceRepositionScreen> {
               initialCenter: LatLng(target.lat, target.lng),
               initialZoom: 16,
               onLongPress: _onLongPress,
+              onSecondaryTap: _onLongPress,
             ),
             children: [
               TileLayer(

@@ -207,15 +207,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         title: Text(l10n.settingsTitle),
         actions: [
-          UnifiedWidget(context).saveButton(
-            onPressed: () async {
-              await _saveAll();
-              if (context.mounted) {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text(l10n.settingsSaved)));
-              }
-            },
+          Padding(
+            padding: EdgeInsets.only(right: 8),
+            child: UnifiedWidget(context).saveButton(
+              onPressed: () async {
+                await _saveAll();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(l10n.settingsSaved)));
+                }
+              },
+            ),
           ),
         ],
       ),
@@ -771,14 +774,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 }
               },
             ),
-            SwitchListTile(
-              secondary: const Icon(Icons.calendar_today),
-              title: Text(l10n.calendarSync),
-              subtitle: Text(l10n.calendarSyncSubtitle),
-              value: SettingsService.instance.calendarEnabled,
-              onChanged: (v) =>
-                  setState(() => SettingsService.instance.calendarEnabled = v),
-            ),
             if (SettingsService.instance.calendarEnabled)
               ListTile(
                 leading: const Icon(Icons.lock_open_outlined),
@@ -798,19 +793,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   }
                 },
               ),
+            SwitchListTile(
+              secondary: const Icon(Icons.calendar_today),
+              title: Text(l10n.calendarSync),
+              subtitle: Text(l10n.calendarSyncSubtitle),
+              value: SettingsService.instance.calendarEnabled,
+              onChanged: (v) =>
+                  setState(() => SettingsService.instance.calendarEnabled = v),
+            ),
             const Divider(),
             const SizedBox(height: 8),
-
-            UnifiedWidget(context).saveAndCancelButtonsRow(
-              onSavePressed: () async {
-                await _saveAll();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text(l10n.settingsSaved)));
-                }
-              },
-              onCancelPressed: () => Navigator.pop(context),
+            Padding(
+              padding: EdgeInsets.only(right: 8),
+              child: UnifiedWidget(context).saveAndCancelButtonsRow(
+                onSavePressed: () async {
+                  await _saveAll();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(l10n.settingsSaved)));
+                  }
+                },
+                onCancelPressed: () => Navigator.pop(context),
+              ),
             ),
 
             const ListTile(

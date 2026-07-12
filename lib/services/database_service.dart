@@ -53,36 +53,7 @@ class DatabaseService {
     }
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, _dbFilename);
-    return openDatabase(
-      path,
-      version: 1,
-      onCreate: _onCreate,
-      onOpen: (db) async {
-        // Idempotent column additions for databases created before a schema
-        // change. ALTER TABLE ADD COLUMN fails if the column already exists,
-        // so we catch and ignore that error.
-        final migrations = [
-          'ALTER TABLE sync_sources ADD COLUMN last_sync_ms INTEGER NOT NULL DEFAULT 0',
-          'ALTER TABLE virtual_devices ADD COLUMN sync_export_protected INTEGER NOT NULL DEFAULT 0',
-          'ALTER TABLE virtual_devices ADD COLUMN sync_import_protected INTEGER NOT NULL DEFAULT 0',
-          'ALTER TABLE saved_places ADD COLUMN sync_url TEXT NOT NULL DEFAULT ""',
-          'ALTER TABLE saved_places ADD COLUMN sync_port INTEGER NOT NULL DEFAULT 8000',
-          'ALTER TABLE saved_places ADD COLUMN sync_api_key TEXT NOT NULL DEFAULT ""',
-          'ALTER TABLE saved_places ADD COLUMN sync_notes TEXT NOT NULL DEFAULT ""',
-          "ALTER TABLE saved_places ADD COLUMN sync_options TEXT NOT NULL DEFAULT '{}'",
-          'ALTER TABLE saved_places ADD COLUMN sync_messages_last_ms INTEGER NOT NULL DEFAULT 0',
-          'ALTER TABLE saved_places ADD COLUMN sync_last_ms INTEGER NOT NULL DEFAULT 0',
-          'ALTER TABLE saved_places ADD COLUMN sync_intervall INTEGER NOT NULL DEFAULT 0',
-        ];
-        for (final sql in migrations) {
-          try {
-            await db.execute(sql);
-          } catch (_) {
-            // Column already present — safe to ignore.
-          }
-        }
-      },
-    );
+    return openDatabase(path, version: 1, onCreate: _onCreate);
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -130,6 +101,7 @@ class DatabaseService {
         sync_api_key TEXT NOT NULL DEFAULT '',
         sync_notes TEXT NOT NULL DEFAULT '',
         sync_options TEXT NOT NULL DEFAULT '{}',
+        sync_messages_last_ms INTEGER NOT NULL DEFAULT 0,
         sync_last_ms INTEGER NOT NULL DEFAULT 0,
         sync_intervall INTEGER NOT NULL DEFAULT 0,
         updated_at INTEGER NOT NULL DEFAULT 0,
@@ -3068,11 +3040,11 @@ class DatabaseService {
     // Load existing entries (after the potential rename above).
     final existing = await loadAllTrustedSources();
     final existingIds = existing.map((t) => t.deviceId).toSet();
-
+    final batch = db.batch();
     int added = 0;
     for (final id in allIds) {
       if (existingIds.contains(id)) continue;
-      await db.insert('trusted_sources', {
+      batch.insert('trusted_sources', {
         'uuid': _uuid.v4(),
         'trusted_device_id': id,
         'trusted': 0,
@@ -3085,6 +3057,7 @@ class DatabaseService {
       }, conflictAlgorithm: ConflictAlgorithm.ignore);
       added++;
     }
+    await batch.commit();
     return added;
   }
 

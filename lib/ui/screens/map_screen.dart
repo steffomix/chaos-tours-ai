@@ -359,6 +359,7 @@ class _MapScreenState extends State<MapScreen> {
                       initialZoom: 13,
                       onTap: _onMapTap,
                       onLongPress: _onLongPress,
+                      onSecondaryTap: _onLongPress,
                     ),
                     children: [
                       TileLayer(

@@ -554,6 +554,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
             initialCenter: center,
             initialZoom: 12,
             onLongPress: _onMapLongPress,
+            onSecondaryTap: _onMapLongPress,
           ),
           children: [
             TileLayer(

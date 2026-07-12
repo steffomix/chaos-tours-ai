@@ -833,7 +833,10 @@ class _SqlEditorDialogState extends State<_SqlEditorDialog> {
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.all(10),
                   ),
-                  style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.bold,
+                  ),
                   keyboardType: TextInputType.multiline,
                 ),
               ),
