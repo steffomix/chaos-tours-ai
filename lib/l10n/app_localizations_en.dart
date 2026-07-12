@@ -344,7 +344,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'How many days of travel history are shown on the timeline map.';
 
   @override
-  String get sectionPlanner => 'Planner';
+  String get sectionPlanner => 'Interval Planner';
 
   @override
   String colorRange(int days) {
@@ -1224,9 +1224,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get photos => 'Photos';
 
   @override
-  String get deleteStay => 'Delete stay';
-
-  @override
   String get deleteStayTitle => 'Delete stay';
 
   @override
@@ -1378,9 +1375,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get phone => 'Phone';
-
-  @override
-  String get saveVisit => 'Save visit';
 
   @override
   String get importAutoOpenHint =>

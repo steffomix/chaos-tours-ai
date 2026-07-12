@@ -5,6 +5,7 @@ import '../../models/trusted_source.dart';
 import '../../models/virtual_device.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
+import '../../utils/unified_widget.dart';
 
 class TrustedSourcesScreen extends StatefulWidget {
   const TrustedSourcesScreen({super.key});
@@ -408,16 +409,9 @@ class _TrustedSourceEditSheetState extends State<_TrustedSourceEditSheet> {
               label: Text(l10n.createVirtualDeviceForSource),
             ),
             const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(l10n.cancel),
-                ),
-                const SizedBox(width: 8),
-                FilledButton(onPressed: _save, child: Text(l10n.save)),
-              ],
+            UnifiedWidget(context).saveAndCancelButtonsRow(
+              onSavePressed: _save,
+              onCancelPressed: () => Navigator.pop(context),
             ),
           ],
         ),

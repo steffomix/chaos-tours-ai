@@ -15,6 +15,7 @@ import '../../services/sync_service.dart';
 import '../../services/telegram_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/maidenhead.dart';
+import '../../utils/unified_widget.dart';
 import 'experiences_screen.dart';
 import 'place_reposition_screen.dart';
 import 'place_visits_screen.dart';
@@ -243,21 +244,22 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  FilledButton.icon(
-                    icon: const Icon(Icons.check),
-                    label: Text(AppLocalizations.of(ctx)!.saveVisit),
-                    onPressed: () async {
+
+                  UnifiedWidget(ctx).saveAndCancelButtonsRow(
+                    onSavePressed: () {
                       final stay = Stay(
                         placeUuid: widget.place.uuid,
                         startTime: startDt.millisecondsSinceEpoch,
                         endTime: endDt.millisecondsSinceEpoch,
                         status: StayStatus.completed,
                       );
-                      await DatabaseService.instance.insertStay(stay);
-                      if (ctx.mounted) Navigator.pop(ctx);
-                      await _loadVisitStats();
-                      widget.onUpdated();
+                      DatabaseService.instance.insertStay(stay).then((_) {
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        _loadVisitStats();
+                        widget.onUpdated();
+                      });
                     },
+                    onCancelPressed: () => Navigator.pop(ctx),
                   ),
                 ],
               ),
@@ -1768,27 +1770,9 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               Divider(),
               const SizedBox(height: 12),
               // ── Aktionen ───────────────────────────────────────────────
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _delete,
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      label: Text(
-                        AppLocalizations.of(context)!.delete,
-                        style: const TextStyle(color: Colors.red),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: _save,
-                      icon: const Icon(Icons.save),
-                      label: Text(AppLocalizations.of(context)!.save),
-                    ),
-                  ),
-                ],
+              UnifiedWidget(context).saveAndDeleteButtonsRow(
+                onSavePressed: _save,
+                onDeletePressed: _delete,
               ),
             ],
           ),

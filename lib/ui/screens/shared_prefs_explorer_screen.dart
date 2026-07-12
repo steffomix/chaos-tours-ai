@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../utils/unified_widget.dart';
 
 /// A simple explorer for the app's [SharedPreferences] with basic editing
 /// capabilities. Mirrors the SQLite [DatabaseExplorerScreen] but for key/value
@@ -76,16 +77,11 @@ class _SharedPrefsExplorerScreenState extends State<SharedPrefsExplorerScreen> {
                 ),
               ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(l10n.cancel),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, current),
-                child: Text(l10n.save),
-              ),
-            ],
+            actionsAlignment: MainAxisAlignment.spaceBetween,
+            actions: UnifiedWidget(context).saveAndCancelButtonsList(
+              onSavePressed: () => Navigator.pop(context, current),
+              onCancelPressed: () => Navigator.pop(context),
+            ),
           ),
         ),
       );
@@ -131,16 +127,11 @@ class _SharedPrefsExplorerScreenState extends State<SharedPrefsExplorerScreen> {
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: Text(l10n.save),
-          ),
-        ],
+        actionsAlignment: MainAxisAlignment.spaceBetween,
+        actions: UnifiedWidget(context).saveAndCancelButtonsList(
+          onSavePressed: () => Navigator.pop(context, controller.text),
+          onCancelPressed: () => Navigator.pop(context),
+        ),
       ),
     );
 
@@ -181,6 +172,7 @@ class _SharedPrefsExplorerScreenState extends State<SharedPrefsExplorerScreen> {
       builder: (context) => AlertDialog(
         title: Text(l10n.sharedPrefsDeleteTitle),
         content: Text(l10n.sharedPrefsDeleteConfirm(key)),
+        actionsAlignment: MainAxisAlignment.spaceBetween,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),

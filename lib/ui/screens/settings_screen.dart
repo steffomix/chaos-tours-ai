@@ -12,6 +12,7 @@ import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/permission_helper.dart';
 import '../../utils/random_data_generator.dart';
+import '../../utils/unified_widget.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -206,7 +207,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         title: Text(l10n.settingsTitle),
         actions: [
-          TextButton(
+          UnifiedWidget(context).saveButton(
             onPressed: () async {
               await _saveAll();
               if (context.mounted) {
@@ -215,7 +216,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ).showSnackBar(SnackBar(content: Text(l10n.settingsSaved)));
               }
             },
-            child: Text(l10n.save),
           ),
         ],
       ),
@@ -242,15 +242,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.pushNamed(context, '/trusted-sources'),
             ),
-            const Divider(),
             // ── Verwaltung ───────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: Text(
-                l10n.sectionManagement,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
+            UnifiedWidget(context).namedDivider(l10n.sectionManagement),
             ListTile(
               leading: const Icon(Icons.folder),
               title: Text(l10n.placeGroups),
@@ -332,13 +325,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: () =>
                   Navigator.pushNamed(context, '/telegram-connections'),
             ),
-            const Divider(),
+            // ── Planer ──────────────────────────────────────────────────
+            UnifiedWidget(context).namedDivider(l10n.sectionPlanner),
+            ListTile(
+              title: Text(l10n.colorRange(_schedulerColorRange)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Slider(
+                    value: _schedulerColorRange.toDouble(),
+                    min: 1,
+                    max: 90,
+                    divisions: 89,
+                    label: '$_schedulerColorRange',
+                    onChanged: (v) =>
+                        setState(() => _schedulerColorRange = v.round()),
+                  ),
+                  Text(
+                    l10n.colorRangeHint(_schedulerColorRange),
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
             // ── Adresssuche ───────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: Text(
-                l10n.sectionAddressSearch,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+            UnifiedWidget(context).namedDivider(l10n.sectionAddressSearch),
+            ListTile(
+              leading: const Icon(Icons.flag_outlined),
+              title: Text(l10n.defaultCountry),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: _searchCountryCtrl,
+                    decoration: InputDecoration(
+                      hintText: l10n.defaultCountryHint,
+                      isDense: true,
+                    ),
+                    onChanged: (v) => _searchCountry = v,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.defaultCountrySubtitle,
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
               ),
             ),
             CheckboxListTile(
@@ -385,67 +416,134 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.flag_outlined),
-              title: Text(l10n.defaultCountry),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: _searchCountryCtrl,
-                    decoration: InputDecoration(
-                      hintText: l10n.defaultCountryHint,
-                      isDense: true,
-                    ),
-                    onChanged: (v) => _searchCountry = v,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    l10n.defaultCountrySubtitle,
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                ],
-              ),
+            // ── Kartendarstellung ─────────────────────────────────────────
+            UnifiedWidget(context).namedDivider(l10n.sectionMapDisplay),
+            SwitchListTile(
+              title: Text(l10n.showGpsPoints),
+              subtitle: Text(l10n.showGpsPointsSubtitle),
+              value: _showTrackingPoints,
+              onChanged: (v) => setState(() => _showTrackingPoints = v),
             ),
-            const Divider(),
-            // ── Planer ──────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: Text(
-                l10n.sectionPlanner,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+            if (_showTrackingPoints)
+              ListTile(
+                title: Text(
+                  l10n.pointSize(_trackingPointRadius.toStringAsFixed(1)),
+                ),
+                subtitle: Slider(
+                  value: _trackingPointRadius,
+                  min: 1,
+                  max: 20,
+                  divisions: 19,
+                  label: '${_trackingPointRadius.toStringAsFixed(1)} m',
+                  onChanged: (v) => setState(() => _trackingPointRadius = v),
+                ),
               ),
-            ),
             ListTile(
-              title: Text(l10n.colorRange(_schedulerColorRange)),
+              title: Text(
+                l10n.visitHistory(
+                  _timelineHistoryDays == 1
+                      ? l10n.visitHistoryDay(_timelineHistoryDays)
+                      : l10n.visitHistoryDays(_timelineHistoryDays),
+                ),
+              ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Slider(
-                    value: _schedulerColorRange.toDouble(),
-                    min: 1,
+                    value: _timelineHistoryDays.toDouble(),
+                    min: 7,
                     max: 90,
-                    divisions: 89,
-                    label: '$_schedulerColorRange',
+                    //divisions: 29,
+                    label: '$_timelineHistoryDays',
                     onChanged: (v) =>
-                        setState(() => _schedulerColorRange = v.round()),
+                        setState(() => _timelineHistoryDays = v.round()),
                   ),
                   Text(
-                    l10n.colorRangeHint(_schedulerColorRange),
+                    l10n.visitHistoryHint,
                     style: const TextStyle(fontSize: 11),
                   ),
                 ],
               ),
             ),
-            const Divider(),
-            // ── Tracking Settings ─────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: Text(
-                l10n.sectionTracking,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+            // ── Fotos ────────────────────────────────────────────────────
+            UnifiedWidget(context).namedDivider(l10n.sectionPhotos),
+            ListTile(
+              title: Text(l10n.photoMaxWidth(_photoMaxWidth)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Slider(
+                    value: _photoMaxWidth.toDouble(),
+                    min: 0,
+                    max: 4096,
+                    divisions: 64,
+                    label: _photoMaxWidth == 0 ? '∞' : '$_photoMaxWidth',
+                    onChanged: (v) =>
+                        setState(() => _photoMaxWidth = (v / 64).round() * 64),
+                  ),
+                  Text(
+                    l10n.photoMaxDimensionSubtitle,
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
               ),
             ),
+            ListTile(
+              title: Text(l10n.photoMaxHeight(_photoMaxHeight)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Slider(
+                    value: _photoMaxHeight.toDouble(),
+                    min: 0,
+                    max: 4096,
+                    divisions: 64,
+                    label: _photoMaxHeight == 0 ? '∞' : '$_photoMaxHeight',
+                    onChanged: (v) =>
+                        setState(() => _photoMaxHeight = (v / 64).round() * 64),
+                  ),
+                  Text(
+                    l10n.photoMaxDimensionSubtitle,
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              title: Text(l10n.photoImageQuality(_photoImageQuality)),
+              subtitle: Slider(
+                value: _photoImageQuality.toDouble(),
+                min: 10,
+                max: 100,
+                divisions: 18,
+                label: '$_photoImageQuality %',
+                onChanged: (v) =>
+                    setState(() => _photoImageQuality = v.round()),
+              ),
+            ),
+            ListTile(
+              title: Text(l10n.placeDetailPhotoCount(_placeDetailPhotoCount)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Slider(
+                    value: _placeDetailPhotoCount.toDouble(),
+                    min: 1,
+                    max: 20,
+                    divisions: 19,
+                    label: '$_placeDetailPhotoCount',
+                    onChanged: (v) =>
+                        setState(() => _placeDetailPhotoCount = v.round()),
+                  ),
+                  Text(
+                    l10n.placeDetailPhotoCountSubtitle,
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            // ── Tracking Settings ─────────────────────────────────────────
+            UnifiedWidget(context).namedDivider(l10n.sectionTracking),
             SwitchListTile(
               title: Text(l10n.autoCreatePlaces),
               subtitle: Text(l10n.autoCreatePlacesSubtitle),
@@ -610,155 +708,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onChanged: (v) => setState(() => _defaultRadius = v),
               ),
             ),
-            const Divider(),
-            // ── Kartendarstellung ─────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: Text(
-                l10n.sectionMapDisplay,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            SwitchListTile(
-              title: Text(l10n.showGpsPoints),
-              subtitle: Text(l10n.showGpsPointsSubtitle),
-              value: _showTrackingPoints,
-              onChanged: (v) => setState(() => _showTrackingPoints = v),
-            ),
-            if (_showTrackingPoints)
-              ListTile(
-                title: Text(
-                  l10n.pointSize(_trackingPointRadius.toStringAsFixed(1)),
-                ),
-                subtitle: Slider(
-                  value: _trackingPointRadius,
-                  min: 1,
-                  max: 20,
-                  divisions: 19,
-                  label: '${_trackingPointRadius.toStringAsFixed(1)} m',
-                  onChanged: (v) => setState(() => _trackingPointRadius = v),
-                ),
-              ),
-            ListTile(
-              title: Text(
-                l10n.visitHistory(
-                  _timelineHistoryDays == 1
-                      ? l10n.visitHistoryDay(_timelineHistoryDays)
-                      : l10n.visitHistoryDays(_timelineHistoryDays),
-                ),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Slider(
-                    value: _timelineHistoryDays.toDouble(),
-                    min: 7,
-                    max: 90,
-                    //divisions: 29,
-                    label: '$_timelineHistoryDays',
-                    onChanged: (v) =>
-                        setState(() => _timelineHistoryDays = v.round()),
-                  ),
-                  Text(
-                    l10n.visitHistoryHint,
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(),
-            // ── Fotos ────────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: Text(
-                l10n.sectionPhotos,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            ListTile(
-              title: Text(l10n.photoMaxWidth(_photoMaxWidth)),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Slider(
-                    value: _photoMaxWidth.toDouble(),
-                    min: 0,
-                    max: 4096,
-                    divisions: 64,
-                    label: _photoMaxWidth == 0 ? '∞' : '$_photoMaxWidth',
-                    onChanged: (v) =>
-                        setState(() => _photoMaxWidth = (v / 64).round() * 64),
-                  ),
-                  Text(
-                    l10n.photoMaxDimensionSubtitle,
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              title: Text(l10n.photoMaxHeight(_photoMaxHeight)),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Slider(
-                    value: _photoMaxHeight.toDouble(),
-                    min: 0,
-                    max: 4096,
-                    divisions: 64,
-                    label: _photoMaxHeight == 0 ? '∞' : '$_photoMaxHeight',
-                    onChanged: (v) =>
-                        setState(() => _photoMaxHeight = (v / 64).round() * 64),
-                  ),
-                  Text(
-                    l10n.photoMaxDimensionSubtitle,
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              title: Text(l10n.photoImageQuality(_photoImageQuality)),
-              subtitle: Slider(
-                value: _photoImageQuality.toDouble(),
-                min: 10,
-                max: 100,
-                divisions: 18,
-                label: '$_photoImageQuality %',
-                onChanged: (v) =>
-                    setState(() => _photoImageQuality = v.round()),
-              ),
-            ),
-            ListTile(
-              title: Text(l10n.placeDetailPhotoCount(_placeDetailPhotoCount)),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Slider(
-                    value: _placeDetailPhotoCount.toDouble(),
-                    min: 1,
-                    max: 20,
-                    divisions: 19,
-                    label: '$_placeDetailPhotoCount',
-                    onChanged: (v) =>
-                        setState(() => _placeDetailPhotoCount = v.round()),
-                  ),
-                  Text(
-                    l10n.placeDetailPhotoCountSubtitle,
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(),
             // ── Berechtigungen ───────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: Text(
-                l10n.sectionPermissions,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
+            UnifiedWidget(context).namedDivider(l10n.sectionPermissions),
             ListTile(
               leading: const Icon(Icons.location_on),
               title: Text(l10n.locationPermission),
@@ -848,6 +799,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
             const Divider(),
+            const SizedBox(height: 8),
+
+            UnifiedWidget(context).saveAndCancelButtonsRow(
+              onSavePressed: () async {
+                await _saveAll();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(l10n.settingsSaved)));
+                }
+              },
+              onCancelPressed: () => Navigator.pop(context),
+            ),
+
             const ListTile(
               leading: Icon(Icons.info_outline),
               title: Text('Chaos Tours'),
@@ -870,14 +835,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (!unlocked) {
       return [
-        const Divider(),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-          child: Text(
-            l10n.devToolsSectionTitle,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
+        UnifiedWidget(context).namedDivider(l10n.devToolsSectionTitle),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Container(

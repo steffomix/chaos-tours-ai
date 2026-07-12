@@ -7,6 +7,7 @@ import '../../models/telegram_connection.dart';
 import '../../services/calendar_service.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
+import '../../utils/unified_widget.dart';
 
 class PlaceGroupsScreen extends StatefulWidget {
   const PlaceGroupsScreen({super.key});
@@ -383,7 +384,7 @@ class _PlaceGroupEditScreenState extends State<_PlaceGroupEditScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.existing == null ? l10n.newGroup : l10n.editGroup),
-        actions: [TextButton(onPressed: _save, child: Text(l10n.save))],
+        actions: [UnifiedWidget(context).saveButton(onPressed: _save)],
       ),
       body: SafeArea(
         child: ListView(

@@ -3,6 +3,7 @@ import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 
 import '../../models/place_experience.dart';
 import '../../services/database_service.dart';
+import '../../utils/unified_widget.dart';
 
 /// Full-screen list of survival experiences for a single place.
 /// Items are loaded in chunks as the user scrolls (chunk loader).
@@ -193,21 +194,20 @@ class _ExperiencesScreenState extends State<ExperiencesScreen> {
                 ],
               ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: Text(ctxL10n.cancel),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: Text(ctxL10n.save),
-              ),
-            ],
+            actionsAlignment: MainAxisAlignment.spaceBetween,
+            actions: UnifiedWidget(ctx).saveAndDeleteButtonsList(
+              onSavePressed: () => Navigator.pop(ctx, true),
+              onDeletePressed: () => Navigator.pop(ctx, false),
+            ),
           );
         },
       ),
     );
 
+    if (saved == false && existing != null) {
+      await _deleteExperience(existing);
+      return;
+    }
     if (saved != true) return;
     if (existing == null) {
       await DatabaseService.instance.insertPlaceExperience(
@@ -334,93 +334,100 @@ class _ExperiencesScreenState extends State<ExperiencesScreen> {
                   }
                   final exp = _experiences[i];
                   final avg = exp.averageRating;
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  'Ø ${avg.toStringAsFixed(1)}',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: avg > 0
-                                        ? Colors.green
-                                        : avg < 0
-                                        ? Colors.red
-                                        : null,
+                  return InkWell(
+                    onTap: () => _addOrEditExperience(exp),
+                    child: Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'Ø ${avg.toStringAsFixed(1)}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: avg > 0
+                                          ? Colors.green
+                                          : avg < 0
+                                          ? Colors.red
+                                          : null,
+                                    ),
                                   ),
                                 ),
-                              ),
+                                Text(
+                                  _fmtMs(exp.createdAt),
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                // IconButton(
+                                //   icon: const Icon(Icons.edit, size: 18),
+                                //   tooltip: l10n.edit,
+                                //   visualDensity: VisualDensity.compact,
+                                //   onPressed: () => _addOrEditExperience(exp),
+                                // ),
+                                // IconButton(
+                                //   icon: const Icon(
+                                //     Icons.delete_outline,
+                                //     size: 18,
+                                //     color: Colors.red,
+                                //   ),
+                                //   tooltip: l10n.delete,
+                                //   visualDensity: VisualDensity.compact,
+                                //   onPressed: () => _deleteExperience(exp),
+                                // ),
+                              ],
+                            ),
+                            if (exp.text.isNotEmpty) ...[
+                              const SizedBox(height: 4),
                               Text(
-                                _fmtMs(exp.createdAt),
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.grey,
-                                ),
+                                exp.text,
+                                maxLines: 20,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 13),
                               ),
-                              IconButton(
-                                icon: const Icon(Icons.edit, size: 18),
-                                tooltip: l10n.edit,
-                                visualDensity: VisualDensity.compact,
-                                onPressed: () => _addOrEditExperience(exp),
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  size: 18,
-                                  color: Colors.red,
-                                ),
-                                tooltip: l10n.delete,
-                                visualDensity: VisualDensity.compact,
-                                onPressed: () => _deleteExperience(exp),
-                              ),
+                              const SizedBox(height: 6),
                             ],
-                          ),
-                          if (exp.text.isNotEmpty) ...[
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              children: [
+                                _ratingChip(
+                                  'Gef/Fr',
+                                  exp.ratingDangerousFriendly,
+                                ),
+                                _ratingChip('Btr/Zuv', exp.ratingFraudReliable),
+                                _ratingChip(
+                                  'Abw/Unt',
+                                  exp.ratingDismissiveAccommodation,
+                                ),
+                                _ratingChip('Verpfl', exp.ratingFood),
+                                _ratingChip('Equip', exp.ratingEquipment),
+                                _ratingChip('Trans', exp.ratingTransport),
+                                _ratingChip('Med', exp.ratingMedicine),
+                              ],
+                            ),
                             const SizedBox(height: 4),
                             Text(
-                              exp.text,
-                              style: const TextStyle(fontSize: 13),
+                              exp.deviceId,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey,
+                                fontStyle: FontStyle.italic,
+                              ),
                             ),
-                            const SizedBox(height: 6),
                           ],
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 4,
-                            children: [
-                              _ratingChip(
-                                'Gef/Fr',
-                                exp.ratingDangerousFriendly,
-                              ),
-                              _ratingChip('Btr/Zuv', exp.ratingFraudReliable),
-                              _ratingChip(
-                                'Abw/Unt',
-                                exp.ratingDismissiveAccommodation,
-                              ),
-                              _ratingChip('Verpfl', exp.ratingFood),
-                              _ratingChip('Equip', exp.ratingEquipment),
-                              _ratingChip('Trans', exp.ratingTransport),
-                              _ratingChip('Med', exp.ratingMedicine),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            exp.deviceId,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   );
+
+                  //////
                 },
               ),
             ),

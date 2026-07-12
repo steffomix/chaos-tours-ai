@@ -31,6 +31,9 @@ enum MessagesFilter {
 /// simplifies maintenance. Messages are paginated (chunk-loaded) because the
 /// volume can be large.
 class MessagesScreen extends StatefulWidget {
+  @override
+  State<MessagesScreen> createState() => _MessagesScreenState();
+
   final MessagesFilter filter;
 
   /// Required when [filter] is [MessagesFilter.place].
@@ -71,9 +74,6 @@ class MessagesScreen extends StatefulWidget {
     this.title,
   }) : filter = MessagesFilter.region,
        placeUuid = null;
-
-  @override
-  State<MessagesScreen> createState() => _MessagesScreenState();
 }
 
 class _MessagesScreenState extends State<MessagesScreen> {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 
 import '../../models/sync_source.dart';
+import '../../utils/unified_widget.dart';
 
 /// Opens a dialog that lets the user configure per-table sync options
 /// (insert / update / delete) for a [SyncSourceOptions] value.
@@ -136,16 +137,11 @@ Future<SyncSourceOptions?> showSyncOptionsDialog(
               ],
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(l10n.cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, opts),
-              child: Text(l10n.save),
-            ),
-          ],
+          actionsAlignment: MainAxisAlignment.spaceBetween,
+          actions: UnifiedWidget(context).saveAndCancelButtonsList(
+            onSavePressed: () => Navigator.pop(ctx, opts),
+            onCancelPressed: () => Navigator.pop(ctx),
+          ),
         ),
       );
     },

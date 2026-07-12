@@ -683,7 +683,7 @@ abstract class AppLocalizations {
   /// Planner section header
   ///
   /// In de, this message translates to:
-  /// **'Planer'**
+  /// **'Intervall Planer'**
   String get sectionPlanner;
 
   /// Color range setting
@@ -2264,12 +2264,6 @@ abstract class AppLocalizations {
   /// **'Fotos'**
   String get photos;
 
-  /// Delete stay button
-  ///
-  /// In de, this message translates to:
-  /// **'Aufenthalt löschen'**
-  String get deleteStay;
-
   /// Delete stay dialog title
   ///
   /// In de, this message translates to:
@@ -2557,12 +2551,6 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Telefon'**
   String get phone;
-
-  /// Save visit button
-  ///
-  /// In de, this message translates to:
-  /// **'Besuch speichern'**
-  String get saveVisit;
 
   /// Import auto-open hint
   ///

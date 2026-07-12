@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../models/place_photo.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
+import '../../utils/unified_widget.dart';
 
 /// A reusable photo grid widget that shows photos for a place and/or stay.
 ///
@@ -309,16 +310,11 @@ class _PhotoViewerState extends State<_PhotoViewer> {
           decoration: InputDecoration(hintText: l10n.captionHint),
           autofocus: true,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, ctrl.text),
-            child: Text(l10n.save),
-          ),
-        ],
+        actionsAlignment: MainAxisAlignment.spaceBetween,
+        actions: UnifiedWidget(context).saveAndCancelButtonsList(
+          onSavePressed: () => Navigator.pop(ctx, ctrl.text),
+          onCancelPressed: () => Navigator.pop(ctx),
+        ),
       ),
     );
     if (result == null || !mounted) return;

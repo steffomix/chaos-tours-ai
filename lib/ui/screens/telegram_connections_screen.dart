@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../models/telegram_connection.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
+import '../../utils/unified_widget.dart';
 
 class TelegramConnectionsScreen extends StatefulWidget {
   const TelegramConnectionsScreen({super.key});
@@ -159,27 +160,22 @@ class _TelegramConnectionsScreenState extends State<TelegramConnectionsScreen> {
                 ),
               ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text(l10n.cancel),
-              ),
-              FilledButton(
-                onPressed: () {
-                  if (formKey.currentState?.validate() != true) return;
-                  Navigator.pop(ctx, (
-                    TelegramConnection(
-                      uuid: existing?.uuid,
-                      name: nameCtrl.text.trim(),
-                      description: descCtrl.text.trim(),
-                      chatId: chatIdCtrl.text.trim(),
-                    ),
-                    tokenCtrl.text.trim(),
-                  ));
-                },
-                child: Text(l10n.save),
-              ),
-            ],
+            actionsAlignment: MainAxisAlignment.spaceBetween,
+            actions: UnifiedWidget(context).saveAndCancelButtonsList(
+              onSavePressed: () {
+                if (formKey.currentState?.validate() != true) return;
+                Navigator.pop(ctx, (
+                  TelegramConnection(
+                    uuid: existing?.uuid,
+                    name: nameCtrl.text.trim(),
+                    description: descCtrl.text.trim(),
+                    chatId: chatIdCtrl.text.trim(),
+                  ),
+                  tokenCtrl.text.trim(),
+                ));
+              },
+              onCancelPressed: () => Navigator.pop(ctx),
+            ),
           );
         },
       ),

@@ -8,6 +8,7 @@ import '../services/database_service.dart';
 import '../services/nominatim_service.dart';
 import '../services/settings_service.dart';
 import '../ui/screens/messages_screen.dart';
+import 'unified_widget.dart';
 
 /// Handles a long-press on any map. Offers the user a choice between creating a
 /// new place and viewing the P2P messages of the surrounding region. When the
@@ -146,16 +147,11 @@ Future<void> createPlaceFromLongPress(
           decoration: InputDecoration(labelText: ctxL10n.name),
           autofocus: true,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(ctxL10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(ctxL10n.save),
-          ),
-        ],
+        actionsAlignment: MainAxisAlignment.spaceBetween,
+        actions: UnifiedWidget(context).saveAndCancelButtonsList(
+          onSavePressed: () => Navigator.pop(ctx, true),
+          onCancelPressed: () => Navigator.pop(ctx, false),
+        ),
       );
     },
   );

@@ -3,6 +3,7 @@ import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 
 import '../../models/activity.dart';
 import '../../services/database_service.dart';
+import '../../utils/unified_widget.dart';
 
 class ActivitiesScreen extends StatefulWidget {
   const ActivitiesScreen({super.key});
@@ -82,20 +83,14 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
           ),
           autofocus: true,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () {
-              final name = nameCtrl.text.trim();
-              if (name.isEmpty) return;
-              Navigator.pop(ctx, Activity(uuid: existing?.uuid, name: name));
-            },
-            child: Text(l10n.save),
-          ),
-        ],
+        actions: UnifiedWidget(ctx).saveAndCancelButtonsList(
+          onSavePressed: () {
+            final name = nameCtrl.text.trim();
+            if (name.isEmpty) return;
+            Navigator.pop(ctx, Activity(uuid: existing?.uuid, name: name));
+          },
+          onCancelPressed: () => Navigator.pop(ctx),
+        ),
       ),
     );
   }

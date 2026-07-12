@@ -13,6 +13,7 @@ import '../../models/stay_activity.dart';
 import '../../models/stay_person.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
+import '../../utils/unified_widget.dart';
 import '../screens/all_photos_screen.dart';
 import '../screens/messages_screen.dart';
 import '../screens/place_detail_screen.dart';
@@ -684,72 +685,8 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                       onChanged: (v) => setState(() => _isInterval = v),
                     ),
                   ],
-                  const SizedBox(height: 16),
+
                   // Persons
-                  Row(
-                    children: [
-                      Text(
-                        l10n.persons,
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.person_add),
-                        onPressed: _showAddPersonDialog,
-                        tooltip: l10n.addPersonSheetTitle,
-                      ),
-                    ],
-                  ),
-                  Wrap(
-                    spacing: 6,
-                    children: _stayPersons
-                        .map(
-                          (sp) => Chip(
-                            avatar: const Icon(Icons.person, size: 16),
-                            label: Text(sp.name),
-                            onDeleted: () => _removeStayPerson(sp),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                  const SizedBox(height: 12),
-                  // Activities
-                  Row(
-                    children: [
-                      Text(
-                        l10n.activities,
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.add_task),
-                        onPressed: _showAddActivityDialog,
-                        tooltip: l10n.addActivitySheetTitle,
-                      ),
-                    ],
-                  ),
-                  Wrap(
-                    spacing: 6,
-                    children: _stayActivities
-                        .map(
-                          (sa) => Chip(
-                            avatar: const Icon(Icons.work_outline, size: 16),
-                            label: Text(sa.description),
-                            onDeleted: () => _removeStayActivity(sa),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                  const SizedBox(height: 16),
-                  // ── Fotos ───────────────────────────────────────
-                  _buildPhotosSection(l10n),
-                  const SizedBox(height: 16),
-                  // ── Bericht / P2P Nachrichten ─────────────────────────
-                  OutlinedButton.icon(
-                    onPressed: _copyReport,
-                    icon: const Icon(Icons.copy_all),
-                    label: const Text('Bericht kopieren'),
-                  ),
                   if (_place != null &&
                       SettingsService.instance.messengerEnabled) ...[
                     const SizedBox(height: 8),
@@ -766,29 +703,82 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                       icon: const Icon(Icons.forum),
                       label: const Text('P2P Nachrichten'),
                     ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Text(
+                          l10n.persons,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(Icons.person_add),
+                          onPressed: _showAddPersonDialog,
+                          tooltip: l10n.addPersonSheetTitle,
+                        ),
+                      ],
+                    ),
+                    Wrap(
+                      spacing: 6,
+                      children: _stayPersons
+                          .map(
+                            (sp) => Chip(
+                              avatar: const Icon(Icons.person, size: 16),
+                              label: Text(sp.name),
+                              onDeleted: () => _removeStayPerson(sp),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    const SizedBox(height: 12),
+                    // Activities
+                    Row(
+                      children: [
+                        Text(
+                          l10n.activities,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(Icons.add_task),
+                          onPressed: _showAddActivityDialog,
+                          tooltip: l10n.addActivitySheetTitle,
+                        ),
+                      ],
+                    ),
+                    Wrap(
+                      spacing: 6,
+                      children: _stayActivities
+                          .map(
+                            (sa) => Chip(
+                              avatar: const Icon(Icons.work_outline, size: 16),
+                              label: Text(sa.description),
+                              onDeleted: () => _removeStayActivity(sa),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    // ── Fotos ───────────────────────────────────────
+                    _buildPhotosSection(l10n),
+                    const SizedBox(height: 16),
+                    // ── Bericht / P2P Nachrichten ─────────────────────────
+                    OutlinedButton.icon(
+                      onPressed: _copyReport,
+                      icon: const Icon(Icons.copy_all),
+                      label: const Text('Bericht kopieren'),
+                    ),
                   ],
                   const SizedBox(height: 16),
-                  FilledButton.icon(
-                    onPressed: () async {
+
+                  UnifiedWidget(context).saveAndDeleteButtonsRow(
+                    onSavePressed: () async {
                       await _save();
                       if (context.mounted) {
                         Navigator.pop(context);
                       }
                     },
-                    icon: const Icon(Icons.save),
-                    label: Text(l10n.save),
-                  ),
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    onPressed: _deleteStay,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.error,
-                      side: BorderSide(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                    icon: const Icon(Icons.delete_outline),
-                    label: Text(l10n.deleteStay),
+                    onDeletePressed: _deleteStay,
                   ),
                 ],
               ),

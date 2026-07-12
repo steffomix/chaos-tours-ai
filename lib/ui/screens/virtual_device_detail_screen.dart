@@ -5,6 +5,7 @@ import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import '../../models/virtual_device.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
+import '../../utils/unified_widget.dart';
 
 /// Detail screen for a single [VirtualDevice].
 ///
@@ -76,16 +77,11 @@ class _VirtualDeviceDetailScreenState extends State<VirtualDeviceDetailScreen> {
           decoration: InputDecoration(labelText: l10n.name),
           autofocus: true,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.save),
-          ),
-        ],
+        actionsAlignment: MainAxisAlignment.spaceBetween,
+        actions: UnifiedWidget(context).saveAndCancelButtonsList(
+          onSavePressed: () => Navigator.pop(ctx, true),
+          onCancelPressed: () => Navigator.pop(ctx, false),
+        ),
       ),
     );
     final newName = ctrl.text.trim();
@@ -126,12 +122,13 @@ class _VirtualDeviceDetailScreenState extends State<VirtualDeviceDetailScreen> {
       builder: (ctx) => AlertDialog(
         title: Text(l10n.purgeDataConfirmTitle),
         content: Text(l10n.purgeDataConfirmContent(_virtualDevice.name)),
+        actionsAlignment: MainAxisAlignment.spaceBetween,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(l10n.cancel),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(
               l10n.purgeDataLabel,
@@ -192,17 +189,18 @@ class _VirtualDeviceDetailScreenState extends State<VirtualDeviceDetailScreen> {
                   ),
                 ],
               ),
+              actionsAlignment: MainAxisAlignment.spaceBetween,
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx2, false),
-                  child: Text(l10n.cancel),
-                ),
                 TextButton(
                   onPressed: () => Navigator.pop(ctx2, true),
                   child: Text(
                     l10n.delete,
                     style: const TextStyle(color: Colors.red),
                   ),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx2, false),
+                  child: Text(l10n.cancel),
                 ),
               ],
             );

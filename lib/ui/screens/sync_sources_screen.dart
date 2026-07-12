@@ -6,6 +6,7 @@ import '../../models/sync_source.dart';
 import '../../models/sync_source_experience.dart';
 import '../../services/database_service.dart';
 import '../../services/sync_service.dart';
+import '../../utils/unified_widget.dart';
 import '../widgets/sync_options_dialog.dart';
 
 class SyncSourcesScreen extends StatefulWidget {
@@ -257,28 +258,23 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
                 ),
               ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text(l10n.cancel),
-              ),
-              FilledButton(
-                onPressed: () {
-                  if (formKey.currentState?.validate() != true) return;
-                  Navigator.pop(
-                    ctx,
-                    (existing ?? SyncSource(name: '', syncUrl: '')).copyWith(
-                      name: nameCtrl.text.trim(),
-                      syncUrl: syncUrlCtrl.text.trim(),
-                      apiKey: apiKeyCtrl.text.trim(),
-                      infoUrl: infoUrlCtrl.text.trim(),
-                      description: descCtrl.text.trim(),
-                    ),
-                  );
-                },
-                child: Text(l10n.save),
-              ),
-            ],
+            actionsAlignment: MainAxisAlignment.spaceBetween,
+            actions: UnifiedWidget(context).saveAndCancelButtonsList(
+              onSavePressed: () {
+                if (formKey.currentState?.validate() != true) return;
+                Navigator.pop(
+                  ctx,
+                  (existing ?? SyncSource(name: '', syncUrl: '')).copyWith(
+                    name: nameCtrl.text.trim(),
+                    syncUrl: syncUrlCtrl.text.trim(),
+                    apiKey: apiKeyCtrl.text.trim(),
+                    infoUrl: infoUrlCtrl.text.trim(),
+                    description: descCtrl.text.trim(),
+                  ),
+                );
+              },
+              onCancelPressed: () => Navigator.pop(ctx),
+            ),
           ),
         );
       },
@@ -510,16 +506,10 @@ class _SyncSourceDetailsSheetState extends State<_SyncSourceDetailsSheet> {
             border: const OutlineInputBorder(),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-            child: Text(l10n.save),
-          ),
-        ],
+        actions: UnifiedWidget(context).saveAndCancelButtonsList(
+          onSavePressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+          onCancelPressed: () => Navigator.pop(ctx),
+        ),
       ),
     );
     if (text == null || text.isEmpty) return;

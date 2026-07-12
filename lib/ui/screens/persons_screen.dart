@@ -3,6 +3,7 @@ import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 
 import '../../models/person.dart';
 import '../../services/database_service.dart';
+import '../../utils/unified_widget.dart';
 
 class PersonsScreen extends StatefulWidget {
   const PersonsScreen({super.key});
@@ -96,27 +97,21 @@ class _PersonsScreenState extends State<PersonsScreen> {
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () {
-              final name = nameCtrl.text.trim();
-              if (name.isEmpty) return;
-              Navigator.pop(
-                ctx,
-                Person(
-                  uuid: existing?.uuid,
-                  name: name,
-                  role: roleCtrl.text.trim(),
-                ),
-              );
-            },
-            child: Text(l10n.save),
-          ),
-        ],
+        actions: UnifiedWidget(ctx).saveAndCancelButtonsList(
+          onSavePressed: () {
+            final name = nameCtrl.text.trim();
+            if (name.isEmpty) return;
+            Navigator.pop(
+              ctx,
+              Person(
+                uuid: existing?.uuid,
+                name: name,
+                role: roleCtrl.text.trim(),
+              ),
+            );
+          },
+          onCancelPressed: () => Navigator.pop(ctx),
+        ),
       ),
     );
   }

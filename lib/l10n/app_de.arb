@@ -454,7 +454,7 @@
   "@visitHistoryHint": {
     "description": "Visit history hint"
   },
-  "sectionPlanner": "Planer",
+  "sectionPlanner": "Intervall Planer",
   "@sectionPlanner": {
     "description": "Planner section header"
   },
@@ -1701,10 +1701,6 @@
   "@photos": {
     "description": "Photos section title"
   },
-  "deleteStay": "Aufenthalt löschen",
-  "@deleteStay": {
-    "description": "Delete stay button"
-  },
   "deleteStayTitle": "Aufenthalt löschen",
   "@deleteStayTitle": {
     "description": "Delete stay dialog title"
@@ -1914,10 +1910,6 @@
   "phone": "Telefon",
   "@phone": {
     "description": "Phone label"
-  },
-  "saveVisit": "Besuch speichern",
-  "@saveVisit": {
-    "description": "Save visit button"
   },
   "importAutoOpenHint": "Diese App öffnet sich automatisch, wenn du eine Datei hierher teilst.",
   "@importAutoOpenHint": {

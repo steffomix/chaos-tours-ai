@@ -211,7 +211,7 @@
     }
   },
   "visitHistoryHint": "How many days of travel history are shown on the timeline map.",
-  "sectionPlanner": "Planner",
+  "sectionPlanner": "Interval Planner",
   "colorRange": "Color range: {days}",
   "@colorRange": {
     "placeholders": {
@@ -726,7 +726,6 @@
   "addActivitySheetTitle": "Add activity",
   "activityNewHint": "Enter activity (new)",
   "photos": "Photos",
-  "deleteStay": "Delete stay",
   "deleteStayTitle": "Delete stay",
   "deleteStayContent": "Do you really want to delete this stay? This action cannot be undone.",
   "personNewHint": "Enter name (new)",
@@ -799,7 +798,6 @@
   "website": "Website",
   "email": "Email",
   "phone": "Phone",
-  "saveVisit": "Save visit",
   "importAutoOpenHint": "This app opens automatically when you share a file here.",
   "importOverwriteWarning": "All existing data will be overwritten.",
   "importNow": "Import now",

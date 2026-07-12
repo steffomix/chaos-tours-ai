@@ -346,7 +346,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Wie viele Tage der Reiseverlauf auf der Zeitachsen-Karte angezeigt wird.';
 
   @override
-  String get sectionPlanner => 'Planer';
+  String get sectionPlanner => 'Intervall Planer';
 
   @override
   String colorRange(int days) {
@@ -1233,9 +1233,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get photos => 'Fotos';
 
   @override
-  String get deleteStay => 'Aufenthalt löschen';
-
-  @override
   String get deleteStayTitle => 'Aufenthalt löschen';
 
   @override
@@ -1386,9 +1383,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get phone => 'Telefon';
-
-  @override
-  String get saveVisit => 'Besuch speichern';
 
   @override
   String get importAutoOpenHint =>

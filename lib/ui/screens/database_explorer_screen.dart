@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/place_photo.dart';
 import '../../services/database_service.dart';
+import '../../utils/unified_widget.dart';
 import '../widgets/album_photo_viewer.dart';
 
 // ---------------------------------------------------------------------------
@@ -316,16 +317,10 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
               ? const TextInputType.numberWithOptions(decimal: true)
               : TextInputType.text,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.save),
-          ),
-        ],
+        actions: UnifiedWidget(ctx).saveAndDeleteButtonsList(
+          onSavePressed: () => Navigator.pop(ctx, true),
+          onDeletePressed: () => Navigator.pop(ctx, false),
+        ),
       ),
     );
 
