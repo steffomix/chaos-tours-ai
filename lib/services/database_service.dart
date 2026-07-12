@@ -3225,6 +3225,41 @@ class DatabaseService {
     return total;
   }
 
+  /// Hard-deletes all rows that have been soft-deleted ([deleted_at] IS NOT
+  /// NULL) from every table that supports soft-deletion.
+  /// Returns the total number of rows permanently removed.
+  Future<int> purgeDeletedRecords() async {
+    final db = await database;
+
+    // Process dependents before parents to minimise FK noise (not enforced).
+    const tables = [
+      'message_attachments',
+      'stay_persons',
+      'stay_activities',
+      'place_experiences',
+      'sync_source_experiences',
+      'p2p_messages',
+      'place_photos',
+      'stays',
+      'saved_places',
+      'place_groups',
+      'persons',
+      'activities',
+      'sync_sources',
+      'telegram_connections',
+      'trusted_sources',
+      'virtual_devices',
+    ];
+
+    int total = 0;
+    for (final table in tables) {
+      total += await db.rawDelete(
+        'DELETE FROM $table WHERE deleted_at IS NOT NULL',
+      );
+    }
+    return total;
+  }
+
   /// Returns device IDs of all non-deleted [TrustedSource] entries where
   /// [trusted] is true.
   Future<List<String>> loadTrustedDeviceIds() async {

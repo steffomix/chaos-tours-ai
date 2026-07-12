@@ -711,6 +711,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.delete_forever),
+              title: Text(l10n.dbPurgeDeletedTitle),
+              subtitle: Text(l10n.dbPurgeDeletedSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text(l10n.dbPurgeDeletedConfirmTitle),
+                    content: Text(l10n.dbPurgeDeletedConfirmContent),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: Text(l10n.cancel),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        child: Text(l10n.ok),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed != true) return;
+                if (!context.mounted) return;
+                final deleted = await DatabaseService.instance
+                    .purgeDeletedRecords();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(l10n.dbPurgeDeletedSuccess(deleted)),
+                    ),
+                  );
+                }
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.cleaning_services),
               title: Text(l10n.dbCleanupTitle),
               subtitle: Text(l10n.dbCleanupSubtitle),

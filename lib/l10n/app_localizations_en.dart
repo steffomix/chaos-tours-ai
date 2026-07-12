@@ -466,6 +466,25 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get dbPurgeDeletedTitle => 'Purge soft-deleted records';
+
+  @override
+  String get dbPurgeDeletedSubtitle =>
+      'Permanently remove all records marked as deleted';
+
+  @override
+  String get dbPurgeDeletedConfirmTitle => 'Purge deleted records?';
+
+  @override
+  String get dbPurgeDeletedConfirmContent =>
+      'All records across every table that have been soft-deleted (deleted_at is set) will be permanently and irrecoverably removed.';
+
+  @override
+  String dbPurgeDeletedSuccess(int deleted) {
+    return '$deleted records purged';
+  }
+
+  @override
   String get syncSources => 'Sync sources';
 
   @override

@@ -471,6 +471,25 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get dbPurgeDeletedTitle => 'Gelöschte Einträge bereinigen';
+
+  @override
+  String get dbPurgeDeletedSubtitle =>
+      'Alle als gelöscht markierten Einträge endgültig entfernen';
+
+  @override
+  String get dbPurgeDeletedConfirmTitle => 'Gelöschte Einträge bereinigen?';
+
+  @override
+  String get dbPurgeDeletedConfirmContent =>
+      'Alle Einträge in sämtlichen Tabellen, bei denen deleted_at gesetzt ist, werden endgültig und unwiderruflich gelöscht.';
+
+  @override
+  String dbPurgeDeletedSuccess(int deleted) {
+    return '$deleted Einträge bereinigt';
+  }
+
+  @override
   String get syncSources => 'Sync-Quellen';
 
   @override

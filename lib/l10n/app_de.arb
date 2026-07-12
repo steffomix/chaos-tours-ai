@@ -611,6 +611,29 @@
       "deleted": { "type": "int" }
     }
   },
+  "dbPurgeDeletedTitle": "Gelöschte Einträge bereinigen",
+  "@dbPurgeDeletedTitle": {
+    "description": "Purge soft-deleted records button title"
+  },
+  "dbPurgeDeletedSubtitle": "Alle als gelöscht markierten Einträge endgültig entfernen",
+  "@dbPurgeDeletedSubtitle": {
+    "description": "Purge soft-deleted records subtitle"
+  },
+  "dbPurgeDeletedConfirmTitle": "Gelöschte Einträge bereinigen?",
+  "@dbPurgeDeletedConfirmTitle": {
+    "description": "Purge soft-deleted records confirmation dialog title"
+  },
+  "dbPurgeDeletedConfirmContent": "Alle Einträge in sämtlichen Tabellen, bei denen deleted_at gesetzt ist, werden endgültig und unwiderruflich gelöscht.",
+  "@dbPurgeDeletedConfirmContent": {
+    "description": "Purge soft-deleted records confirmation dialog content"
+  },
+  "dbPurgeDeletedSuccess": "{deleted} Einträge bereinigt",
+  "@dbPurgeDeletedSuccess": {
+    "description": "Purge soft-deleted records success message",
+    "placeholders": {
+      "deleted": { "type": "int" }
+    }
+  },
   "syncSources": "Sync-Quellen",
   "@syncSources": {
     "description": "Sync sources"

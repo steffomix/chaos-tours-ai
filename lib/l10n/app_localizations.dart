@@ -890,6 +890,36 @@ abstract class AppLocalizations {
   /// **'{deleted} Einträge gelöscht'**
   String dbPurgeForeignDevicesSuccess(int deleted);
 
+  /// Purge soft-deleted records button title
+  ///
+  /// In de, this message translates to:
+  /// **'Gelöschte Einträge bereinigen'**
+  String get dbPurgeDeletedTitle;
+
+  /// Purge soft-deleted records subtitle
+  ///
+  /// In de, this message translates to:
+  /// **'Alle als gelöscht markierten Einträge endgültig entfernen'**
+  String get dbPurgeDeletedSubtitle;
+
+  /// Purge soft-deleted records confirmation dialog title
+  ///
+  /// In de, this message translates to:
+  /// **'Gelöschte Einträge bereinigen?'**
+  String get dbPurgeDeletedConfirmTitle;
+
+  /// Purge soft-deleted records confirmation dialog content
+  ///
+  /// In de, this message translates to:
+  /// **'Alle Einträge in sämtlichen Tabellen, bei denen deleted_at gesetzt ist, werden endgültig und unwiderruflich gelöscht.'**
+  String get dbPurgeDeletedConfirmContent;
+
+  /// Purge soft-deleted records success message
+  ///
+  /// In de, this message translates to:
+  /// **'{deleted} Einträge bereinigt'**
+  String dbPurgeDeletedSuccess(int deleted);
+
   /// Sync sources
   ///
   /// In de, this message translates to:
