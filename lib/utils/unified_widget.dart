@@ -1,5 +1,7 @@
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class UnifiedWidget {
   final BuildContext context;
@@ -70,4 +72,24 @@ class UnifiedWidget {
     deleteButton(onPressed: onDeletePressed),
     saveButton(onPressed: onSavePressed),
   ];
+
+  Widget markdownText(String text, {bool expanded = false}) {
+    final mdWidget = MarkdownBody(
+      data: text,
+      selectable: true,
+      onTapLink: (text, href, title) {
+        if (href != null) {
+          launchUrl(Uri.parse(href));
+        }
+      },
+      imageBuilder: (uri, title, alt) {
+        return Image.network(
+          uri.toString(),
+          errorBuilder: (ctx, err, stack) =>
+              const Icon(Icons.broken_image, color: Colors.red),
+        );
+      },
+    );
+    return expanded ? Expanded(child: mdWidget) : mdWidget;
+  }
 }

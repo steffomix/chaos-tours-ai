@@ -2492,6 +2492,12 @@ abstract class AppLocalizations {
   /// **'Jetzt besuchen'**
   String get visitNow;
 
+  /// Copy basic report button
+  ///
+  /// In de, this message translates to:
+  /// **'Bericht mit Basisdaten kopieren'**
+  String get copyBasicReport;
+
   /// Copy full report button
   ///
   /// In de, this message translates to:

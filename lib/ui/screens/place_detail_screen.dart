@@ -549,7 +549,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     }
   }
 
-  Future<void> _copyReport() async {
+  Future<void> _copyReport({bool basicReport = false}) async {
     final place = widget.place;
     final db = DatabaseService.instance;
     final uuid = place.uuid;
@@ -575,6 +575,15 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
           '${d.minute.toString().padLeft(2, '0')}';
     }
 
+    Future<void> toClipboard(String text) async {
+      await Clipboard.setData(ClipboardData(text: text));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.reportCopied)),
+        );
+      }
+    }
+
     final buf = StringBuffer();
 
     // ── Header ──────────────────────────────────────────────────────────
@@ -583,18 +592,35 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     buf.writeln('| Feld | Wert |');
     buf.writeln('|------|------|');
     buf.writeln('| Typ | ${place.placeType.label} |');
+
+    buf.writeln('| UUID | ${place.uuid} |');
+    if (place.originSourceUuid != null) {
+      buf.writeln('| Ursprung UUID | ${place.originSourceUuid} |');
+    }
+    buf.writeln('| Device ID | ${place.deviceId} |');
     buf.writeln(
-      '| Koordinaten | ${place.lat.toStringAsFixed(6)}, ${place.lng.toStringAsFixed(6)} |',
+      '| GPS Koordinaten | ${place.lat.toStringAsFixed(6)}, ${place.lng.toStringAsFixed(6)} |',
     );
+    buf.writeln(
+      '| QTH Koordinaten | ${Maidenhead.encode(place.lat, place.lng, pairs: 6)} |',
+    );
+    buf.writeln('| Email | ${place.email} |');
+    buf.writeln('| Telefon | ${place.phone} |');
     buf.writeln('| Radius | ${place.radius.toStringAsFixed(0)} m |');
     if (group != null) buf.writeln('| Gruppe | ${group.name} |');
     buf.writeln('| Erstellt | ${fmtDt(place.createdAt)} |');
+    buf.writeln('| Aktualisiert am | ${fmtDt(place.updatedAt)} |');
     buf.writeln('| Besuche gesamt | ${completed.length} |');
     if (place.notes.isNotEmpty) {
       buf.writeln();
       buf.writeln('**Notiz:** ${place.notes}');
     }
     buf.writeln();
+
+    if (basicReport) {
+      await toClipboard(buf.toString());
+      return;
+    }
 
     // ── Statistics ──────────────────────────────────────────────────────
     if (completed.isNotEmpty) {
@@ -708,12 +734,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
       }
     }
 
-    await Clipboard.setData(ClipboardData(text: buf.toString()));
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.reportCopied)),
-      );
-    }
+    await toClipboard(buf.toString());
+    return;
   }
 
   Future<void> _sendToTelegram() async {
@@ -1657,7 +1679,12 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               ),
               // ── Bericht kopieren ───────────────────────────────────────
               OutlinedButton.icon(
-                onPressed: _copyReport,
+                onPressed: () => _copyReport(basicReport: true),
+                icon: const Icon(Icons.copy_all),
+                label: Text(AppLocalizations.of(context)!.copyBasicReport),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => _copyReport(basicReport: false),
                 icon: const Icon(Icons.copy_all),
                 label: Text(AppLocalizations.of(context)!.copyFullReport),
               ),

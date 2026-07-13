@@ -1358,6 +1358,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get visitNow => 'Jetzt besuchen';
 
   @override
+  String get copyBasicReport => 'Bericht mit Basisdaten kopieren';
+
+  @override
   String get copyFullReport => 'Vollständigen Bericht kopieren';
 
   @override

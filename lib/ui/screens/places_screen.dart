@@ -15,6 +15,7 @@ import '../../services/settings_service.dart';
 import '../../services/location_service.dart';
 import '../../utils/geo_utils.dart';
 import '../../utils/place_creation_helper.dart';
+import '../../utils/unified_widget.dart';
 import 'place_detail_screen.dart';
 import '../widgets/experience_filter_panel.dart';
 import 'messages_screen.dart';
@@ -945,139 +946,137 @@ class _PlaceCardState extends State<_PlaceCard> {
               borderRadius: BorderRadius.circular(12),
             )
           : null,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: widget.onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    widget.place.placeType.icon,
-                    color: widget.place.placeType.dotColor,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      widget.place.name,
-                      style: textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (widget.distance != null)
-                    Text(
-                      widget.fmtDistance(widget.distance!),
-                      style: textTheme.bodySmall?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  if (headlineRating != null) ...[
-                    const SizedBox(width: 8),
-                    Icon(Icons.star, size: 14, color: Colors.amber),
-                    Text(
-                      headlineRating.toStringAsFixed(1),
-                      style: textTheme.bodySmall,
-                    ),
-                  ],
-                ],
-              ),
-              // ── Kompass-Zeile (Peilung + Distanz) ────────────────────
-              if (widget.compassOrigin != null) ...[
-                const SizedBox(height: 6),
-                Builder(
-                  builder: (_) {
-                    final o = widget.compassOrigin!;
-                    final bearing = GeoUtils.bearingDegrees(
-                      o.lat,
-                      o.lng,
-                      widget.place.lat,
-                      widget.place.lng,
-                    );
-                    final dist = GeoUtils.distanceMeters(
-                      o.lat,
-                      o.lng,
-                      widget.place.lat,
-                      widget.place.lng,
-                    );
-                    return Row(
-                      children: [
-                        Icon(
-                          Icons.explore,
-                          size: 16,
-                          color: colorScheme.primary,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          GeoUtils.formatBearingDegMin(bearing),
-                          style: textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Icon(
-                          Icons.straighten,
-                          size: 16,
-                          color: colorScheme.primary,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          GeoUtils.formatDistanceKm(dist),
-                          style: textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  widget.place.placeType.icon,
+                  color: widget.place.placeType.dotColor,
+                  size: 20,
                 ),
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  icon: Icon(Icons.edit, size: 16),
+                  onPressed: widget.onTap,
+                  label: Text(
+                    widget.place.name,
+                    style: textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Expanded(child: Container()),
+                if (widget.distance != null)
+                  Text(
+                    widget.fmtDistance(widget.distance!),
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                if (headlineRating != null) ...[
+                  const SizedBox(width: 8),
+                  Icon(Icons.star, size: 14, color: Colors.amber),
+                  Text(
+                    headlineRating.toStringAsFixed(1),
+                    style: textTheme.bodySmall,
+                  ),
+                ],
               ],
-              // ── Ratings table (specific filter mode) ─────────────────
-              if (specificActive) ...[
-                const SizedBox(height: 8),
-                _buildRatingsTable(context),
-                const SizedBox(height: 8),
-              ],
-              // ── Visit info ────────────────────────────────────────────
-              const SizedBox(height: 4),
+            ),
+            // ── Kompass-Zeile (Peilung + Distanz) ────────────────────
+            if (widget.compassOrigin != null) ...[
+              const SizedBox(height: 6),
+              Builder(
+                builder: (_) {
+                  final o = widget.compassOrigin!;
+                  final bearing = GeoUtils.bearingDegrees(
+                    o.lat,
+                    o.lng,
+                    widget.place.lat,
+                    widget.place.lng,
+                  );
+                  final dist = GeoUtils.distanceMeters(
+                    o.lat,
+                    o.lng,
+                    widget.place.lat,
+                    widget.place.lng,
+                  );
+                  return Row(
+                    children: [
+                      Icon(Icons.explore, size: 16, color: colorScheme.primary),
+                      const SizedBox(width: 6),
+                      Text(
+                        GeoUtils.formatBearingDegMin(bearing),
+                        style: textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Icon(
+                        Icons.straighten,
+                        size: 16,
+                        color: colorScheme.primary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        GeoUtils.formatDistanceKm(dist),
+                        style: textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
+            // ── Ratings table (specific filter mode) ─────────────────
+            if (specificActive) ...[
+              const SizedBox(height: 8),
+              _buildRatingsTable(context),
+              const SizedBox(height: 8),
+            ],
+            // ── Visit info ────────────────────────────────────────────
+            const SizedBox(height: 4),
+            Text(
+              widget.count == 0
+                  ? l10n.notVisitedYet
+                  : (widget.count == 1
+                        ? l10n.visitCount(widget.count)
+                        : l10n.visitCountPlural(widget.count)),
+              style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            if (widget.lastStay != null) ...[
+              const SizedBox(height: 2),
               Text(
-                widget.count == 0
-                    ? l10n.notVisitedYet
-                    : (widget.count == 1
-                          ? l10n.visitCount(widget.count)
-                          : l10n.visitCountPlural(widget.count)),
+                '${l10n.lastVisit(widget.fmtDate(widget.lastStay!.startTime), widget.fmtTime(widget.lastStay!.startDateTime))}'
+                '${widget.lastStay!.endDateTime != null ? ' – ${widget.fmtTime(widget.lastStay!.endDateTime!)}' : ''}'
+                '${widget.lastStay!.endDateTime != null ? '  (${widget.fmtDuration(widget.lastStay!.duration)})' : ''}',
                 style: textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
               ),
-              if (widget.lastStay != null) ...[
-                const SizedBox(height: 2),
-                Text(
-                  '${l10n.lastVisit(widget.fmtDate(widget.lastStay!.startTime), widget.fmtTime(widget.lastStay!.startDateTime))}'
-                  '${widget.lastStay!.endDateTime != null ? ' – ${widget.fmtTime(widget.lastStay!.endDateTime!)}' : ''}'
-                  '${widget.lastStay!.endDateTime != null ? '  (${widget.fmtDuration(widget.lastStay!.duration)})' : ''}',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-              if (widget.place.notes.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(
-                  widget.place.notes,
-                  maxLines: 20,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.bodySmall,
-                ),
-              ],
             ],
-          ),
+            if (widget.place.notes.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              UnifiedWidget(context).markdownText(widget.place.notes),
+
+              // Text(
+              //   widget.place.notes,
+              //   maxLines: 20,
+              //   overflow: TextOverflow.ellipsis,
+              //   style: textTheme.bodySmall,
+              // ),
+            ],
+          ],
         ),
       ),
     );

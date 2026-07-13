@@ -5,6 +5,7 @@ import '../../models/saved_place.dart';
 import '../../models/stay.dart';
 import '../../models/stay_activity.dart';
 import '../../models/stay_person.dart';
+import '../../utils/unified_widget.dart';
 import '../widgets/stay_detail_sheet.dart';
 
 class StayCard extends StatelessWidget {
@@ -52,6 +53,7 @@ class StayCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context)!;
     final placeName = place?.name ?? stay.address ?? l10n.unknownPlace;
     final startDt = stay.startDateTime;
@@ -63,119 +65,117 @@ class StayCard extends StatelessWidget {
       color: isActive
           ? colorScheme.primaryContainer.withValues(alpha: 0.4)
           : null,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => _openSheet(context),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header row
-              Row(
-                children: [
-                  Icon(
-                    isActive ? Icons.location_on : Icons.location_on_outlined,
-                    color: isActive
-                        ? colorScheme.primary
-                        : colorScheme.onSurfaceVariant,
-                    size: 20,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header row
+            Row(
+              children: [
+                Icon(
+                  isActive ? Icons.location_on : Icons.location_on_outlined,
+                  color: isActive
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
+                  size: 20,
+                ),
+                const SizedBox(width: 6),
+                OutlinedButton.icon(
+                  onPressed: () => _openSheet(context),
+                  icon: const Icon(Icons.edit, size: 16),
+                  label: Text(
+                    placeName,
+                    style: textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(width: 6),
-                  Expanded(
+                ),
+
+                if (isActive)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Text(
-                      placeName,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      l10n.active,
+                      style: TextStyle(
+                        color: colorScheme.onPrimary,
+                        fontSize: 11,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (isActive)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        l10n.active,
-                        style: TextStyle(
-                          color: colorScheme.onPrimary,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
-                ],
+              ],
+            ),
+            const SizedBox(height: 4),
+            // Time row
+            Text(
+              endDt != null
+                  ? '${_formatDate(startDt)}  ${_formatTime(startDt)} – ${_formatTime(endDt)}  (${_formatDuration(stay.duration)})'
+                  : '${_formatDate(startDt)}  ${_formatTime(startDt)} – ${l10n.stillRunning}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(height: 4),
-              // Time row
+            ),
+            // Address (if different from place name)
+            if (stay.address != null && place == null) ...[
+              const SizedBox(height: 2),
               Text(
-                endDt != null
-                    ? '${_formatDate(startDt)}  ${_formatTime(startDt)} – ${_formatTime(endDt)}  (${_formatDuration(stay.duration)})'
-                    : '${_formatDate(startDt)}  ${_formatTime(startDt)} – ${l10n.stillRunning}',
+                stay.address!,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
+                overflow: TextOverflow.ellipsis,
               ),
-              // Address (if different from place name)
-              if (stay.address != null && place == null) ...[
-                const SizedBox(height: 2),
-                Text(
-                  stay.address!,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-              // Notes preview
-              if (stay.notes.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(
-                  stay.notes,
-                  maxLines: 20,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-              // Persons + activities chips
-              if (persons.isNotEmpty || activities.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 4,
-                  runSpacing: 4,
-                  children: [
-                    ...persons.map(
-                      (p) => Chip(
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        padding: EdgeInsets.zero,
-                        avatar: const Icon(Icons.person, size: 14),
-                        label: Text(
-                          p.name,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ),
-                    ),
-                    ...activities.map(
-                      (a) => Chip(
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        padding: EdgeInsets.zero,
-                        avatar: const Icon(Icons.work_outline, size: 14),
-                        label: Text(
-                          a.description,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ],
-          ),
+            // Notes preview
+            if (stay.notes.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              UnifiedWidget(context).markdownText(stay.notes),
+
+              // Text(
+              //   stay.notes,
+              //   maxLines: 20,
+              //   overflow: TextOverflow.ellipsis,
+              //   style: Theme.of(context).textTheme.bodySmall,
+              // ),
+            ],
+            // Persons + activities chips
+            if (persons.isNotEmpty || activities.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                children: [
+                  ...persons.map(
+                    (p) => Chip(
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      padding: EdgeInsets.zero,
+                      avatar: const Icon(Icons.person, size: 14),
+                      label: Text(p.name, style: const TextStyle(fontSize: 12)),
+                    ),
+                  ),
+                  ...activities.map(
+                    (a) => Chip(
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      padding: EdgeInsets.zero,
+                      avatar: const Icon(Icons.work_outline, size: 14),
+                      label: Text(
+                        a.description,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
         ),
       ),
     );

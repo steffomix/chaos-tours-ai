@@ -3,15 +3,18 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/message.dart';
 import '../../models/place_photo.dart';
 import '../../models/saved_place.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
+import '../../utils/unified_widget.dart';
 
 /// Scope of the shared [MessagesScreen].
 enum MessagesFilter {
@@ -391,7 +394,9 @@ class _MessageCard extends StatelessWidget {
                       },
                     ),
                     const SizedBox(width: 4),
-                    Expanded(child: Text(message.body)),
+                    UnifiedWidget(
+                      context,
+                    ).markdownText(message.body, expanded: true),
                   ],
                 ),
               ),

@@ -1350,7 +1350,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get visitNow => 'Visit now';
 
   @override
-  String get copyFullReport => 'Copy full report';
+  String get copyBasicReport => 'Copy basic place report';
+
+  @override
+  String get copyFullReport => 'Copy full place report';
 
   @override
   String get sendReportToTelegram => 'Send report to Telegram';
