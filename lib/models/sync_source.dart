@@ -54,7 +54,6 @@ class SyncSourceOptions {
     'sync_source_experiences',
     'place_photos',
     'p2p_messages',
-    'message_attachments',
   ];
 
   final Map<String, SyncTableOptions> tables;
@@ -83,9 +82,7 @@ class SyncSourceOptions {
   factory SyncSourceOptions.p2pDefault() {
     final tableMap = <String, SyncTableOptions>{};
     for (final t in allTables) {
-      if (t == 'p2p_messages' ||
-          t == 'message_attachments' ||
-          t == 'place_experiences') {
+      if (t == 'p2p_messages' || t == 'place_experiences') {
         tableMap[t] = const SyncTableOptions(insert: true, update: true);
       } else {
         tableMap[t] = const SyncTableOptions();

@@ -30,7 +30,6 @@ Future<SyncSourceOptions?> showSyncOptionsDialog(
     'sync_source_experiences': l10n.sourceExperiences,
     'place_photos': l10n.photos,
     'p2p_messages': l10n.messagesPlaceTitle,
-    'message_attachments': l10n.messageAttachments,
   };
 
   return showDialog<SyncSourceOptions>(

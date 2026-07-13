@@ -8,7 +8,6 @@ import 'package:uuid/uuid.dart';
 import '../models/activity.dart';
 import '../models/virtual_device.dart';
 import '../models/message.dart';
-import '../models/message_attachment.dart';
 import '../models/person.dart';
 import '../models/place_experience.dart';
 import '../models/place_group.dart';
@@ -550,21 +549,6 @@ class RandomDataGenerator {
     );
   }
 
-  MessageAttachment _createMessageAttachment(
-    String messageUuid,
-    String photoUuid,
-  ) {
-    return MessageAttachment(
-      uuid: randomUuid(),
-      messageUuid: maybeOrphantUuid(messageUuid),
-      photoUuid: maybeOrphantUuid(photoUuid),
-      createdAt: randomPastTimeStamp,
-      updatedAt: null,
-      deletedAt: null,
-      deviceId: deviceIdFromPool(),
-    );
-  }
-
   Stay _createStay(String placeUuid) {
     final stay = Stay(
       uuid: randomUuid(),
@@ -661,7 +645,6 @@ class RandomDataGenerator {
     int numPlaceGroups = 2,
     int numPlacesPerGroup = 100,
     int numMessagesPerPlace = 5,
-    int maxAttachmentsPerMessage = 3,
     int maxPhotosPerPlace = 2,
     int maxExperiencesPerPlace = 2,
     int maxStaysPerPlace = 20,
@@ -750,25 +733,6 @@ class RandomDataGenerator {
             progressNotifier.addP2PMessage();
             Message message = _createMessage(place.uuid);
             insertPlaceMessage(batch, message);
-
-            // Attachments for this message
-            final attachmentCount = _random.nextInt(maxAttachmentsPerMessage);
-            for (int k = 0; k < attachmentCount; k++) {
-              progressNotifier.addPlacePhoto();
-              PlacePhoto photo = await _createPhoto(place.uuid);
-              insertPhoto(batch, photo);
-
-              progressNotifier.addPlaceExperience();
-              MessageAttachment attachment = _createMessageAttachment(
-                message.uuid,
-                photo.uuid,
-              );
-              batch.insert(
-                'message_attachments',
-                _withSyncFields(attachment.toMap(), ''),
-                conflictAlgorithm: ConflictAlgorithm.replace,
-              );
-            }
           }
 
           // Place Experiences (Batch korrigiert)

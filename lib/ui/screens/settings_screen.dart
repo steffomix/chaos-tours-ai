@@ -775,14 +775,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     .cleanupOrphanedRecords();
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        l10n.dbCleanupSuccess(
-                          result['nullified'] ?? 0,
-                          result['deleted'] ?? 0,
-                        ),
-                      ),
-                    ),
+                    SnackBar(content: Text(l10n.dbCleanupSuccess(result))),
                   );
                 }
               },

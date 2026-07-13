@@ -8,7 +8,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../models/message.dart';
-import '../../models/message_attachment.dart';
 import '../../models/place_photo.dart';
 import '../../models/saved_place.dart';
 import '../../services/database_service.dart';
@@ -82,7 +81,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
   final ScrollController _scrollCtrl = ScrollController();
   final List<Message> _messages = [];
   final Map<String, SavedPlace> _placeCache = {};
-  final Map<String, List<PlacePhoto>> _photoCache = {};
 
   bool _loading = false;
   bool _hasMore = true;
@@ -164,9 +162,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
         final place = await db.getSavedPlace(m.placeUuid);
         if (place != null) _placeCache[m.placeUuid] = place;
       }
-      if (!_photoCache.containsKey(m.uuid)) {
-        _photoCache[m.uuid] = await db.loadPhotosForMessage(m.uuid);
-      }
     }
   }
 
@@ -206,7 +201,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
                       return _MessageCard(
                         message: _messages[i],
                         place: _placeCache[_messages[i].placeUuid],
-                        photos: _photoCache[_messages[i].uuid] ?? const [],
                         showPlace: widget.filter != MessagesFilter.place,
                         onReply: () => setState(() => _replyTo = _messages[i]),
                         onDelete: () => _deleteMessage(_messages[i]),
@@ -281,16 +275,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
       placeUuid: placeUuid,
       replyToUuid: _replyTo?.uuid,
       body: body,
+      photoData: newPhotos.isNotEmpty ? newPhotos.first : null,
     );
     await db.insertMessage(message);
-
-    for (final bytes in newPhotos) {
-      final photo = PlacePhoto(placeUuid: placeUuid, photoData: bytes);
-      final photoUuid = await db.insertPlacePhoto(photo);
-      await db.insertMessageAttachment(
-        MessageAttachment(messageUuid: message.uuid, photoUuid: photoUuid),
-      );
-    }
 
     if (!mounted) return;
     setState(() => _replyTo = null);
@@ -303,7 +290,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
 class _MessageCard extends StatelessWidget {
   final Message message;
   final SavedPlace? place;
-  final List<PlacePhoto> photos;
   final bool showPlace;
   final VoidCallback onReply;
   final VoidCallback onDelete;
@@ -312,7 +298,6 @@ class _MessageCard extends StatelessWidget {
   const _MessageCard({
     required this.message,
     required this.place,
-    required this.photos,
     required this.showPlace,
     required this.onReply,
     required this.onDelete,
@@ -411,14 +396,15 @@ class _MessageCard extends StatelessWidget {
                 ),
               ),
 
-            if (photos.isNotEmpty)
+            if (message.photoData.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: GestureDetector(
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (_) => _MessagePhotoViewer(
-                        photo: photos.first,
+                        photoData: message.photoData,
+                        messageUuid: message.uuid,
                         isOwn: own,
                         onDeleted: onDeletePhoto,
                       ),
@@ -427,7 +413,7 @@ class _MessageCard extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.memory(
-                      photos.first.photoData,
+                      message.photoData,
                       width: double.infinity,
                       fit: BoxFit.contain,
                     ),
@@ -762,22 +748,23 @@ class _ComposerState extends State<_Composer> {
 // ── Message photo viewer ─────────────────────────────────────────────────────
 
 class _MessagePhotoViewer extends StatelessWidget {
-  final PlacePhoto photo;
+  final Uint8List photoData;
+  final String messageUuid;
   final bool isOwn;
   final VoidCallback? onDeleted;
 
   const _MessagePhotoViewer({
-    required this.photo,
+    required this.photoData,
+    required this.messageUuid,
     required this.isOwn,
     this.onDeleted,
   });
 
   Future<void> _share(BuildContext context) async {
-    final bytes = photo.photoData;
-    if (bytes.isEmpty) return;
+    if (photoData.isEmpty) return;
     final tmp = await getTemporaryDirectory();
-    final file = File('${tmp.path}/share_msg_${photo.uuid}.jpg');
-    await file.writeAsBytes(bytes);
+    final file = File('${tmp.path}/share_msg_$messageUuid.jpg');
+    await file.writeAsBytes(photoData);
     await SharePlus.instance.share(
       ShareParams(files: [XFile(file.path, mimeType: 'image/jpeg')]),
     );
@@ -806,7 +793,7 @@ class _MessagePhotoViewer extends StatelessWidget {
       ),
     );
     if (confirmed != true || !context.mounted) return;
-    await DatabaseService.instance.softDeletePlacePhoto(photo.uuid);
+    await DatabaseService.instance.removeMessagePhoto(messageUuid);
     if (context.mounted) Navigator.pop(context);
     onDeleted?.call();
   }
@@ -834,8 +821,8 @@ class _MessagePhotoViewer extends StatelessWidget {
       ),
       body: InteractiveViewer(
         child: Center(
-          child: photo.photoData.isNotEmpty
-              ? Image.memory(photo.photoData)
+          child: photoData.isNotEmpty
+              ? Image.memory(photoData)
               : const Icon(Icons.broken_image, color: Colors.white, size: 64),
         ),
       ),

@@ -580,11 +580,10 @@
   "@dbCleanupConfirmContent": {
     "description": "Database cleanup confirmation dialog content"
   },
-  "dbCleanupSuccess": "{nullified} IDs nullified, {deleted} Einträge bereinigt",
+  "dbCleanupSuccess": "{deleted} Einträge bereinigt",
   "@dbCleanupSuccess": {
     "description": "Database cleanup success message",
     "placeholders": {
-      "nullified": { "type": "int" },
       "deleted": { "type": "int" }
     }
   },

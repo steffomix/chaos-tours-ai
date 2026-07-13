@@ -23,7 +23,6 @@ import '../models/telegram_connection.dart';
 import '../models/tracking_point.dart';
 import '../models/trusted_source.dart';
 import '../models/message.dart';
-import '../models/message_attachment.dart';
 import 'sync_service.dart' show SyncOptions;
 import 'settings_service.dart';
 
@@ -453,6 +452,7 @@ class DatabaseService {
         place_uuid TEXT NOT NULL,
         reply_to_uuid TEXT,
         body TEXT NOT NULL DEFAULT '',
+        photo_data BLOB NOT NULL DEFAULT '',
         created_at INTEGER NOT NULL DEFAULT 0,
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER,
@@ -467,26 +467,6 @@ class DatabaseService {
     );
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_messages_created ON p2p_messages(created_at) WHERE deleted_at IS NULL',
-    );
-
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS message_attachments (
-        uuid TEXT PRIMARY KEY,
-        device_id TEXT NOT NULL DEFAULT '',
-        message_uuid TEXT NOT NULL,
-        photo_uuid TEXT NOT NULL,
-        created_at INTEGER NOT NULL DEFAULT 0,
-        updated_at INTEGER NOT NULL DEFAULT 0,
-        deleted_at INTEGER,
-        FOREIGN KEY (message_uuid) REFERENCES p2p_messages(uuid) ON DELETE CASCADE,
-        FOREIGN KEY (photo_uuid) REFERENCES place_photos(uuid) ON DELETE CASCADE
-      )
-    ''');
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_message_attachments_message ON message_attachments(message_uuid) WHERE deleted_at IS NULL',
-    );
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_message_attachments_photo ON message_attachments(photo_uuid) WHERE deleted_at IS NULL',
     );
 
     await db.execute('''
@@ -711,20 +691,6 @@ class DatabaseService {
         );
       }
       await txn.delete('stays', where: 'place_uuid = ?', whereArgs: [uuid]);
-      // Cascade to messages and their attachments
-      final msgRows = await txn.query(
-        'p2p_messages',
-        columns: ['uuid'],
-        where: 'place_uuid = ?',
-        whereArgs: [uuid],
-      );
-      for (final msg in msgRows) {
-        await txn.delete(
-          'message_attachments',
-          where: 'message_uuid = ?',
-          whereArgs: [msg['uuid']],
-        );
-      }
       await txn.delete(
         'p2p_messages',
         where: 'place_uuid = ?',
@@ -1294,7 +1260,6 @@ class DatabaseService {
       'place_photos',
       'telegram_connections',
       'p2p_messages',
-      'message_attachments',
       'trusted_sources',
     ];
     int total = 0;
@@ -2154,59 +2119,13 @@ class DatabaseService {
     );
   }
 
-  // ── Message attachments (references to place_photos) ──────────────────────
-
-  Future<String> insertMessageAttachment(
-    MessageAttachment attachment, {
-    String deviceId = '',
-  }) async {
-    final db = await database;
-    final map = _withSyncFields(attachment.toMap(), deviceId);
-    await db.insert(
-      'message_attachments',
-      map,
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-    return map['uuid'] as String;
-  }
-
-  Future<List<MessageAttachment>> loadAttachmentsForMessage(
-    String messageUuid,
-  ) async {
-    final db = await database;
-    final rows = await db.query(
-      'message_attachments',
-      where: 'message_uuid = ? AND deleted_at IS NULL',
-      whereArgs: [messageUuid],
-      orderBy: 'created_at ASC',
-    );
-    return rows.map(MessageAttachment.fromMap).toList();
-  }
-
-  /// Resolves the referenced photos for a message in one query.
-  Future<List<PlacePhoto>> loadPhotosForMessage(String messageUuid) async {
-    final db = await database;
-    final rows = await db.rawQuery(
-      '''SELECT ph.* FROM place_photos ph
-         JOIN message_attachments ma ON ma.photo_uuid = ph.uuid
-         WHERE ma.message_uuid = ?
-           AND ma.deleted_at IS NULL
-           AND ph.deleted_at IS NULL
-         ORDER BY ma.created_at ASC''',
-      [messageUuid],
-    );
-    return rows.map(PlacePhoto.fromMap).toList();
-  }
-
-  Future<void> softDeleteMessageAttachment(
-    String uuid, {
-    String deviceId = '',
-  }) async {
+  /// Clears the photo embedded in a message (sets photo_data to empty bytes).
+  Future<void> removeMessagePhoto(String uuid, {String deviceId = ''}) async {
     final db = await database;
     await db.update(
-      'message_attachments',
+      'p2p_messages',
       {
-        'deleted_at': DateTime.now().millisecondsSinceEpoch,
+        'photo_data': Uint8List(0),
         'updated_at': DateTime.now().millisecondsSinceEpoch,
         if (deviceId.isNotEmpty) 'device_id': deviceId,
       },
@@ -3069,101 +2988,40 @@ class DatabaseService {
   /// Device-ID fields are intentionally excluded — they are not referential-
   /// integrity foreign keys but device-ownership markers.
   ///
-  /// Returns a map with the total number of rows affected (deleted or updated) for each operation.
-  Future<Map<String, int>> cleanupOrphanedRecords() async {
+  /// Returns the total number of rows affected (deleted or updated) by the cleanup operations.
+  Future<int> cleanupOrphanedRecords() async {
     final db = await database;
-    Map<String, int> result = {};
-    int total = 0;
 
-    // ── Nullify broken optional FK references ──────────────────────────────
-    total += await db.rawUpdate('''
-      UPDATE saved_places SET group_uuid = NULL
-      WHERE group_uuid IS NOT NULL
-        AND group_uuid NOT IN (SELECT uuid FROM place_groups)
-    ''');
-    total += await db.rawUpdate('''
-      UPDATE place_groups SET telegram_connection_uuid = NULL
-      WHERE telegram_connection_uuid IS NOT NULL
-        AND telegram_connection_uuid NOT IN (SELECT uuid FROM telegram_connections)
-    ''');
-    total += await db.rawUpdate('''
-      UPDATE stays SET place_uuid = NULL
-      WHERE place_uuid IS NOT NULL
-        AND place_uuid NOT IN (SELECT uuid FROM saved_places)
-    ''');
-    total += await db.rawUpdate('''
-      UPDATE stay_persons SET person_uuid = NULL
-      WHERE person_uuid IS NOT NULL
-        AND person_uuid NOT IN (SELECT uuid FROM persons)
-    ''');
-    total += await db.rawUpdate('''
-      UPDATE stay_activities SET activity_uuid = NULL
-      WHERE activity_uuid IS NOT NULL
-        AND activity_uuid NOT IN (SELECT uuid FROM activities)
-    ''');
-    total += await db.rawUpdate('''
-      UPDATE place_experiences SET stay_uuid = NULL
-      WHERE stay_uuid IS NOT NULL
-        AND stay_uuid NOT IN (SELECT uuid FROM stays)
-    ''');
-    total += await db.rawUpdate('''
-      UPDATE place_photos SET place_uuid = NULL
-      WHERE place_uuid IS NOT NULL
-        AND place_uuid NOT IN (SELECT uuid FROM saved_places)
-    ''');
-    total += await db.rawUpdate('''
-      UPDATE place_photos SET stay_uuid = NULL
-      WHERE stay_uuid IS NOT NULL
-        AND stay_uuid NOT IN (SELECT uuid FROM stays)
-    ''');
-    total += await db.rawUpdate('''
-      UPDATE virtual_devices SET auto_place_group_uuid = NULL
-      WHERE auto_place_group_uuid IS NOT NULL
-        AND auto_place_group_uuid NOT IN (SELECT uuid FROM place_groups)
-    ''');
-    total += await db.rawUpdate('''
-      UPDATE virtual_devices SET default_place_group_uuid = NULL
-      WHERE default_place_group_uuid IS NOT NULL
-        AND default_place_group_uuid NOT IN (SELECT uuid FROM place_groups)
-    ''');
-    total += await db.rawUpdate('''
-      UPDATE virtual_devices SET sync_source_place_group_uuid = NULL
-      WHERE sync_source_place_group_uuid IS NOT NULL
-        AND sync_source_place_group_uuid NOT IN (SELECT uuid FROM place_groups)
-    ''');
-
-    result['nullified'] = total;
-    total = 0;
+    Batch batch = db.batch(); // reset batch for delete operations
 
     // ── Delete records whose mandatory parent no longer exists ─────────────
-    // message_attachments first (depends on p2p_messages and place_photos)
-    total += await db.rawDelete('''
-      DELETE FROM message_attachments
-      WHERE message_uuid NOT IN (SELECT uuid FROM p2p_messages)
-         OR photo_uuid NOT IN (SELECT uuid FROM place_photos)
-    ''');
-    total += await db.rawDelete('''
+
+    batch.rawDelete('''
       DELETE FROM stay_persons
-      WHERE stay_uuid NOT IN (SELECT uuid FROM stays)
+      WHERE stay_uuid IS NULL OR stay_uuid NOT IN (SELECT uuid FROM stays where uuid = stay_uuid)
     ''');
-    total += await db.rawDelete('''
+    batch.rawDelete('''
       DELETE FROM stay_activities
-      WHERE stay_uuid NOT IN (SELECT uuid FROM stays)
+      WHERE stay_uuid IS NULL OR stay_uuid NOT IN (SELECT uuid FROM stays)
     ''');
-    total += await db.rawDelete('''
+    batch.rawDelete('''
       DELETE FROM place_experiences
-      WHERE saved_place_uuid NOT IN (SELECT uuid FROM saved_places)
+      WHERE saved_place_uuid IS NULL OR saved_place_uuid NOT IN (SELECT uuid FROM saved_places)
     ''');
-    total += await db.rawDelete('''
+    batch.rawDelete('''
       DELETE FROM sync_source_experiences
-      WHERE sync_source_uuid NOT IN (SELECT uuid FROM sync_sources)
+      WHERE sync_source_uuid IS NULL OR sync_source_uuid NOT IN (SELECT uuid FROM sync_sources)
     ''');
-    total += await db.rawDelete('''
+    batch.rawDelete('''
       DELETE FROM p2p_messages
-      WHERE place_uuid NOT IN (SELECT uuid FROM saved_places)
+      WHERE place_uuid IS NULL OR place_uuid NOT IN (SELECT uuid FROM saved_places)
     ''');
 
-    result['deleted'] = total;
+    final batchResult = await batch.commit(noResult: false);
+    final result = batchResult.fold(
+      0,
+      (sum, count) => sum + (count as int? ?? 0),
+    );
 
     return result;
   }
@@ -3196,7 +3054,6 @@ class DatabaseService {
     // Delete dependents before parents to reduce dangling-reference noise,
     // though FK enforcement is intentionally not applied.
     const tables = [
-      'message_attachments',
       'stay_persons',
       'stay_activities',
       'place_experiences',
@@ -3233,7 +3090,6 @@ class DatabaseService {
 
     // Process dependents before parents to minimise FK noise (not enforced).
     const tables = [
-      'message_attachments',
       'stay_persons',
       'stay_activities',
       'place_experiences',

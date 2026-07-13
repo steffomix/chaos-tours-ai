@@ -254,7 +254,7 @@
   "dbCleanupSubtitle": "Remove orphaned entries",
   "dbCleanupConfirmTitle": "Clean up database?",
   "dbCleanupConfirmContent": "All orphaned entries (without a valid parent record) will be permanently removed. Device ID fields are not affected.",
-  "dbCleanupSuccess": "{nullified} IDs nullified, {deleted} entries deleted",
+  "dbCleanupSuccess": "{deleted} entries deleted",
   "dbPurgeForeignDevicesTitle": "Remove foreign device entries",
   "dbPurgeForeignDevicesSubtitle": "Delete all records from untrusted devices across all tables",
   "dbPurgeForeignDevicesConfirmTitle": "Remove foreign device entries?",

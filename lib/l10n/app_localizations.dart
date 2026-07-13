@@ -857,8 +857,8 @@ abstract class AppLocalizations {
   /// Database cleanup success message
   ///
   /// In de, this message translates to:
-  /// **'{nullified} IDs nullified, {deleted} Einträge bereinigt'**
-  String dbCleanupSuccess(int nullified, int deleted);
+  /// **'{deleted} Einträge bereinigt'**
+  String dbCleanupSuccess(int deleted);
 
   /// Purge foreign device entries button title
   ///

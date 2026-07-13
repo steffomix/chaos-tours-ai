@@ -441,8 +441,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'All orphaned entries (without a valid parent record) will be permanently removed. Device ID fields are not affected.';
 
   @override
-  String dbCleanupSuccess(int nullified, int deleted) {
-    return '$nullified IDs nullified, $deleted entries deleted';
+  String dbCleanupSuccess(int deleted) {
+    return '$deleted entries deleted';
   }
 
   @override

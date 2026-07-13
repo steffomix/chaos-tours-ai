@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:uuid/uuid.dart';
 
 import '../services/settings_service.dart';
@@ -28,6 +30,9 @@ class Message {
   /// The message text.
   final String body;
 
+  /// Optional photo embedded directly in this message (empty if none).
+  final Uint8List photoData;
+
   /// Creation timestamp (milliseconds since epoch).
   final int createdAt;
 
@@ -42,6 +47,7 @@ class Message {
     required this.placeUuid,
     this.replyToUuid,
     this.body = '',
+    Uint8List? photoData,
     int? createdAt,
     int? updatedAt,
     this.deletedAt,
@@ -49,6 +55,7 @@ class Message {
        deviceId = deviceId?.isNotEmpty == true
            ? deviceId!
            : SettingsService.instance.deviceId,
+       photoData = photoData ?? Uint8List(0),
        createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch,
        updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch;
 
@@ -60,6 +67,7 @@ class Message {
       placeUuid: map['place_uuid'] as String,
       replyToUuid: map['reply_to_uuid'] as String?,
       body: (map['body'] as String?) ?? '',
+      photoData: (map['photo_data'] as Uint8List?) ?? Uint8List(0),
       createdAt:
           (map['created_at'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       updatedAt:
@@ -76,6 +84,7 @@ class Message {
       'place_uuid': placeUuid,
       if (replyToUuid != null) 'reply_to_uuid': replyToUuid,
       'body': body,
+      'photo_data': photoData,
       'created_at': createdAt,
       'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -90,6 +99,7 @@ class Message {
     String? replyToUuid,
     bool clearReplyToUuid = false,
     String? body,
+    Uint8List? photoData,
     int? createdAt,
     int? updatedAt,
     int? deletedAt,
@@ -102,6 +112,7 @@ class Message {
       placeUuid: placeUuid ?? this.placeUuid,
       replyToUuid: clearReplyToUuid ? null : (replyToUuid ?? this.replyToUuid),
       body: body ?? this.body,
+      photoData: photoData ?? this.photoData,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
