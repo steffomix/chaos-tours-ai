@@ -2843,6 +2843,18 @@ class DatabaseService {
 
   // ── TrustedSources ───────────────────────────────────────────────────────
 
+  Future<TrustedSource?> loadTrustedSource(String deviceId) async {
+    final db = await database;
+    final rows = await db.query(
+      'trusted_sources',
+      where: 'trusted_device_id = ? AND deleted_at IS NULL',
+      whereArgs: [deviceId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return TrustedSource.fromMap(rows.first);
+  }
+
   /// Returns all non-deleted sources — trusted entries first, then the rest,
   /// both groups sorted by [trusted_device_id].
   Future<List<TrustedSource>> loadAllTrustedSources() async {

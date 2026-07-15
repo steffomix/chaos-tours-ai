@@ -19,7 +19,7 @@ import '../../utils/unified_widget.dart';
 import 'experiences_screen.dart';
 import 'place_reposition_screen.dart';
 import 'place_visits_screen.dart';
-import 'messages_screen.dart';
+import 'p2p_message/p2p_messages_screen.dart';
 import 'places_screen.dart';
 import '../widgets/place_photos_section.dart';
 import '../widgets/sync_options_dialog.dart';

@@ -7,7 +7,7 @@ import '../models/saved_place.dart';
 import '../services/database_service.dart';
 import '../services/nominatim_service.dart';
 import '../services/settings_service.dart';
-import '../ui/screens/messages_screen.dart';
+import '../ui/screens/p2p_message/p2p_messages_screen.dart';
 import 'unified_widget.dart';
 
 /// Handles a long-press on any map. Offers the user a choice between creating a

@@ -18,7 +18,7 @@ import '../../utils/place_creation_helper.dart';
 import '../../utils/unified_widget.dart';
 import 'place_detail_screen.dart';
 import '../widgets/experience_filter_panel.dart';
-import 'messages_screen.dart';
+import 'p2p_message/p2p_messages_screen.dart';
 
 /// Reference point for the compass view: the user's current location, or a
 /// specific place the user selected.

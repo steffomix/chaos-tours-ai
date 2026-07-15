@@ -15,7 +15,7 @@ import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/unified_widget.dart';
 import '../screens/all_photos_screen.dart';
-import '../screens/messages_screen.dart';
+import '../screens/p2p_message/p2p_messages_screen.dart';
 import '../screens/place_detail_screen.dart';
 
 class StayDetailSheet extends StatefulWidget {
