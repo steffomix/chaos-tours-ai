@@ -21,7 +21,7 @@ import 'place_map_reposition_screen.dart';
 import '../stay/stays_screen.dart';
 import '../p2p_message/p2p_messages_screen.dart';
 import 'places_screen.dart';
-import 'place_photos_section.dart';
+import '../photo/place_detail_photos_section.dart';
 import '../settings/sync_options_dialog.dart';
 
 class PlaceDetailScreen extends StatefulWidget {
@@ -1078,7 +1078,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                 leading: const Icon(Icons.photo_library_outlined),
                 title: Text(AppLocalizations.of(context)!.photos),
                 children: [
-                  PlacePhotosSection(
+                  PlaceDetailPhotosSection(
                     placeUuid: widget.place.uuid,
                     placeName: widget.place.name,
                     deviceId: widget.place.deviceId,

@@ -10,26 +10,21 @@ import '../../../models/place_photo.dart';
 import '../../../models/stay.dart';
 import '../../../services/database_service.dart';
 import '../../../services/settings_service.dart';
-import '../photo/all_photos_screen.dart';
+import '../../../utils/time.dart';
+import 'all_photos_screen.dart';
 import '../stay/stay_detail_sheet.dart';
-
-String _fmtMs(int ms) {
-  final dt = DateTime.fromMillisecondsSinceEpoch(ms);
-  return '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}  '
-      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-}
 
 /// Shows the newest [n] photos for a place inline, combined (place + stay),
 /// sorted by date (newest first), in card style with BoxFit.contain.
 ///
 /// If there are more than [n] photos, shows a "Show all X photos" button
 /// that opens [AllPhotosScreen].
-class PlacePhotosSection extends StatefulWidget {
+class PlaceDetailPhotosSection extends StatefulWidget {
   final String placeUuid;
   final String placeName;
   final String deviceId;
 
-  const PlacePhotosSection({
+  const PlaceDetailPhotosSection({
     super.key,
     required this.placeUuid,
     required this.placeName,
@@ -37,10 +32,11 @@ class PlacePhotosSection extends StatefulWidget {
   });
 
   @override
-  State<PlacePhotosSection> createState() => _PlacePhotosSectionState();
+  State<PlaceDetailPhotosSection> createState() =>
+      _PlaceDetailPhotosSectionState();
 }
 
-class _PlacePhotosSectionState extends State<PlacePhotosSection> {
+class _PlaceDetailPhotosSectionState extends State<PlaceDetailPhotosSection> {
   /// All photos (place + stay), sorted newest-first.
   List<PlacePhoto> _allPhotos = [];
 
@@ -56,7 +52,7 @@ class _PlacePhotosSectionState extends State<PlacePhotosSection> {
   }
 
   @override
-  void didUpdateWidget(PlacePhotosSection oldWidget) {
+  void didUpdateWidget(PlaceDetailPhotosSection oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.placeUuid != widget.placeUuid) {
       _load();
@@ -264,7 +260,7 @@ class _PhotoCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
             child: Text(
-              _fmtMs(photo.takenAt),
+              formatMillisecond(photo.takenAt),
               style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ),
@@ -392,7 +388,7 @@ class _InlineFullScreenViewerState extends State<_InlineFullScreenViewer> {
               style: const TextStyle(color: Colors.white),
             ),
             Text(
-              _fmtMs(photo.takenAt),
+              formatMillisecond(photo.takenAt),
               style: const TextStyle(color: Colors.white70, fontSize: 12),
             ),
           ],

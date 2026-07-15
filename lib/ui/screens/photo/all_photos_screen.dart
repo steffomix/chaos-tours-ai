@@ -9,6 +9,7 @@ import '../../../models/place_photo.dart';
 import '../../../models/stay.dart';
 import '../../../services/database_service.dart';
 import '../stay/stay_detail_sheet.dart';
+import 'all_photo_fullscreen_viewer.dart';
 
 String _fmtMs(int ms) {
   final dt = DateTime.fromMillisecondsSinceEpoch(ms);
@@ -130,7 +131,7 @@ class _AllPhotosScreenState extends State<AllPhotosScreen> {
   void _openPhoto(int index) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => _FullScreenViewer(
+        builder: (_) => AllFotoFullScreenViewer(
           photos: _photos,
           initialIndex: index,
           onChanged: _reload,
@@ -297,142 +298,6 @@ class _PhotoCard extends StatelessWidget {
           else
             const SizedBox(height: 4),
         ],
-      ),
-    );
-  }
-}
-
-// ── Full-screen photo viewer ─────────────────────────────────────────────────
-
-class _FullScreenViewer extends StatefulWidget {
-  final List<PlacePhoto> photos;
-  final int initialIndex;
-  final VoidCallback onChanged;
-
-  const _FullScreenViewer({
-    required this.photos,
-    required this.initialIndex,
-    required this.onChanged,
-  });
-
-  @override
-  State<_FullScreenViewer> createState() => _FullScreenViewerState();
-}
-
-class _FullScreenViewerState extends State<_FullScreenViewer> {
-  late PageController _ctrl;
-  late int _index;
-
-  @override
-  void initState() {
-    super.initState();
-    _index = widget.initialIndex;
-    _ctrl = PageController(initialPage: _index);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _share() async {
-    final photo = widget.photos[_index];
-    final bytes = photo.photoData;
-    if (bytes.isEmpty || !mounted) return;
-    final tmp = await getTemporaryDirectory();
-    final file = File('${tmp.path}/share_${photo.uuid}.jpg');
-    await file.writeAsBytes(bytes);
-    await SharePlus.instance.share(
-      ShareParams(
-        files: [XFile(file.path, mimeType: 'image/jpeg')],
-        text: photo.caption.isNotEmpty ? photo.caption : null,
-      ),
-    );
-  }
-
-  Future<void> _delete() async {
-    final l10n = AppLocalizations.of(context)!;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.photoDeleteTitle),
-        content: Text(l10n.photoDeleteContent),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.delete),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-    await DatabaseService.instance.softDeletePlacePhoto(
-      widget.photos[_index].uuid,
-    );
-    widget.onChanged();
-    if (mounted) Navigator.pop(context);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final photo = widget.photos[_index];
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${_index + 1} / ${widget.photos.length}',
-              style: const TextStyle(color: Colors.white),
-            ),
-            Text(
-              _fmtMs(photo.takenAt),
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share, color: Colors.white),
-            tooltip: l10n.sharePhoto,
-            onPressed: _share,
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.white),
-            onPressed: _delete,
-          ),
-        ],
-      ),
-      body: PageView.builder(
-        controller: _ctrl,
-        itemCount: widget.photos.length,
-        onPageChanged: (i) => setState(() => _index = i),
-        itemBuilder: (_, i) {
-          final b = widget.photos[i].photoData;
-          return InteractiveViewer(
-            child: Center(
-              child: b.isNotEmpty
-                  ? Image.memory(b)
-                  : const Icon(
-                      Icons.broken_image,
-                      color: Colors.white,
-                      size: 64,
-                    ),
-            ),
-          );
-        },
       ),
     );
   }
