@@ -126,19 +126,22 @@ class _PlaceGroupEditScreenState extends State<PlaceGroupEditScreen> {
               child: ListView(
                 shrinkWrap: true,
                 children: [
-                  RadioListTile<String?>(
-                    value: null,
+                  RadioGroup<String?>(
                     groupValue: picked,
-                    title: Text(dlgL10n.noGroup),
                     onChanged: (v) => setDlg(() => picked = v),
-                  ),
-                  ...otherGroups.map(
-                    // replace with new radio list tile for each group
-                    (g) => RadioListTile<String?>(
-                      value: g.uuid,
-                      groupValue: picked,
-                      title: Text(g.name),
-                      onChanged: (v) => setDlg(() => picked = v),
+                    child: Column(
+                      children: [
+                        RadioListTile<String?>(
+                          value: null,
+                          title: Text(dlgL10n.noGroup),
+                        ),
+                        ...otherGroups.map(
+                          (g) => RadioListTile<String?>(
+                            value: g.uuid,
+                            title: Text(g.name),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
