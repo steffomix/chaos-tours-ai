@@ -8,7 +8,7 @@ import '../../../models/trusted_source.dart';
 import '../../../services/database_service.dart';
 import '../../../services/settings_service.dart';
 import '../../../utils/unified_widget.dart';
-import '../trusted_source_edit_sheet.dart';
+import '../settings/trusted_source_edit_sheet.dart';
 import 'p2p_message_photo_viewer.dart';
 import 'p2p_reply_reference.dart';
 

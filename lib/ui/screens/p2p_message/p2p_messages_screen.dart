@@ -1,22 +1,11 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
-import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../models/message.dart';
-import '../../../models/place_photo.dart';
 import '../../../models/saved_place.dart';
-import '../../../models/trusted_source.dart';
 import '../../../services/database_service.dart';
 import '../../../services/settings_service.dart';
-import '../../../utils/unified_widget.dart';
-import '../trusted_source_edit_sheet.dart';
 import 'p2p_message_card.dart';
 import 'p2p_message_composer.dart';
 

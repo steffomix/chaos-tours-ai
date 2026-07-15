@@ -5,22 +5,22 @@ import 'package:uuid/uuid.dart';
 import 'models/trusted_source.dart';
 import 'services/database_service.dart';
 import 'services/settings_service.dart';
-import 'ui/screens/activities_screen.dart';
-import 'ui/screens/virtual_devices_screen.dart';
-import 'ui/screens/database_explorer_screen.dart';
+import 'ui/screens/stay/activities_screen.dart';
+import 'ui/screens/settings/virtual_devices_screen.dart';
+import 'ui/screens/settings/database_explorer_screen.dart';
 import 'ui/screens/home_screen.dart';
-import 'ui/screens/map_screen.dart';
-import 'ui/screens/persons_screen.dart';
-import 'ui/screens/photo_album_screen.dart';
-import 'ui/screens/place_groups_screen.dart';
-import 'ui/screens/places_screen.dart';
-import 'ui/screens/database_dump_screen.dart';
-import 'ui/screens/settings_screen.dart';
-import 'ui/screens/timeline_screen.dart';
-import 'ui/screens/sync_sources_screen.dart';
-import 'ui/screens/telegram_connections_screen.dart';
-import 'ui/screens/trusted_sources_screen.dart';
-import 'ui/screens/shared_prefs_explorer_screen.dart';
+import 'ui/screens/place/places_map_screen.dart';
+import 'ui/screens/stay/persons_screen.dart';
+import 'ui/screens/photo/photo_album_screen.dart';
+import 'ui/screens/place/place_groups_screen.dart';
+import 'ui/screens/place/places_screen.dart';
+import 'ui/screens/settings/database_dump_screen.dart';
+import 'ui/screens/settings/settings_screen.dart';
+import 'ui/screens/place/places_timeline_screen.dart';
+import 'ui/screens/settings/sync_sources_screen.dart';
+import 'ui/screens/settings/telegram_connections_screen.dart';
+import 'ui/screens/settings/trusted_sources_screen.dart';
+import 'ui/screens/settings/shared_prefs_explorer_screen.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -72,9 +72,9 @@ class _AppHomeState extends State<_AppHome> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const MapScreen(),
+    const PlacesMapScreen(),
     const PlacesScreen(),
-    const TimelineScreen(),
+    const PlacesTimelineScreen(),
     const PhotoAlbumScreen(),
   ];
 

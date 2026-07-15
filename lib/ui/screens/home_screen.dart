@@ -13,7 +13,7 @@ import '../../services/database_service.dart';
 import '../../services/foreground_service_handler.dart';
 import '../../services/settings_service.dart';
 import '../../utils/permission_helper.dart';
-import '../widgets/stay_detail_sheet.dart';
+import 'stay/stay_detail_sheet.dart';
 
 class _GpsCountdownNotifier extends ValueNotifier<int> {
   _GpsCountdownNotifier() : super(SettingsService.instance.gpsIntervalSeconds) {
