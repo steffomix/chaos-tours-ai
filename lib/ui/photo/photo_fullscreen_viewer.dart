@@ -7,27 +7,31 @@ import 'package:share_plus/share_plus.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/place_photo.dart';
 import '../../services/database_service.dart';
-import '../../utils/time.dart';
+import '../../utils/format.dart';
 
-class PhotoAlbumFullScreenViewer extends StatefulWidget {
+class FotoFullScreenViewer extends StatefulWidget {
   final List<PlacePhoto> photos;
   final int initialIndex;
   final VoidCallback onChanged;
 
-  const PhotoAlbumFullScreenViewer({
+  /// Optional guard: if provided, the delete button is only shown (and
+  /// the delete action only executed) when this returns [true].
+  /// If omitted, delete is always available.
+  final bool Function()? canDelete;
+
+  const FotoFullScreenViewer({
     super.key,
     required this.photos,
     required this.initialIndex,
     required this.onChanged,
+    this.canDelete,
   });
 
   @override
-  State<PhotoAlbumFullScreenViewer> createState() =>
-      _PhotoAlbumFullScreenViewerState();
+  State<FotoFullScreenViewer> createState() => _FotoFullScreenViewerState();
 }
 
-class _PhotoAlbumFullScreenViewerState
-    extends State<PhotoAlbumFullScreenViewer> {
+class _FotoFullScreenViewerState extends State<FotoFullScreenViewer> {
   late PageController _ctrl;
   late int _index;
 
@@ -60,6 +64,7 @@ class _PhotoAlbumFullScreenViewerState
   }
 
   Future<void> _delete() async {
+    if (widget.canDelete != null && !widget.canDelete!()) return;
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -117,30 +122,49 @@ class _PhotoAlbumFullScreenViewerState
             tooltip: l10n.sharePhoto,
             onPressed: _share,
           ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.white),
-            onPressed: _delete,
-          ),
+          if (widget.canDelete == null || widget.canDelete!())
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.white),
+              onPressed: _delete,
+            ),
         ],
       ),
-      body: PageView.builder(
-        controller: _ctrl,
-        itemCount: widget.photos.length,
-        onPageChanged: (i) => setState(() => _index = i),
-        itemBuilder: (_, i) {
-          final b = widget.photos[i].photoData;
-          return InteractiveViewer(
-            child: Center(
-              child: b.isNotEmpty
-                  ? Image.memory(b)
-                  : const Icon(
-                      Icons.broken_image,
-                      color: Colors.white,
-                      size: 64,
-                    ),
+      body: Column(
+        children: [
+          Expanded(
+            child: PageView.builder(
+              controller: _ctrl,
+              itemCount: widget.photos.length,
+              onPageChanged: (i) => setState(() => _index = i),
+              itemBuilder: (_, i) {
+                final b = widget.photos[i].photoData;
+                return InteractiveViewer(
+                  child: Center(
+                    child: b.isNotEmpty
+                        ? Image.memory(b)
+                        : const Icon(
+                            Icons.broken_image,
+                            color: Colors.white,
+                            size: 64,
+                          ),
+                  ),
+                );
+              },
             ),
-          );
-        },
+          ),
+          if (photo.caption.isNotEmpty)
+            Container(
+              color: Colors.black54,
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              child: Text(
+                photo.caption,
+                style: const TextStyle(color: Colors.white),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          SizedBox(height: MediaQuery.of(context).padding.bottom),
+        ],
       ),
     );
   }

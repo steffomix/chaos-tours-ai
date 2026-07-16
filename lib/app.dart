@@ -11,7 +11,7 @@ import 'ui/settings/database_explorer_screen.dart';
 import 'ui/home_screen.dart';
 import 'ui/place/places_map_screen.dart';
 import 'ui/stay/persons_screen.dart';
-import 'ui/photo/photo_album_screen.dart';
+import 'ui/photo/photos_screen.dart';
 import 'ui/place/place_groups_screen.dart';
 import 'ui/place/places_screen.dart';
 import 'ui/settings/database_dump_screen.dart';
@@ -75,7 +75,7 @@ class _AppHomeState extends State<_AppHome> {
     const PlacesMapScreen(),
     const PlacesScreen(),
     const PlacesTimelineScreen(),
-    const PhotoAlbumScreen(),
+    const PhotosScreen.global(),
   ];
 
   @override

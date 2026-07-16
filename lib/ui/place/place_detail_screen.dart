@@ -16,12 +16,12 @@ import '../../services/telegram_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/maidenhead.dart';
 import '../../utils/unified_widget.dart';
+import '../photo/place_detail_photo_section.dart';
 import 'place_experiences_screen.dart';
 import 'place_map_reposition_screen.dart';
 import '../stay/stays_screen.dart';
 import '../p2p_message/p2p_messages_screen.dart';
 import 'places_screen.dart';
-import '../photo/place_detail_photos_section.dart';
 import '../settings/sync_options_dialog.dart';
 
 class PlaceDetailScreen extends StatefulWidget {

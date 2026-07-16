@@ -2,11 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../models/activity.dart';
 import '../../models/person.dart';
-import '../../models/place_photo.dart';
 import '../../models/saved_place.dart';
 import '../../models/stay.dart';
 import '../../models/stay_activity.dart';
@@ -14,7 +12,7 @@ import '../../models/stay_person.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/unified_widget.dart';
-import '../photo/all_photos_screen.dart';
+import '../photo/place_detail_photo_section.dart';
 import '../p2p_message/p2p_messages_screen.dart';
 import '../place/place_detail_screen.dart';
 
@@ -36,7 +34,6 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
   List<Activity> _allActivities = [];
   SavedPlace? _place;
   bool _loading = true;
-  List<PlacePhoto> _stayPhotos = [];
 
   late DateTime _startDt;
   late DateTime? _endDt;
@@ -65,7 +62,6 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
       DatabaseService.instance.loadActivitiesForStay(stayUuid),
       DatabaseService.instance.loadAllPersons(),
       DatabaseService.instance.loadAllActivities(),
-      DatabaseService.instance.loadPhotosForStay(stayUuid),
     ]);
     SavedPlace? place;
     if (widget.stay.placeUuid != null) {
@@ -78,7 +74,6 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
         _stayActivities = results[1] as List<StayActivity>;
         _allPersons = results[2] as List<Person>;
         _allActivities = results[3] as List<Activity>;
-        _stayPhotos = results[4] as List<PlacePhoto>;
         _place = place;
         _loading = false;
       });
@@ -221,8 +216,11 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
       buf.writeln();
     }
 
-    if (_stayPhotos.isNotEmpty) {
-      buf.writeln('**Fotos:** ${_stayPhotos.length}');
+    final stayPhotos = await DatabaseService.instance.loadPhotosForStay(
+      widget.stay.uuid,
+    );
+    if (stayPhotos.isNotEmpty) {
+      buf.writeln('**Fotos:** ${stayPhotos.length}');
     }
 
     await Clipboard.setData(ClipboardData(text: buf.toString()));
@@ -239,11 +237,6 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
     final t =
         '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     return '$d  $t';
-  }
-
-  String _fmtMs(int ms) {
-    final dt = DateTime.fromMillisecondsSinceEpoch(ms);
-    return _fmtDt(dt);
   }
 
   Future<void> _addPersonFromList(Person person) async {
@@ -361,151 +354,6 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
           ],
         ),
       ),
-    );
-  }
-
-  // ── Photos ─────────────────────────────────────────────────────────────────
-
-  Future<void> _addStayPhoto({required ImageSource source}) async {
-    final s = SettingsService.instance;
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: source,
-      imageQuality: s.photoImageQuality,
-      maxWidth: s.photoMaxWidth == 0 ? null : s.photoMaxWidth.toDouble(),
-      maxHeight: s.photoMaxHeight == 0 ? null : s.photoMaxHeight.toDouble(),
-    );
-    if (picked == null || !mounted) return;
-    final bytes = await picked.readAsBytes();
-    final photo = PlacePhoto(
-      placeUuid: widget.stay.placeUuid,
-      stayUuid: widget.stay.uuid,
-      photoData: bytes,
-      takenAt: DateTime.now().millisecondsSinceEpoch,
-    );
-    await DatabaseService.instance.insertPlacePhoto(
-      photo,
-      deviceId: widget.stay.deviceId,
-    );
-    await _load();
-  }
-
-  void _openFullViewer(int index) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => _StayPhotoViewer(
-          photos: _stayPhotos,
-          initialIndex: index,
-          onChanged: _load,
-        ),
-      ),
-    );
-  }
-
-  void _openAllStayPhotos(AppLocalizations l10n) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => AllPhotosScreen.forStay(
-          stayUuid: widget.stay.uuid,
-          title: l10n.allPhotosScreenTitle,
-          subtitle: _place?.name,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPhotosSection(AppLocalizations l10n) {
-    final n = SettingsService.instance.placeDetailPhotoCount;
-    final inlinePhotos = _stayPhotos.take(n).toList();
-    final totalCount = _stayPhotos.length;
-    final hasMore = totalCount > n;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // ── Add photo buttons ──────────────────────────────────────────────
-        Row(
-          children: [
-            Text(l10n.photos, style: Theme.of(context).textTheme.titleSmall),
-            const Spacer(),
-            IconButton(
-              icon: const Icon(Icons.camera_alt, size: 20),
-              tooltip: l10n.camera,
-              onPressed: () => _addStayPhoto(source: ImageSource.camera),
-            ),
-            IconButton(
-              icon: const Icon(Icons.add_photo_alternate, size: 20),
-              tooltip: l10n.fromGallery,
-              onPressed: () => _addStayPhoto(source: ImageSource.gallery),
-            ),
-          ],
-        ),
-        if (_stayPhotos.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              l10n.noPlacePhotos,
-              style: const TextStyle(color: Colors.grey, fontSize: 13),
-            ),
-          )
-        else ...[
-          ...inlinePhotos.asMap().entries.map((entry) {
-            final photo = entry.value;
-            final bytes = photo.photoData;
-            final hasData = bytes.isNotEmpty;
-            return Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  GestureDetector(
-                    onTap: () => _openFullViewer(entry.key),
-                    child: hasData
-                        ? Image.memory(
-                            bytes,
-                            fit: BoxFit.contain,
-                            width: double.infinity,
-                          )
-                        : Container(
-                            height: 120,
-                            color: Colors.grey[300],
-                            child: const Center(
-                              child: Icon(Icons.broken_image),
-                            ),
-                          ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-                    child: Text(
-                      _fmtMs(photo.takenAt),
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ),
-                  if (photo.caption.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
-                      child: Text(
-                        photo.caption,
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                    ),
-                  const SizedBox(height: 4),
-                ],
-              ),
-            );
-          }),
-          if (hasMore)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: OutlinedButton.icon(
-                onPressed: () => _openAllStayPhotos(l10n),
-                icon: const Icon(Icons.photo_library_outlined),
-                label: Text(l10n.showAllPhotosButton(totalCount)),
-              ),
-            ),
-        ],
-      ],
     );
   }
 
@@ -760,7 +608,13 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                     ),
                     const SizedBox(height: 16),
                     // ── Fotos ───────────────────────────────────────
-                    _buildPhotosSection(l10n),
+                    PlaceDetailPhotosSection(
+                      stayUuid: widget.stay.uuid,
+                      placeUuid: widget.stay.placeUuid,
+                      placeName: _place?.name ?? '',
+                      deviceId: widget.stay.deviceId,
+                      showSectionTitle: true,
+                    ),
                     const SizedBox(height: 16),
                     // ── Bericht / P2P Nachrichten ─────────────────────────
                     OutlinedButton.icon(
@@ -783,129 +637,6 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                 ],
               ),
             ),
-    );
-  }
-}
-
-// ── Full-screen viewer for stay photos ──────────────────────────────────────
-
-class _StayPhotoViewer extends StatefulWidget {
-  final List<PlacePhoto> photos;
-  final int initialIndex;
-  final VoidCallback onChanged;
-
-  const _StayPhotoViewer({
-    required this.photos,
-    required this.initialIndex,
-    required this.onChanged,
-  });
-
-  @override
-  State<_StayPhotoViewer> createState() => _StayPhotoViewerState();
-}
-
-class _StayPhotoViewerState extends State<_StayPhotoViewer> {
-  late PageController _ctrl;
-  late int _index;
-
-  @override
-  void initState() {
-    super.initState();
-    _index = widget.initialIndex;
-    _ctrl = PageController(initialPage: _index);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _delete() async {
-    final l10n = AppLocalizations.of(context)!;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.photoDeleteTitle),
-        content: Text(l10n.photoDeleteContent),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.delete),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-    await DatabaseService.instance.softDeletePlacePhoto(
-      widget.photos[_index].uuid,
-    );
-    widget.onChanged();
-    if (mounted) Navigator.pop(context);
-  }
-
-  String _fmtMs(int ms) {
-    final dt = DateTime.fromMillisecondsSinceEpoch(ms);
-    return '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}  '
-        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final photo = widget.photos[_index];
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${_index + 1} / ${widget.photos.length}',
-              style: const TextStyle(color: Colors.white),
-            ),
-            Text(
-              _fmtMs(photo.takenAt),
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.white),
-            tooltip: l10n.delete,
-            onPressed: _delete,
-          ),
-        ],
-      ),
-      body: PageView.builder(
-        controller: _ctrl,
-        itemCount: widget.photos.length,
-        onPageChanged: (i) => setState(() => _index = i),
-        itemBuilder: (_, i) {
-          final b = widget.photos[i].photoData;
-          return InteractiveViewer(
-            child: Center(
-              child: b.isNotEmpty
-                  ? Image.memory(b)
-                  : const Icon(
-                      Icons.broken_image,
-                      color: Colors.white,
-                      size: 64,
-                    ),
-            ),
-          );
-        },
-      ),
     );
   }
 }
