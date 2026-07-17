@@ -3128,6 +3128,104 @@ class DatabaseService {
     return total;
   }
 
+  /// Restores all soft-deleted rows ([deleted_at] IS NOT NULL) by clearing
+  /// [deleted_at] across every table that supports soft-deletion.
+  /// Returns the total number of rows restored.
+  Future<int> restoreDeletedRecords() async {
+    final db = await database;
+
+    const tables = [
+      'stay_persons',
+      'stay_activities',
+      'place_experiences',
+      'sync_source_experiences',
+      'p2p_messages',
+      'place_photos',
+      'stays',
+      'saved_places',
+      'place_groups',
+      'persons',
+      'activities',
+      'sync_sources',
+      'telegram_connections',
+      'trusted_sources',
+      'virtual_devices',
+    ];
+
+    int total = 0;
+    for (final table in tables) {
+      total += await db.rawUpdate(
+        'UPDATE $table SET deleted_at = NULL WHERE deleted_at IS NOT NULL',
+      );
+    }
+    return total;
+  }
+
+  /// Sets [updated_at] to NULL across every table that carries it, which
+  /// forces a full re-sync on the next sync run.
+  /// Returns the total number of rows affected.
+  Future<int> resetUpdatedAt() async {
+    final db = await database;
+
+    const tables = [
+      'stay_persons',
+      'stay_activities',
+      'place_experiences',
+      'sync_source_experiences',
+      'p2p_messages',
+      'place_photos',
+      'stays',
+      'saved_places',
+      'place_groups',
+      'persons',
+      'activities',
+      'sync_sources',
+      'telegram_connections',
+      'trusted_sources',
+      'virtual_devices',
+    ];
+
+    int total = 0;
+    for (final table in tables) {
+      total += await db.rawUpdate('UPDATE $table SET updated_at = NULL');
+    }
+    return total;
+  }
+
+  /// Sets [updated_at] to [timestamp] (milliseconds since epoch) for every
+  /// row across every table that carries it.  Setting this to a future
+  /// timestamp acts as a write-lock until that point in time.
+  /// Returns the total number of rows affected.
+  Future<int> setUpdatedAt(int timestamp) async {
+    final db = await database;
+
+    const tables = [
+      'stay_persons',
+      'stay_activities',
+      'place_experiences',
+      'sync_source_experiences',
+      'p2p_messages',
+      'place_photos',
+      'stays',
+      'saved_places',
+      'place_groups',
+      'persons',
+      'activities',
+      'sync_sources',
+      'telegram_connections',
+      'trusted_sources',
+      'virtual_devices',
+    ];
+
+    int total = 0;
+    for (final table in tables) {
+      total += await db.rawUpdate('UPDATE $table SET updated_at = ?', [
+        timestamp,
+      ]);
+    }
+    return total;
+  }
+
   /// Returns device IDs of all non-deleted [TrustedSource] entries where
   /// [trusted] is true.
   Future<List<String>> loadTrustedDeviceIds() async {

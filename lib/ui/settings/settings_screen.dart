@@ -747,6 +747,134 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.restore_from_trash),
+              title: Text(l10n.dbRestoreDeletedTitle),
+              subtitle: Text(l10n.dbRestoreDeletedSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text(l10n.dbRestoreDeletedConfirmTitle),
+                    content: Text(l10n.dbRestoreDeletedConfirmContent),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: Text(l10n.cancel),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        child: Text(l10n.ok),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed != true) return;
+                if (!context.mounted) return;
+                final count = await DatabaseService.instance
+                    .restoreDeletedRecords();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(l10n.dbRestoreDeletedSuccess(count)),
+                    ),
+                  );
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.update_disabled),
+              title: Text(l10n.dbResetUpdatedAtTitle),
+              subtitle: Text(l10n.dbResetUpdatedAtSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text(l10n.dbResetUpdatedAtConfirmTitle),
+                    content: Text(l10n.dbResetUpdatedAtConfirmContent),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: Text(l10n.cancel),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        child: Text(l10n.ok),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed != true) return;
+                if (!context.mounted) return;
+                final count = await DatabaseService.instance.resetUpdatedAt();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(l10n.dbResetUpdatedAtSuccess(count)),
+                    ),
+                  );
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.schedule),
+              title: Text(l10n.dbSetUpdatedAtTitle),
+              subtitle: Text(l10n.dbSetUpdatedAtSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                final now = DateTime.now();
+                final pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: now,
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2100),
+                );
+                if (pickedDate == null) return;
+                if (!context.mounted) return;
+                final pickedTime = await showTimePicker(
+                  context: context,
+                  initialTime: TimeOfDay.fromDateTime(now),
+                );
+                if (pickedTime == null) return;
+                if (!context.mounted) return;
+                final chosen = DateTime(
+                  pickedDate.year,
+                  pickedDate.month,
+                  pickedDate.day,
+                  pickedTime.hour,
+                  pickedTime.minute,
+                );
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text(l10n.dbSetUpdatedAtConfirmTitle),
+                    content: Text(l10n.dbSetUpdatedAtConfirmContent),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: Text(l10n.cancel),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        child: Text(l10n.ok),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed != true) return;
+                if (!context.mounted) return;
+                final count = await DatabaseService.instance.setUpdatedAt(
+                  chosen.millisecondsSinceEpoch,
+                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.dbSetUpdatedAtSuccess(count))),
+                  );
+                }
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.cleaning_services),
               title: Text(l10n.dbCleanupTitle),
               subtitle: Text(l10n.dbCleanupSubtitle),

@@ -490,6 +490,64 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get dbRestoreDeletedTitle => 'Gelöschte Einträge wiederherstellen';
+
+  @override
+  String get dbRestoreDeletedSubtitle =>
+      'Soft-Delete aller als gelöscht markierten Einträge zurücksetzen';
+
+  @override
+  String get dbRestoreDeletedConfirmTitle =>
+      'Gelöschte Einträge wiederherstellen?';
+
+  @override
+  String get dbRestoreDeletedConfirmContent =>
+      'Bei allen als gelöscht markierten Einträgen wird deleted_at zurückgesetzt. Die Einträge sind danach wieder sichtbar.';
+
+  @override
+  String dbRestoreDeletedSuccess(int count) {
+    return '$count Einträge wiederhergestellt';
+  }
+
+  @override
+  String get dbResetUpdatedAtTitle => 'updated_at zurücksetzen';
+
+  @override
+  String get dbResetUpdatedAtSubtitle =>
+      'Setzt updated_at auf null – erzwingt Update beim nächsten Sync';
+
+  @override
+  String get dbResetUpdatedAtConfirmTitle => 'updated_at zurücksetzen?';
+
+  @override
+  String get dbResetUpdatedAtConfirmContent =>
+      'updated_at wird bei allen Einträgen auf null gesetzt. Beim nächsten Sync werden alle Einträge als geändert behandelt.';
+
+  @override
+  String dbResetUpdatedAtSuccess(int count) {
+    return '$count Einträge zurückgesetzt';
+  }
+
+  @override
+  String get dbSetUpdatedAtTitle => 'updated_at auf Zeitpunkt setzen';
+
+  @override
+  String get dbSetUpdatedAtSubtitle =>
+      'Setzt updated_at auf ein Datum/Uhrzeit – Zukunft wirkt wie Schreibschutz';
+
+  @override
+  String get dbSetUpdatedAtConfirmTitle => 'updated_at setzen?';
+
+  @override
+  String get dbSetUpdatedAtConfirmContent =>
+      'updated_at wird bei allen Einträgen auf den gewählten Zeitpunkt gesetzt.';
+
+  @override
+  String dbSetUpdatedAtSuccess(int count) {
+    return '$count Einträge aktualisiert';
+  }
+
+  @override
   String get syncSources => 'Sync-Quellen';
 
   @override
@@ -1800,7 +1858,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get devToolsWarning =>
-      'WARNUNG: Diese Werkzeuge sind potentiell ZERSTÖRERISCH. Sie können Daten unwiderruflich verändern oder löschen. Nach dem Freischalten sind sie für eine Stunde nutzbar. Es ist SEHR SEHR SEHR ratsam, vorher wenigstens ein Backup der Datenbank anzulegen!';
+      'WARNUNG: Diese Werkzeuge sind potentiell ZERSTÖRERISCH. Sie können Daten unwiderruflich verändern oder löschen. Nach dem Freischalten sind sie für eine Stunde nutzbar. Es ist ***SEHR*** ratsam, vorher wenigstens ein Backup der Datenbank anzulegen!';
 
   @override
   String get devToolsUnlockButton => 'Entwicklerwerkzeuge freischalten';

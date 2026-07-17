@@ -920,6 +920,96 @@ abstract class AppLocalizations {
   /// **'{deleted} Einträge bereinigt'**
   String dbPurgeDeletedSuccess(int deleted);
 
+  /// Restore soft-deleted records button title
+  ///
+  /// In de, this message translates to:
+  /// **'Gelöschte Einträge wiederherstellen'**
+  String get dbRestoreDeletedTitle;
+
+  /// Restore soft-deleted records subtitle
+  ///
+  /// In de, this message translates to:
+  /// **'Soft-Delete aller als gelöscht markierten Einträge zurücksetzen'**
+  String get dbRestoreDeletedSubtitle;
+
+  /// Restore soft-deleted records confirmation dialog title
+  ///
+  /// In de, this message translates to:
+  /// **'Gelöschte Einträge wiederherstellen?'**
+  String get dbRestoreDeletedConfirmTitle;
+
+  /// Restore soft-deleted records confirmation dialog content
+  ///
+  /// In de, this message translates to:
+  /// **'Bei allen als gelöscht markierten Einträgen wird deleted_at zurückgesetzt. Die Einträge sind danach wieder sichtbar.'**
+  String get dbRestoreDeletedConfirmContent;
+
+  /// Restore soft-deleted records success message
+  ///
+  /// In de, this message translates to:
+  /// **'{count} Einträge wiederhergestellt'**
+  String dbRestoreDeletedSuccess(int count);
+
+  /// Reset updated_at to null button title
+  ///
+  /// In de, this message translates to:
+  /// **'updated_at zurücksetzen'**
+  String get dbResetUpdatedAtTitle;
+
+  /// Reset updated_at subtitle
+  ///
+  /// In de, this message translates to:
+  /// **'Setzt updated_at auf null – erzwingt Update beim nächsten Sync'**
+  String get dbResetUpdatedAtSubtitle;
+
+  /// Reset updated_at confirmation dialog title
+  ///
+  /// In de, this message translates to:
+  /// **'updated_at zurücksetzen?'**
+  String get dbResetUpdatedAtConfirmTitle;
+
+  /// Reset updated_at confirmation dialog content
+  ///
+  /// In de, this message translates to:
+  /// **'updated_at wird bei allen Einträgen auf null gesetzt. Beim nächsten Sync werden alle Einträge als geändert behandelt.'**
+  String get dbResetUpdatedAtConfirmContent;
+
+  /// Reset updated_at success message
+  ///
+  /// In de, this message translates to:
+  /// **'{count} Einträge zurückgesetzt'**
+  String dbResetUpdatedAtSuccess(int count);
+
+  /// Set updated_at to a specific timestamp button title
+  ///
+  /// In de, this message translates to:
+  /// **'updated_at auf Zeitpunkt setzen'**
+  String get dbSetUpdatedAtTitle;
+
+  /// Set updated_at subtitle
+  ///
+  /// In de, this message translates to:
+  /// **'Setzt updated_at auf ein Datum/Uhrzeit – Zukunft wirkt wie Schreibschutz'**
+  String get dbSetUpdatedAtSubtitle;
+
+  /// Set updated_at confirmation dialog title
+  ///
+  /// In de, this message translates to:
+  /// **'updated_at setzen?'**
+  String get dbSetUpdatedAtConfirmTitle;
+
+  /// Set updated_at confirmation dialog content
+  ///
+  /// In de, this message translates to:
+  /// **'updated_at wird bei allen Einträgen auf den gewählten Zeitpunkt gesetzt.'**
+  String get dbSetUpdatedAtConfirmContent;
+
+  /// Set updated_at success message
+  ///
+  /// In de, this message translates to:
+  /// **'{count} Einträge aktualisiert'**
+  String dbSetUpdatedAtSuccess(int count);
+
   /// Sync sources
   ///
   /// In de, this message translates to:
@@ -3263,7 +3353,7 @@ abstract class AppLocalizations {
   /// Warning shown above the developer tools unlock challenge
   ///
   /// In de, this message translates to:
-  /// **'WARNUNG: Diese Werkzeuge sind potentiell ZERSTÖRERISCH. Sie können Daten unwiderruflich verändern oder löschen. Nach dem Freischalten sind sie für eine Stunde nutzbar. Es ist SEHR SEHR SEHR ratsam, vorher wenigstens ein Backup der Datenbank anzulegen!'**
+  /// **'WARNUNG: Diese Werkzeuge sind potentiell ZERSTÖRERISCH. Sie können Daten unwiderruflich verändern oder löschen. Nach dem Freischalten sind sie für eine Stunde nutzbar. Es ist ***SEHR*** ratsam, vorher wenigstens ein Backup der Datenbank anzulegen!'**
   String get devToolsWarning;
 
   /// Button that starts the unlock challenge

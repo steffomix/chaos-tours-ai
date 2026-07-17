@@ -633,6 +633,75 @@
       "deleted": { "type": "int" }
     }
   },
+  "dbRestoreDeletedTitle": "Gelöschte Einträge wiederherstellen",
+  "@dbRestoreDeletedTitle": {
+    "description": "Restore soft-deleted records button title"
+  },
+  "dbRestoreDeletedSubtitle": "Soft-Delete aller als gelöscht markierten Einträge zurücksetzen",
+  "@dbRestoreDeletedSubtitle": {
+    "description": "Restore soft-deleted records subtitle"
+  },
+  "dbRestoreDeletedConfirmTitle": "Gelöschte Einträge wiederherstellen?",
+  "@dbRestoreDeletedConfirmTitle": {
+    "description": "Restore soft-deleted records confirmation dialog title"
+  },
+  "dbRestoreDeletedConfirmContent": "Bei allen als gelöscht markierten Einträgen wird deleted_at zurückgesetzt. Die Einträge sind danach wieder sichtbar.",
+  "@dbRestoreDeletedConfirmContent": {
+    "description": "Restore soft-deleted records confirmation dialog content"
+  },
+  "dbRestoreDeletedSuccess": "{count} Einträge wiederhergestellt",
+  "@dbRestoreDeletedSuccess": {
+    "description": "Restore soft-deleted records success message",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "dbResetUpdatedAtTitle": "updated_at zurücksetzen",
+  "@dbResetUpdatedAtTitle": {
+    "description": "Reset updated_at to null button title"
+  },
+  "dbResetUpdatedAtSubtitle": "Setzt updated_at auf null – erzwingt Update beim nächsten Sync",
+  "@dbResetUpdatedAtSubtitle": {
+    "description": "Reset updated_at subtitle"
+  },
+  "dbResetUpdatedAtConfirmTitle": "updated_at zurücksetzen?",
+  "@dbResetUpdatedAtConfirmTitle": {
+    "description": "Reset updated_at confirmation dialog title"
+  },
+  "dbResetUpdatedAtConfirmContent": "updated_at wird bei allen Einträgen auf null gesetzt. Beim nächsten Sync werden alle Einträge als geändert behandelt.",
+  "@dbResetUpdatedAtConfirmContent": {
+    "description": "Reset updated_at confirmation dialog content"
+  },
+  "dbResetUpdatedAtSuccess": "{count} Einträge zurückgesetzt",
+  "@dbResetUpdatedAtSuccess": {
+    "description": "Reset updated_at success message",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "dbSetUpdatedAtTitle": "updated_at auf Zeitpunkt setzen",
+  "@dbSetUpdatedAtTitle": {
+    "description": "Set updated_at to a specific timestamp button title"
+  },
+  "dbSetUpdatedAtSubtitle": "Setzt updated_at auf ein Datum/Uhrzeit – Zukunft wirkt wie Schreibschutz",
+  "@dbSetUpdatedAtSubtitle": {
+    "description": "Set updated_at subtitle"
+  },
+  "dbSetUpdatedAtConfirmTitle": "updated_at setzen?",
+  "@dbSetUpdatedAtConfirmTitle": {
+    "description": "Set updated_at confirmation dialog title"
+  },
+  "dbSetUpdatedAtConfirmContent": "updated_at wird bei allen Einträgen auf den gewählten Zeitpunkt gesetzt.",
+  "@dbSetUpdatedAtConfirmContent": {
+    "description": "Set updated_at confirmation dialog content"
+  },
+  "dbSetUpdatedAtSuccess": "{count} Einträge aktualisiert",
+  "@dbSetUpdatedAtSuccess": {
+    "description": "Set updated_at success message",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "syncSources": "Sync-Quellen",
   "@syncSources": {
     "description": "Sync sources"
@@ -2468,7 +2537,7 @@
   "@devToolsSectionTitle": {
     "description": "Title of the developer tools section at the bottom of settings"
   },
-  "devToolsWarning": "WARNUNG: Diese Werkzeuge sind potentiell ZERSTÖRERISCH. Sie können Daten unwiderruflich verändern oder löschen. Nach dem Freischalten sind sie für eine Stunde nutzbar. Es ist SEHR SEHR SEHR ratsam, vorher wenigstens ein Backup der Datenbank anzulegen!",
+  "devToolsWarning": "WARNUNG: Diese Werkzeuge sind potentiell ZERSTÖRERISCH. Sie können Daten unwiderruflich verändern oder löschen. Nach dem Freischalten sind sie für eine Stunde nutzbar. Es ist ***SEHR*** ratsam, vorher wenigstens ein Backup der Datenbank anzulegen!",
   "@devToolsWarning": {
     "description": "Warning shown above the developer tools unlock challenge"
   },

@@ -485,6 +485,63 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get dbRestoreDeletedTitle => 'Restore soft-deleted records';
+
+  @override
+  String get dbRestoreDeletedSubtitle =>
+      'Clear the deleted flag on all soft-deleted records';
+
+  @override
+  String get dbRestoreDeletedConfirmTitle => 'Restore deleted records?';
+
+  @override
+  String get dbRestoreDeletedConfirmContent =>
+      'deleted_at will be cleared on all soft-deleted records. The records will be visible again afterwards.';
+
+  @override
+  String dbRestoreDeletedSuccess(int count) {
+    return '$count records restored';
+  }
+
+  @override
+  String get dbResetUpdatedAtTitle => 'Reset updated_at';
+
+  @override
+  String get dbResetUpdatedAtSubtitle =>
+      'Set updated_at to null – forces an update on the next sync';
+
+  @override
+  String get dbResetUpdatedAtConfirmTitle => 'Reset updated_at?';
+
+  @override
+  String get dbResetUpdatedAtConfirmContent =>
+      'updated_at will be set to null for all records. On the next sync all records will be treated as changed.';
+
+  @override
+  String dbResetUpdatedAtSuccess(int count) {
+    return '$count records reset';
+  }
+
+  @override
+  String get dbSetUpdatedAtTitle => 'Set updated_at to a timestamp';
+
+  @override
+  String get dbSetUpdatedAtSubtitle =>
+      'Set updated_at to a date/time – a future value acts as write protection';
+
+  @override
+  String get dbSetUpdatedAtConfirmTitle => 'Set updated_at?';
+
+  @override
+  String get dbSetUpdatedAtConfirmContent =>
+      'updated_at will be set to the chosen timestamp for all records.';
+
+  @override
+  String dbSetUpdatedAtSuccess(int count) {
+    return '$count records updated';
+  }
+
+  @override
   String get syncSources => 'Sync sources';
 
   @override
@@ -1786,7 +1843,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get devToolsWarning =>
-      'WARNING: These tools are potentially DESTRUCTIVE. They can irreversibly modify or delete data. Once unlocked they stay usable for one hour. It is STRONGLY, STRONGLY, STRONGLY advised to at least make a backup of the database first!';
+      'WARNING: These tools are potentially DESTRUCTIVE. They can irreversibly modify or delete data. Once unlocked they stay usable for one hour. It is ***STRONGLY*** advised to at least make a backup of the database first!';
 
   @override
   String get devToolsUnlockButton => 'Unlock developer tools';
