@@ -212,6 +212,10 @@ class _P2pMessageCardState extends State<P2pMessageCard> {
                       widget.message.photoData,
                       width: double.infinity,
                       fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          UnifiedWidget(
+                            context,
+                          ).fotoError(widget.message.photoData),
                     ),
                   ),
                 ),

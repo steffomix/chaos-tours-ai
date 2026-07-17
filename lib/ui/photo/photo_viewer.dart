@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:mime/mime.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -14,17 +15,11 @@ class FotoViewer extends StatefulWidget {
   final int initialIndex;
   final VoidCallback onChanged;
 
-  /// Optional guard: if provided, the delete button is only shown (and
-  /// the delete action only executed) when this returns [true].
-  /// If omitted, delete is always available.
-  final bool Function()? canDelete;
-
   const FotoViewer({
     super.key,
     required this.photos,
     required this.initialIndex,
     required this.onChanged,
-    this.canDelete,
   });
 
   @override
@@ -64,7 +59,6 @@ class _FotoViewerState extends State<FotoViewer> {
   }
 
   Future<void> _delete() async {
-    if (widget.canDelete != null && !widget.canDelete!()) return;
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -122,11 +116,10 @@ class _FotoViewerState extends State<FotoViewer> {
             tooltip: l10n.sharePhoto,
             onPressed: _share,
           ),
-          if (widget.canDelete == null || widget.canDelete!())
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.white),
-              onPressed: _delete,
-            ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.white),
+            onPressed: _delete,
+          ),
         ],
       ),
       body: Column(
@@ -137,11 +130,45 @@ class _FotoViewerState extends State<FotoViewer> {
               itemCount: widget.photos.length,
               onPageChanged: (i) => setState(() => _index = i),
               itemBuilder: (_, i) {
-                final b = widget.photos[i].photoData;
+                final bytes = widget.photos[i].photoData;
                 return InteractiveViewer(
                   child: Center(
-                    child: b.isNotEmpty
-                        ? Image.memory(b)
+                    child: bytes.isNotEmpty
+                        ? Image.memory(
+                            bytes,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                                  height: 120,
+                                  color: Colors.grey[300],
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.broken_image),
+                                        Text('Error loading image'),
+                                        Builder(
+                                          builder: (context) {
+                                            final mime = lookupMimeType(
+                                              '*',
+                                              headerBytes: bytes.sublist(
+                                                0,
+                                                100,
+                                              ),
+                                            );
+                                            if (mime != null) {
+                                              return Text(
+                                                'File type looks like: $mime',
+                                              );
+                                            } else {
+                                              return Text('Unknown file type');
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                          )
                         : const Icon(
                             Icons.broken_image,
                             color: Colors.white,

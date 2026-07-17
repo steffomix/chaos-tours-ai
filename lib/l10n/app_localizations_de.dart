@@ -2076,4 +2076,18 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get visitNotFoundContent =>
       'Dieser Besuch existiert nicht mehr in der Datenbank. Er wurde möglicherweise gelöscht oder noch nicht synchronisiert.';
+
+  @override
+  String get imageFileHasNoData => 'Datei ist leer';
+
+  @override
+  String imageFileTypeLooksLike(String type) {
+    return 'Datei schein vom Typ $type zu sein';
+  }
+
+  @override
+  String get imageFileHasUnknownType => 'Datetyp unbekannt';
+
+  @override
+  String get imageLoadingError => 'Fehler beim laden des Bildes';
 }

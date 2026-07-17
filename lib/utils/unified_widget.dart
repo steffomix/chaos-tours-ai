@@ -1,6 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:mime/mime.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class UnifiedWidget {
@@ -91,5 +94,37 @@ class UnifiedWidget {
       },
     );
     return expanded ? Expanded(child: mdWidget) : mdWidget;
+  }
+
+  Widget fotoError(Uint8List bytes) {
+    final l10n = AppLocalizations.of(context)!;
+    Text errorText;
+    if (bytes.isEmpty) {
+      errorText = Text(l10n.imageFileHasNoData);
+    } else {
+      final mime = lookupMimeType('*', headerBytes: bytes.sublist(0, 100));
+      if (mime != null) {
+        errorText = Text(l10n.imageFileTypeLooksLike(mime));
+      } else {
+        errorText = Text(l10n.imageFileHasUnknownType);
+      }
+    }
+
+    return Container(
+      color: Colors.grey[300],
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.broken_image),
+              Text(l10n.imageLoadingError),
+              errorText,
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

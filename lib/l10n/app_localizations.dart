@@ -3745,6 +3745,30 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Dieser Besuch existiert nicht mehr in der Datenbank. Er wurde möglicherweise gelöscht oder noch nicht synchronisiert.'**
   String get visitNotFoundContent;
+
+  /// No description provided for @imageFileHasNoData.
+  ///
+  /// In de, this message translates to:
+  /// **'Datei ist leer'**
+  String get imageFileHasNoData;
+
+  /// No description provided for @imageFileTypeLooksLike.
+  ///
+  /// In de, this message translates to:
+  /// **'Datei schein vom Typ {type} zu sein'**
+  String imageFileTypeLooksLike(String type);
+
+  /// No description provided for @imageFileHasUnknownType.
+  ///
+  /// In de, this message translates to:
+  /// **'Datetyp unbekannt'**
+  String get imageFileHasUnknownType;
+
+  /// No description provided for @imageLoadingError.
+  ///
+  /// In de, this message translates to:
+  /// **'Fehler beim laden des Bildes'**
+  String get imageLoadingError;
 }
 
 class _AppLocalizationsDelegate

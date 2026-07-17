@@ -364,7 +364,6 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
           photos: [PlacePhoto(photoData: bytes)],
           initialIndex: 0,
           onChanged: () {},
-          canDelete: () => false,
         ),
       ),
     );

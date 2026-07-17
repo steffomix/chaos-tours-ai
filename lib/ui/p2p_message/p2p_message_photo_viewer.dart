@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
+import '../../utils/unified_widget.dart';
 
 class P2pMessagePhotoViewer extends StatelessWidget {
   final Uint8List photoData;
@@ -84,8 +85,13 @@ class P2pMessagePhotoViewer extends StatelessWidget {
       body: InteractiveViewer(
         child: Center(
           child: photoData.isNotEmpty
-              ? Image.memory(photoData)
-              : const Icon(Icons.broken_image, color: Colors.white, size: 64),
+              ? Image.memory(
+                  photoData,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) =>
+                      UnifiedWidget(context).fotoError(photoData),
+                )
+              : UnifiedWidget(context).fotoError(photoData),
         ),
       ),
     );

@@ -2629,5 +2629,15 @@
   "placeNotFoundTitle": "Ort nicht gefunden",
   "placeNotFoundContent": "Dieser Ort existiert nicht mehr in der Datenbank. Er wurde möglicherweise gelöscht oder noch nicht synchronisiert.",
   "visitNotFoundTitle": "Besuch nicht gefunden",
-  "visitNotFoundContent": "Dieser Besuch existiert nicht mehr in der Datenbank. Er wurde möglicherweise gelöscht oder noch nicht synchronisiert."
+  "visitNotFoundContent": "Dieser Besuch existiert nicht mehr in der Datenbank. Er wurde möglicherweise gelöscht oder noch nicht synchronisiert.",
+  "imageFileHasNoData": "Datei ist leer",
+  "imageFileTypeLooksLike": "Datei schein vom Typ {type} zu sein",
+  "@imageFileTypeLooksLike": {
+    "placeholders": {
+      "type": {"type": "String"}
+    }
+  },
+  "imageFileHasUnknownType": "Datetyp unbekannt",
+  "imageLoadingError": "Fehler beim laden des Bildes"
+
 }

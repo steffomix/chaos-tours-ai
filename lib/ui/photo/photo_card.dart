@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:mime/mime.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/place_photo.dart';
@@ -34,7 +36,7 @@ class PhotoCard extends StatelessWidget {
         placeName != null || onOpenPlace != null || onOpenVisit != null;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: EdgeInsets.only(bottom: 8),
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -44,6 +46,32 @@ class PhotoCard extends StatelessWidget {
             onTap: onTap,
             child: hasData
                 ? Image.memory(
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      height: 120,
+                      color: Colors.grey[300],
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.broken_image),
+                            Text('Error loading image'),
+                            Builder(
+                              builder: (context) {
+                                final mime = lookupMimeType(
+                                  '*',
+                                  headerBytes: bytes.sublist(0, 100),
+                                );
+                                if (mime != null) {
+                                  return Text('File type looks like: $mime');
+                                } else {
+                                  return Text('Unknown file type');
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                     bytes,
                     fit: BoxFit.contain,
                     width: double.infinity,

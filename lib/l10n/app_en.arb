@@ -1141,5 +1141,14 @@
   "placeNotFoundTitle": "Place not found",
   "placeNotFoundContent": "This place no longer exists in the database. It may have been deleted or not yet synced.",
   "visitNotFoundTitle": "Visit not found",
-  "visitNotFoundContent": "This visit no longer exists in the database. It may have been deleted or not yet synced."
+  "visitNotFoundContent": "This visit no longer exists in the database. It may have been deleted or not yet synced.",
+  "imageFileHasNoData": "File is empty",
+  "imageFileTypeLooksLike": "File type looks like {type}",
+  "@imageFileTypeLooksLike": {
+    "placeholders": {
+      "type": {"type": "String"}
+    }
+  },
+  "imageFileHasUnknownType": "Unknown file type",
+  "imageLoadingError": "Error loading image"
 }
