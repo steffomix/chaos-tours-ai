@@ -12,7 +12,7 @@ import '../../models/stay_person.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/unified_widget.dart';
-import '../photo/place_detail_photo_section.dart';
+import '../photo/photos_section.dart';
 import '../p2p_message/p2p_messages_screen.dart';
 import '../place/place_detail_screen.dart';
 
@@ -608,7 +608,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                     ),
                     const SizedBox(height: 16),
                     // ── Fotos ───────────────────────────────────────
-                    PlaceDetailPhotosSection(
+                    PhotosSection(
                       stayUuid: widget.stay.uuid,
                       placeUuid: widget.stay.placeUuid,
                       placeName: _place?.name ?? '',

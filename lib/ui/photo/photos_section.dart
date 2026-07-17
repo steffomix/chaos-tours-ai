@@ -7,11 +7,11 @@ import '../../models/stay.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
 import '../stay/stay_detail_sheet.dart';
-import 'photo_fullscreen_viewer.dart';
+import 'photo_viewer.dart';
 import 'photos_screen.dart';
-import 'place_detail_photo_card.dart';
+import 'photo_card.dart';
 
-class PlaceDetailPhotosSection extends StatefulWidget {
+class PhotosSection extends StatefulWidget {
   final String? placeUuid;
   final String placeName;
   final String deviceId;
@@ -23,7 +23,7 @@ class PlaceDetailPhotosSection extends StatefulWidget {
   /// the section is embedded in a sheet that has no outer ExpansionTile).
   final bool showSectionTitle;
 
-  const PlaceDetailPhotosSection({
+  const PhotosSection({
     super.key,
     this.placeUuid,
     required this.placeName,
@@ -33,11 +33,10 @@ class PlaceDetailPhotosSection extends StatefulWidget {
   });
 
   @override
-  State<PlaceDetailPhotosSection> createState() =>
-      _PlaceDetailPhotosSectionState();
+  State<PhotosSection> createState() => _PhotosSectionState();
 }
 
-class _PlaceDetailPhotosSectionState extends State<PlaceDetailPhotosSection> {
+class _PhotosSectionState extends State<PhotosSection> {
   List<PlacePhoto> _allPhotos = [];
   final Map<String, Stay> _stayCache = {};
   bool _loading = true;
@@ -49,11 +48,12 @@ class _PlaceDetailPhotosSectionState extends State<PlaceDetailPhotosSection> {
   }
 
   @override
-  void didUpdateWidget(PlaceDetailPhotosSection oldWidget) {
+  void didUpdateWidget(PhotosSection oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.placeUuid != widget.placeUuid ||
-        oldWidget.stayUuid != widget.stayUuid)
+        oldWidget.stayUuid != widget.stayUuid) {
       _load();
+    }
   }
 
   Future<void> _load() async {
@@ -109,7 +109,7 @@ class _PlaceDetailPhotosSectionState extends State<PlaceDetailPhotosSection> {
   void _openFullViewer(int index) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => FotoFullScreenViewer(
+        builder: (_) => FotoViewer(
           photos: _allPhotos,
           initialIndex: index,
           onChanged: _load,
@@ -206,7 +206,7 @@ class _PlaceDetailPhotosSectionState extends State<PlaceDetailPhotosSection> {
             final stay = photo.stayUuid != null
                 ? _stayCache[photo.stayUuid]
                 : null;
-            return PlaceDetailPhotoCard(
+            return PhotoCard(
               photo: photo,
               placeName: widget.placeName.isNotEmpty ? widget.placeName : null,
               onTap: () => _openFullViewer(entry.key),

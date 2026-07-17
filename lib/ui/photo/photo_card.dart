@@ -4,7 +4,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/place_photo.dart';
 import '../../utils/format.dart';
 
-class PlaceDetailPhotoCard extends StatelessWidget {
+class PhotoCard extends StatelessWidget {
   final PlacePhoto photo;
   final String? placeName;
   final VoidCallback onTap;
@@ -16,7 +16,7 @@ class PlaceDetailPhotoCard extends StatelessWidget {
   /// When provided, an additional "open visit" button is shown.
   final VoidCallback? onOpenVisit;
 
-  const PlaceDetailPhotoCard({
+  const PhotoCard({
     super.key,
     required this.photo,
     this.placeName,

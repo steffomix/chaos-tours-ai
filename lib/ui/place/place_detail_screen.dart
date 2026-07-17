@@ -16,7 +16,7 @@ import '../../services/telegram_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/maidenhead.dart';
 import '../../utils/unified_widget.dart';
-import '../photo/place_detail_photo_section.dart';
+import '../photo/photos_section.dart';
 import 'place_experiences_screen.dart';
 import 'place_map_reposition_screen.dart';
 import '../stay/stays_screen.dart';
@@ -1078,7 +1078,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                 leading: const Icon(Icons.photo_library_outlined),
                 title: Text(AppLocalizations.of(context)!.photos),
                 children: [
-                  PlaceDetailPhotosSection(
+                  PhotosSection(
                     placeUuid: widget.place.uuid,
                     placeName: widget.place.name,
                     deviceId: widget.place.deviceId,

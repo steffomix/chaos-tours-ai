@@ -9,7 +9,7 @@ import '../../models/place_photo.dart';
 import '../../services/database_service.dart';
 import '../../utils/format.dart';
 
-class FotoFullScreenViewer extends StatefulWidget {
+class FotoViewer extends StatefulWidget {
   final List<PlacePhoto> photos;
   final int initialIndex;
   final VoidCallback onChanged;
@@ -19,7 +19,7 @@ class FotoFullScreenViewer extends StatefulWidget {
   /// If omitted, delete is always available.
   final bool Function()? canDelete;
 
-  const FotoFullScreenViewer({
+  const FotoViewer({
     super.key,
     required this.photos,
     required this.initialIndex,
@@ -28,10 +28,10 @@ class FotoFullScreenViewer extends StatefulWidget {
   });
 
   @override
-  State<FotoFullScreenViewer> createState() => _FotoFullScreenViewerState();
+  State<FotoViewer> createState() => _FotoViewerState();
 }
 
-class _FotoFullScreenViewerState extends State<FotoFullScreenViewer> {
+class _FotoViewerState extends State<FotoViewer> {
   late PageController _ctrl;
   late int _index;
 

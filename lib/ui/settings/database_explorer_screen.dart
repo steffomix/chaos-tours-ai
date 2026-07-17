@@ -4,7 +4,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/place_photo.dart';
 import '../../services/database_service.dart';
 import '../../utils/unified_widget.dart';
-import '../photo/photo_fullscreen_viewer.dart';
+import '../photo/photo_viewer.dart';
 
 // ---------------------------------------------------------------------------
 // Column metadata – one clean object per column instead of parallel maps
@@ -360,7 +360,7 @@ class _DatabaseExplorerScreenState extends State<DatabaseExplorerScreen> {
   void _openPhoto(Uint8List bytes) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => FotoFullScreenViewer(
+        builder: (_) => FotoViewer(
           photos: [PlacePhoto(photoData: bytes)],
           initialIndex: 0,
           onChanged: () {},

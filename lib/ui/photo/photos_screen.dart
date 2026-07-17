@@ -7,8 +7,8 @@ import '../../models/stay.dart';
 import '../../services/database_service.dart';
 import '../place/place_detail_screen.dart';
 import '../stay/stay_detail_sheet.dart';
-import 'photo_fullscreen_viewer.dart';
-import 'place_detail_photo_card.dart';
+import 'photo_viewer.dart';
+import 'photo_card.dart';
 
 /// Full-screen view of all photos for a place, a single stay, or the entire
 /// database (global photo album).
@@ -239,7 +239,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
   void _openPhoto(int index) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => FotoFullScreenViewer(
+        builder: (_) => FotoViewer(
           photos: _photos,
           initialIndex: index,
           onChanged: _reload,
@@ -327,7 +327,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
                     final placeName = effectivePlaceUuid != null
                         ? _placeCache[effectivePlaceUuid]?.name
                         : null;
-                    return PlaceDetailPhotoCard(
+                    return PhotoCard(
                       photo: photo,
                       placeName: placeName,
                       onTap: () => _openPhoto(i),
@@ -340,7 +340,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
                   final stay = photo.stayUuid != null
                       ? _stayCache[photo.stayUuid]
                       : null;
-                  return PlaceDetailPhotoCard(
+                  return PhotoCard(
                     photo: photo,
                     placeName: widget.subtitle,
                     onTap: () => _openPhoto(i),
