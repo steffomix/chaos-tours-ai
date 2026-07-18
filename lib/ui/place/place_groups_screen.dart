@@ -163,7 +163,7 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
                       ],
                       if (g.telegramConnectionUuid != null) ...const [
                         SizedBox(width: 8),
-                        Icon(Icons.send, size: 14),
+                        Icon(Icons.send, size: 14, color: Colors.blue),
                       ],
                     ],
                   ),

@@ -583,6 +583,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationsSubtitle => 'Request notification permission';
 
   @override
+  String get sectionCalendar => 'Device Calendar';
+
+  @override
   String get calendarSync => 'Calendar sync';
 
   @override

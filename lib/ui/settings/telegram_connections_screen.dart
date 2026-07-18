@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../models/telegram_connection.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
+import '../../utils/custom_icons.dart';
 import '../../utils/unified_widget.dart';
 
 class TelegramConnectionsScreen extends StatefulWidget {
@@ -201,7 +202,7 @@ class _TelegramConnectionsScreenState extends State<TelegramConnectionsScreen> {
                 final c = _connections[i];
                 final url = c.telegramUrl;
                 return ListTile(
-                  leading: const Icon(Icons.send),
+                  leading: telegramIcon(),
                   title: Text(c.name),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

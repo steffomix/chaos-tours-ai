@@ -10,6 +10,7 @@ import '../../models/virtual_device.dart';
 import '../../models/place_group.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
+import '../../utils/custom_icons.dart';
 import '../../utils/permission_helper.dart';
 import '../../utils/random_data_generator.dart';
 import '../../utils/unified_widget.dart';
@@ -265,14 +266,61 @@ class _SettingsScreenState extends State<SettingsScreen> {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.pushNamed(context, '/activities'),
             ),
+
             ListTile(
-              leading: const Icon(Icons.send),
+              leading: const MatrixIcon(size: 32.0),
+              title: Text(l10n.matrixConnections),
+              subtitle: Text(l10n.matrixConnectionsSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.pushNamed(context, '/matrix-connections'),
+            ),
+
+            ListTile(
+              leading: telegramIcon(),
               title: Text(l10n.telegramConnections),
               subtitle: Text(l10n.telegramConnectionsSubtitle),
               trailing: const Icon(Icons.chevron_right),
               onTap: () =>
                   Navigator.pushNamed(context, '/telegram-connections'),
             ),
+            if (!(Platform.isLinux ||
+                Platform.isWindows ||
+                Platform.isMacOS)) ...[
+              SwitchListTile(
+                secondary: const Icon(Icons.calendar_month),
+                title: Text(l10n.calendarSync),
+                subtitle: Text(l10n.calendarSyncSubtitle),
+                value: SettingsService.instance.calendarEnabled,
+                onChanged: (v) => setState(
+                  () => SettingsService.instance.calendarEnabled = v,
+                ),
+              ),
+
+              if (SettingsService.instance.calendarEnabled)
+                Padding(
+                  padding: const EdgeInsets.only(left: 32.0),
+                  child: ListTile(
+                    leading: const Icon(Icons.lock_open_outlined),
+                    title: Text(l10n.calendarPermission),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () async {
+                      final granted = await PermissionHelper.instance
+                          .requestCalendarPermission();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              granted
+                                  ? l10n.calendarGranted
+                                  : l10n.calendarDenied,
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ),
+            ],
             ListTile(
               leading: const Icon(Icons.public),
               title: Text(l10n.syncSources),
@@ -970,33 +1018,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   );
                 }
               },
-            ),
-            if (SettingsService.instance.calendarEnabled)
-              ListTile(
-                leading: const Icon(Icons.lock_open_outlined),
-                title: Text(l10n.calendarPermission),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () async {
-                  final granted = await PermissionHelper.instance
-                      .requestCalendarPermission();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          granted ? l10n.calendarGranted : l10n.calendarDenied,
-                        ),
-                      ),
-                    );
-                  }
-                },
-              ),
-            SwitchListTile(
-              secondary: const Icon(Icons.calendar_today),
-              title: Text(l10n.calendarSync),
-              subtitle: Text(l10n.calendarSyncSubtitle),
-              value: SettingsService.instance.calendarEnabled,
-              onChanged: (v) =>
-                  setState(() => SettingsService.instance.calendarEnabled = v),
             ),
             const Divider(),
             const SizedBox(height: 8),

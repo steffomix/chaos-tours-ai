@@ -754,6 +754,10 @@
   "@notificationsSubtitle": {
     "description": "Notifications subtitle"
   },
+  "sectionCalendar": "Gerätekalender",
+  "@sectionCalendar": {
+    "description": "Calendar section header"
+  },
   "calendarSync": "Kalender-Sync",
   "@calendarSync": {
     "description": "Calendar sync"

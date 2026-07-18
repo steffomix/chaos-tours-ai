@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -8,6 +10,7 @@ import '../../models/telegram_connection.dart';
 import '../../services/calendar_service.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
+import '../../utils/custom_icons.dart';
 import '../../utils/unified_widget.dart';
 
 class PlaceGroupEditScreen extends StatefulWidget {
@@ -271,42 +274,10 @@ class _PlaceGroupEditScreenState extends State<PlaceGroupEditScreen> {
             ),
 
             const SizedBox(height: 8),
-            const Divider(),
+
+            UnifiedWidget(context).namedDivider('Matrix'),
             const SizedBox(height: 4),
             // Telegram connection picker
-            if (widget.telegramConnections.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String?>(
-                isExpanded: true,
-                initialValue: _telegramConnectionUuid,
-                decoration: const InputDecoration(
-                  labelText: 'Telegram',
-                  prefixIcon: Icon(Icons.send),
-                  border: OutlineInputBorder(),
-                ),
-                items: [
-                  DropdownMenuItem(value: null, child: Text(l10n.none)),
-                  ...widget.telegramConnections.map(
-                    (c) => DropdownMenuItem(value: c.uuid, child: Text(c.name)),
-                  ),
-                ],
-                onChanged: (v) => setState(() => _telegramConnectionUuid = v),
-              ),
-            ],
-
-            ListTile(
-              leading: const Icon(Icons.send),
-              title: Text(l10n.telegramConnections),
-              subtitle: Text(l10n.telegramConnectionsSubtitle),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.pushNamed(context, '/telegram-connections')
-                  .then((value) async {
-                    await updateTelegramConnections();
-                    if (mounted) setState(() {});
-                  }),
-            ),
-            const Divider(),
-
             // Matrix connection picker
             if (widget.matrixConnections.isNotEmpty) ...[
               const SizedBox(height: 12),
@@ -315,7 +286,10 @@ class _PlaceGroupEditScreenState extends State<PlaceGroupEditScreen> {
                 initialValue: _matrixConnectionUuid,
                 decoration: InputDecoration(
                   labelText: 'Matrix',
-                  prefixIcon: const Icon(Icons.chat_bubble_outline),
+                  prefixIcon: const Padding(
+                    padding: EdgeInsets.all(4.0),
+                    child: MatrixIcon(),
+                  ),
                   border: const OutlineInputBorder(),
                 ),
                 items: [
@@ -329,7 +303,7 @@ class _PlaceGroupEditScreenState extends State<PlaceGroupEditScreen> {
             ],
 
             ListTile(
-              leading: const Icon(Icons.chat_bubble_outline),
+              leading: const MatrixIcon(size: 32.0),
               title: Text(l10n.matrixConnections),
               subtitle: Text(l10n.matrixConnectionsSubtitle),
               trailing: const Icon(Icons.chevron_right),
@@ -339,56 +313,91 @@ class _PlaceGroupEditScreenState extends State<PlaceGroupEditScreen> {
                     if (mounted) setState(() {});
                   }),
             ),
-            const Divider(),
+            UnifiedWidget(context).namedDivider('Telegram'),
+
+            if (widget.telegramConnections.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String?>(
+                isExpanded: true,
+                initialValue: _telegramConnectionUuid,
+                decoration: const InputDecoration(
+                  labelText: 'Telegram',
+                  prefixIcon: Icon(Icons.send, color: Colors.blue),
+                  border: OutlineInputBorder(),
+                ),
+                items: [
+                  DropdownMenuItem(value: null, child: Text(l10n.none)),
+                  ...widget.telegramConnections.map(
+                    (c) => DropdownMenuItem(value: c.uuid, child: Text(c.name)),
+                  ),
+                ],
+                onChanged: (v) => setState(() => _telegramConnectionUuid = v),
+              ),
+            ],
+
+            ListTile(
+              leading: telegramIcon(),
+              title: Text(l10n.telegramConnections),
+              subtitle: Text(l10n.telegramConnectionsSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.pushNamed(context, '/telegram-connections')
+                  .then((value) async {
+                    await updateTelegramConnections();
+                    if (mounted) setState(() {});
+                  }),
+            ),
 
             const SizedBox(height: 8),
-            const Divider(),
-            const SizedBox(height: 4),
-            // Calendar picker
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.calendar_month),
-                title: Text(
-                  _calendarId != null ? l10n.calendarChosen : l10n.noCalendar,
-                ),
-                subtitle: _calendarId != null ? Text(_calendarId!) : null,
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: _pickCalendar,
-                    ),
-                    if (_calendarId != null)
+            if (!(Platform.isLinux ||
+                Platform.isWindows ||
+                Platform.isMacOS)) ...[
+              UnifiedWidget(context).namedDivider(l10n.sectionCalendar),
+              const SizedBox(height: 4),
+              // Calendar picker
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.calendar_month),
+                  title: Text(
+                    _calendarId != null ? l10n.calendarChosen : l10n.noCalendar,
+                  ),
+                  subtitle: _calendarId != null ? Text(_calendarId!) : null,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
                       IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () => setState(() => _calendarId = null),
+                        icon: const Icon(Icons.edit),
+                        onPressed: _pickCalendar,
                       ),
-                  ],
+                      if (_calendarId != null)
+                        IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () => setState(() => _calendarId = null),
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-
-            // Checkboxes
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(l10n.notesInCalendar),
-              value: _includeNotes,
-              onChanged: (v) => setState(() => _includeNotes = v ?? true),
-            ),
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(l10n.personsInCalendar),
-              value: _includePersons,
-              onChanged: (v) => setState(() => _includePersons = v ?? true),
-            ),
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(l10n.activitiesInCalendar),
-              value: _includeActivities,
-              onChanged: (v) => setState(() => _includeActivities = v ?? true),
-            ),
-
+              // Checkboxes
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.notesInCalendar),
+                value: _includeNotes,
+                onChanged: (v) => setState(() => _includeNotes = v ?? true),
+              ),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.personsInCalendar),
+                value: _includePersons,
+                onChanged: (v) => setState(() => _includePersons = v ?? true),
+              ),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.activitiesInCalendar),
+                value: _includeActivities,
+                onChanged: (v) =>
+                    setState(() => _includeActivities = v ?? true),
+              ),
+            ],
             // Move places (only when editing an existing group)
             if (widget.existing != null) ...[
               const Divider(),

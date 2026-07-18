@@ -1088,6 +1088,12 @@ abstract class AppLocalizations {
   /// **'Benachrichtigungsberechtigung anfordern'**
   String get notificationsSubtitle;
 
+  /// Calendar section header
+  ///
+  /// In de, this message translates to:
+  /// **'Gerätekalender'**
+  String get sectionCalendar;
+
   /// Calendar sync
   ///
   /// In de, this message translates to:

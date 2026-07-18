@@ -5,6 +5,7 @@ import '../../models/matrix_connection.dart';
 import '../../services/database_service.dart';
 import '../../services/matrix_service.dart';
 import '../../services/settings_service.dart';
+import '../../utils/custom_icons.dart';
 import '../../utils/unified_widget.dart';
 
 class MatrixConnectionsScreen extends StatefulWidget {
@@ -309,7 +310,7 @@ class _MatrixConnectionsScreenState extends State<MatrixConnectionsScreen> {
                 final membership = SettingsService.instance
                     .getMatrixRoomMembership(c.uuid);
                 return ListTile(
-                  leading: const Icon(Icons.chat_bubble_outline),
+                  leading: MatrixIcon(size: 32.0),
                   title: Text(c.name),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

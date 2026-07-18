@@ -589,6 +589,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get notificationsSubtitle => 'Benachrichtigungsberechtigung anfordern';
 
   @override
+  String get sectionCalendar => 'Gerätekalender';
+
+  @override
   String get calendarSync => 'Kalender-Sync';
 
   @override

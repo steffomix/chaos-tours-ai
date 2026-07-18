@@ -293,6 +293,7 @@
   "backgroundLocationSubtitle": "Request background location",
   "notifications": "Notifications",
   "notificationsSubtitle": "Request notification permission",
+  "sectionCalendar": "Device Calendar",
   "calendarSync": "Calendar sync",
   "calendarSyncSubtitle": "Automatically add stays to device calendar",
   "calendarPermission": "Request calendar permission",
