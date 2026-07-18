@@ -14,6 +14,7 @@ class Stay {
   final String notes;
   final String? calendarEventId;
   final String? telegramMessageId;
+  final String? matrixEventId;
   final String? address;
   final StayStatus status;
 
@@ -33,6 +34,7 @@ class Stay {
     this.notes = '',
     this.calendarEventId,
     this.telegramMessageId,
+    this.matrixEventId,
     this.address,
     this.status = StayStatus.detecting,
     this.isInterval = true,
@@ -65,6 +67,7 @@ class Stay {
       notes: (map['notes'] as String?) ?? '',
       calendarEventId: map['calendar_event_id'] as String?,
       telegramMessageId: map['telegram_message_id'] as String?,
+      matrixEventId: map['matrix_event_id'] as String?,
       address: map['address'] as String?,
       status: StayStatus.values.firstWhere(
         (s) => s.name == (map['status'] as String? ?? 'detecting'),
@@ -88,6 +91,7 @@ class Stay {
       'notes': notes,
       if (calendarEventId != null) 'calendar_event_id': calendarEventId,
       if (telegramMessageId != null) 'telegram_message_id': telegramMessageId,
+      if (matrixEventId != null) 'matrix_event_id': matrixEventId,
       if (address != null) 'address': address,
       'status': status.name,
       'is_interval': isInterval ? 1 : 0,
@@ -105,6 +109,7 @@ class Stay {
     String? notes,
     String? calendarEventId,
     String? telegramMessageId,
+    String? matrixEventId,
     String? address,
     StayStatus? status,
     bool? isInterval,
@@ -112,6 +117,7 @@ class Stay {
     bool clearPlaceUuid = false,
     bool clearCalendarEventId = false,
     bool clearTelegramMessageId = false,
+    bool clearMatrixEventId = false,
     int? updatedAt,
     int? deletedAt,
     bool clearDeletedAt = false,
@@ -129,6 +135,9 @@ class Stay {
       telegramMessageId: clearTelegramMessageId
           ? null
           : (telegramMessageId ?? this.telegramMessageId),
+      matrixEventId: clearMatrixEventId
+          ? null
+          : (matrixEventId ?? this.matrixEventId),
       address: address ?? this.address,
       status: status ?? this.status,
       isInterval: isInterval ?? this.isInterval,

@@ -224,6 +224,16 @@ class _SharedPrefsExplorerScreenState extends State<SharedPrefsExplorerScreen> {
                       ? '[${value.join(', ')}]'
                       : value?.toString() ?? 'NULL';
 
+                  if (key.startsWith('secret')) {
+                    return ListTile(
+                      title: Text(
+                        key,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text('<secret>'),
+                    );
+                  }
+
                   return ListTile(
                     title: Text(
                       key,

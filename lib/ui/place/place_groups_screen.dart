@@ -105,6 +105,8 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
   Future<(PlaceGroup, String?)?> _showEditDialog(PlaceGroup? existing) async {
     final telegramConnections = await DatabaseService.instance
         .loadAllTelegramConnections();
+    final matrixConnections = await DatabaseService.instance
+        .loadAllMatrixConnections();
     if (!mounted) return null;
     return Navigator.push<(PlaceGroup, String?)>(
       context,
@@ -113,6 +115,7 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
         builder: (_) => PlaceGroupEditScreen(
           existing: existing,
           telegramConnections: telegramConnections,
+          matrixConnections: matrixConnections,
         ),
       ),
     );

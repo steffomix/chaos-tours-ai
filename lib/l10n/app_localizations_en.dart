@@ -555,6 +555,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Manage Telegram bots for place reports';
 
   @override
+  String get matrixConnections => 'Matrix connections';
+
+  @override
+  String get matrixConnectionsSubtitle =>
+      'Manage Matrix rooms for place reports';
+
+  @override
   String get sectionPermissions => 'Permissions';
 
   @override
@@ -1207,6 +1214,53 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get botTokenHint => '123456:ABC-DEF…';
+
+  @override
+  String get matrixConnectionsTitle => 'Matrix connections';
+
+  @override
+  String get noMatrixConnections => 'No Matrix connections yet.';
+
+  @override
+  String get newMatrixConnection => 'New Matrix connection';
+
+  @override
+  String get editMatrixConnection => 'Edit Matrix connection';
+
+  @override
+  String get matrixHomeserverLabel => 'Homeserver URL *';
+
+  @override
+  String get matrixHomeserverHint => 'https://matrix.org';
+
+  @override
+  String get matrixRoomIdLabel => 'Room ID *';
+
+  @override
+  String get matrixRoomIdHint => '!room:matrix.org';
+
+  @override
+  String get matrixAccessTokenLabel => 'Access token *';
+
+  @override
+  String get matrixAccessTokenHint => 'syt_...';
+
+  @override
+  String get matrixCheckMembership => 'Check membership';
+
+  @override
+  String get matrixMemberYes => 'Member of room';
+
+  @override
+  String get matrixMemberNo => 'Not in room';
+
+  @override
+  String get matrixMemberUnknown => 'Membership not yet checked';
+
+  @override
+  String matrixMemberError(String error) {
+    return 'Error: $error';
+  }
 
   @override
   String get distance => 'Distance';

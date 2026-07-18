@@ -20,6 +20,7 @@ import '../models/place_photo.dart';
 import '../models/sync_source.dart';
 import '../models/sync_source_experience.dart';
 import '../models/telegram_connection.dart';
+import '../models/matrix_connection.dart';
 import '../models/tracking_point.dart';
 import '../models/trusted_source.dart';
 import '../models/message.dart';
@@ -62,6 +63,7 @@ class DatabaseService {
         device_id TEXT NOT NULL DEFAULT '',
         place_type INTEGER NOT NULL DEFAULT 0,
         telegram_connection_uuid TEXT,
+        matrix_connection_uuid TEXT,
         name TEXT NOT NULL,
         include_notes INTEGER NOT NULL DEFAULT 1,
         include_persons INTEGER NOT NULL DEFAULT 1,
@@ -128,6 +130,7 @@ class DatabaseService {
         end_time INTEGER,
         notes TEXT NOT NULL DEFAULT '',
         telegram_message_id TEXT,
+        matrix_event_id TEXT,
         address TEXT,
         status TEXT NOT NULL DEFAULT 'detecting',
         is_interval INTEGER NOT NULL DEFAULT 1,
@@ -474,6 +477,19 @@ class DatabaseService {
         uuid TEXT PRIMARY KEY,
         device_id TEXT NOT NULL DEFAULT '',
         chat_id TEXT NOT NULL DEFAULT '',
+        name TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        updated_at INTEGER NOT NULL DEFAULT 0,
+        deleted_at INTEGER
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS matrix_connections (
+        uuid TEXT PRIMARY KEY,
+        device_id TEXT NOT NULL DEFAULT '',
+        homeserver TEXT NOT NULL DEFAULT '',
+        room_id TEXT NOT NULL DEFAULT '',
         name TEXT NOT NULL,
         description TEXT NOT NULL DEFAULT '',
         updated_at INTEGER NOT NULL DEFAULT 0,
@@ -1553,6 +1569,73 @@ class DatabaseService {
     final db = await database;
     await db.update(
       'telegram_connections',
+      {
+        'deleted_at': DateTime.now().millisecondsSinceEpoch,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+        if (deviceId.isNotEmpty) 'device_id': deviceId,
+      },
+      where: 'uuid = ?',
+      whereArgs: [uuid],
+    );
+  }
+
+  // ── MatrixConnections ────────────────────────────────────────────────────
+
+  Future<String> insertMatrixConnection(
+    MatrixConnection conn, {
+    String deviceId = '',
+  }) async {
+    final db = await database;
+    final map = _withSyncFields(conn.toMap(), deviceId);
+    await db.insert(
+      'matrix_connections',
+      map,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    return map['uuid'] as String;
+  }
+
+  Future<List<MatrixConnection>> loadAllMatrixConnections() async {
+    final db = await database;
+    final rows = await db.query(
+      'matrix_connections',
+      where: 'deleted_at IS NULL',
+      orderBy: 'name ASC',
+    );
+    return rows.map(MatrixConnection.fromMap).toList();
+  }
+
+  Future<MatrixConnection?> loadMatrixConnection(String uuid) async {
+    final db = await database;
+    final rows = await db.query(
+      'matrix_connections',
+      where: 'uuid = ? AND deleted_at IS NULL',
+      whereArgs: [uuid],
+    );
+    if (rows.isEmpty) return null;
+    return MatrixConnection.fromMap(rows.first);
+  }
+
+  Future<void> updateMatrixConnection(
+    MatrixConnection conn, {
+    String deviceId = '',
+  }) async {
+    final db = await database;
+    await db.update(
+      'matrix_connections',
+      _withSyncFields(conn.toMap(), deviceId),
+      where: 'uuid = ?',
+      whereArgs: [conn.uuid],
+    );
+  }
+
+  Future<void> softDeleteMatrixConnection(
+    String uuid, {
+    String deviceId = '',
+  }) async {
+    final db = await database;
+    await db.update(
+      'matrix_connections',
       {
         'deleted_at': DateTime.now().millisecondsSinceEpoch,
         'updated_at': DateTime.now().millisecondsSinceEpoch,

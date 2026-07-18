@@ -1034,6 +1034,18 @@ abstract class AppLocalizations {
   /// **'Telegram-Bots für Ortsberichte verwalten'**
   String get telegramConnectionsSubtitle;
 
+  /// Matrix connections
+  ///
+  /// In de, this message translates to:
+  /// **'Matrix-Verbindungen'**
+  String get matrixConnections;
+
+  /// Matrix connections subtitle
+  ///
+  /// In de, this message translates to:
+  /// **'Matrix-Räume für Ortsberichte verwalten'**
+  String get matrixConnectionsSubtitle;
+
   /// Permissions section header
   ///
   /// In de, this message translates to:
@@ -2197,6 +2209,96 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'123456:ABC-DEF…'**
   String get botTokenHint;
+
+  /// Matrix connections screen title
+  ///
+  /// In de, this message translates to:
+  /// **'Matrix-Verbindungen'**
+  String get matrixConnectionsTitle;
+
+  /// No Matrix connections yet
+  ///
+  /// In de, this message translates to:
+  /// **'Noch keine Matrix-Verbindungen vorhanden.'**
+  String get noMatrixConnections;
+
+  /// New Matrix connection dialog title
+  ///
+  /// In de, this message translates to:
+  /// **'Neue Matrix-Verbindung'**
+  String get newMatrixConnection;
+
+  /// Edit Matrix connection dialog title
+  ///
+  /// In de, this message translates to:
+  /// **'Matrix-Verbindung bearbeiten'**
+  String get editMatrixConnection;
+
+  /// Matrix homeserver label
+  ///
+  /// In de, this message translates to:
+  /// **'Homeserver-URL *'**
+  String get matrixHomeserverLabel;
+
+  /// Matrix homeserver hint
+  ///
+  /// In de, this message translates to:
+  /// **'https://matrix.org'**
+  String get matrixHomeserverHint;
+
+  /// Matrix room ID label
+  ///
+  /// In de, this message translates to:
+  /// **'Raum-ID *'**
+  String get matrixRoomIdLabel;
+
+  /// Matrix room ID hint
+  ///
+  /// In de, this message translates to:
+  /// **'!raum:matrix.org'**
+  String get matrixRoomIdHint;
+
+  /// Matrix access token label
+  ///
+  /// In de, this message translates to:
+  /// **'Access-Token *'**
+  String get matrixAccessTokenLabel;
+
+  /// Matrix access token hint
+  ///
+  /// In de, this message translates to:
+  /// **'syt_...'**
+  String get matrixAccessTokenHint;
+
+  /// Check Matrix room membership button
+  ///
+  /// In de, this message translates to:
+  /// **'Mitgliedschaft prüfen'**
+  String get matrixCheckMembership;
+
+  /// Matrix room membership confirmed
+  ///
+  /// In de, this message translates to:
+  /// **'Mitglied im Raum'**
+  String get matrixMemberYes;
+
+  /// Not a Matrix room member
+  ///
+  /// In de, this message translates to:
+  /// **'Nicht im Raum'**
+  String get matrixMemberNo;
+
+  /// Matrix room membership not yet checked
+  ///
+  /// In de, this message translates to:
+  /// **'Mitgliedschaft nicht geprüft'**
+  String get matrixMemberUnknown;
+
+  /// Matrix membership check error
+  ///
+  /// In de, this message translates to:
+  /// **'Fehler: {error}'**
+  String matrixMemberError(String error);
 
   /// Distance filter label
   ///

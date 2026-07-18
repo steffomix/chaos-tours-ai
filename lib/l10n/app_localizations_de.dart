@@ -561,6 +561,13 @@ class AppLocalizationsDe extends AppLocalizations {
       'Telegram-Bots für Ortsberichte verwalten';
 
   @override
+  String get matrixConnections => 'Matrix-Verbindungen';
+
+  @override
+  String get matrixConnectionsSubtitle =>
+      'Matrix-Räume für Ortsberichte verwalten';
+
+  @override
   String get sectionPermissions => 'Berechtigungen';
 
   @override
@@ -1217,6 +1224,53 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get botTokenHint => '123456:ABC-DEF…';
+
+  @override
+  String get matrixConnectionsTitle => 'Matrix-Verbindungen';
+
+  @override
+  String get noMatrixConnections => 'Noch keine Matrix-Verbindungen vorhanden.';
+
+  @override
+  String get newMatrixConnection => 'Neue Matrix-Verbindung';
+
+  @override
+  String get editMatrixConnection => 'Matrix-Verbindung bearbeiten';
+
+  @override
+  String get matrixHomeserverLabel => 'Homeserver-URL *';
+
+  @override
+  String get matrixHomeserverHint => 'https://matrix.org';
+
+  @override
+  String get matrixRoomIdLabel => 'Raum-ID *';
+
+  @override
+  String get matrixRoomIdHint => '!raum:matrix.org';
+
+  @override
+  String get matrixAccessTokenLabel => 'Access-Token *';
+
+  @override
+  String get matrixAccessTokenHint => 'syt_...';
+
+  @override
+  String get matrixCheckMembership => 'Mitgliedschaft prüfen';
+
+  @override
+  String get matrixMemberYes => 'Mitglied im Raum';
+
+  @override
+  String get matrixMemberNo => 'Nicht im Raum';
+
+  @override
+  String get matrixMemberUnknown => 'Mitgliedschaft nicht geprüft';
+
+  @override
+  String matrixMemberError(String error) {
+    return 'Fehler: $error';
+  }
 
   @override
   String get distance => 'Entfernung';

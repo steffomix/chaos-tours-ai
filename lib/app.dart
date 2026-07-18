@@ -19,6 +19,7 @@ import 'ui/settings/settings_screen.dart';
 import 'ui/place/places_timeline_screen.dart';
 import 'ui/settings/sync_sources_screen.dart';
 import 'ui/settings/telegram_connections_screen.dart';
+import 'ui/settings/matrix_connections_screen.dart';
 import 'ui/settings/trusted_sources_screen.dart';
 import 'ui/settings/shared_prefs_explorer_screen.dart';
 
@@ -50,6 +51,7 @@ class _AppState extends State<App> {
         '/database-dump': (_) => const DatabaseDumpScreen(),
         '/sync-sources': (_) => const SyncSourcesScreen(),
         '/telegram-connections': (_) => const TelegramConnectionsScreen(),
+        '/matrix-connections': (_) => const MatrixConnectionsScreen(),
         '/trusted-sources': (_) => const TrustedSourcesScreen(),
         '/database-explorer': (_) => const DatabaseExplorerScreen(),
         '/shared-prefs-explorer': (_) => const SharedPrefsExplorerScreen(),

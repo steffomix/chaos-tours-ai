@@ -9,6 +9,7 @@ class PlaceGroup {
   final String uuid;
   final String name;
   final String? telegramConnectionUuid;
+  final String? matrixConnectionUuid;
   final bool includeNotes;
   final bool includePersons;
   final bool includeActivities;
@@ -24,6 +25,7 @@ class PlaceGroup {
     String? uuid,
     required this.name,
     this.telegramConnectionUuid,
+    this.matrixConnectionUuid,
     this.includeNotes = true,
     this.includePersons = true,
     this.includeActivities = true,
@@ -44,6 +46,7 @@ class PlaceGroup {
       uuid: map['uuid'] as String?,
       name: map['name'] as String,
       telegramConnectionUuid: map['telegram_connection_uuid'] as String?,
+      matrixConnectionUuid: map['matrix_connection_uuid'] as String?,
       includeNotes: (map['include_notes'] as int? ?? 1) == 1,
       includePersons: (map['include_persons'] as int? ?? 1) == 1,
       includeActivities: (map['include_activities'] as int? ?? 1) == 1,
@@ -64,6 +67,8 @@ class PlaceGroup {
       'name': name,
       if (telegramConnectionUuid != null)
         'telegram_connection_uuid': telegramConnectionUuid,
+      if (matrixConnectionUuid != null)
+        'matrix_connection_uuid': matrixConnectionUuid,
       'include_notes': includeNotes ? 1 : 0,
       'include_persons': includePersons ? 1 : 0,
       'include_activities': includeActivities ? 1 : 0,
@@ -85,6 +90,8 @@ class PlaceGroup {
     bool? isAutoGroup,
     PlaceType? placeType,
     bool clearTelegramConnectionUuid = false,
+    String? matrixConnectionUuid,
+    bool clearMatrixConnectionUuid = false,
     int? updatedAt,
     int? deletedAt,
     bool clearDeletedAt = false,
@@ -96,6 +103,9 @@ class PlaceGroup {
       telegramConnectionUuid: clearTelegramConnectionUuid
           ? null
           : (telegramConnectionUuid ?? this.telegramConnectionUuid),
+      matrixConnectionUuid: clearMatrixConnectionUuid
+          ? null
+          : (matrixConnectionUuid ?? this.matrixConnectionUuid),
       includeNotes: includeNotes ?? this.includeNotes,
       includePersons: includePersons ?? this.includePersons,
       includeActivities: includeActivities ?? this.includeActivities,

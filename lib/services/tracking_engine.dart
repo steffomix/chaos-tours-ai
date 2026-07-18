@@ -8,6 +8,7 @@ import '../services/database_service.dart';
 import '../services/nominatim_service.dart';
 import '../services/settings_service.dart';
 import '../services/telegram_service.dart';
+import '../services/matrix_service.dart';
 import '../utils/geo_utils.dart';
 import '../utils/maidenhead.dart';
 
@@ -310,6 +311,7 @@ class TrackingEngine {
     if (place.placeType.syncEnabled) {
       await _createArrivalCalendarEvent(place.uuid);
       await _createArrivalTelegramMessage(place.uuid);
+      await _createArrivalMatrixMessage(place.uuid);
     }
   }
 
@@ -393,6 +395,7 @@ class TrackingEngine {
         if (autoGroup != null && autoGroup.placeType.syncEnabled) {
           await _createArrivalCalendarEvent(placeUuid);
           await _createArrivalTelegramMessage(placeUuid);
+          await _createArrivalMatrixMessage(placeUuid);
         }
       }
       return;
@@ -465,6 +468,34 @@ class TrackingEngine {
     final result = await TelegramService.instance.sendMessage(conn, text);
     if (result.success && result.messageId != null) {
       final updated = stay.copyWith(telegramMessageId: result.messageId);
+      await DatabaseService.instance.updateStay(updated);
+      _activeStays[placeUuid] = updated;
+    }
+  }
+
+  /// Sends an arrival Matrix message for the stay at [placeUuid].
+  Future<void> _createArrivalMatrixMessage(String placeUuid) async {
+    final stay = _activeStays[placeUuid];
+    final place = _activePlaces[placeUuid];
+    if (stay == null || place == null) return;
+    if (place.groupUuid == null) return;
+    final group = await DatabaseService.instance.loadPlaceGroup(
+      place.groupUuid!,
+    );
+    if (group == null || group.matrixConnectionUuid == null) return;
+    final conn = await DatabaseService.instance.loadMatrixConnection(
+      group.matrixConnectionUuid!,
+    );
+    if (conn == null) return;
+
+    final d = DateTime.fromMillisecondsSinceEpoch(stay.startTime);
+    final fmtTime =
+        '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+    final text = '\u{1F4CD} ${place.name}\nAnkunft: $fmtTime';
+
+    final result = await MatrixService.instance.sendMessage(conn, text);
+    if (result.success && result.eventId != null) {
+      final updated = stay.copyWith(matrixEventId: result.eventId);
       await DatabaseService.instance.updateStay(updated);
       _activeStays[placeUuid] = updated;
     }
@@ -603,6 +634,75 @@ class TrackingEngine {
             if (result.success && result.messageId != null) {
               await DatabaseService.instance.updateStay(
                 ended.copyWith(telegramMessageId: result.messageId),
+              );
+            }
+          }
+        }
+      }
+    }
+
+    // Matrix sync — analogous to Telegram, fires for any place with a
+    // matrix-connected group.
+    if (place.groupUuid != null) {
+      final group = await DatabaseService.instance.loadPlaceGroup(
+        place.groupUuid!,
+      );
+      if (group != null && group.matrixConnectionUuid != null) {
+        final conn = await DatabaseService.instance.loadMatrixConnection(
+          group.matrixConnectionUuid!,
+        );
+        if (conn != null) {
+          final persons = await DatabaseService.instance.loadPersonsForStay(
+            ended.uuid,
+          );
+          final activities = await DatabaseService.instance
+              .loadActivitiesForStay(ended.uuid);
+
+          final dStart = DateTime.fromMillisecondsSinceEpoch(ended.startTime);
+          final dEnd = DateTime.fromMillisecondsSinceEpoch(endTime);
+          String fmtTime(DateTime d) =>
+              '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+          final duration = ended.copyWith(endTime: endTime).duration;
+          String fmtDur(Duration dur) {
+            final h = dur.inHours;
+            final m = dur.inMinutes.remainder(60);
+            return h > 0 ? '${h}h ${m}min' : '${m}min';
+          }
+
+          final buf = StringBuffer();
+          buf.writeln('\u{1F4CD} ${place.name}');
+          buf.writeln(
+            'Ankunft: ${fmtTime(dStart)}  \u2022  Abfahrt: ${fmtTime(dEnd)}',
+          );
+          buf.writeln('Dauer: ${fmtDur(duration)}');
+          buf.writeln(
+            'Google Maps: http://maps.google.com/?q=${place.lat.toStringAsFixed(6)},${place.lng.toStringAsFixed(6)}',
+          );
+          if (persons.isNotEmpty) {
+            buf.writeln('Personen: ${persons.map((p) => p.name).join(', ')}');
+          }
+          if (activities.isNotEmpty) {
+            buf.writeln(
+              'T\u00e4tigkeiten: ${activities.map((a) => a.description).join(', ')}',
+            );
+          }
+          if (ended.notes.isNotEmpty) {
+            buf.writeln(ended.notes);
+          }
+
+          final text = buf.toString().trimRight();
+
+          if (ended.matrixEventId != null) {
+            await MatrixService.instance.editMessage(
+              conn,
+              ended.matrixEventId!,
+              text,
+            );
+          } else {
+            final result = await MatrixService.instance.sendMessage(conn, text);
+            if (result.success && result.eventId != null) {
+              await DatabaseService.instance.updateStay(
+                ended.copyWith(matrixEventId: result.eventId),
               );
             }
           }

@@ -60,7 +60,9 @@ class SettingsService {
   static const String _keyPhotoMaxHeight = 'photo_max_height';
   static const String _keyPhotoImageQuality = 'photo_image_quality';
   static const String _keyGroupCalendarIds = 'group_calendar_ids';
-  static const String _keyTelegramBotTokens = 'telegram_bot_tokens';
+  static const String _keyTelegramBotTokens = 'secret_telegram_bot_tokens';
+  static const String _keyMatrixAccessTokens = 'secret_matrix_access_tokens';
+  static const String _keyMatrixRoomMembership = 'matrix_room_membership';
   static const String _keyDevToolsUnlockedUntilMs =
       'dev_tools_unlocked_until_ms';
 
@@ -412,6 +414,101 @@ class SettingsService {
       map.remove(uuid);
     }
     await _p.setString(_keyTelegramBotTokens, jsonEncode(map));
+  }
+
+  // ── Matrix access-token + membership mapping (device-local, never synced) ──
+
+  /// Returns the access token linked to [connectionUuid], or null.
+  String? getMatrixAccessToken(String connectionUuid) {
+    final raw = _p.getString(_keyMatrixAccessTokens);
+    if (raw == null || raw.isEmpty) return null;
+    final map = Map<String, String>.from(
+      (jsonDecode(raw) as Map<String, dynamic>).map(
+        (k, v) => MapEntry(k, v as String),
+      ),
+    );
+    return map[connectionUuid];
+  }
+
+  /// Sets or clears the access token for [connectionUuid].
+  Future<void> setMatrixAccessToken(
+    String connectionUuid,
+    String? token,
+  ) async {
+    final raw = _p.getString(_keyMatrixAccessTokens);
+    final map = <String, String>{};
+    if (raw != null && raw.isNotEmpty) {
+      map.addAll(
+        Map<String, String>.from(
+          (jsonDecode(raw) as Map<String, dynamic>).map(
+            (k, v) => MapEntry(k, v as String),
+          ),
+        ),
+      );
+    }
+    if (token == null || token.isEmpty) {
+      map.remove(connectionUuid);
+    } else {
+      map[connectionUuid] = token;
+    }
+    await _p.setString(_keyMatrixAccessTokens, jsonEncode(map));
+  }
+
+  /// Removes access tokens for the given connection UUIDs.
+  Future<void> removeMatrixAccessTokens(List<String> connectionUuids) async {
+    if (connectionUuids.isEmpty) return;
+    final raw = _p.getString(_keyMatrixAccessTokens);
+    if (raw == null || raw.isEmpty) return;
+    final map = Map<String, String>.from(
+      (jsonDecode(raw) as Map<String, dynamic>).map(
+        (k, v) => MapEntry(k, v as String),
+      ),
+    );
+    for (final uuid in connectionUuids) {
+      map.remove(uuid);
+    }
+    await _p.setString(_keyMatrixAccessTokens, jsonEncode(map));
+  }
+
+  /// Returns the stored room-membership status for [connectionUuid], or null
+  /// if never checked.
+  bool? getMatrixRoomMembership(String connectionUuid) {
+    final raw = _p.getString(_keyMatrixRoomMembership);
+    if (raw == null || raw.isEmpty) return null;
+    final map = Map<String, dynamic>.from(jsonDecode(raw) as Map);
+    final v = map[connectionUuid];
+    if (v is bool) return v;
+    return null;
+  }
+
+  /// Persists the room-membership status for [connectionUuid].
+  Future<void> setMatrixRoomMembership(
+    String connectionUuid,
+    bool? isMember,
+  ) async {
+    final raw = _p.getString(_keyMatrixRoomMembership);
+    final map = <String, dynamic>{};
+    if (raw != null && raw.isNotEmpty) {
+      map.addAll(Map<String, dynamic>.from(jsonDecode(raw) as Map));
+    }
+    if (isMember == null) {
+      map.remove(connectionUuid);
+    } else {
+      map[connectionUuid] = isMember;
+    }
+    await _p.setString(_keyMatrixRoomMembership, jsonEncode(map));
+  }
+
+  /// Removes membership entries for the given connection UUIDs.
+  Future<void> removeMatrixRoomMemberships(List<String> connectionUuids) async {
+    if (connectionUuids.isEmpty) return;
+    final raw = _p.getString(_keyMatrixRoomMembership);
+    if (raw == null || raw.isEmpty) return;
+    final map = Map<String, dynamic>.from(jsonDecode(raw) as Map);
+    for (final uuid in connectionUuids) {
+      map.remove(uuid);
+    }
+    await _p.setString(_keyMatrixRoomMembership, jsonEncode(map));
   }
 
   // ── Experience / distance filter ────────────────────────────────────────

@@ -718,6 +718,14 @@
   "@telegramConnectionsSubtitle": {
     "description": "Telegram connections subtitle"
   },
+  "matrixConnections": "Matrix-Verbindungen",
+  "@matrixConnections": {
+    "description": "Matrix connections"
+  },
+  "matrixConnectionsSubtitle": "Matrix-Räume für Ortsberichte verwalten",
+  "@matrixConnectionsSubtitle": {
+    "description": "Matrix connections subtitle"
+  },
   "sectionPermissions": "Berechtigungen",
   "@sectionPermissions": {
     "description": "Permissions section header"
@@ -1665,6 +1673,69 @@
   "botTokenHint": "123456:ABC-DEF…",
   "@botTokenHint": {
     "description": "Bot token hint"
+  },
+  "matrixConnectionsTitle": "Matrix-Verbindungen",
+  "@matrixConnectionsTitle": {
+    "description": "Matrix connections screen title"
+  },
+  "noMatrixConnections": "Noch keine Matrix-Verbindungen vorhanden.",
+  "@noMatrixConnections": {
+    "description": "No Matrix connections yet"
+  },
+  "newMatrixConnection": "Neue Matrix-Verbindung",
+  "@newMatrixConnection": {
+    "description": "New Matrix connection dialog title"
+  },
+  "editMatrixConnection": "Matrix-Verbindung bearbeiten",
+  "@editMatrixConnection": {
+    "description": "Edit Matrix connection dialog title"
+  },
+  "matrixHomeserverLabel": "Homeserver-URL *",
+  "@matrixHomeserverLabel": {
+    "description": "Matrix homeserver label"
+  },
+  "matrixHomeserverHint": "https://matrix.org",
+  "@matrixHomeserverHint": {
+    "description": "Matrix homeserver hint"
+  },
+  "matrixRoomIdLabel": "Raum-ID *",
+  "@matrixRoomIdLabel": {
+    "description": "Matrix room ID label"
+  },
+  "matrixRoomIdHint": "!raum:matrix.org",
+  "@matrixRoomIdHint": {
+    "description": "Matrix room ID hint"
+  },
+  "matrixAccessTokenLabel": "Access-Token *",
+  "@matrixAccessTokenLabel": {
+    "description": "Matrix access token label"
+  },
+  "matrixAccessTokenHint": "syt_...",
+  "@matrixAccessTokenHint": {
+    "description": "Matrix access token hint"
+  },
+  "matrixCheckMembership": "Mitgliedschaft prüfen",
+  "@matrixCheckMembership": {
+    "description": "Check Matrix room membership button"
+  },
+  "matrixMemberYes": "Mitglied im Raum",
+  "@matrixMemberYes": {
+    "description": "Matrix room membership confirmed"
+  },
+  "matrixMemberNo": "Nicht im Raum",
+  "@matrixMemberNo": {
+    "description": "Not a Matrix room member"
+  },
+  "matrixMemberUnknown": "Mitgliedschaft nicht geprüft",
+  "@matrixMemberUnknown": {
+    "description": "Matrix room membership not yet checked"
+  },
+  "matrixMemberError": "Fehler: {error}",
+  "@matrixMemberError": {
+    "description": "Matrix membership check error",
+    "placeholders": {
+      "error": { "type": "String" }
+    }
   },
   "distance": "Entfernung",
   "@distance": {

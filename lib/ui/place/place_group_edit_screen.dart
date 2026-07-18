@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../models/matrix_connection.dart';
 import '../../models/place_group.dart';
 import '../../models/saved_place.dart';
 import '../../models/telegram_connection.dart';
@@ -12,11 +13,13 @@ import '../../utils/unified_widget.dart';
 class PlaceGroupEditScreen extends StatefulWidget {
   final PlaceGroup? existing;
   final List<TelegramConnection> telegramConnections;
+  final List<MatrixConnection> matrixConnections;
 
   const PlaceGroupEditScreen({
     super.key,
     required this.existing,
     required this.telegramConnections,
+    required this.matrixConnections,
   });
 
   @override
@@ -27,6 +30,7 @@ class _PlaceGroupEditScreenState extends State<PlaceGroupEditScreen> {
   late final TextEditingController _nameCtrl;
   String? _calendarId;
   String? _telegramConnectionUuid;
+  String? _matrixConnectionUuid;
   late bool _includeNotes;
   late bool _includePersons;
   late bool _includeActivities;
@@ -42,6 +46,7 @@ class _PlaceGroupEditScreenState extends State<PlaceGroupEditScreen> {
         ? SettingsService.instance.getGroupCalendarId(e.uuid)
         : null;
     _telegramConnectionUuid = e?.telegramConnectionUuid;
+    _matrixConnectionUuid = e?.matrixConnectionUuid;
     _includeNotes = e?.includeNotes ?? true;
     _includePersons = e?.includePersons ?? true;
     _includeActivities = e?.includeActivities ?? true;
@@ -62,6 +67,17 @@ class _PlaceGroupEditScreenState extends State<PlaceGroupEditScreen> {
       setState(() {
         widget.telegramConnections.clear();
         widget.telegramConnections.addAll(connections);
+      });
+    }
+  }
+
+  Future<void> updateMatrixConnections() async {
+    final connections = await DatabaseService.instance
+        .loadAllMatrixConnections();
+    if (mounted) {
+      setState(() {
+        widget.matrixConnections.clear();
+        widget.matrixConnections.addAll(connections);
       });
     }
   }
@@ -189,6 +205,7 @@ class _PlaceGroupEditScreenState extends State<PlaceGroupEditScreen> {
       uuid: widget.existing?.uuid,
       name: name,
       telegramConnectionUuid: _telegramConnectionUuid,
+      matrixConnectionUuid: _matrixConnectionUuid,
       includeNotes: _includeNotes,
       includePersons: _includePersons,
       includeActivities: _includeActivities,
@@ -285,6 +302,40 @@ class _PlaceGroupEditScreenState extends State<PlaceGroupEditScreen> {
               onTap: () => Navigator.pushNamed(context, '/telegram-connections')
                   .then((value) async {
                     await updateTelegramConnections();
+                    if (mounted) setState(() {});
+                  }),
+            ),
+            const Divider(),
+
+            // Matrix connection picker
+            if (widget.matrixConnections.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String?>(
+                isExpanded: true,
+                initialValue: _matrixConnectionUuid,
+                decoration: InputDecoration(
+                  labelText: 'Matrix',
+                  prefixIcon: const Icon(Icons.chat_bubble_outline),
+                  border: const OutlineInputBorder(),
+                ),
+                items: [
+                  DropdownMenuItem(value: null, child: Text(l10n.none)),
+                  ...widget.matrixConnections.map(
+                    (c) => DropdownMenuItem(value: c.uuid, child: Text(c.name)),
+                  ),
+                ],
+                onChanged: (v) => setState(() => _matrixConnectionUuid = v),
+              ),
+            ],
+
+            ListTile(
+              leading: const Icon(Icons.chat_bubble_outline),
+              title: Text(l10n.matrixConnections),
+              subtitle: Text(l10n.matrixConnectionsSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.pushNamed(context, '/matrix-connections')
+                  .then((value) async {
+                    await updateMatrixConnections();
                     if (mounted) setState(() {});
                   }),
             ),

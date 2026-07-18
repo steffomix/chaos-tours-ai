@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:mime/mime.dart';
 
 import '../../l10n/app_localizations.dart';
