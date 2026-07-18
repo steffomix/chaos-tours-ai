@@ -1741,6 +1741,72 @@
       "error": { "type": "String" }
     }
   },
+  "matrixSectionAuth": "Authentifizierung",
+  "@matrixSectionAuth": {
+    "description": "Matrix auth section header"
+  },
+  "matrixSectionTest": "Verbindung testen",
+  "@matrixSectionTest": {
+    "description": "Matrix test section header"
+  },
+  "matrixUsernameLabel": "Matrix-Benutzername",
+  "@matrixUsernameLabel": {
+    "description": "Matrix username field label"
+  },
+  "matrixUsernameHint": "@alice:matrix.org",
+  "@matrixUsernameHint": {
+    "description": "Matrix username field hint"
+  },
+  "matrixPasswordLabel": "Passwort",
+  "@matrixPasswordLabel": {
+    "description": "Matrix password field label"
+  },
+  "matrixPasswordHint": "Passwort eingeben",
+  "@matrixPasswordHint": {
+    "description": "Matrix password field hint"
+  },
+  "matrixLoginButton": "Einloggen & Token erneuern",
+  "@matrixLoginButton": {
+    "description": "Matrix login button"
+  },
+  "matrixLoginSuccess": "Login erfolgreich \u2013 Token gespeichert",
+  "@matrixLoginSuccess": {
+    "description": "Matrix login success message"
+  },
+  "matrixLoginError": "Login fehlgeschlagen: {error}",
+  "@matrixLoginError": {
+    "description": "Matrix login error message",
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "matrixLoginMissingFields": "Bitte Homeserver, Benutzername und Passwort eingeben.",
+  "@matrixLoginMissingFields": {
+    "description": "Matrix login missing fields error"
+  },
+  "matrixCredentialNote": "Benutzername und Passwort werden nur lokal gespeichert und f\u00fcr die automatische Token-Erneuerung verwendet.",
+  "@matrixCredentialNote": {
+    "description": "Matrix credential storage note"
+  },
+  "matrixTestMessageHint": "Testnachricht eingeben\u2026",
+  "@matrixTestMessageHint": {
+    "description": "Matrix test message field hint"
+  },
+  "matrixSendTestButton": "Senden",
+  "@matrixSendTestButton": {
+    "description": "Matrix send test button"
+  },
+  "matrixTestSent": "Nachricht erfolgreich gesendet",
+  "@matrixTestSent": {
+    "description": "Matrix test send success"
+  },
+  "matrixTestError": "Fehler beim Senden: {error}",
+  "@matrixTestError": {
+    "description": "Matrix test send error",
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
   "distance": "Entfernung",
   "@distance": {
     "description": "Distance filter label"
@@ -2676,6 +2742,7 @@
   "radiusInKm": "Radius in km",
   "showAction": "Anzeigen",
   "sectionP2pMessenger": "P2P-Messenger",
+  "sectionP2pMessengerAndValuation": "P2P-Messenger & Bewertungen",
   "messengerEnable": "Messenger aktivieren",
   "messengerEnableSubtitle": "Ortsgebundener P2P-Chat im Orte-Tab (Store-and-Forward).",
   "createPlaceOnSync": "Orte bei Sync-Gelegenheit erstellen",

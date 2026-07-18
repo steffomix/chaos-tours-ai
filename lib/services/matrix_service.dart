@@ -11,10 +11,14 @@ class MatrixSendResult {
   /// The Matrix event_id when a message was sent successfully.
   final String? eventId;
 
+  /// True when the server responded with HTTP 401 (expired / invalid token).
+  final bool isAuthError;
+
   const MatrixSendResult({
     required this.success,
     this.errorMessage,
     this.eventId,
+    this.isAuthError = false,
   });
 }
 
@@ -25,6 +29,20 @@ class MatrixMembershipResult {
   const MatrixMembershipResult({required this.isMember, this.errorMessage});
 }
 
+class MatrixLoginResult {
+  final bool success;
+  final String? errorMessage;
+
+  /// The new access token returned on successful login.
+  final String? accessToken;
+
+  const MatrixLoginResult({
+    required this.success,
+    this.errorMessage,
+    this.accessToken,
+  });
+}
+
 /// Sends messages via the Matrix Client-Server API.
 class MatrixService {
   MatrixService._();
@@ -32,18 +50,172 @@ class MatrixService {
 
   String _normalizeHomeserver(String homeserver) {
     var s = homeserver.trim();
-    if (s.endsWith('/')) s = s.substring(0, s.length - 1);
+    while (s.endsWith('/')) {
+      s = s.substring(0, s.length - 1);
+    }
     return s;
   }
 
+  /// Returns the token to use: [overrideToken] (from UI testing) takes
+  /// precedence over the token stored in SharedPreferences.
+  String _resolveToken(String connectionUuid, String? overrideToken) {
+    if (overrideToken != null && overrideToken.trim().isNotEmpty) {
+      return overrideToken.trim();
+    }
+    return (SettingsService.instance.getMatrixAccessToken(connectionUuid) ?? '')
+        .trim();
+  }
+
+  // ── Login ────────────────────────────────────────────────────────────────
+
+  /// Logs in with [username] and [password] on [homeserver].
+  /// On success the new access token (and refresh token if supported) are
+  /// stored automatically for [connectionUuid].
+  Future<MatrixLoginResult> login(
+    String connectionUuid,
+    String homeserver,
+    String username,
+    String password,
+  ) async {
+    final hs = _normalizeHomeserver(homeserver);
+    final uri = Uri.parse('$hs/_matrix/client/v3/login');
+    try {
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'type': 'm.login.password',
+          'identifier': {'type': 'm.id.user', 'user': username},
+          'password': password,
+          'refresh_token': true,
+        }),
+      );
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        final accessToken = body['access_token'] as String?;
+        final refreshToken = body['refresh_token'] as String?;
+        if (accessToken == null) {
+          return const MatrixLoginResult(
+            success: false,
+            errorMessage: 'Kein Access-Token in der Antwort erhalten',
+          );
+        }
+        await SettingsService.instance.setMatrixAccessToken(
+          connectionUuid,
+          accessToken,
+        );
+        if (refreshToken != null) {
+          await SettingsService.instance.setMatrixRefreshToken(
+            connectionUuid,
+            refreshToken,
+          );
+        }
+        return MatrixLoginResult(success: true, accessToken: accessToken);
+      } else {
+        String? msg;
+        try {
+          final body = jsonDecode(response.body) as Map<String, dynamic>;
+          msg = body['error'] as String?;
+        } catch (_) {}
+        return MatrixLoginResult(
+          success: false,
+          errorMessage: msg ?? 'HTTP ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      return MatrixLoginResult(success: false, errorMessage: e.toString());
+    }
+  }
+
+  // ── Token refresh ─────────────────────────────────────────────────────────
+
+  /// Tries to obtain a fresh access token:
+  /// 1. Uses the stored refresh token (Matrix spec >= 1.3).
+  /// 2. Falls back to re-login with stored credentials.
+  Future<bool> _tryRefreshOrRelogin(MatrixConnection connection) async {
+    final hs = _normalizeHomeserver(connection.homeserver);
+
+    // 1. Refresh token
+    final refreshToken = SettingsService.instance.getMatrixRefreshToken(
+      connection.uuid,
+    );
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      try {
+        final uri = Uri.parse('$hs/_matrix/client/v3/refresh');
+        final response = await http.post(
+          uri,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'refresh_token': refreshToken}),
+        );
+        if (response.statusCode == 200) {
+          final body = jsonDecode(response.body) as Map<String, dynamic>;
+          final newAccess = body['access_token'] as String?;
+          final newRefresh = body['refresh_token'] as String?;
+          if (newAccess != null) {
+            await SettingsService.instance.setMatrixAccessToken(
+              connection.uuid,
+              newAccess,
+            );
+            if (newRefresh != null) {
+              await SettingsService.instance.setMatrixRefreshToken(
+                connection.uuid,
+                newRefresh,
+              );
+            }
+            return true;
+          }
+        }
+      } catch (_) {}
+    }
+
+    // 2. Re-login with stored credentials
+    final creds = SettingsService.instance.getMatrixCredentials(
+      connection.uuid,
+    );
+    if (creds != null) {
+      final result = await login(
+        connection.uuid,
+        connection.homeserver,
+        creds['username'] ?? '',
+        creds['password'] ?? '',
+      );
+      return result.success;
+    }
+
+    return false;
+  }
+
+  // ── Send message ──────────────────────────────────────────────────────────
+
   /// Sends a plain-text [text] message to the room defined by [connection].
+  ///
+  /// Pass [overrideToken] to test before saving credentials (auto-refresh is
+  /// skipped when an override token is given).
   Future<MatrixSendResult> sendMessage(
     MatrixConnection connection,
-    String text,
-  ) async {
-    final token =
-        (SettingsService.instance.getMatrixAccessToken(connection.uuid) ?? '')
-            .trim();
+    String text, {
+    String? overrideToken,
+  }) async {
+    var result = await _doSendMessage(
+      connection,
+      text,
+      overrideToken: overrideToken,
+    );
+    if (result.isAuthError && overrideToken == null) {
+      final refreshed = await _tryRefreshOrRelogin(connection);
+      if (refreshed) {
+        result = await _doSendMessage(connection, text);
+      }
+    }
+    return result;
+  }
+
+  Future<MatrixSendResult> _doSendMessage(
+    MatrixConnection connection,
+    String text, {
+    String? overrideToken,
+  }) async {
+    final token = _resolveToken(connection.uuid, overrideToken);
     final homeserver = _normalizeHomeserver(connection.homeserver);
     final roomId = connection.roomId.trim();
 
@@ -78,6 +250,7 @@ class MatrixService {
         } catch (_) {}
         return MatrixSendResult(success: true, eventId: eventId);
       } else {
+        final isAuth = response.statusCode == 401;
         String? msg;
         try {
           final body = jsonDecode(response.body) as Map<String, dynamic>;
@@ -86,6 +259,7 @@ class MatrixService {
         return MatrixSendResult(
           success: false,
           errorMessage: msg ?? 'HTTP ${response.statusCode}',
+          isAuthError: isAuth,
         );
       }
     } catch (e) {
@@ -93,15 +267,31 @@ class MatrixService {
     }
   }
 
-  /// Edits a previously sent message (identified by [originalEventId]).
+  // ── Edit message ──────────────────────────────────────────────────────────
+
+  /// Edits a previously sent message via the m.replace relation.
+  /// Automatically tries to refresh the token on 401.
   Future<MatrixSendResult> editMessage(
     MatrixConnection connection,
     String originalEventId,
     String newText,
   ) async {
-    final token =
-        (SettingsService.instance.getMatrixAccessToken(connection.uuid) ?? '')
-            .trim();
+    var result = await _doEditMessage(connection, originalEventId, newText);
+    if (result.isAuthError) {
+      final refreshed = await _tryRefreshOrRelogin(connection);
+      if (refreshed) {
+        result = await _doEditMessage(connection, originalEventId, newText);
+      }
+    }
+    return result;
+  }
+
+  Future<MatrixSendResult> _doEditMessage(
+    MatrixConnection connection,
+    String originalEventId,
+    String newText,
+  ) async {
+    final token = _resolveToken(connection.uuid, null);
     final homeserver = _normalizeHomeserver(connection.homeserver);
     final roomId = connection.roomId.trim();
 
@@ -145,6 +335,7 @@ class MatrixService {
         } catch (_) {}
         return MatrixSendResult(success: true, eventId: eventId);
       } else {
+        final isAuth = response.statusCode == 401;
         String? msg;
         try {
           final body = jsonDecode(response.body) as Map<String, dynamic>;
@@ -153,6 +344,7 @@ class MatrixService {
         return MatrixSendResult(
           success: false,
           errorMessage: msg ?? 'HTTP ${response.statusCode}',
+          isAuthError: isAuth,
         );
       }
     } catch (e) {
@@ -160,14 +352,15 @@ class MatrixService {
     }
   }
 
-  /// Checks whether the account belonging to [connection]'s access token
-  /// is a member of the configured room.
+  // ── Room membership ───────────────────────────────────────────────────────
+
+  /// Checks whether the account is a joined member of [connection]'s room.
+  /// Pass [overrideToken] to test without saving credentials first.
   Future<MatrixMembershipResult> checkRoomMembership(
-    MatrixConnection connection,
-  ) async {
-    final token =
-        (SettingsService.instance.getMatrixAccessToken(connection.uuid) ?? '')
-            .trim();
+    MatrixConnection connection, {
+    String? overrideToken,
+  }) async {
+    final token = _resolveToken(connection.uuid, overrideToken);
     final homeserver = _normalizeHomeserver(connection.homeserver);
     final roomId = connection.roomId.trim();
 

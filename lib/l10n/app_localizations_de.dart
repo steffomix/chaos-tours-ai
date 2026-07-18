@@ -1276,6 +1276,57 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get matrixSectionAuth => 'Authentifizierung';
+
+  @override
+  String get matrixSectionTest => 'Verbindung testen';
+
+  @override
+  String get matrixUsernameLabel => 'Matrix-Benutzername';
+
+  @override
+  String get matrixUsernameHint => '@alice:matrix.org';
+
+  @override
+  String get matrixPasswordLabel => 'Passwort';
+
+  @override
+  String get matrixPasswordHint => 'Passwort eingeben';
+
+  @override
+  String get matrixLoginButton => 'Einloggen & Token erneuern';
+
+  @override
+  String get matrixLoginSuccess => 'Login erfolgreich – Token gespeichert';
+
+  @override
+  String matrixLoginError(String error) {
+    return 'Login fehlgeschlagen: $error';
+  }
+
+  @override
+  String get matrixLoginMissingFields =>
+      'Bitte Homeserver, Benutzername und Passwort eingeben.';
+
+  @override
+  String get matrixCredentialNote =>
+      'Benutzername und Passwort werden nur lokal gespeichert und für die automatische Token-Erneuerung verwendet.';
+
+  @override
+  String get matrixTestMessageHint => 'Testnachricht eingeben…';
+
+  @override
+  String get matrixSendTestButton => 'Senden';
+
+  @override
+  String get matrixTestSent => 'Nachricht erfolgreich gesendet';
+
+  @override
+  String matrixTestError(String error) {
+    return 'Fehler beim Senden: $error';
+  }
+
+  @override
   String get distance => 'Entfernung';
 
   @override
@@ -2013,6 +2064,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get sectionP2pMessenger => 'P2P-Messenger';
+
+  @override
+  String get sectionP2pMessengerAndValuation => 'P2P-Messenger & Bewertungen';
 
   @override
   String get messengerEnable => 'Messenger aktivieren';

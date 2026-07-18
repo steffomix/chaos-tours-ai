@@ -63,6 +63,8 @@ class SettingsService {
   static const String _keyTelegramBotTokens = 'secret_telegram_bot_tokens';
   static const String _keyMatrixAccessTokens = 'secret_matrix_access_tokens';
   static const String _keyMatrixRoomMembership = 'matrix_room_membership';
+  static const String _keyMatrixRefreshTokens = 'secret_matrix_refresh_tokens';
+  static const String _keyMatrixCredentials = 'secret_matrix_credentials';
   static const String _keyDevToolsUnlockedUntilMs =
       'dev_tools_unlocked_until_ms';
 
@@ -509,6 +511,101 @@ class SettingsService {
       map.remove(uuid);
     }
     await _p.setString(_keyMatrixRoomMembership, jsonEncode(map));
+  }
+
+  // ── Matrix refresh token ──────────────────────────────────────────────────
+
+  String? getMatrixRefreshToken(String connectionUuid) {
+    final raw = _p.getString(_keyMatrixRefreshTokens);
+    if (raw == null || raw.isEmpty) return null;
+    final map = Map<String, String>.from(
+      (jsonDecode(raw) as Map<String, dynamic>).map(
+        (k, v) => MapEntry(k, v as String),
+      ),
+    );
+    return map[connectionUuid];
+  }
+
+  Future<void> setMatrixRefreshToken(
+    String connectionUuid,
+    String? token,
+  ) async {
+    final raw = _p.getString(_keyMatrixRefreshTokens);
+    final map = <String, String>{};
+    if (raw != null && raw.isNotEmpty) {
+      map.addAll(
+        Map<String, String>.from(
+          (jsonDecode(raw) as Map<String, dynamic>).map(
+            (k, v) => MapEntry(k, v as String),
+          ),
+        ),
+      );
+    }
+    if (token == null || token.isEmpty) {
+      map.remove(connectionUuid);
+    } else {
+      map[connectionUuid] = token;
+    }
+    await _p.setString(_keyMatrixRefreshTokens, jsonEncode(map));
+  }
+
+  Future<void> removeMatrixRefreshTokens(List<String> connectionUuids) async {
+    if (connectionUuids.isEmpty) return;
+    final raw = _p.getString(_keyMatrixRefreshTokens);
+    if (raw == null || raw.isEmpty) return;
+    final map = Map<String, String>.from(
+      (jsonDecode(raw) as Map<String, dynamic>).map(
+        (k, v) => MapEntry(k, v as String),
+      ),
+    );
+    for (final uuid in connectionUuids) {
+      map.remove(uuid);
+    }
+    await _p.setString(_keyMatrixRefreshTokens, jsonEncode(map));
+  }
+
+  // ── Matrix credentials (for auto-refresh / re-login) ─────────────────────
+  // Stored locally only. Used to transparently renew expired access tokens.
+
+  /// Returns {username, password} for [connectionUuid], or null if not set.
+  Map<String, String>? getMatrixCredentials(String connectionUuid) {
+    final raw = _p.getString(_keyMatrixCredentials);
+    if (raw == null || raw.isEmpty) return null;
+    final outer = jsonDecode(raw) as Map<String, dynamic>;
+    final inner = outer[connectionUuid];
+    if (inner == null) return null;
+    return Map<String, String>.from(
+      (inner as Map<String, dynamic>).map((k, v) => MapEntry(k, v as String)),
+    );
+  }
+
+  Future<void> setMatrixCredentials(
+    String connectionUuid,
+    String username,
+    String password,
+  ) async {
+    final raw = _p.getString(_keyMatrixCredentials);
+    final map = <String, dynamic>{};
+    if (raw != null && raw.isNotEmpty) {
+      map.addAll(Map<String, dynamic>.from(jsonDecode(raw) as Map));
+    }
+    if (username.isEmpty) {
+      map.remove(connectionUuid);
+    } else {
+      map[connectionUuid] = {'username': username, 'password': password};
+    }
+    await _p.setString(_keyMatrixCredentials, jsonEncode(map));
+  }
+
+  Future<void> removeMatrixCredentials(List<String> connectionUuids) async {
+    if (connectionUuids.isEmpty) return;
+    final raw = _p.getString(_keyMatrixCredentials);
+    if (raw == null || raw.isEmpty) return;
+    final map = Map<String, dynamic>.from(jsonDecode(raw) as Map);
+    for (final uuid in connectionUuids) {
+      map.remove(uuid);
+    }
+    await _p.setString(_keyMatrixCredentials, jsonEncode(map));
   }
 
   // ── Experience / distance filter ────────────────────────────────────────

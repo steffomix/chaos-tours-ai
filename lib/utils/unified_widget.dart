@@ -10,17 +10,20 @@ class UnifiedWidget {
   final BuildContext context;
   UnifiedWidget(this.context);
 
-  Row namedDivider(String name) => Row(
-    children: [
-      Expanded(child: Divider(color: Colors.grey[400])),
-      const SizedBox(width: 8),
-      Text(
-        name,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      ),
-      const SizedBox(width: 8),
-      Expanded(child: Divider(color: Colors.grey[400])),
-    ],
+  Padding namedDivider(String name) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8.0),
+    child: Row(
+      children: [
+        Expanded(child: Divider(color: Colors.grey[400])),
+        const SizedBox(width: 8),
+        Text(
+          name,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(width: 8),
+        Expanded(child: Divider(color: Colors.grey[400])),
+      ],
+    ),
   );
 
   FilledButton saveButton({required VoidCallback onPressed}) => FilledButton(

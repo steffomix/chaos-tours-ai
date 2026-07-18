@@ -224,7 +224,12 @@ class _PlaceGroupEditScreenState extends State<PlaceGroupEditScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.existing == null ? l10n.newGroup : l10n.editGroup),
-        actions: [UnifiedWidget(context).saveButton(onPressed: _save)],
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: UnifiedWidget(context).saveButton(onPressed: _save),
+          ),
+        ],
       ),
       body: SafeArea(
         child: ListView(

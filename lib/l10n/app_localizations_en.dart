@@ -1266,6 +1266,57 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get matrixSectionAuth => 'Authentication';
+
+  @override
+  String get matrixSectionTest => 'Test connection';
+
+  @override
+  String get matrixUsernameLabel => 'Matrix username';
+
+  @override
+  String get matrixUsernameHint => '@alice:matrix.org';
+
+  @override
+  String get matrixPasswordLabel => 'Password';
+
+  @override
+  String get matrixPasswordHint => 'Enter password';
+
+  @override
+  String get matrixLoginButton => 'Log in & renew token';
+
+  @override
+  String get matrixLoginSuccess => 'Login successful – token saved';
+
+  @override
+  String matrixLoginError(String error) {
+    return 'Login failed: $error';
+  }
+
+  @override
+  String get matrixLoginMissingFields =>
+      'Please enter homeserver, username and password.';
+
+  @override
+  String get matrixCredentialNote =>
+      'Username and password are stored locally only and used for automatic token renewal.';
+
+  @override
+  String get matrixTestMessageHint => 'Enter test message…';
+
+  @override
+  String get matrixSendTestButton => 'Send';
+
+  @override
+  String get matrixTestSent => 'Message sent successfully';
+
+  @override
+  String matrixTestError(String error) {
+    return 'Send error: $error';
+  }
+
+  @override
   String get distance => 'Distance';
 
   @override
@@ -1997,6 +2048,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sectionP2pMessenger => 'P2P messenger';
+
+  @override
+  String get sectionP2pMessengerAndValuation => 'P2P-Messenger & Valuations';
 
   @override
   String get messengerEnable => 'Enable messenger';

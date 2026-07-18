@@ -731,6 +731,31 @@
       "error": { "type": "String" }
     }
   },
+  "matrixSectionAuth": "Authentication",
+  "matrixSectionTest": "Test connection",
+  "matrixUsernameLabel": "Matrix username",
+  "matrixUsernameHint": "@alice:matrix.org",
+  "matrixPasswordLabel": "Password",
+  "matrixPasswordHint": "Enter password",
+  "matrixLoginButton": "Log in & renew token",
+  "matrixLoginSuccess": "Login successful \u2013 token saved",
+  "matrixLoginError": "Login failed: {error}",
+  "@matrixLoginError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "matrixLoginMissingFields": "Please enter homeserver, username and password.",
+  "matrixCredentialNote": "Username and password are stored locally only and used for automatic token renewal.",
+  "matrixTestMessageHint": "Enter test message\u2026",
+  "matrixSendTestButton": "Send",
+  "matrixTestSent": "Message sent successfully",
+  "matrixTestError": "Send error: {error}",
+  "@matrixTestError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
   "distance": "Distance",
   "maxDistance": "max. {dist}",
   "@maxDistance": {
@@ -1094,6 +1119,7 @@
   "radiusInKm": "Radius in km",
   "showAction": "Show",
   "sectionP2pMessenger": "P2P messenger",
+  "sectionP2pMessengerAndValuation": "P2P-Messenger & Valuations",
   "messengerEnable": "Enable messenger",
   "messengerEnableSubtitle": "Location-bound P2P chat in the Places tab (store-and-forward).",
   "createPlaceOnSync": "Create places on sync opportunity",

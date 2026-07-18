@@ -340,7 +340,6 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
                     vertical: 6,
                   ),
                   child: ListTile(
-                    leading: const Icon(Icons.sync),
                     title: Text(src.name),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -456,6 +455,7 @@ class _SyncSourcesScreenState extends State<SyncSourcesScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       builder: (_) => _SyncSourceDetailsSheet(source: src),
     );
   }
@@ -535,7 +535,7 @@ class _SyncSourceDetailsSheetState extends State<_SyncSourceDetailsSheet> {
     final l10n = AppLocalizations.of(context)!;
     return DraggableScrollableSheet(
       expand: false,
-      initialChildSize: 0.5,
+      initialChildSize: 0.9,
       maxChildSize: 0.95,
       builder: (_, scrollCtrl) => Padding(
         padding: const EdgeInsets.all(16),

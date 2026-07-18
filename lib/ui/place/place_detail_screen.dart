@@ -950,6 +950,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
@@ -960,15 +961,16 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               color: widget.place.placeType.dotColor,
             ),
             const SizedBox(width: 8),
-            Expanded(child: Text(AppLocalizations.of(context)!.placeEditTitle)),
+            Expanded(child: Text(l10n.placeEditTitle)),
           ],
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.map_outlined),
-            tooltip: AppLocalizations.of(context)!.openInGoogleMaps,
+            tooltip: l10n.openInGoogleMaps,
             onPressed: _openInMaps,
           ),
+          UnifiedWidget(context).saveButton(onPressed: _save),
         ],
       ),
       body: Padding(
@@ -1000,8 +1002,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                       ),
                       label: Text(
                         widget.place.originType == PlaceOriginType.auto
-                            ? AppLocalizations.of(context)!.placeOriginAuto
-                            : AppLocalizations.of(context)!.placeOriginImported,
+                            ? l10n.placeOriginAuto
+                            : l10n.placeOriginImported,
                         style: const TextStyle(fontSize: 11),
                       ),
                       padding: EdgeInsets.zero,
@@ -1014,7 +1016,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               TextField(
                 controller: _nameCtrl,
                 decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)!.name,
+                  labelText: l10n.name,
                   border: const OutlineInputBorder(),
                 ),
               ),
@@ -1023,7 +1025,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               TextField(
                 controller: _notesCtrl,
                 decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)!.noteName,
+                  labelText: l10n.noteName,
                   border: const OutlineInputBorder(),
                 ),
                 minLines: 3,
@@ -1033,7 +1035,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               // ── Website / Email / Telefon ──────────────────────────────
               _ContactField(
                 controller: _websiteCtrl,
-                labelText: AppLocalizations.of(context)!.website,
+                labelText: l10n.website,
                 icon: Icons.language,
                 keyboardType: TextInputType.url,
                 onLaunch: () async {
@@ -1049,7 +1051,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               const SizedBox(height: 8),
               _ContactField(
                 controller: _emailCtrl,
-                labelText: AppLocalizations.of(context)!.email,
+                labelText: l10n.email,
                 icon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 onLaunch: () async {
@@ -1062,7 +1064,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               const SizedBox(height: 8),
               _ContactField(
                 controller: _phoneCtrl,
-                labelText: AppLocalizations.of(context)!.phone,
+                labelText: l10n.phone,
                 icon: Icons.phone_outlined,
                 keyboardType: TextInputType.phone,
                 onLaunch: () async {
@@ -1076,7 +1078,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
                 leading: const Icon(Icons.photo_library_outlined),
-                title: Text(AppLocalizations.of(context)!.photos),
+                title: Text(l10n.photos),
                 children: [
                   PhotosSection(
                     placeUuid: widget.place.uuid,
@@ -1085,8 +1087,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              // ── Besuche ────────────────────────────────────────────────
+
+              UnifiedWidget(context).namedDivider(l10n.navVisits),
               OutlinedButton.icon(
                 onPressed: widget.place.uuid.isEmpty
                     ? null
@@ -1099,10 +1101,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                 icon: const Icon(Icons.history),
                 label: Text(
                   _visitCount == 0
-                      ? AppLocalizations.of(context)!.showVisits
-                      : AppLocalizations.of(
-                          context,
-                        )!.showVisitsCount(_visitCount),
+                      ? l10n.showVisits
+                      : l10n.showVisitsCount(_visitCount),
                 ),
               ),
               const SizedBox(height: 8),
@@ -1112,30 +1112,13 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     ? null
                     : _createManualVisit,
                 icon: const Icon(Icons.add_location_alt),
-                label: Text(AppLocalizations.of(context)!.visitNow),
+                label: Text(l10n.visitNow),
               ),
-              const SizedBox(height: 8),
               // ── Besuchs-Intervall ──────────────────────────────────────
-              const SizedBox(height: 8),
-              Row(
-                children: <Widget>[
-                  Expanded(child: Divider()),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      AppLocalizations.of(context)!.intervalVisit,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                  Expanded(child: Divider()),
-                ],
-              ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text(AppLocalizations.of(context)!.visitInterval),
-                subtitle: Text(
-                  AppLocalizations.of(context)!.visitIntervalSubtitle,
-                ),
+                title: Text(l10n.visitInterval),
+                subtitle: Text(l10n.visitIntervalSubtitle),
                 value: _intervalEnabled,
                 onChanged: (v) => setState(() => _intervalEnabled = v),
               ),
@@ -1145,32 +1128,18 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                   controller: _intervalDaysCtrl,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context)!.intervalDaysLabel,
-                    hintText: AppLocalizations.of(context)!.intervalDaysHint,
+                    labelText: l10n.intervalDaysLabel,
+                    hintText: l10n.intervalDaysHint,
                     border: const OutlineInputBorder(),
-                    suffixText: AppLocalizations.of(
-                      context,
-                    )!.intervalDaysSuffix,
+                    suffixText: l10n.intervalDaysSuffix,
                   ),
                   onChanged: (v) {},
                 ),
               ],
-              const SizedBox(height: 12),
               // ── Gruppe ─────────────────────────────────────────────────
-              Row(
-                children: <Widget>[
-                  Expanded(child: Divider()),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      AppLocalizations.of(context)!.placeGroupsTitle,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                  Expanded(child: Divider()),
-                ],
-              ),
-              const SizedBox(height: 8),
+              UnifiedWidget(
+                context,
+              ).namedDivider(AppLocalizations.of(context)!.placeGroupsTitle),
               DropdownButtonFormField<String?>(
                 initialValue: _groupUuid == null
                     ? null
@@ -1178,14 +1147,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                           ? _groupUuid
                           : null),
                 decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)!.group,
+                  labelText: l10n.group,
                   border: const OutlineInputBorder(),
                 ),
                 items: [
-                  DropdownMenuItem(
-                    value: null,
-                    child: Text(AppLocalizations.of(context)!.noGroup),
-                  ),
+                  DropdownMenuItem(value: null, child: Text(l10n.noGroup)),
                   ..._groups.map(
                     (g) => DropdownMenuItem(
                       value: g.uuid,
@@ -1208,7 +1174,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
 
               ListTile(
                 leading: const Icon(Icons.folder),
-                title: Text(AppLocalizations.of(context)!.managePlaceGroups),
+                title: Text(l10n.managePlaceGroups),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   Navigator.pushNamed(context, '/place-groups').then((_) {
@@ -1228,26 +1194,13 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                 OutlinedButton.icon(
                   onPressed: _sendToTelegram,
                   icon: const Icon(Icons.send),
-                  label: Text(
-                    AppLocalizations.of(context)!.sendReportToTelegram,
-                  ),
+                  label: Text(l10n.sendReportToTelegram),
                 ),
               ],
               // ── HR P2P Sync ────────────────────────────────────────────────────────
-              Row(
-                children: <Widget>[
-                  Expanded(child: Divider()),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      'P2P Sync',
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                  Expanded(child: Divider()),
-                ],
-              ),
-              const SizedBox(height: 4),
+              UnifiedWidget(
+                context,
+              ).namedDivider(l10n.sectionP2pMessengerAndValuation),
               // ── Survival-Erfahrungen ─────────────────────────────────────
               OutlinedButton.icon(
                 onPressed: widget.place.uuid.isEmpty
@@ -1262,7 +1215,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                         ),
                       ),
                 icon: const Icon(Icons.night_shelter),
-                label: Text(AppLocalizations.of(context)!.survivalExperiences),
+                label: Text(l10n.survivalExperiences),
               ),
               const SizedBox(height: 12),
               // ── Nachrichten zum Ort ────────────────────────────────────
@@ -1280,9 +1233,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                           ),
                         ),
                   icon: const Icon(Icons.forum),
-                  label: Text(
-                    AppLocalizations.of(context)!.placeMessagesButton,
-                  ),
+                  label: Text(l10n.placeMessagesButton),
                 ),
               if (SettingsService.instance.messengerEnabled)
                 const SizedBox(height: 8),
@@ -1477,17 +1428,9 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               ),
               const SizedBox(height: 4),
               // ── HR GPS Einstellungen ─────────────────────────────────────────────────
-              Row(
-                children: <Widget>[
-                  Expanded(child: Divider()),
-                  Text(
-                    AppLocalizations.of(context)!.gpsSettings,
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                  Expanded(child: Divider()),
-                ],
-              ),
-              const SizedBox(height: 4),
+              UnifiedWidget(
+                context,
+              ).namedDivider(AppLocalizations.of(context)!.gpsSettings),
               // ── Radius ändern ────────────────────────────────────────
               Text(
                 AppLocalizations.of(
@@ -1607,16 +1550,9 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               ),
               const SizedBox(height: 20),
               // ── HR Statistik ─────────────────────────────────────────────────
-              Row(
-                children: <Widget>[
-                  Expanded(child: Divider()),
-                  Text(
-                    AppLocalizations.of(context)!.infoAndStats,
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                  Expanded(child: Divider()),
-                ],
-              ),
+              UnifiedWidget(
+                context,
+              ).namedDivider(AppLocalizations.of(context)!.infoAndStats),
               const SizedBox(height: 4),
               // ── Besuchsstatistik ───────────────────────────────────────
               Row(
@@ -1682,6 +1618,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                 icon: const Icon(Icons.copy_all),
                 label: Text(AppLocalizations.of(context)!.copyBasicReport),
               ),
+              const SizedBox(height: 8),
               OutlinedButton.icon(
                 onPressed: () => _copyReport(basicReport: false),
                 icon: const Icon(Icons.copy_all),
@@ -1796,9 +1733,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               Divider(),
               const SizedBox(height: 12),
               // ── Aktionen ───────────────────────────────────────────────
-              UnifiedWidget(context).saveAndDeleteButtonsRow(
-                onSavePressed: _save,
-                onDeletePressed: _delete,
+              Row(
+                children: [
+                  UnifiedWidget(context).deleteButton(onPressed: _delete),
+                  Spacer(),
+                ],
               ),
             ],
           ),

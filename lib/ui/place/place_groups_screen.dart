@@ -171,15 +171,12 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () => _editGroup(g),
-                      ),
-                      IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () => _deleteGroup(g),
                       ),
                     ],
                   ),
+                  onTap: () => _editGroup(g),
                 );
               },
             ),

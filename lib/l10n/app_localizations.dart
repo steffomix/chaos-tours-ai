@@ -2306,6 +2306,96 @@ abstract class AppLocalizations {
   /// **'Fehler: {error}'**
   String matrixMemberError(String error);
 
+  /// Matrix auth section header
+  ///
+  /// In de, this message translates to:
+  /// **'Authentifizierung'**
+  String get matrixSectionAuth;
+
+  /// Matrix test section header
+  ///
+  /// In de, this message translates to:
+  /// **'Verbindung testen'**
+  String get matrixSectionTest;
+
+  /// Matrix username field label
+  ///
+  /// In de, this message translates to:
+  /// **'Matrix-Benutzername'**
+  String get matrixUsernameLabel;
+
+  /// Matrix username field hint
+  ///
+  /// In de, this message translates to:
+  /// **'@alice:matrix.org'**
+  String get matrixUsernameHint;
+
+  /// Matrix password field label
+  ///
+  /// In de, this message translates to:
+  /// **'Passwort'**
+  String get matrixPasswordLabel;
+
+  /// Matrix password field hint
+  ///
+  /// In de, this message translates to:
+  /// **'Passwort eingeben'**
+  String get matrixPasswordHint;
+
+  /// Matrix login button
+  ///
+  /// In de, this message translates to:
+  /// **'Einloggen & Token erneuern'**
+  String get matrixLoginButton;
+
+  /// Matrix login success message
+  ///
+  /// In de, this message translates to:
+  /// **'Login erfolgreich – Token gespeichert'**
+  String get matrixLoginSuccess;
+
+  /// Matrix login error message
+  ///
+  /// In de, this message translates to:
+  /// **'Login fehlgeschlagen: {error}'**
+  String matrixLoginError(String error);
+
+  /// Matrix login missing fields error
+  ///
+  /// In de, this message translates to:
+  /// **'Bitte Homeserver, Benutzername und Passwort eingeben.'**
+  String get matrixLoginMissingFields;
+
+  /// Matrix credential storage note
+  ///
+  /// In de, this message translates to:
+  /// **'Benutzername und Passwort werden nur lokal gespeichert und für die automatische Token-Erneuerung verwendet.'**
+  String get matrixCredentialNote;
+
+  /// Matrix test message field hint
+  ///
+  /// In de, this message translates to:
+  /// **'Testnachricht eingeben…'**
+  String get matrixTestMessageHint;
+
+  /// Matrix send test button
+  ///
+  /// In de, this message translates to:
+  /// **'Senden'**
+  String get matrixSendTestButton;
+
+  /// Matrix test send success
+  ///
+  /// In de, this message translates to:
+  /// **'Nachricht erfolgreich gesendet'**
+  String get matrixTestSent;
+
+  /// Matrix test send error
+  ///
+  /// In de, this message translates to:
+  /// **'Fehler beim Senden: {error}'**
+  String matrixTestError(String error);
+
   /// Distance filter label
   ///
   /// In de, this message translates to:
@@ -3643,6 +3733,12 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'P2P-Messenger'**
   String get sectionP2pMessenger;
+
+  /// No description provided for @sectionP2pMessengerAndValuation.
+  ///
+  /// In de, this message translates to:
+  /// **'P2P-Messenger & Bewertungen'**
+  String get sectionP2pMessengerAndValuation;
 
   /// No description provided for @messengerEnable.
   ///
