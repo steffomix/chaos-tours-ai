@@ -8,17 +8,17 @@ const _uuid = Uuid();
 
 /// Type of a saved place — determines behaviour and map appearance.
 enum PlaceType {
-  /// Green dot. Notification on arrival, Nominatim lookup, DB stay, Calendar event.
+  /// Green dot. Notification on arrival, Nominatim lookup, DB stay, Calendar, Matrix or Telegram integration.
   public,
 
-  /// Blue dot. Notification on arrival, Nominatim lookup, DB stay. No calendar.
+  /// Blue dot. Notification on arrival, Nominatim lookup, DB stay. No calendar, Matrix or Telegram integration.
   private,
 
   /// Red dot. Shown on map only — no notification, no stay tracking.
   secret,
 
-  /// Only visible in the places list when "Verbotene Orte auflisten" is enabled.
-  forbidden,
+  /// Only visible in the places list when "Verborgene Orte auflisten" is enabled.
+  hidden,
 
   /// Orange dot. Automatically created at a P2P sync opportunity (mesh node /
   /// peer). Anchors location-bound messages. No notification, no stay tracking,
@@ -35,7 +35,7 @@ extension PlaceTypeExtension on PlaceType {
         return 'Privat';
       case PlaceType.secret:
         return 'Geheim';
-      case PlaceType.forbidden:
+      case PlaceType.hidden:
         return 'Verboten';
       case PlaceType.syncSource:
         return 'Sync-Quelle';
@@ -50,7 +50,7 @@ extension PlaceTypeExtension on PlaceType {
         return Icons.lock;
       case PlaceType.secret:
         return Icons.visibility_off;
-      case PlaceType.forbidden:
+      case PlaceType.hidden:
         return Icons.block;
       case PlaceType.syncSource:
         return Icons.hub;
@@ -65,7 +65,7 @@ extension PlaceTypeExtension on PlaceType {
         return Colors.blue;
       case PlaceType.secret:
         return Colors.red;
-      case PlaceType.forbidden:
+      case PlaceType.hidden:
         return Colors.grey;
       case PlaceType.syncSource:
         return Colors.orange;

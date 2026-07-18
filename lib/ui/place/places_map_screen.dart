@@ -373,7 +373,7 @@ class _PlacesMapScreenState extends State<PlacesMapScreen> {
                         circles: _places
                             .where(
                               (p) =>
-                                  p.placeType != PlaceType.forbidden ||
+                                  p.placeType != PlaceType.hidden ||
                                   SettingsService.instance.showForbiddenPlaces,
                             )
                             .map((place) {

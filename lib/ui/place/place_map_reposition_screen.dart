@@ -129,7 +129,7 @@ class _PlaceMapRepositionScreenState extends State<PlaceMapRepositionScreen> {
                 circles: _places
                     .where(
                       (p) =>
-                          p.placeType != PlaceType.forbidden ||
+                          p.placeType != PlaceType.hidden ||
                           SettingsService.instance.showForbiddenPlaces,
                     )
                     .map(
