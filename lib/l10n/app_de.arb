@@ -2903,6 +2903,14 @@
     }
   },
   "imageFileHasUnknownType": "Datetyp unbekannt",
-  "imageLoadingError": "Fehler beim laden des Bildes"
+  "imageLoadingError": "Fehler beim laden des Bildes",
+  "createPlaceFromGps": "Ort aus GPS-Koordinaten erstellen",
+  "createPlaceFromMaidenhead": "Ort aus Maidenhead-Locator erstellen",
+  "latitude": "Breitengrad",
+  "longitude": "L\u00e4ngengrad",
+  "maidenheadLocatorTitle": "Maidenhead-Locator",
+  "maidenheadInfoBase": "Sektionen 1\u20133: Standard 6-stelliger Maidenhead-Locator (erforderlich). Es wird immer das Zentrum des gew\u00e4hlten Rasters verwendet.",
+  "maidenheadInfoDeterministic": "Sektionen 4\u20135: Deterministisches Rasterelement f\u00fcr UUID-v5-Generierung bei automatischer Ortserstellung \u2013 gemeinsamer Sync-Schl\u00fcssel auf allen Ger\u00e4ten.",
+  "maidenheadInfoPrecision": "Sektion 6: Optionale zus\u00e4tzliche Genauigkeit f\u00fcr die manuelle Ortserstellung."
 
 }

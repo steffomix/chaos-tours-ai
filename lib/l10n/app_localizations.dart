@@ -4183,6 +4183,54 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Fehler beim laden des Bildes'**
   String get imageLoadingError;
+
+  /// No description provided for @createPlaceFromGps.
+  ///
+  /// In de, this message translates to:
+  /// **'Ort aus GPS-Koordinaten erstellen'**
+  String get createPlaceFromGps;
+
+  /// No description provided for @createPlaceFromMaidenhead.
+  ///
+  /// In de, this message translates to:
+  /// **'Ort aus Maidenhead-Locator erstellen'**
+  String get createPlaceFromMaidenhead;
+
+  /// No description provided for @latitude.
+  ///
+  /// In de, this message translates to:
+  /// **'Breitengrad'**
+  String get latitude;
+
+  /// No description provided for @longitude.
+  ///
+  /// In de, this message translates to:
+  /// **'Längengrad'**
+  String get longitude;
+
+  /// No description provided for @maidenheadLocatorTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Maidenhead-Locator'**
+  String get maidenheadLocatorTitle;
+
+  /// No description provided for @maidenheadInfoBase.
+  ///
+  /// In de, this message translates to:
+  /// **'Sektionen 1–3: Standard 6-stelliger Maidenhead-Locator (erforderlich). Es wird immer das Zentrum des gewählten Rasters verwendet.'**
+  String get maidenheadInfoBase;
+
+  /// No description provided for @maidenheadInfoDeterministic.
+  ///
+  /// In de, this message translates to:
+  /// **'Sektionen 4–5: Deterministisches Rasterelement für UUID-v5-Generierung bei automatischer Ortserstellung – gemeinsamer Sync-Schlüssel auf allen Geräten.'**
+  String get maidenheadInfoDeterministic;
+
+  /// No description provided for @maidenheadInfoPrecision.
+  ///
+  /// In de, this message translates to:
+  /// **'Sektion 6: Optionale zusätzliche Genauigkeit für die manuelle Ortserstellung.'**
+  String get maidenheadInfoPrecision;
 }
 
 class _AppLocalizationsDelegate

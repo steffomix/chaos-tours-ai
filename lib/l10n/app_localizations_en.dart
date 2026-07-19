@@ -2312,4 +2312,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get imageLoadingError => 'Error loading image';
+
+  @override
+  String get createPlaceFromGps => 'Create place from GPS coordinates';
+
+  @override
+  String get createPlaceFromMaidenhead =>
+      'Create place from Maidenhead locator';
+
+  @override
+  String get latitude => 'Latitude';
+
+  @override
+  String get longitude => 'Longitude';
+
+  @override
+  String get maidenheadLocatorTitle => 'Maidenhead locator';
+
+  @override
+  String get maidenheadInfoBase =>
+      'Sections 1–3: Standard 6-character Maidenhead locator (required). The centre of the selected cell is used.';
+
+  @override
+  String get maidenheadInfoDeterministic =>
+      'Sections 4–5: Deterministic grid cell for UUID v5 generation on automatic place creation – shared sync key across all devices.';
+
+  @override
+  String get maidenheadInfoPrecision =>
+      'Section 6: Optional extra precision for manual place creation.';
 }

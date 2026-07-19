@@ -2328,4 +2328,32 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get imageLoadingError => 'Fehler beim laden des Bildes';
+
+  @override
+  String get createPlaceFromGps => 'Ort aus GPS-Koordinaten erstellen';
+
+  @override
+  String get createPlaceFromMaidenhead =>
+      'Ort aus Maidenhead-Locator erstellen';
+
+  @override
+  String get latitude => 'Breitengrad';
+
+  @override
+  String get longitude => 'Längengrad';
+
+  @override
+  String get maidenheadLocatorTitle => 'Maidenhead-Locator';
+
+  @override
+  String get maidenheadInfoBase =>
+      'Sektionen 1–3: Standard 6-stelliger Maidenhead-Locator (erforderlich). Es wird immer das Zentrum des gewählten Rasters verwendet.';
+
+  @override
+  String get maidenheadInfoDeterministic =>
+      'Sektionen 4–5: Deterministisches Rasterelement für UUID-v5-Generierung bei automatischer Ortserstellung – gemeinsamer Sync-Schlüssel auf allen Geräten.';
+
+  @override
+  String get maidenheadInfoPrecision =>
+      'Sektion 6: Optionale zusätzliche Genauigkeit für die manuelle Ortserstellung.';
 }

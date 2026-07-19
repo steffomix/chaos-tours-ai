@@ -1244,5 +1244,13 @@
     }
   },
   "imageFileHasUnknownType": "Unknown file type",
-  "imageLoadingError": "Error loading image"
+  "imageLoadingError": "Error loading image",
+  "createPlaceFromGps": "Create place from GPS coordinates",
+  "createPlaceFromMaidenhead": "Create place from Maidenhead locator",
+  "latitude": "Latitude",
+  "longitude": "Longitude",
+  "maidenheadLocatorTitle": "Maidenhead locator",
+  "maidenheadInfoBase": "Sections 1\u20133: Standard 6-character Maidenhead locator (required). The centre of the selected cell is used.",
+  "maidenheadInfoDeterministic": "Sections 4\u20135: Deterministic grid cell for UUID v5 generation on automatic place creation \u2013 shared sync key across all devices.",
+  "maidenheadInfoPrecision": "Section 6: Optional extra precision for manual place creation."
 }
