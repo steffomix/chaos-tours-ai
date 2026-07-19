@@ -50,7 +50,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _placeDetailPhotoCount;
 
   // P2P Messenger / place sync
-  late bool _messengerEnabled;
   late int _photoSyncMaxBytes;
   late bool _showForbiddenPlaces;
 
@@ -95,7 +94,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _photoMaxHeight = s.photoMaxHeight;
     _photoImageQuality = s.photoImageQuality;
     _placeDetailPhotoCount = s.placeDetailPhotoCount;
-    _messengerEnabled = s.messengerEnabled;
     _photoSyncMaxBytes = s.photoSyncMaxBytes;
     _showForbiddenPlaces = s.showForbiddenPlaces;
     _loadGroups();
@@ -168,7 +166,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     s.photoMaxHeight = _photoMaxHeight;
     s.photoImageQuality = _photoImageQuality;
     s.placeDetailPhotoCount = _placeDetailPhotoCount;
-    s.messengerEnabled = _messengerEnabled;
     s.photoSyncMaxBytes = _photoSyncMaxBytes;
     // notify foreground service about new settings
     if (gpsIntervalChanged && (Platform.isAndroid || Platform.isIOS)) {

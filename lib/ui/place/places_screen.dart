@@ -46,7 +46,8 @@ class PlacesScreen extends StatefulWidget {
   State<PlacesScreen> createState() => _PlacesScreenState();
 }
 
-class _PlacesScreenState extends State<PlacesScreen> {
+class _PlacesScreenState extends State<PlacesScreen>
+    with TickerProviderStateMixin {
   // ── Map data (loaded in full) ────────────────────────────────────────────
   List<SavedPlace> _mapPlaces = [];
 
@@ -71,6 +72,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
 
   // Map
   final MapController _mapController = MapController();
+  late TabController _tabController;
 
   // Distance
   ({double lat, double lng})? _currentPos;
@@ -88,6 +90,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
     _placesScrollCtrl.addListener(_onPlacesScroll);
     final s = SettingsService.instance;
     _expFilter = PlacesFilterState(
@@ -136,6 +139,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
   @override
   void dispose() {
     ForegroundServiceManager.removeDataListener(_onServiceData);
+    _tabController.dispose();
     _placesScrollCtrl.dispose();
     _searchCtrl.dispose();
     super.dispose();
@@ -390,6 +394,15 @@ class _PlacesScreenState extends State<PlacesScreen> {
     return '${(meters / 1000).toStringAsFixed(1)} km';
   }
 
+  void _showOnMap(SavedPlace place) {
+    setState(() {
+      _tabController.animateTo(2);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _mapController.move(LatLng(place.lat, place.lng), 16);
+      });
+    });
+  }
+
   void _openSheet(SavedPlace place) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -397,6 +410,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
           place: place,
           onUpdated: _loadPlaces,
           onDeleted: _loadPlaces,
+          onShowOnMap: () => _showOnMap(place),
         ),
       ),
     );
@@ -663,47 +677,44 @@ class _PlacesScreenState extends State<PlacesScreen> {
             ],
           ],
         ),
-        body: DefaultTabController(
-          length: SettingsService.instance.messengerEnabled ? 3 : 2,
-          child: Column(
-            children: [
-              if (_filterPanelOpen)
-                ExperienceFilterPanel(
-                  filter: _expFilter,
-                  onChanged: (f) {
-                    setState(() => _expFilter = f);
-                    final s = SettingsService.instance;
-                    s.filterRequireExperiences = f.ownDeviceOnly;
-                    s.filterMinAvgRating = f.minAvgRating;
-                    s.filterUseMedian = f.useMedian;
-                    s.filterDistanceEnabled = f.distanceEnabled;
-                    s.filterMaxDistanceKm = f.maxDistanceKm;
-                    s.filterUseSpecificRating = f.useSpecificRating;
-                    s.filterSpecificRatingField =
-                        f.specificRatingField?.dbColumn ?? '';
-                    _loadPlaces();
-                  },
-                ),
-              TabBar(
-                tabs: [
-                  Tab(icon: const Icon(Icons.list), text: l10n.tabPlaces),
-                  if (SettingsService.instance.messengerEnabled)
-                    const Tab(icon: Icon(Icons.forum), text: 'Messenger'),
-                  const Tab(icon: Icon(Icons.map), text: 'Survive'),
+        body: Column(
+          children: [
+            if (_filterPanelOpen)
+              ExperienceFilterPanel(
+                filter: _expFilter,
+                onChanged: (f) {
+                  setState(() => _expFilter = f);
+                  final s = SettingsService.instance;
+                  s.filterRequireExperiences = f.ownDeviceOnly;
+                  s.filterMinAvgRating = f.minAvgRating;
+                  s.filterUseMedian = f.useMedian;
+                  s.filterDistanceEnabled = f.distanceEnabled;
+                  s.filterMaxDistanceKm = f.maxDistanceKm;
+                  s.filterUseSpecificRating = f.useSpecificRating;
+                  s.filterSpecificRatingField =
+                      f.specificRatingField?.dbColumn ?? '';
+                  _loadPlaces();
+                },
+              ),
+            TabBar(
+              controller: _tabController,
+              tabs: [
+                Tab(icon: const Icon(Icons.list), text: l10n.tabPlaces),
+                const Tab(icon: Icon(Icons.forum), text: 'Messenger'),
+                const Tab(icon: Icon(Icons.map), text: 'Survive'),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildList(),
+                  const MessagesScreen(filter: MessagesFilter.all),
+                  _buildMap(),
                 ],
               ),
-              Expanded(
-                child: TabBarView(
-                  children: [
-                    _buildList(),
-                    if (SettingsService.instance.messengerEnabled)
-                      const MessagesScreen(filter: MessagesFilter.all),
-                    _buildMap(),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

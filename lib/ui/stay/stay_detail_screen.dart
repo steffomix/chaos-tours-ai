@@ -500,8 +500,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                   ],
 
                   // Persons
-                  if (_place != null &&
-                      SettingsService.instance.messengerEnabled) ...[
+                  if (_place != null) ...[
                     const SizedBox(height: 8),
                     OutlinedButton.icon(
                       onPressed: () => Navigator.push(

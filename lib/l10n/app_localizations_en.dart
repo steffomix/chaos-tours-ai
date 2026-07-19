@@ -1638,6 +1638,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get showOnMap => 'Show on map';
+
+  @override
+  String get showOnMapScreen => 'Show on map screen';
+
+  @override
   String get openInGoogleMaps => 'Open in Google Maps';
 
   @override
@@ -2117,20 +2123,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sectionP2pMessengerAndValuation => 'P2P-Messenger & Valuations';
-
-  @override
-  String get messengerEnable => 'Enable messenger';
-
-  @override
-  String get messengerEnableSubtitle =>
-      'Location-bound P2P chat in the Places tab (store-and-forward).';
-
-  @override
-  String get createPlaceOnSync => 'Create places on sync opportunity';
-
-  @override
-  String get createPlaceOnSyncSubtitle =>
-      'Automatically creates a \"sync source\" place on a synchronization opportunity — even when automatic place creation is disabled. Required so messages received there have a reference place.';
 
   @override
   String get syncPhotos => 'Sync photos';

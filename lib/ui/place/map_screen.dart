@@ -36,7 +36,9 @@ class _LiveTrackingState {
 }
 
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
+  final LatLng? initialCenter;
+
+  const MapScreen({super.key, this.initialCenter});
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -68,8 +70,17 @@ class _MapScreenState extends State<MapScreen> {
     );
     _loadPlaces();
     _loadTrackingPoints();
-    // Move map to current location once the map controller is ready.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _goToCurrentLocation());
+    // Move map to initial center (if given) or current location once ready.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ic = widget.initialCenter;
+      if (ic != null) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          _mapController.move(ic, 16);
+        });
+      } else {
+        _goToCurrentLocation();
+      }
+    });
   }
 
   @override

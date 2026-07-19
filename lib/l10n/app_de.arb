@@ -2207,6 +2207,14 @@
       }
     }
   },
+  "showOnMap": "Auf Karte anzeigen",
+  "@showOnMap": {
+    "description": "Show on internal map tooltip"
+  },
+  "showOnMapScreen": "Auf Kartenbildschirm anzeigen",
+  "@showOnMapScreen": {
+    "description": "Show on map screen tooltip"
+  },
   "openInGoogleMaps": "In Google Maps öffnen",
   "@openInGoogleMaps": {
     "description": "Open in Google Maps tooltip"
@@ -2796,10 +2804,6 @@
   "showAction": "Anzeigen",
   "sectionP2pMessenger": "P2P-Messenger",
   "sectionP2pMessengerAndValuation": "P2P-Messenger & Bewertungen",
-  "messengerEnable": "Messenger aktivieren",
-  "messengerEnableSubtitle": "Ortsgebundener P2P-Chat im Orte-Tab (Store-and-Forward).",
-  "createPlaceOnSync": "Orte bei Sync-Gelegenheit erstellen",
-  "createPlaceOnSyncSubtitle": "Legt bei einer Synchronisationsgelegenheit automatisch einen Ort als „Sync-Quelle\" an – auch wenn die automatische Ortserstellung deaktiviert ist. Nötig, damit dort empfangene Nachrichten einen Bezugsort haben.",
   "syncPhotos": "Fotos synchronisieren",
   "syncPhotosSubtitle": "Bilder am Ort übertragen (base64 im JSON – kann groß werden).",
   "photoSizeLimitUnlimited": "Foto-Größenlimit: unbegrenzt",

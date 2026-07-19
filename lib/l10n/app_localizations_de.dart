@@ -1647,6 +1647,12 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get showOnMap => 'Auf Karte anzeigen';
+
+  @override
+  String get showOnMapScreen => 'Auf Kartenbildschirm anzeigen';
+
+  @override
   String get openInGoogleMaps => 'In Google Maps öffnen';
 
   @override
@@ -2133,20 +2139,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get sectionP2pMessengerAndValuation => 'P2P-Messenger & Bewertungen';
-
-  @override
-  String get messengerEnable => 'Messenger aktivieren';
-
-  @override
-  String get messengerEnableSubtitle =>
-      'Ortsgebundener P2P-Chat im Orte-Tab (Store-and-Forward).';
-
-  @override
-  String get createPlaceOnSync => 'Orte bei Sync-Gelegenheit erstellen';
-
-  @override
-  String get createPlaceOnSyncSubtitle =>
-      'Legt bei einer Synchronisationsgelegenheit automatisch einen Ort als „Sync-Quelle\" an – auch wenn die automatische Ortserstellung deaktiviert ist. Nötig, damit dort empfangene Nachrichten einen Bezugsort haben.';
 
   @override
   String get syncPhotos => 'Fotos synchronisieren';

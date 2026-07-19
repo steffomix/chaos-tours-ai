@@ -897,6 +897,8 @@
       }
     }
   },
+  "showOnMap": "Show on map",
+  "showOnMapScreen": "Show on map screen",
   "openInGoogleMaps": "Open in Google Maps",
   "noteName": "Note",
   "website": "Website",
@@ -1149,10 +1151,6 @@
   "showAction": "Show",
   "sectionP2pMessenger": "P2P messenger",
   "sectionP2pMessengerAndValuation": "P2P-Messenger & Valuations",
-  "messengerEnable": "Enable messenger",
-  "messengerEnableSubtitle": "Location-bound P2P chat in the Places tab (store-and-forward).",
-  "createPlaceOnSync": "Create places on sync opportunity",
-  "createPlaceOnSyncSubtitle": "Automatically creates a \"sync source\" place on a synchronization opportunity — even when automatic place creation is disabled. Required so messages received there have a reference place.",
   "syncPhotos": "Sync photos",
   "syncPhotosSubtitle": "Transfer images on place (base64 in JSON — can get large).",
   "photoSizeLimitUnlimited": "Photo size limit: unlimited",

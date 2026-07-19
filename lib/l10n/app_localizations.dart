@@ -2996,6 +2996,18 @@ abstract class AppLocalizations {
   /// **'Bericht für „{place}\" an „{connection}\" senden?'**
   String telegramSendContent(String place, String connection);
 
+  /// Show on internal map tooltip
+  ///
+  /// In de, this message translates to:
+  /// **'Auf Karte anzeigen'**
+  String get showOnMap;
+
+  /// Show on map screen tooltip
+  ///
+  /// In de, this message translates to:
+  /// **'Auf Kartenbildschirm anzeigen'**
+  String get showOnMapScreen;
+
   /// Open in Google Maps tooltip
   ///
   /// In de, this message translates to:
@@ -3853,30 +3865,6 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'P2P-Messenger & Bewertungen'**
   String get sectionP2pMessengerAndValuation;
-
-  /// No description provided for @messengerEnable.
-  ///
-  /// In de, this message translates to:
-  /// **'Messenger aktivieren'**
-  String get messengerEnable;
-
-  /// No description provided for @messengerEnableSubtitle.
-  ///
-  /// In de, this message translates to:
-  /// **'Ortsgebundener P2P-Chat im Orte-Tab (Store-and-Forward).'**
-  String get messengerEnableSubtitle;
-
-  /// No description provided for @createPlaceOnSync.
-  ///
-  /// In de, this message translates to:
-  /// **'Orte bei Sync-Gelegenheit erstellen'**
-  String get createPlaceOnSync;
-
-  /// No description provided for @createPlaceOnSyncSubtitle.
-  ///
-  /// In de, this message translates to:
-  /// **'Legt bei einer Synchronisationsgelegenheit automatisch einen Ort als „Sync-Quelle\" an – auch wenn die automatische Ortserstellung deaktiviert ist. Nötig, damit dort empfangene Nachrichten einen Bezugsort haben.'**
-  String get createPlaceOnSyncSubtitle;
 
   /// No description provided for @syncPhotos.
   ///

@@ -44,12 +44,11 @@ Future<void> handleMapLongPress(
               title: Text(l10n.createPlaceFromMaidenhead),
               onTap: () => Navigator.pop(ctx, 'maidenhead'),
             ),
-            if (SettingsService.instance.messengerEnabled)
-              ListTile(
-                leading: const Icon(Icons.forum),
-                title: Text(l10n.showRegionMessages),
-                onTap: () => Navigator.pop(ctx, 'region'),
-              ),
+            ListTile(
+              leading: const Icon(Icons.forum),
+              title: Text(l10n.showRegionMessages),
+              onTap: () => Navigator.pop(ctx, 'region'),
+            ),
           ],
         ),
       );

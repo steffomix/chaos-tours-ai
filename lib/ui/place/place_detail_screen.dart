@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/virtual_device.dart';
@@ -22,6 +23,7 @@ import 'place_experiences_screen.dart';
 import 'place_map_reposition_screen.dart';
 import '../stay/stays_screen.dart';
 import '../p2p_message/p2p_messages_screen.dart';
+import 'map_screen.dart';
 import 'places_screen.dart';
 import '../settings/sync_options_dialog.dart';
 
@@ -29,12 +31,14 @@ class PlaceDetailScreen extends StatefulWidget {
   final SavedPlace place;
   final VoidCallback onUpdated;
   final VoidCallback onDeleted;
+  final VoidCallback? onShowOnMap;
 
   const PlaceDetailScreen({
     super.key,
     required this.place,
     required this.onUpdated,
     required this.onDeleted,
+    this.onShowOnMap,
   });
 
   @override
@@ -967,6 +971,19 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.travel_explore),
+            tooltip: l10n.showOnMapScreen,
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => MapScreen(
+                    initialCenter: LatLng(widget.place.lat, widget.place.lng),
+                  ),
+                ),
+              );
+            },
+          ),
+          IconButton(
             icon: const ColoredLocationPinIcon(),
             tooltip: l10n.openInGoogleMaps,
             onPressed: _openInMaps,
@@ -1212,41 +1229,55 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                 context,
               ).namedDivider(l10n.sectionP2pMessengerAndValuation),
               // ── Survival-Erfahrungen ─────────────────────────────────────
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: widget.place.uuid.isEmpty
+                          ? null
+                          : () => Navigator.push(
+                              context,
+                              MaterialPageRoute<void>(
+                                builder: (_) => ExperiencesScreen(
+                                  placeUuid: widget.place.uuid,
+                                  placeName: widget.place.name,
+                                ),
+                              ),
+                            ),
+                      icon: const Icon(Icons.night_shelter),
+                      label: Text(l10n.survivalExperiences),
+                    ),
+                  ),
+
+                  if (widget.onShowOnMap != null)
+                    IconButton(
+                      icon: const Icon(Icons.map),
+                      tooltip: l10n.showOnMap,
+                      onPressed: () {
+                        widget.onShowOnMap!();
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+              // ── Nachrichten zum Ort ────────────────────────────────────
               OutlinedButton.icon(
                 onPressed: widget.place.uuid.isEmpty
                     ? null
                     : () => Navigator.push(
                         context,
                         MaterialPageRoute<void>(
-                          builder: (_) => ExperiencesScreen(
+                          builder: (_) => MessagesScreen.place(
                             placeUuid: widget.place.uuid,
-                            placeName: widget.place.name,
+                            title: widget.place.name,
                           ),
                         ),
                       ),
-                icon: const Icon(Icons.night_shelter),
-                label: Text(l10n.survivalExperiences),
+                icon: const Icon(Icons.forum),
+                label: Text(l10n.placeMessagesButton),
               ),
-              const SizedBox(height: 12),
-              // ── Nachrichten zum Ort ────────────────────────────────────
-              if (SettingsService.instance.messengerEnabled)
-                OutlinedButton.icon(
-                  onPressed: widget.place.uuid.isEmpty
-                      ? null
-                      : () => Navigator.push(
-                          context,
-                          MaterialPageRoute<void>(
-                            builder: (_) => MessagesScreen.place(
-                              placeUuid: widget.place.uuid,
-                              title: widget.place.name,
-                            ),
-                          ),
-                        ),
-                  icon: const Icon(Icons.forum),
-                  label: Text(l10n.placeMessagesButton),
-                ),
-              if (SettingsService.instance.messengerEnabled)
-                const SizedBox(height: 8),
               // ── P2P Sync Konfiguration ─────────────────────────────────
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,

@@ -58,7 +58,6 @@ class SettingsService {
       'dev_tools_unlocked_until_ms';
 
   // ── P2P Messenger / place sync ─────────────────────────────────────────────
-  static const String _keyMessengerEnabled = 'messenger_enabled';
   static const String _keySyncPhotosEnabled = 'sync_photos_enabled';
   static const String _keyPhotoSyncMaxBytes = 'photo_sync_max_bytes';
   static const String _keyRegionMessageRadiusKm = 'region_message_radius_km';
@@ -159,10 +158,6 @@ class SettingsService {
   set autoCreatePlaces(bool v) => _p.setBool(_keyAutoCreate, v);
 
   // ── P2P Messenger / place sync ─────────────────────────────────────────────
-
-  /// Whether the P2P messenger feature is enabled (default: true).
-  bool get messengerEnabled => _p.getBool(_keyMessengerEnabled) ?? true;
-  set messengerEnabled(bool v) => _p.setBool(_keyMessengerEnabled, v);
 
   /// Whether photos are included in mesh sync transport (default: true).
   bool get syncPhotosEnabled => _p.getBool(_keySyncPhotosEnabled) ?? true;
