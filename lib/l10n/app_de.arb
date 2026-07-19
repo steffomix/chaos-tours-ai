@@ -2028,6 +2028,15 @@
   "@filterByGroup": {
     "description": "Filter by group label"
   },
+  "placeTypePublicLabel": "Öffentlich",
+  "placeTypePrivateLabel": "Privat",
+  "placeTypeSecretLabel": "Geheim",
+  "placeTypeHiddenLabel": "Verborgen",
+  "placeTypeHiddenActivate": "Verborgene Orte anzeigen",
+  "placeTypePublicDescription": "- Datenschutzebene 0\n- Grüner Punkt auf der Karte.\n- Benachrichtigung bei Ankunft.\n- Speichern von Besuchen in der Datenbank.\n- Veröffentlichen von Besuchen in Kalender, Matrix und Telegram.",
+  "placeTypePrivateDescription": "- Datenschutzebene 1\n- Blauer Punkt auf der Karte dominiert Punkte der Ebene 0.\n- Benachrichtigung bei Ankunft.\n- Speichern von Besuchen in der Datenbank.",
+  "placeTypeSecretDescription": "- Datenschutzebene 2\n- Roter Punkt auf der Karte dominiert Punkte der Ebene 0 und 1",
+  "placeTypeHiddenDescription": "Orte von diesem Typ werden auf der Karte nicht angezeigt und nicht gelistet.\nAnzeige in Listen nur wenn in Einstellungen aktiviert.",
   "filterByPlaceType": "Nach Ortstyp filtern",
   "@filterByPlaceType": {
     "description": "Filter by place type label"
@@ -2748,7 +2757,7 @@
   "createPlaceOnSync": "Orte bei Sync-Gelegenheit erstellen",
   "createPlaceOnSyncSubtitle": "Legt bei einer Synchronisationsgelegenheit automatisch einen Ort als „Sync-Quelle\" an – auch wenn die automatische Ortserstellung deaktiviert ist. Nötig, damit dort empfangene Nachrichten einen Bezugsort haben.",
   "syncPhotos": "Fotos synchronisieren",
-  "syncPhotosSubtitle": "Bilder über das Mesh übertragen (base64 im JSON – kann groß werden).",
+  "syncPhotosSubtitle": "Bilder am Ort übertragen (base64 im JSON – kann groß werden).",
   "photoSizeLimitUnlimited": "Foto-Größenlimit: unbegrenzt",
   "photoSizeLimitKib": "Foto-Größenlimit: {kib} KiB",
   "@photoSizeLimitKib": {

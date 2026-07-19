@@ -5,15 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/virtual_device.dart';
 
-/// When the app scans the local network for P2P mesh nodes.
-enum NodeScanMode {
-  /// Scan periodically, every N GPS sampling intervals.
-  perGpsInterval,
-
-  /// Scan only when the tracking engine registers a halt at a place.
-  onHalt,
-}
-
 class SettingsService {
   SettingsService._();
   static final SettingsService instance = SettingsService._();
@@ -24,8 +15,6 @@ class SettingsService {
   static const String _keyDefaultRadius = 'default_radius_meters';
   static const String _keyAutoCreate = 'auto_create_places';
   static const String _keyAutoPlaceGroup = 'auto_place_group_uuid';
-  static const String _keySyncSourcePlaceGroupUuid =
-      'sync_source_place_group_uuid';
   static const String _keyDefaultPlaceGroup = 'default_place_group_uuid';
   static const String _keyTrackingEnabled = 'tracking_enabled';
   static const String _keyActiveVirtualDeviceId = 'active_virtual_device_uuid';
@@ -68,14 +57,10 @@ class SettingsService {
   static const String _keyDevToolsUnlockedUntilMs =
       'dev_tools_unlocked_until_ms';
 
-  // ── P2P Messenger / mesh sync ─────────────────────────────────────────────
+  // ── P2P Messenger / place sync ─────────────────────────────────────────────
   static const String _keyMessengerEnabled = 'messenger_enabled';
-  static const String _keyCreatePlaceOnSyncOpportunity =
-      'create_place_on_sync_opportunity';
   static const String _keySyncPhotosEnabled = 'sync_photos_enabled';
   static const String _keyPhotoSyncMaxBytes = 'photo_sync_max_bytes';
-  static const String _keyNodeScanMode = 'node_scan_mode';
-  static const String _keyNodeScanIntervalPerGps = 'node_scan_interval_per_gps';
   static const String _keyRegionMessageRadiusKm = 'region_message_radius_km';
 
   // ── Sync protection (Geschützter Bereich) ────────────────────────────────
@@ -173,19 +158,11 @@ class SettingsService {
   bool get autoCreatePlaces => _p.getBool(_keyAutoCreate) ?? true;
   set autoCreatePlaces(bool v) => _p.setBool(_keyAutoCreate, v);
 
-  // ── P2P Messenger / mesh sync ─────────────────────────────────────────────
+  // ── P2P Messenger / place sync ─────────────────────────────────────────────
 
   /// Whether the P2P messenger feature is enabled (default: true).
   bool get messengerEnabled => _p.getBool(_keyMessengerEnabled) ?? true;
   set messengerEnabled(bool v) => _p.setBool(_keyMessengerEnabled, v);
-
-  /// When a sync opportunity is detected and no place is nearby, create a
-  /// "Sync-Quelle" place automatically — even if [autoCreatePlaces] is off.
-  /// Location-bound messages require a place to anchor to (default: true).
-  bool get createPlaceOnSyncOpportunity =>
-      _p.getBool(_keyCreatePlaceOnSyncOpportunity) ?? true;
-  set createPlaceOnSyncOpportunity(bool v) =>
-      _p.setBool(_keyCreatePlaceOnSyncOpportunity, v);
 
   /// Whether photos are included in mesh sync transport (default: true).
   bool get syncPhotosEnabled => _p.getBool(_keySyncPhotosEnabled) ?? true;
@@ -196,19 +173,6 @@ class SettingsService {
   int get photoSyncMaxBytes => _p.getInt(_keyPhotoSyncMaxBytes) ?? 524288;
   set photoSyncMaxBytes(int v) =>
       _p.setInt(_keyPhotoSyncMaxBytes, v < 0 ? 0 : v);
-
-  /// When the app scans for local mesh nodes (default: onHalt).
-  NodeScanMode get nodeScanMode {
-    final raw = _p.getInt(_keyNodeScanMode) ?? NodeScanMode.onHalt.index;
-    return NodeScanMode.values[raw.clamp(0, NodeScanMode.values.length - 1)];
-  }
-
-  set nodeScanMode(NodeScanMode v) => _p.setInt(_keyNodeScanMode, v.index);
-
-  /// In [NodeScanMode.perGpsInterval], scan every N GPS intervals (default: 4).
-  int get nodeScanIntervalPerGps => _p.getInt(_keyNodeScanIntervalPerGps) ?? 4;
-  set nodeScanIntervalPerGps(int v) =>
-      _p.setInt(_keyNodeScanIntervalPerGps, v.clamp(1, 100));
 
   /// Radius in km for the "messages of the region" map view (default: 5.0).
   double get regionMessageRadiusKm =>
@@ -233,18 +197,6 @@ class SettingsService {
       _p.remove(_keyDefaultPlaceGroup);
     } else {
       _p.setString(_keyDefaultPlaceGroup, v);
-    }
-  }
-
-  /// UUID of the group assigned to auto-created "Sync-Quelle" places. The group
-  /// carries [PlaceType.syncSource]. Nullable until first created.
-  String? get syncSourcePlaceGroupUuid =>
-      _p.getString(_keySyncSourcePlaceGroupUuid);
-  set syncSourcePlaceGroupUuid(String? v) {
-    if (v == null || v.isEmpty) {
-      _p.remove(_keySyncSourcePlaceGroupUuid);
-    } else {
-      _p.setString(_keySyncSourcePlaceGroupUuid, v);
     }
   }
 
@@ -678,7 +630,6 @@ class SettingsService {
     autoCreatePlaces = a.autoCreatePlaces;
     autoPlaceGroupUuid = a.autoPlaceGroupUuid;
     defaultPlaceGroupUuid = a.defaultPlaceGroupUuid;
-    syncSourcePlaceGroupUuid = a.syncSourcePlaceGroupUuid;
     timelineHistoryDays = a.timelineHistoryDays;
     searchCountry = a.searchCountry;
     addressOnAutoCreate = a.addressOnAutoCreate;
@@ -713,7 +664,6 @@ class SettingsService {
       autoCreatePlaces: autoCreatePlaces,
       autoPlaceGroupUuid: autoPlaceGroupUuid,
       defaultPlaceGroupUuid: defaultPlaceGroupUuid,
-      syncSourcePlaceGroupUuid: syncSourcePlaceGroupUuid,
       timelineHistoryDays: timelineHistoryDays,
       searchCountry: searchCountry,
       addressOnAutoCreate: addressOnAutoCreate,

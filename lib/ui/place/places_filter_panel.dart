@@ -352,7 +352,7 @@ class _ExperienceFilterPanelState extends State<ExperienceFilterPanel> {
                     final selected = filter.placeTypeFilter.contains(t.index);
                     return FilterChip(
                       avatar: Icon(t.icon, color: t.dotColor, size: 16),
-                      label: Text(t.label),
+                      label: Text(t.l10nLabel(context)),
                       selected: selected,
                       onSelected: (v) {
                         final updated = v

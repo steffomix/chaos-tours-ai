@@ -250,7 +250,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
           list = list.where((p) {
             if (p.name.toLowerCase().contains(q)) return true;
             if (p.notes.toLowerCase().contains(q)) return true;
-            if (p.placeType.label.toLowerCase().contains(q)) return true;
+            if (p.placeType.name.toLowerCase().contains(q)) return true;
             return false;
           }).toList();
         }
@@ -495,7 +495,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
       list = list.where((p) {
         if (p.name.toLowerCase().contains(q)) return true;
         if (p.notes.toLowerCase().contains(q)) return true;
-        if (p.placeType.label.toLowerCase().contains(q)) return true;
+        if (p.placeType.name.toLowerCase().contains(q)) return true;
         return false;
       }).toList();
     }

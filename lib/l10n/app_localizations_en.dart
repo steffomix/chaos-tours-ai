@@ -1485,6 +1485,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get filterByGroup => 'Filter by group';
 
   @override
+  String get placeTypePublicLabel => 'Public';
+
+  @override
+  String get placeTypePrivateLabel => 'Private';
+
+  @override
+  String get placeTypeSecretLabel => 'Secret';
+
+  @override
+  String get placeTypeHiddenLabel => 'Hidden';
+
+  @override
+  String get placeTypeHiddenActivate => 'Show hidden places';
+
+  @override
+  String get placeTypePublicDescription =>
+      '- Data protection level 0\n- Green dot on the map.\n- Notification upon arrival.\n- Saving visits to the database.\n- Publishing visits to calendar, Matrix, and Telegram.';
+
+  @override
+  String get placeTypePrivateDescription =>
+      '- Data protection level 1\n- Blue dot on the map dominates dots of level 0.\n- Notification upon arrival.\n- Saving visits to the database.';
+
+  @override
+  String get placeTypeSecretDescription =>
+      '- Data protection level 2\n- Red dot on the map dominates dots of level 0 and 1.';
+
+  @override
+  String get placeTypeHiddenDescription =>
+      'Locations of this type are not displayed on map and not listed.\nThey appear in lists only if enabled in the settings.';
+
+  @override
   String get filterByPlaceType => 'Filter by place type';
 
   @override
@@ -2071,7 +2102,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncPhotosSubtitle =>
-      'Transfer images over the mesh (base64 in JSON — can get large).';
+      'Transfer images on place (base64 in JSON — can get large).';
 
   @override
   String get photoSizeLimitUnlimited => 'Photo size limit: unlimited';

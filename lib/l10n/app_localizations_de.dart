@@ -1494,6 +1494,37 @@ class AppLocalizationsDe extends AppLocalizations {
   String get filterByGroup => 'Nach Gruppe filtern';
 
   @override
+  String get placeTypePublicLabel => 'Öffentlich';
+
+  @override
+  String get placeTypePrivateLabel => 'Privat';
+
+  @override
+  String get placeTypeSecretLabel => 'Geheim';
+
+  @override
+  String get placeTypeHiddenLabel => 'Verborgen';
+
+  @override
+  String get placeTypeHiddenActivate => 'Verborgene Orte anzeigen';
+
+  @override
+  String get placeTypePublicDescription =>
+      '- Datenschutzebene 0\n- Grüner Punkt auf der Karte.\n- Benachrichtigung bei Ankunft.\n- Speichern von Besuchen in der Datenbank.\n- Veröffentlichen von Besuchen in Kalender, Matrix und Telegram.';
+
+  @override
+  String get placeTypePrivateDescription =>
+      '- Datenschutzebene 1\n- Blauer Punkt auf der Karte dominiert Punkte der Ebene 0.\n- Benachrichtigung bei Ankunft.\n- Speichern von Besuchen in der Datenbank.';
+
+  @override
+  String get placeTypeSecretDescription =>
+      '- Datenschutzebene 2\n- Roter Punkt auf der Karte dominiert Punkte der Ebene 0 und 1';
+
+  @override
+  String get placeTypeHiddenDescription =>
+      'Orte von diesem Typ werden auf der Karte nicht angezeigt und nicht gelistet.\nAnzeige in Listen nur wenn in Einstellungen aktiviert.';
+
+  @override
   String get filterByPlaceType => 'Nach Ortstyp filtern';
 
   @override
@@ -2087,7 +2118,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get syncPhotosSubtitle =>
-      'Bilder über das Mesh übertragen (base64 im JSON – kann groß werden).';
+      'Bilder am Ort übertragen (base64 im JSON – kann groß werden).';
 
   @override
   String get photoSizeLimitUnlimited => 'Foto-Größenlimit: unbegrenzt';

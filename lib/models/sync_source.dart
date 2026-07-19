@@ -69,7 +69,7 @@ class SyncSourceOptions {
   };
 
   /// All tables with insert+update enabled (delete off) — used for opportunistic
-  /// mesh-node sync where every device fully shares its data.
+  /// place-node sync where every device fully shares its data.
   factory SyncSourceOptions.allEnabled() => SyncSourceOptions(
     tables: {
       for (final t in allTables)

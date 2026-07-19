@@ -25,7 +25,7 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <!-- Internet for OSM map tiles -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Local network access + mDNS discovery for the P2P mesh sync -->
+    <!-- Local network access + mDNS discovery for the P2P place sync -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />

@@ -2720,6 +2720,60 @@ abstract class AppLocalizations {
   /// **'Nach Gruppe filtern'**
   String get filterByGroup;
 
+  /// No description provided for @placeTypePublicLabel.
+  ///
+  /// In de, this message translates to:
+  /// **'Öffentlich'**
+  String get placeTypePublicLabel;
+
+  /// No description provided for @placeTypePrivateLabel.
+  ///
+  /// In de, this message translates to:
+  /// **'Privat'**
+  String get placeTypePrivateLabel;
+
+  /// No description provided for @placeTypeSecretLabel.
+  ///
+  /// In de, this message translates to:
+  /// **'Geheim'**
+  String get placeTypeSecretLabel;
+
+  /// No description provided for @placeTypeHiddenLabel.
+  ///
+  /// In de, this message translates to:
+  /// **'Verborgen'**
+  String get placeTypeHiddenLabel;
+
+  /// No description provided for @placeTypeHiddenActivate.
+  ///
+  /// In de, this message translates to:
+  /// **'Verborgene Orte anzeigen'**
+  String get placeTypeHiddenActivate;
+
+  /// No description provided for @placeTypePublicDescription.
+  ///
+  /// In de, this message translates to:
+  /// **'- Datenschutzebene 0\n- Grüner Punkt auf der Karte.\n- Benachrichtigung bei Ankunft.\n- Speichern von Besuchen in der Datenbank.\n- Veröffentlichen von Besuchen in Kalender, Matrix und Telegram.'**
+  String get placeTypePublicDescription;
+
+  /// No description provided for @placeTypePrivateDescription.
+  ///
+  /// In de, this message translates to:
+  /// **'- Datenschutzebene 1\n- Blauer Punkt auf der Karte dominiert Punkte der Ebene 0.\n- Benachrichtigung bei Ankunft.\n- Speichern von Besuchen in der Datenbank.'**
+  String get placeTypePrivateDescription;
+
+  /// No description provided for @placeTypeSecretDescription.
+  ///
+  /// In de, this message translates to:
+  /// **'- Datenschutzebene 2\n- Roter Punkt auf der Karte dominiert Punkte der Ebene 0 und 1'**
+  String get placeTypeSecretDescription;
+
+  /// No description provided for @placeTypeHiddenDescription.
+  ///
+  /// In de, this message translates to:
+  /// **'Orte von diesem Typ werden auf der Karte nicht angezeigt und nicht gelistet.\nAnzeige in Listen nur wenn in Einstellungen aktiviert.'**
+  String get placeTypeHiddenDescription;
+
   /// Filter by place type label
   ///
   /// In de, this message translates to:
@@ -3773,7 +3827,7 @@ abstract class AppLocalizations {
   /// No description provided for @syncPhotosSubtitle.
   ///
   /// In de, this message translates to:
-  /// **'Bilder über das Mesh übertragen (base64 im JSON – kann groß werden).'**
+  /// **'Bilder am Ort übertragen (base64 im JSON – kann groß werden).'**
   String get syncPhotosSubtitle;
 
   /// No description provided for @photoSizeLimitUnlimited.

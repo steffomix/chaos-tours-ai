@@ -584,14 +584,14 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
       }
     }
 
+    if (!mounted) return;
     final buf = StringBuffer();
-
     // ── Header ──────────────────────────────────────────────────────────
     buf.writeln('# ${place.name}');
     buf.writeln();
     buf.writeln('| Feld | Wert |');
     buf.writeln('|------|------|');
-    buf.writeln('| Typ | ${place.placeType.label} |');
+    buf.writeln('| Typ | ${place.placeType.l10nLabel(context)} |');
 
     buf.writeln('| UUID | ${place.uuid} |');
     if (place.originSourceUuid != null) {
@@ -776,11 +776,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
       RegExp(r'[_*\[\]()~`>#+\-=|{}.!\\]'),
       (m) => '\\${m[0]}',
     );
-
+    if (!mounted) return;
     final buf = StringBuffer();
     buf.writeln('*${esc(place.name)}*');
     buf.writeln();
-    buf.writeln('Typ: ${esc(place.placeType.label)}');
+    buf.writeln('Typ: ${esc(place.placeType.l10nLabel(context))}');
     buf.writeln(
       'Koordinaten: ${esc(place.lat.toStringAsFixed(6))}, ${esc(place.lng.toStringAsFixed(6))}',
     );

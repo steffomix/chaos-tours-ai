@@ -24,9 +24,6 @@ class VirtualDevice {
   /// UUID of the [PlaceGroup] pre-selected when the user creates a place manually.
   final String? defaultPlaceGroupUuid;
 
-  /// UUID of the [PlaceGroup] used for synchronization.
-  final String? syncSourcePlaceGroupUuid;
-
   /// How many days of stay history are shown on the timeline map (default: 7).
   final int timelineHistoryDays;
 
@@ -67,6 +64,8 @@ class VirtualDevice {
   /// When true, incoming sync rows with this device_id are ignored on import.
   final bool syncImportProtected;
 
+  final bool showForbiddenPlaces;
+
   VirtualDevice({
     String? uuid,
     required this.name,
@@ -77,7 +76,6 @@ class VirtualDevice {
     this.autoCreatePlaces = true,
     this.autoPlaceGroupUuid,
     this.defaultPlaceGroupUuid,
-    this.syncSourcePlaceGroupUuid,
     this.timelineHistoryDays = 7,
     this.searchCountry = '',
     this.addressOnAutoCreate = true,
@@ -94,6 +92,7 @@ class VirtualDevice {
     int? updatedAt,
     this.deletedAt,
     String? deviceId,
+    this.showForbiddenPlaces = false,
     this.syncExportProtected = false,
     this.syncImportProtected = false,
   }) : uuid = uuid?.isNotEmpty == true ? uuid! : _uuid.v4(),
@@ -116,7 +115,6 @@ class VirtualDevice {
       autoCreatePlaces: (map['auto_create_places'] as int? ?? 1) == 1,
       autoPlaceGroupUuid: map['auto_place_group_uuid'] as String?,
       defaultPlaceGroupUuid: map['default_place_group_uuid'] as String?,
-      syncSourcePlaceGroupUuid: map['sync_source_place_group_uuid'] as String?,
       timelineHistoryDays: map['timeline_history_days'] as int? ?? 7,
       searchCountry: map['search_country'] as String? ?? '',
       addressOnAutoCreate: (map['address_on_auto_create'] as int? ?? 1) == 1,
@@ -141,6 +139,7 @@ class VirtualDevice {
       deletedAt: map['deleted_at'] as int?,
       syncExportProtected: (map['sync_export_protected'] as int? ?? 0) == 1,
       syncImportProtected: (map['sync_import_protected'] as int? ?? 0) == 1,
+      showForbiddenPlaces: (map['show_forbidden_places'] as int? ?? 0) == 1,
     );
   }
 
@@ -158,8 +157,6 @@ class VirtualDevice {
         'auto_place_group_uuid': autoPlaceGroupUuid,
       if (defaultPlaceGroupUuid != null)
         'default_place_group_uuid': defaultPlaceGroupUuid,
-      if (syncSourcePlaceGroupUuid != null)
-        'sync_source_place_group_uuid': syncSourcePlaceGroupUuid,
       'timeline_history_days': timelineHistoryDays,
       'search_country': searchCountry,
       'address_on_auto_create': addressOnAutoCreate ? 1 : 0,
@@ -177,6 +174,7 @@ class VirtualDevice {
       'filter_specific_rating_field': filterSpecificRatingField,
       'sync_export_protected': syncExportProtected ? 1 : 0,
       'sync_import_protected': syncImportProtected ? 1 : 0,
+      'show_forbidden_places': showForbiddenPlaces ? 1 : 0,
     };
   }
 
@@ -193,8 +191,6 @@ class VirtualDevice {
     bool clearAutoPlaceGroupUuid = false,
     String? defaultPlaceGroupUuid,
     bool clearDefaultPlaceGroupUuid = false,
-    String? syncSourcePlaceGroupUuid,
-    bool clearSyncSourcePlaceGroupUuid = false,
     int? timelineHistoryDays,
     String? searchCountry,
     bool? addressOnAutoCreate,
@@ -213,6 +209,7 @@ class VirtualDevice {
     String? filterSpecificRatingField,
     bool? syncExportProtected,
     bool? syncImportProtected,
+    bool? showForbiddenPlaces,
   }) {
     return VirtualDevice(
       uuid: uuid ?? this.uuid,
@@ -229,9 +226,6 @@ class VirtualDevice {
       defaultPlaceGroupUuid: clearDefaultPlaceGroupUuid
           ? null
           : (defaultPlaceGroupUuid ?? this.defaultPlaceGroupUuid),
-      syncSourcePlaceGroupUuid: clearSyncSourcePlaceGroupUuid
-          ? null
-          : (syncSourcePlaceGroupUuid ?? this.syncSourcePlaceGroupUuid),
       timelineHistoryDays: timelineHistoryDays ?? this.timelineHistoryDays,
       searchCountry: searchCountry ?? this.searchCountry,
       addressOnAutoCreate: addressOnAutoCreate ?? this.addressOnAutoCreate,
@@ -254,6 +248,7 @@ class VirtualDevice {
           filterSpecificRatingField ?? this.filterSpecificRatingField,
       syncExportProtected: syncExportProtected ?? this.syncExportProtected,
       syncImportProtected: syncImportProtected ?? this.syncImportProtected,
+      showForbiddenPlaces: showForbiddenPlaces ?? this.showForbiddenPlaces,
     );
   }
 }

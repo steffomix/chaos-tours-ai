@@ -234,6 +234,7 @@ class DatabaseService {
         scheduler_group_ids TEXT NOT NULL DEFAULT '',
         sync_export_protected INTEGER NOT NULL DEFAULT 0,
         sync_import_protected INTEGER NOT NULL DEFAULT 0,
+        show_forbidden_places INTEGER NOT NULL DEFAULT 0,
         updated_at INTEGER NOT NULL DEFAULT 0,
         deleted_at INTEGER
       )
@@ -2366,7 +2367,6 @@ class DatabaseService {
         name: 'Standard',
         autoPlaceGroupUuid: s.autoPlaceGroupUuid,
         defaultPlaceGroupUuid: s.defaultPlaceGroupUuid,
-        syncSourcePlaceGroupUuid: s.syncSourcePlaceGroupUuid,
         syncImportProtected: true,
       ),
     );
@@ -2401,11 +2401,6 @@ class DatabaseService {
     if (!await checkGroupExists(s.defaultPlaceGroupUuid)) {
       s.defaultPlaceGroupUuid = await insertPlaceGroup(
         PlaceGroup(name: 'Standard', placeType: PlaceType.public),
-      );
-    }
-    if (!await checkGroupExists(s.syncSourcePlaceGroupUuid)) {
-      s.syncSourcePlaceGroupUuid = await insertPlaceGroup(
-        PlaceGroup(name: 'Sync-Quelle', placeType: PlaceType.syncSource),
       );
     }
   }

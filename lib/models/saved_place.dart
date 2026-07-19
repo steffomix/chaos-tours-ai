@@ -1,3 +1,4 @@
+import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
@@ -19,26 +20,34 @@ enum PlaceType {
 
   /// Only visible in the places list when "Verborgene Orte auflisten" is enabled.
   hidden,
-
-  /// Orange dot. Automatically created at a P2P sync opportunity (mesh node /
-  /// peer). Anchors location-bound messages. No notification, no stay tracking,
-  /// no calendar sync.
-  syncSource,
 }
 
 extension PlaceTypeExtension on PlaceType {
-  String get label {
+  String l10nLabel(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     switch (this) {
       case PlaceType.public:
-        return 'Öffentlich';
+        return l10n.placeTypePublicLabel;
       case PlaceType.private:
-        return 'Privat';
+        return l10n.placeTypePrivateLabel;
       case PlaceType.secret:
-        return 'Geheim';
+        return l10n.placeTypeSecretLabel;
       case PlaceType.hidden:
-        return 'Verboten';
-      case PlaceType.syncSource:
-        return 'Sync-Quelle';
+        return l10n.placeTypeHiddenLabel;
+    }
+  }
+
+  String l10nDescription(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (this) {
+      case PlaceType.public:
+        return l10n.placeTypePublicDescription;
+      case PlaceType.private:
+        return l10n.placeTypePrivateDescription;
+      case PlaceType.secret:
+        return l10n.placeTypeSecretDescription;
+      case PlaceType.hidden:
+        return l10n.placeTypeHiddenDescription;
     }
   }
 
@@ -52,8 +61,6 @@ extension PlaceTypeExtension on PlaceType {
         return Icons.visibility_off;
       case PlaceType.hidden:
         return Icons.block;
-      case PlaceType.syncSource:
-        return Icons.hub;
     }
   }
 
@@ -67,8 +74,6 @@ extension PlaceTypeExtension on PlaceType {
         return Colors.red;
       case PlaceType.hidden:
         return Colors.grey;
-      case PlaceType.syncSource:
-        return Colors.orange;
     }
   }
 

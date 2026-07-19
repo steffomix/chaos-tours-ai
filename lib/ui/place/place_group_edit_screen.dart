@@ -269,13 +269,20 @@ class _PlaceGroupEditScreenState extends State<PlaceGroupEditScreen> {
                     size: 16,
                     color: selected ? Colors.white : t.dotColor,
                   ),
-                  label: Text(t.label),
+                  label: Text(t.l10nLabel(context)),
                   selected: selected,
                   selectedColor: t.dotColor,
                   labelStyle: TextStyle(color: selected ? Colors.white : null),
                   onSelected: (_) => setState(() => _placeType = t),
                 );
               }).toList(),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Text(
+                _placeType.l10nDescription(context),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ),
 
             const SizedBox(height: 8),

@@ -6,6 +6,7 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 import 'dart:math';
 
+import '../../models/saved_place.dart';
 import '../../models/virtual_device.dart';
 import '../../models/place_group.dart';
 import '../../services/database_service.dart';
@@ -31,7 +32,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late bool _autoCreatePlaces;
   String? _autoPlaceGroupUuid;
   String? _defaultPlaceGroupUuid;
-  String? _syncSourcePlaceGroupUuid;
   late int _gpsSmoothingPoints;
   late bool _showTrackingPoints;
   late double _trackingPointRadius;
@@ -49,13 +49,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _photoImageQuality;
   late int _placeDetailPhotoCount;
 
-  // P2P Messenger / mesh sync
+  // P2P Messenger / place sync
   late bool _messengerEnabled;
-  late bool _createPlaceOnSyncOpportunity;
-  late bool _syncPhotosEnabled;
   late int _photoSyncMaxBytes;
-  late NodeScanMode _nodeScanMode;
-  late int _nodeScanIntervalPerGps;
+  late bool _showForbiddenPlaces;
 
   // Falls du ein StatefulWidget nutzt, definiere den Generator in deinem State:
   final RandomDataGenerator _generator = RandomDataGenerator();
@@ -83,7 +80,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _autoCreatePlaces = s.autoCreatePlaces;
     _autoPlaceGroupUuid = s.autoPlaceGroupUuid;
     _defaultPlaceGroupUuid = s.defaultPlaceGroupUuid;
-    _syncSourcePlaceGroupUuid = s.syncSourcePlaceGroupUuid;
     _gpsSmoothingPoints = s.gpsSmoothingPoints;
     _showTrackingPoints = s.showTrackingPoints;
     _trackingPointRadius = s.trackingPointRadius;
@@ -100,11 +96,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _photoImageQuality = s.photoImageQuality;
     _placeDetailPhotoCount = s.placeDetailPhotoCount;
     _messengerEnabled = s.messengerEnabled;
-    _createPlaceOnSyncOpportunity = s.createPlaceOnSyncOpportunity;
-    _syncPhotosEnabled = s.syncPhotosEnabled;
     _photoSyncMaxBytes = s.photoSyncMaxBytes;
-    _nodeScanMode = s.nodeScanMode;
-    _nodeScanIntervalPerGps = s.nodeScanIntervalPerGps;
+    _showForbiddenPlaces = s.showForbiddenPlaces;
     _loadGroups();
     _loadVirtualDevices();
   }
@@ -139,7 +132,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _autoCreatePlaces = s.autoCreatePlaces;
     _autoPlaceGroupUuid = s.autoPlaceGroupUuid;
     _defaultPlaceGroupUuid = s.defaultPlaceGroupUuid;
-    _syncSourcePlaceGroupUuid = s.syncSourcePlaceGroupUuid;
     _timelineHistoryDays = s.timelineHistoryDays;
     _searchCountry = s.searchCountry;
     _searchCountryCtrl.text = _searchCountry;
@@ -147,12 +139,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _addressOnManualCreate = s.addressOnManualCreate;
     _addressOnInterval = s.addressOnInterval;
     _schedulerColorRange = s.schedulerColorRange;
+    _showForbiddenPlaces = s.showForbiddenPlaces;
     setState(() {});
   }
 
   Future<void> _saveAll() async {
     final s = SettingsService.instance;
-    bool gpsInterfalChanged = s.gpsIntervalSeconds != _gpsInterval;
+    bool gpsIntervalChanged = s.gpsIntervalSeconds != _gpsInterval;
     s.deviceId = _deviceId;
     s.gpsIntervalSeconds = _gpsInterval;
     s.stayDetectionSeconds = _stayDetection;
@@ -161,7 +154,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     s.autoCreatePlaces = _autoCreatePlaces;
     s.autoPlaceGroupUuid = _autoPlaceGroupUuid;
     s.defaultPlaceGroupUuid = _defaultPlaceGroupUuid;
-    s.syncSourcePlaceGroupUuid = _syncSourcePlaceGroupUuid;
     s.gpsSmoothingPoints = _gpsSmoothingPoints;
     s.showTrackingPoints = _showTrackingPoints;
     s.trackingPointRadius = _trackingPointRadius;
@@ -177,13 +169,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     s.photoImageQuality = _photoImageQuality;
     s.placeDetailPhotoCount = _placeDetailPhotoCount;
     s.messengerEnabled = _messengerEnabled;
-    s.createPlaceOnSyncOpportunity = _createPlaceOnSyncOpportunity;
-    s.syncPhotosEnabled = _syncPhotosEnabled;
     s.photoSyncMaxBytes = _photoSyncMaxBytes;
-    s.nodeScanMode = _nodeScanMode;
-    s.nodeScanIntervalPerGps = _nodeScanIntervalPerGps;
     // notify foreground service about new settings
-    if (gpsInterfalChanged && (Platform.isAndroid || Platform.isIOS)) {
+    if (gpsIntervalChanged && (Platform.isAndroid || Platform.isIOS)) {
       await FlutterForegroundTask.updateService(
         foregroundTaskOptions: ForegroundTaskOptions(
           eventAction: ForegroundTaskEventAction.repeat(
@@ -246,6 +234,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.pushNamed(context, '/trusted-sources'),
             ),
+
             // ── Verwaltung ───────────────────────────────────────────────
             UnifiedWidget(context).namedDivider(l10n.sectionManagement),
             ListTile(
@@ -253,6 +242,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: Text(l10n.placeGroups),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.pushNamed(context, '/place-groups'),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 32),
+              child: ListTile(
+                leading: Chip(
+                  label: Text(
+                    PlaceType.hidden.l10nLabel(context),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  avatar: Icon(PlaceType.hidden.icon, size: 16),
+                  backgroundColor: PlaceType.hidden.dotColor,
+                ),
+                title: Text(l10n.placeTypeHiddenActivate),
+                subtitle: Text(PlaceType.hidden.l10nDescription(context)),
+                trailing: Switch(
+                  value: _showForbiddenPlaces,
+                  onChanged: (v) {
+                    setState(() {
+                      _showForbiddenPlaces = v;
+                    });
+                  },
+                ),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.people),
@@ -607,25 +619,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
                 onChanged: (v) => setState(() => _defaultPlaceGroupUuid = v),
-              ),
-            ),
-            ListTile(
-              title: Text(l10n.syncPlaceGroup),
-              subtitle: Text(l10n.syncPlaceGroupSubtitle),
-              trailing: DropdownButton<String?>(
-                value: _syncSourcePlaceGroupUuid == null
-                    ? null
-                    : (_groups.any((g) => g.uuid == _syncSourcePlaceGroupUuid)
-                          ? _syncSourcePlaceGroupUuid
-                          : null),
-                hint: Text(l10n.none),
-                items: [
-                  DropdownMenuItem(value: null, child: Text(l10n.none)),
-                  ..._groups.map(
-                    (g) => DropdownMenuItem(value: g.uuid, child: Text(g.name)),
-                  ),
-                ],
-                onChanged: (v) => setState(() => _syncSourcePlaceGroupUuid = v),
               ),
             ),
             ListTile(

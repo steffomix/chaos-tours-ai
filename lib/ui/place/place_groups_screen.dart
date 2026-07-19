@@ -155,7 +155,7 @@ class _PlaceGroupsScreenState extends State<PlaceGroupsScreen> {
                         color: g.placeType.dotColor,
                       ),
                       const SizedBox(width: 4),
-                      Text(g.placeType.label),
+                      Text(g.placeType.l10nLabel(context)),
                       if (SettingsService.instance.getGroupCalendarId(g.uuid) !=
                           null) ...const [
                         SizedBox(width: 8),
