@@ -295,9 +295,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: () =>
                   Navigator.pushNamed(context, '/telegram-connections'),
             ),
-            if (!(Platform.isLinux ||
-                Platform.isWindows ||
-                Platform.isMacOS)) ...[
+            if (!(Platform.isLinux || Platform.isWindows)) ...[
               SwitchListTile(
                 secondary: const Icon(Icons.calendar_month),
                 title: Text(l10n.calendarSync),

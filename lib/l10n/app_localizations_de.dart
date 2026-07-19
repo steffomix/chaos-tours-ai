@@ -1344,6 +1344,20 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get matrixLoadRooms => 'Beigetretene Räume laden';
+
+  @override
+  String get matrixPickRoom => 'Raum auswählen';
+
+  @override
+  String matrixRoomsLoadError(String error) {
+    return 'Fehler beim Laden: $error';
+  }
+
+  @override
+  String get matrixNoRooms => 'Keine Räume gefunden.';
+
+  @override
   String get distance => 'Entfernung';
 
   @override
@@ -1527,7 +1541,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get placeTypePublicDescription =>
-      '- Datenschutzebene 0\n- Grüner Punkt auf der Karte.\n- Benachrichtigung bei Ankunft.\n- Speichern von Besuchen in der Datenbank.\n- Veröffentlichen von Besuchen in Kalender, Matrix und Telegram.';
+      '- Datenschutzebene 0\n- Grüner Punkt auf der Karte.\n- Benachrichtigung bei Ankunft.\n- Speichern von Besuchen in der Datenbank.\n- Veröffentlichen von Besuchen in Matrix, Telegram und Kalender.';
+
+  @override
+  String get placeTypePublicDescriptionLinux =>
+      '- Datenschutzebene 0\n- Grüner Punkt auf der Karte.\n- Benachrichtigung bei Ankunft.\n- Speichern von Besuchen in der Datenbank.\n- Veröffentlichen von Besuchen in Matrix und Telegram.';
 
   @override
   String get placeTypePrivateDescription =>

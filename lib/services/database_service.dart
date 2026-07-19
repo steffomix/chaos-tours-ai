@@ -47,7 +47,7 @@ class DatabaseService {
   // the old schema and start fresh. This also simplifies development and testing, as we
   // don't have to worry about migrations when changing the schema.
   Future<Database> _openDatabase() async {
-    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+    if (Platform.isLinux || Platform.isWindows) {
       sqfliteFfiInit();
       databaseFactory = databaseFactoryFfi;
     }

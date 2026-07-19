@@ -1830,6 +1830,25 @@
       "error": { "type": "String" }
     }
   },
+  "matrixLoadRooms": "Beigetretene Räume laden",
+  "@matrixLoadRooms": {
+    "description": "Button: load joined Matrix rooms"
+  },
+  "matrixPickRoom": "Raum auswählen",
+  "@matrixPickRoom": {
+    "description": "Matrix room picker dropdown label"
+  },
+  "matrixRoomsLoadError": "Fehler beim Laden: {error}",
+  "@matrixRoomsLoadError": {
+    "description": "Error loading Matrix rooms",
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "matrixNoRooms": "Keine Räume gefunden.",
+  "@matrixNoRooms": {
+    "description": "No Matrix rooms found"
+  },
   "distance": "Entfernung",
   "@distance": {
     "description": "Distance filter label"
@@ -2056,7 +2075,9 @@
   "placeTypeSecretLabel": "Geheim",
   "placeTypeHiddenLabel": "Verborgen",
   "placeTypeHiddenActivate": "Verborgene Orte anzeigen",
-  "placeTypePublicDescription": "- Datenschutzebene 0\n- Grüner Punkt auf der Karte.\n- Benachrichtigung bei Ankunft.\n- Speichern von Besuchen in der Datenbank.\n- Veröffentlichen von Besuchen in Kalender, Matrix und Telegram.",
+  "placeTypePublicDescription": "- Datenschutzebene 0\n- Grüner Punkt auf der Karte.\n- Benachrichtigung bei Ankunft.\n- Speichern von Besuchen in der Datenbank.\n- Veröffentlichen von Besuchen in Matrix, Telegram und Kalender.",
+  "placeTypePublicDescriptionLinux": "- Datenschutzebene 0\n- Grüner Punkt auf der Karte.\n- Benachrichtigung bei Ankunft.\n- Speichern von Besuchen in der Datenbank.\n- Veröffentlichen von Besuchen in Matrix und Telegram.",
+
   "placeTypePrivateDescription": "- Datenschutzebene 1\n- Blauer Punkt auf der Karte dominiert Punkte der Ebene 0.\n- Benachrichtigung bei Ankunft.\n- Speichern von Besuchen in der Datenbank.",
   "placeTypeSecretDescription": "- Datenschutzebene 2\n- Roter Punkt auf der Karte dominiert Punkte der Ebene 0 und 1",
   "placeTypeHiddenDescription": "Orte von diesem Typ werden auf der Karte nicht angezeigt und nicht gelistet.\nAnzeige in Listen nur wenn in Einstellungen aktiviert.",

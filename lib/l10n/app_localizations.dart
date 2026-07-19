@@ -2426,6 +2426,30 @@ abstract class AppLocalizations {
   /// **'Fehler beim Senden: {error}'**
   String matrixTestError(String error);
 
+  /// Button: load joined Matrix rooms
+  ///
+  /// In de, this message translates to:
+  /// **'Beigetretene Räume laden'**
+  String get matrixLoadRooms;
+
+  /// Matrix room picker dropdown label
+  ///
+  /// In de, this message translates to:
+  /// **'Raum auswählen'**
+  String get matrixPickRoom;
+
+  /// Error loading Matrix rooms
+  ///
+  /// In de, this message translates to:
+  /// **'Fehler beim Laden: {error}'**
+  String matrixRoomsLoadError(String error);
+
+  /// No Matrix rooms found
+  ///
+  /// In de, this message translates to:
+  /// **'Keine Räume gefunden.'**
+  String get matrixNoRooms;
+
   /// Distance filter label
   ///
   /// In de, this message translates to:
@@ -2783,8 +2807,14 @@ abstract class AppLocalizations {
   /// No description provided for @placeTypePublicDescription.
   ///
   /// In de, this message translates to:
-  /// **'- Datenschutzebene 0\n- Grüner Punkt auf der Karte.\n- Benachrichtigung bei Ankunft.\n- Speichern von Besuchen in der Datenbank.\n- Veröffentlichen von Besuchen in Kalender, Matrix und Telegram.'**
+  /// **'- Datenschutzebene 0\n- Grüner Punkt auf der Karte.\n- Benachrichtigung bei Ankunft.\n- Speichern von Besuchen in der Datenbank.\n- Veröffentlichen von Besuchen in Matrix, Telegram und Kalender.'**
   String get placeTypePublicDescription;
+
+  /// No description provided for @placeTypePublicDescriptionLinux.
+  ///
+  /// In de, this message translates to:
+  /// **'- Datenschutzebene 0\n- Grüner Punkt auf der Karte.\n- Benachrichtigung bei Ankunft.\n- Speichern von Besuchen in der Datenbank.\n- Veröffentlichen von Besuchen in Matrix und Telegram.'**
+  String get placeTypePublicDescriptionLinux;
 
   /// No description provided for @placeTypePrivateDescription.
   ///

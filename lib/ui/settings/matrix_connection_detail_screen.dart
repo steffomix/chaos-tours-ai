@@ -47,6 +47,11 @@ class _MatrixConnectionDetailScreenState
   String? _testResultMsg;
   bool _isSendingTest = false;
 
+  // ── Room picker state ──────────────────────────────────────────────────────
+  List<MatrixRoomInfo> _joinedRooms = [];
+  bool _isLoadingRooms = false;
+  String? _roomsLoadError;
+
   @override
   void initState() {
     super.initState();
@@ -55,7 +60,7 @@ class _MatrixConnectionDetailScreenState
     _nameCtrl = TextEditingController(text: e?.name ?? '');
     _descCtrl = TextEditingController(text: e?.description ?? '');
     _homeserverCtrl = TextEditingController(
-      text: e?.homeserver ?? 'http://matrix.org',
+      text: e?.homeserver ?? 'https://matrix.org',
     );
     _roomIdCtrl = TextEditingController(text: e?.roomId ?? '');
     _tokenCtrl = TextEditingController(
@@ -164,6 +169,29 @@ class _MatrixConnectionDetailScreenState
     }
   }
 
+  Future<void> _loadRooms() async {
+    final l10n = AppLocalizations.of(context)!;
+    setState(() {
+      _isLoadingRooms = true;
+      _roomsLoadError = null;
+    });
+
+    final (rooms, error) = await MatrixService.instance.loadJoinedRooms(
+      _buildConn(),
+      overrideToken: _tokenCtrl.text.trim(),
+    );
+
+    if (mounted) {
+      setState(() {
+        _isLoadingRooms = false;
+        _joinedRooms = rooms;
+        _roomsLoadError = error != null
+            ? l10n.matrixRoomsLoadError(error)
+            : (rooms.isEmpty ? l10n.matrixNoRooms : null);
+      });
+    }
+  }
+
   Future<void> _sendTest() async {
     final l10n = AppLocalizations.of(context)!;
     final msg = _testMsgCtrl.text.trim();
@@ -251,7 +279,12 @@ class _MatrixConnectionDetailScreenState
               ? l10n.newMatrixConnection
               : l10n.editMatrixConnection,
         ),
-        actions: [UnifiedWidget(context).saveButton(onPressed: _save)],
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: UnifiedWidget(context).saveButton(onPressed: _save),
+          ),
+        ],
       ),
       body: Form(
         key: _formKey,
@@ -361,7 +394,86 @@ class _MatrixConnectionDetailScreenState
               validator: (v) =>
                   v == null || v.trim().isEmpty ? l10n.required : null,
             ),
-            UnifiedWidget(context).namedDivider('l10n.roomIdSection'),
+            UnifiedWidget(context).namedDivider('Matrix Room'),
+            // ── Raum-Picker ─────────────────────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: _isLoadingRooms
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.list, size: 18),
+                label: Text(l10n.matrixLoadRooms),
+                onPressed: _isLoadingRooms ? null : _loadRooms,
+              ),
+            ),
+            if (_roomsLoadError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  _roomsLoadError!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _joinedRooms.isEmpty
+                        ? Theme.of(context).colorScheme.onSurfaceVariant
+                        : Colors.red,
+                  ),
+                ),
+              ),
+            if (_joinedRooms.isNotEmpty) ...[
+              const SizedBox(height: 8),
+
+              DropdownButtonFormField<MatrixRoomInfo>(
+                isExpanded: true,
+                itemHeight: null,
+                decoration: InputDecoration(
+                  labelText: l10n.matrixPickRoom,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.meeting_room_outlined),
+                ),
+                selectedItemBuilder: (context) => _joinedRooms
+                    .map(
+                      (r) =>
+                          Text(r.displayName, overflow: TextOverflow.ellipsis),
+                    )
+                    .toList(),
+                items: _joinedRooms
+                    .map(
+                      (r) => DropdownMenuItem(
+                        value: r,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              r.displayName,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (r.displaySubtitle != null)
+                              Text(
+                                r.displaySubtitle!,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (r) {
+                  if (r != null) {
+                    setState(() => _roomIdCtrl.text = r.roomId);
+                  }
+                },
+              ),
+            ],
+            const SizedBox(height: 8),
             TextFormField(
               controller: _roomIdCtrl,
               decoration: InputDecoration(

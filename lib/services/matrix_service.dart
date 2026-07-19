@@ -403,4 +403,117 @@ class MatrixService {
       );
     }
   }
+
+  // ── Joined rooms list ─────────────────────────────────────────────────────
+
+  /// Loads all rooms the account has joined, enriched with room name and
+  /// canonical alias fetched in parallel. Returns (rooms, errorMessage).
+  Future<(List<MatrixRoomInfo>, String?)> loadJoinedRooms(
+    MatrixConnection connection, {
+    String? overrideToken,
+  }) async {
+    final token = _resolveToken(connection.uuid, overrideToken);
+    final homeserver = _normalizeHomeserver(connection.homeserver);
+
+    if (token.isEmpty || homeserver.isEmpty) {
+      return (<MatrixRoomInfo>[], 'Access-Token oder Homeserver fehlt');
+    }
+
+    final listUri = Uri.parse('$homeserver/_matrix/client/v3/joined_rooms');
+    try {
+      final listResp = await http.get(
+        listUri,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (listResp.statusCode != 200) {
+        String? msg;
+        try {
+          msg =
+              (jsonDecode(listResp.body) as Map<String, dynamic>)['error']
+                  as String?;
+        } catch (_) {}
+        return (<MatrixRoomInfo>[], msg ?? 'HTTP ${listResp.statusCode}');
+      }
+
+      final roomIds =
+          ((jsonDecode(listResp.body) as Map<String, dynamic>)['joined_rooms']
+                  as List<dynamic>?)
+              ?.cast<String>() ??
+          [];
+
+      // Fetch name + canonical alias for each room in parallel.
+      final headers = {'Authorization': 'Bearer $token'};
+      final infos = await Future.wait(
+        roomIds.map((roomId) async {
+          final enc = Uri.encodeComponent(roomId);
+          String? name;
+          String? alias;
+
+          await Future.wait([
+            http
+                .get(
+                  Uri.parse(
+                    '$homeserver/_matrix/client/v3/rooms/$enc/state/m.room.name',
+                  ),
+                  headers: headers,
+                )
+                .then((r) {
+                  if (r.statusCode == 200) {
+                    name =
+                        (jsonDecode(r.body) as Map<String, dynamic>)['name']
+                            as String?;
+                  }
+                })
+                .catchError((_) {}),
+            http
+                .get(
+                  Uri.parse(
+                    '$homeserver/_matrix/client/v3/rooms/$enc/state/m.room.canonical_alias',
+                  ),
+                  headers: headers,
+                )
+                .then((r) {
+                  if (r.statusCode == 200) {
+                    alias =
+                        (jsonDecode(r.body) as Map<String, dynamic>)['alias']
+                            as String?;
+                  }
+                })
+                .catchError((_) {}),
+          ]);
+
+          return MatrixRoomInfo(roomId: roomId, name: name, alias: alias);
+        }),
+      );
+
+      infos.sort((a, b) => a.displayName.compareTo(b.displayName));
+      return (infos, null);
+    } catch (e) {
+      return (<MatrixRoomInfo>[], e.toString());
+    }
+  }
+}
+
+// ── MatrixRoomInfo ────────────────────────────────────────────────────────────
+
+class MatrixRoomInfo {
+  final String roomId;
+  final String? name;
+  final String? alias;
+
+  const MatrixRoomInfo({required this.roomId, this.name, this.alias});
+
+  /// Best human-readable label (name > alias > roomId).
+  String get displayName {
+    if (name != null && name!.isNotEmpty) return name!;
+    if (alias != null && alias!.isNotEmpty) return alias!;
+    return roomId;
+  }
+
+  /// Secondary line shown in the picker (alias or roomId when name is set).
+  String? get displaySubtitle {
+    if (name != null && name!.isNotEmpty) return alias ?? roomId;
+    if (alias != null && alias!.isNotEmpty) return roomId;
+    return null;
+  }
 }

@@ -766,6 +766,15 @@
       "error": { "type": "String" }
     }
   },
+  "matrixLoadRooms": "Load joined rooms",
+  "matrixPickRoom": "Select room",
+  "matrixRoomsLoadError": "Error loading rooms: {error}",
+  "@matrixRoomsLoadError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "matrixNoRooms": "No rooms found.",
   "distance": "Distance",
   "maxDistance": "max. {dist}",
   "@maxDistance": {
@@ -833,7 +842,8 @@
   "placeTypeSecretLabel": "Secret",
   "placeTypeHiddenLabel": "Hidden",
   "placeTypeHiddenActivate": "Show hidden places",
-  "placeTypePublicDescription": "- Data protection level 0\n- Green dot on the map.\n- Notification upon arrival.\n- Saving visits to the database.\n- Publishing visits to calendar, Matrix, and Telegram.",
+  "placeTypePublicDescription": "- Data protection level 0\n- Green dot on the map.\n- Notification upon arrival.\n- Saving visits to the database.\n- Publishing visits to Matrix, Telegram and Calendar.",
+  "placeTypePublicDescriptionLinux": "- Data protection level 0\n- Green dot on the map.\n- Notification upon arrival.\n- Saving visits to the database.\n- Publishing visits to Matrix, and Telegram.",
   "placeTypePrivateDescription": "- Data protection level 1\n- Blue dot on the map dominates dots of level 0.\n- Notification upon arrival.\n- Saving visits to the database.",
   "placeTypeSecretDescription": "- Data protection level 2\n- Red dot on the map dominates dots of level 0 and 1.",
   "placeTypeHiddenDescription": "Locations of this type are not displayed on map and not listed.\nThey appear in lists only if enabled in the settings.",

@@ -1334,6 +1334,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get matrixLoadRooms => 'Load joined rooms';
+
+  @override
+  String get matrixPickRoom => 'Select room';
+
+  @override
+  String matrixRoomsLoadError(String error) {
+    return 'Error loading rooms: $error';
+  }
+
+  @override
+  String get matrixNoRooms => 'No rooms found.';
+
+  @override
   String get distance => 'Distance';
 
   @override
@@ -1518,7 +1532,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get placeTypePublicDescription =>
-      '- Data protection level 0\n- Green dot on the map.\n- Notification upon arrival.\n- Saving visits to the database.\n- Publishing visits to calendar, Matrix, and Telegram.';
+      '- Data protection level 0\n- Green dot on the map.\n- Notification upon arrival.\n- Saving visits to the database.\n- Publishing visits to Matrix, Telegram and Calendar.';
+
+  @override
+  String get placeTypePublicDescriptionLinux =>
+      '- Data protection level 0\n- Green dot on the map.\n- Notification upon arrival.\n- Saving visits to the database.\n- Publishing visits to Matrix, and Telegram.';
 
   @override
   String get placeTypePrivateDescription =>

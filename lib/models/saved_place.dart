@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
@@ -41,7 +43,9 @@ extension PlaceTypeExtension on PlaceType {
     final l10n = AppLocalizations.of(context)!;
     switch (this) {
       case PlaceType.public:
-        return l10n.placeTypePublicDescription;
+        return !(Platform.isLinux || Platform.isWindows)
+            ? l10n.placeTypePublicDescriptionLinux
+            : l10n.placeTypePublicDescription;
       case PlaceType.private:
         return l10n.placeTypePrivateDescription;
       case PlaceType.secret:
