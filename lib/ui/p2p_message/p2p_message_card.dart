@@ -19,6 +19,8 @@ class P2pMessageCard extends StatefulWidget {
   final VoidCallback onReply;
   final VoidCallback onDelete;
   final VoidCallback? onDeletePhoto;
+  final VoidCallback refreshTrustedStatus;
+  final ValueNotifier<int> trustedStateRefreshNotifier;
 
   const P2pMessageCard({
     super.key,
@@ -27,6 +29,8 @@ class P2pMessageCard extends StatefulWidget {
     required this.showPlace,
     required this.onReply,
     required this.onDelete,
+    required this.refreshTrustedStatus,
+    required this.trustedStateRefreshNotifier,
     this.onDeletePhoto,
   });
 
@@ -35,13 +39,27 @@ class P2pMessageCard extends StatefulWidget {
 }
 
 class _P2pMessageCardState extends State<P2pMessageCard> {
-  /// `null` = still loading, `true/false` = loaded result.
   bool? _trusted;
+  bool _ownDeviceId = false;
 
   @override
   void initState() {
     super.initState();
+    _ownDeviceId = SettingsService.instance.deviceId == widget.message.deviceId;
     _loadTrustedStatus();
+    widget.trustedStateRefreshNotifier.addListener(_onRefreshTrustedStatus);
+  }
+
+  @override
+  void dispose() {
+    widget.trustedStateRefreshNotifier.removeListener(_onRefreshTrustedStatus);
+    super.dispose();
+  }
+
+  Future<void> _onRefreshTrustedStatus() async {
+    await _loadTrustedStatus();
+
+    setState(() {});
   }
 
   Future<void> _loadTrustedStatus() async {
@@ -49,14 +67,12 @@ class _P2pMessageCardState extends State<P2pMessageCard> {
       widget.message.deviceId,
     );
     if (mounted) {
-      setState(() => _trusted = source?.trusted ?? false);
+      setState(() => _trusted = source?.trusted);
     }
   }
 
   String _authorLabel(AppLocalizations l10n) {
-    final ownId = SettingsService.instance.deviceId;
-    if (widget.message.deviceId == ownId) return l10n.messageAuthorSelf;
-    if (widget.message.authorName.isNotEmpty) return widget.message.authorName;
+    if (widget.message.deviceId == _ownDeviceId) return l10n.messageAuthorSelf;
     final id = widget.message.deviceId;
     if (id.contains('@')) {
       return id.split('@').first;
@@ -73,7 +89,6 @@ class _P2pMessageCardState extends State<P2pMessageCard> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final own = widget.message.deviceId == SettingsService.instance.deviceId;
     final theme = Theme.of(context);
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -84,28 +99,27 @@ class _P2pMessageCardState extends State<P2pMessageCard> {
           children: [
             Row(
               children: [
-                Icon(
-                  own ? Icons.phone_android : Icons.person_outline,
-                  size: 16,
-                  color: theme.colorScheme.primary,
-                ),
+                if (_ownDeviceId)
+                  Icon(Icons.phone_android, color: Colors.green)
+                else
+                  SizedBox(width: 24),
                 const SizedBox(width: 4),
                 Expanded(
                   flex: 10,
                   child: TextButton.icon(
                     icon: _trusted == null
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
+                        ? Icon(Icons.question_mark, color: theme.hintColor)
                         : Icon(
-                            _trusted! ? Icons.check_circle : Icons.cancel,
+                            _trusted! ? Icons.security : Icons.warning,
                             color: _trusted! ? Colors.green : Colors.red,
                           ),
                     onPressed: () async {
-                      final deviceId = widget.message.deviceId;
                       final db = DatabaseService.instance;
+                      if (_trusted == null) {
+                        widget.refreshTrustedStatus();
+                        return;
+                      }
+                      final deviceId = widget.message.deviceId;
                       final source = await db.loadTrustedSource(deviceId);
                       if (source != null) {
                         if (!context.mounted) return;
@@ -121,6 +135,7 @@ class _P2pMessageCardState extends State<P2pMessageCard> {
                           await DatabaseService.instance.upsertTrustedSource(
                             result,
                           );
+                          widget.trustedStateRefreshNotifier.value++;
                         }
                         // Refresh trust status after sheet is closed.
                         _loadTrustedStatus();
@@ -201,7 +216,7 @@ class _P2pMessageCardState extends State<P2pMessageCard> {
                       builder: (_) => P2pMessagePhotoViewer(
                         photoData: widget.message.photoData,
                         messageUuid: widget.message.uuid,
-                        isOwn: own,
+                        isOwn: _ownDeviceId,
                         onDeleted: widget.onDeletePhoto,
                       ),
                     ),

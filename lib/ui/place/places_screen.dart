@@ -398,7 +398,7 @@ class _PlacesScreenState extends State<PlacesScreen>
     setState(() {
       _tabController.animateTo(2);
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _mapController.move(LatLng(place.lat, place.lng), 16);
+        _mapController.move(LatLng(place.lat, place.lng), 16.0);
       });
     });
   }

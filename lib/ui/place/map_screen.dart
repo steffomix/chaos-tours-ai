@@ -362,7 +362,7 @@ class _MapScreenState extends State<MapScreen> {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           final ic = widget.initialCenter;
                           if (ic != null) {
-                            _mapController.move(ic, 16);
+                            _mapController.move(ic, 16.0);
                           } else {
                             _goToCurrentLocation();
                           }

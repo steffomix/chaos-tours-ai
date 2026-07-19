@@ -539,7 +539,6 @@ class RandomDataGenerator {
   Message _createMessage(String placeUuid) {
     return Message(
       uuid: randomUuid(),
-      authorName: 'Author ${randomString(5)}',
       placeUuid: maybeOrphantUuid(placeUuid),
       body: 'Message body ${randomString(20)}',
       createdAt: randomPastTimeStamp,

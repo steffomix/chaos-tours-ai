@@ -259,18 +259,22 @@ class _PlacesScreenCardState extends State<PlacesScreenCard> {
                   size: 20,
                 ),
                 const SizedBox(width: 8),
-                OutlinedButton.icon(
-                  icon: Icon(Icons.edit, size: 16),
-                  onPressed: widget.onTap,
-                  label: Text(
-                    widget.place.name,
-                    style: textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+                Expanded(
+                  flex: 5,
+                  child: OutlinedButton.icon(
+                    icon: Icon(Icons.edit, size: 16),
+                    onPressed: widget.onTap,
+                    label: Text(
+                      widget.place.name,
+                      style: textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Expanded(child: Container()),
+
+                const Spacer(),
                 if (widget.distance != null)
                   Text(
                     widget.fmtDistance(widget.distance!),

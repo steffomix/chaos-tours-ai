@@ -484,7 +484,6 @@ class DatabaseService {
       CREATE TABLE IF NOT EXISTS p2p_messages (
         uuid TEXT PRIMARY KEY,
         device_id TEXT NOT NULL DEFAULT '',
-        author_name TEXT NOT NULL DEFAULT '',
         place_uuid TEXT NOT NULL,
         reply_to_uuid TEXT,
         body TEXT NOT NULL DEFAULT '',

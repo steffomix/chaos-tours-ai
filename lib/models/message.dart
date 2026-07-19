@@ -17,9 +17,6 @@ class Message {
   /// Author identity — the device ID of the sender.
   final String deviceId;
 
-  /// Optional human-readable display name of the author.
-  final String authorName;
-
   /// UUID of the [SavedPlace] this message is anchored to. Always set —
   /// location-bound messaging requires a place.
   final String placeUuid;
@@ -43,7 +40,6 @@ class Message {
   Message({
     String? uuid,
     String? deviceId,
-    this.authorName = '',
     required this.placeUuid,
     this.replyToUuid,
     this.body = '',
@@ -63,7 +59,6 @@ class Message {
     return Message(
       uuid: map['uuid'] as String?,
       deviceId: map['device_id'] as String?,
-      authorName: (map['author_name'] as String?) ?? '',
       placeUuid: map['place_uuid'] as String,
       replyToUuid: map['reply_to_uuid'] as String?,
       body: (map['body'] as String?) ?? '',
@@ -80,7 +75,6 @@ class Message {
     return {
       'uuid': uuid,
       'device_id': deviceId,
-      'author_name': authorName,
       'place_uuid': placeUuid,
       if (replyToUuid != null) 'reply_to_uuid': replyToUuid,
       'body': body,
@@ -94,7 +88,6 @@ class Message {
   Message copyWith({
     String? uuid,
     String? deviceId,
-    String? authorName,
     String? placeUuid,
     String? replyToUuid,
     bool clearReplyToUuid = false,
@@ -108,7 +101,6 @@ class Message {
     return Message(
       uuid: uuid ?? this.uuid,
       deviceId: deviceId ?? this.deviceId,
-      authorName: authorName ?? this.authorName,
       placeUuid: placeUuid ?? this.placeUuid,
       replyToUuid: clearReplyToUuid ? null : (replyToUuid ?? this.replyToUuid),
       body: body ?? this.body,

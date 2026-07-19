@@ -91,6 +91,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
   final List<Message> _messages = [];
   final Map<String, SavedPlace> _placeCache = {};
 
+  ValueNotifier<int> trustedStateRefreshNotifier = ValueNotifier(0);
+
   bool _loading = false;
   bool _hasMore = true;
   int _offset = 0;
@@ -214,6 +216,13 @@ class _MessagesScreenState extends State<MessagesScreen> {
                         onReply: () => setState(() => _replyTo = _messages[i]),
                         onDelete: () => _deleteMessage(_messages[i]),
                         onDeletePhoto: _reload,
+                        refreshTrustedStatus: () async {
+                          await DatabaseService.instance
+                              .refreshTrustedSources();
+                          trustedStateRefreshNotifier.value++;
+                        },
+                        trustedStateRefreshNotifier:
+                            trustedStateRefreshNotifier,
                       );
                     },
                   ),
