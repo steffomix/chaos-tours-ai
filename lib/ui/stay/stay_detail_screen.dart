@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
@@ -429,69 +428,32 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom:
-            MediaQuery.of(context).viewInsets.bottom +
-            MediaQuery.of(context).padding.bottom +
-            16,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.editStay),
+        actions: [
+          if (_place != null) ...[
+            Tooltip(
+              message: l10n.openPlaceSettings,
+              child: IconButton(
+                icon: const Icon(Icons.edit_location_alt),
+                onPressed: _openPlaceSheet,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 8, left: 16),
+              child: UnifiedWidget(context).saveButton(onPressed: _save),
+            ),
+          ],
+        ],
       ),
-      child: _loading
-          ? const SizedBox(
-              height: 120,
-              child: Center(child: CircularProgressIndicator()),
-            )
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // ── Header ───────────────────────────────────────────
-                  Row(
-                    children: [
-                      if (defaultTargetPlatform == TargetPlatform.linux)
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back),
-                          tooltip: MaterialLocalizations.of(
-                            context,
-                          ).backButtonTooltip,
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      Flexible(
-                        child: Text(
-                          l10n.editStay,
-                          style: Theme.of(context).textTheme.titleLarge,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      if (_place != null)
-                        Icon(
-                          Icons.arrow_right_alt,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      if (_place != null)
-                        Tooltip(
-                          message: l10n.openPlaceSettings,
-                          child: TextButton.icon(
-                            onPressed: _openPlaceSheet,
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                              ),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            icon: const Icon(Icons.edit_location_alt, size: 24),
-                            label: const SizedBox.shrink(),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
                   // ── Start-Zeit ────────────────────────────────────────
                   ListTile(
                     contentPadding: EdgeInsets.zero,
@@ -608,13 +570,28 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                     ),
                     const SizedBox(height: 16),
                     // ── Fotos ───────────────────────────────────────
-                    PhotosSection(
-                      stayUuid: widget.stay.uuid,
-                      placeUuid: widget.stay.placeUuid,
-                      placeName: _place?.name ?? '',
-                      deviceId: widget.stay.deviceId,
-                      showSectionTitle: true,
+                    ExpansionTile(
+                      initiallyExpanded: true,
+                      tilePadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.photo_library_outlined),
+                      title: Text(l10n.photos),
+                      children: [
+                        PhotosSection(
+                          stayUuid: widget.stay.uuid,
+                          placeUuid: widget.stay.placeUuid,
+                          placeName: _place?.name ?? '',
+                          deviceId: widget.stay.deviceId,
+                          showSectionTitle: true,
+                        ),
+                      ],
                     ),
+                    // PhotosSection(
+                    //   stayUuid: widget.stay.uuid,
+                    //   placeUuid: widget.stay.placeUuid,
+                    //   placeName: _place?.name ?? '',
+                    //   deviceId: widget.stay.deviceId,
+                    //   showSectionTitle: true,
+                    // ),
                     const SizedBox(height: 16),
                     // ── Bericht / P2P Nachrichten ─────────────────────────
                     OutlinedButton.icon(
@@ -624,15 +601,13 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                     ),
                   ],
                   const SizedBox(height: 16),
-
-                  UnifiedWidget(context).saveAndDeleteButtonsRow(
-                    onSavePressed: () async {
-                      await _save();
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                      }
-                    },
-                    onDeletePressed: _deleteStay,
+                  // ── Save  ─────────────────────────────────────
+                  Row(
+                    children: [
+                      UnifiedWidget(
+                        context,
+                      ).deleteButton(onPressed: _deleteStay),
+                    ],
                   ),
                 ],
               ),

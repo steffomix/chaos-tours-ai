@@ -6,7 +6,7 @@ import '../../models/place_photo.dart';
 import '../../models/stay.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
-import '../stay/stay_detail_sheet.dart';
+import '../stay/stay_detail_screen.dart';
 import 'photo_viewer.dart';
 import 'photos_screen.dart';
 import 'photo_card.dart';
@@ -144,10 +144,10 @@ class _PhotosSectionState extends State<PhotosSection> {
   }
 
   void _openStay(Stay stay) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => StayDetailSheet(stay: stay, onUpdated: _load),
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => StayDetailSheet(stay: stay, onUpdated: _load),
+      ),
     );
   }
 

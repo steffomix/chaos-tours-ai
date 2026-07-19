@@ -6,7 +6,7 @@ import '../../models/saved_place.dart';
 import '../../models/stay.dart';
 import '../../services/database_service.dart';
 import '../place/place_detail_screen.dart';
-import '../stay/stay_detail_sheet.dart';
+import '../stay/stay_detail_screen.dart';
 import 'photo_viewer.dart';
 import 'photo_card.dart';
 
@@ -228,10 +228,10 @@ class _PhotosScreenState extends State<PhotosScreen> {
       return;
     }
     if (ctx.mounted) {
-      await showModalBottomSheet<void>(
-        context: ctx,
-        isScrollControlled: true,
-        builder: (_) => StayDetailSheet(stay: stay!, onUpdated: _reload),
+      await Navigator.of(ctx).push(
+        MaterialPageRoute<void>(
+          builder: (_) => StayDetailSheet(stay: stay!, onUpdated: _reload),
+        ),
       );
     }
   }
@@ -249,10 +249,10 @@ class _PhotosScreenState extends State<PhotosScreen> {
   }
 
   void _openStay(Stay stay) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => StayDetailSheet(stay: stay, onUpdated: _reload),
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => StayDetailSheet(stay: stay, onUpdated: _reload),
+      ),
     );
   }
 

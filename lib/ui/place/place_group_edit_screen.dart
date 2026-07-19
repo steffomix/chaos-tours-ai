@@ -252,12 +252,9 @@ class _PlaceGroupEditScreenState extends State<PlaceGroupEditScreen> {
               value: _isAutoGroup,
               onChanged: (v) => setState(() => _isAutoGroup = v ?? false),
             ),
-            const Divider(),
-            const SizedBox(height: 4),
 
             // PlaceType
-            Text(l10n.type, style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 8),
+            UnifiedWidget(context).namedDivider(l10n.type),
             Wrap(
               spacing: 8,
               runSpacing: 4,
@@ -285,10 +282,7 @@ class _PlaceGroupEditScreenState extends State<PlaceGroupEditScreen> {
               ),
             ),
 
-            const SizedBox(height: 8),
-
             UnifiedWidget(context).namedDivider('Matrix'),
-            const SizedBox(height: 4),
             // Telegram connection picker
             // Matrix connection picker
             if (widget.matrixConnections.isNotEmpty) ...[
@@ -359,12 +353,10 @@ class _PlaceGroupEditScreenState extends State<PlaceGroupEditScreen> {
                   }),
             ),
 
-            const SizedBox(height: 8),
             if (!(Platform.isLinux ||
                 Platform.isWindows ||
                 Platform.isMacOS)) ...[
               UnifiedWidget(context).namedDivider(l10n.sectionCalendar),
-              const SizedBox(height: 4),
               // Calendar picker
               Card(
                 child: ListTile(
@@ -412,7 +404,7 @@ class _PlaceGroupEditScreenState extends State<PlaceGroupEditScreen> {
             ],
             // Move places (only when editing an existing group)
             if (widget.existing != null) ...[
-              const Divider(),
+              UnifiedWidget(context).namedDivider(l10n.sectionManagement),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.drive_file_move_outline),

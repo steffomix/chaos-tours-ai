@@ -6,7 +6,7 @@ import '../../models/stay.dart';
 import '../../models/stay_activity.dart';
 import '../../models/stay_person.dart';
 import '../../utils/unified_widget.dart';
-import 'stay_detail_sheet.dart';
+import 'stay_detail_screen.dart';
 
 class StayCard extends StatelessWidget {
   final Stay stay;
@@ -42,11 +42,10 @@ class StayCard extends StatelessWidget {
   }
 
   void _openSheet(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (_) => StayDetailSheet(stay: stay, onUpdated: onUpdated),
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => StayDetailSheet(stay: stay, onUpdated: onUpdated),
+      ),
     );
   }
 

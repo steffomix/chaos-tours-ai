@@ -13,7 +13,7 @@ import '../services/database_service.dart';
 import '../services/foreground_service_handler.dart';
 import '../services/settings_service.dart';
 import '../utils/permission_helper.dart';
-import 'stay/stay_detail_sheet.dart';
+import 'stay/stay_detail_screen.dart';
 
 class _GpsCountdownNotifier extends ValueNotifier<int> {
   _GpsCountdownNotifier() : super(SettingsService.instance.gpsIntervalSeconds) {
@@ -619,13 +619,12 @@ class _HomeScreenState extends State<HomeScreen>
                 child: InkWell(
                   borderRadius: BorderRadius.circular(12),
                   onTap: () {
-                    showModalBottomSheet<void>(
-                      context: context,
-                      isScrollControlled: true,
-                      useSafeArea: true,
-                      builder: (_) => StayDetailSheet(
-                        stay: _activeStay!,
-                        onUpdated: _loadActiveStay,
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => StayDetailSheet(
+                          stay: _activeStay!,
+                          onUpdated: _loadActiveStay,
+                        ),
                       ),
                     );
                   },
@@ -821,13 +820,12 @@ class _HomeScreenState extends State<HomeScreen>
                             title: Text(name),
                             subtitle: Text('$dateText · $durText'),
                             onTap: () {
-                              showModalBottomSheet<void>(
-                                context: context,
-                                isScrollControlled: true,
-                                useSafeArea: true,
-                                builder: (_) => StayDetailSheet(
-                                  stay: stay,
-                                  onUpdated: _loadRecentStays,
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => StayDetailSheet(
+                                    stay: stay,
+                                    onUpdated: _loadRecentStays,
+                                  ),
                                 ),
                               );
                             },

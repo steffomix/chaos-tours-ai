@@ -970,7 +970,10 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
             tooltip: l10n.openInGoogleMaps,
             onPressed: _openInMaps,
           ),
-          UnifiedWidget(context).saveButton(onPressed: _save),
+          Padding(
+            padding: const EdgeInsets.only(right: 8, left: 16),
+            child: UnifiedWidget(context).saveButton(onPressed: _save),
+          ),
         ],
       ),
       body: Padding(
@@ -1076,6 +1079,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               ),
               // ── Fotos ──────────────────────────────────────────────────
               ExpansionTile(
+                initiallyExpanded: true,
                 tilePadding: EdgeInsets.zero,
                 leading: const Icon(Icons.photo_library_outlined),
                 title: Text(l10n.photos),
