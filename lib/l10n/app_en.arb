@@ -711,6 +711,16 @@
   "chatIdHint": "-123... or @channel",
   "botTokenLabel": "Bot token *",
   "botTokenHint": "123456:ABC-DEF…",
+  "telegramSectionTest": "Test connection",
+  "telegramTestMessageHint": "Enter test message…",
+  "telegramSendTestButton": "Send",
+  "telegramTestSent": "Message sent successfully",
+  "telegramTestError": "Send error: {error}",
+  "@telegramTestError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
   "matrixConnectionsTitle": "Matrix connections",
   "noMatrixConnections": "No Matrix connections yet.",
   "newMatrixConnection": "New Matrix connection",

@@ -1678,6 +1678,29 @@
   "@botTokenHint": {
     "description": "Bot token hint"
   },
+  "telegramSectionTest": "Verbindung testen",
+  "@telegramSectionTest": {
+    "description": "Telegram test section divider"
+  },
+  "telegramTestMessageHint": "Testnachricht eingeben…",
+  "@telegramTestMessageHint": {
+    "description": "Telegram test message hint"
+  },
+  "telegramSendTestButton": "Senden",
+  "@telegramSendTestButton": {
+    "description": "Telegram send test button"
+  },
+  "telegramTestSent": "Nachricht erfolgreich gesendet",
+  "@telegramTestSent": {
+    "description": "Telegram test sent success"
+  },
+  "telegramTestError": "Fehler beim Senden: {error}",
+  "@telegramTestError": {
+    "description": "Telegram test send error",
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
   "matrixConnectionsTitle": "Matrix-Verbindungen",
   "@matrixConnectionsTitle": {
     "description": "Matrix connections screen title"

@@ -1229,6 +1229,23 @@ class AppLocalizationsDe extends AppLocalizations {
   String get botTokenHint => '123456:ABC-DEF…';
 
   @override
+  String get telegramSectionTest => 'Verbindung testen';
+
+  @override
+  String get telegramTestMessageHint => 'Testnachricht eingeben…';
+
+  @override
+  String get telegramSendTestButton => 'Senden';
+
+  @override
+  String get telegramTestSent => 'Nachricht erfolgreich gesendet';
+
+  @override
+  String telegramTestError(String error) {
+    return 'Fehler beim Senden: $error';
+  }
+
+  @override
   String get matrixConnectionsTitle => 'Matrix-Verbindungen';
 
   @override

@@ -54,7 +54,9 @@ class _MatrixConnectionDetailScreenState
     _uuid = e?.uuid ?? const Uuid().v4();
     _nameCtrl = TextEditingController(text: e?.name ?? '');
     _descCtrl = TextEditingController(text: e?.description ?? '');
-    _homeserverCtrl = TextEditingController(text: e?.homeserver ?? '');
+    _homeserverCtrl = TextEditingController(
+      text: e?.homeserver ?? 'http://matrix.org',
+    );
     _roomIdCtrl = TextEditingController(text: e?.roomId ?? '');
     _tokenCtrl = TextEditingController(
       text: e != null
@@ -66,9 +68,7 @@ class _MatrixConnectionDetailScreenState
         : null;
     _usernameCtrl = TextEditingController(text: creds?['username'] ?? '');
     _passwordCtrl = TextEditingController(text: creds?['password'] ?? '');
-    _testMsgCtrl = TextEditingController(
-      text: 'Testnachricht von Chaos Tours AI',
-    );
+    _testMsgCtrl = TextEditingController(text: '');
     if (e != null) {
       _membershipStatus = SettingsService.instance.getMatrixRoomMembership(
         e.uuid,
@@ -279,7 +279,9 @@ class _MatrixConnectionDetailScreenState
             ),
 
             // ── Matrix-Verbindung ───────────────────────────────────────────
-            UnifiedWidget(context).namedDivider('Matrix'),
+            const SizedBox(height: 8),
+            // ── Authentifizierung ───────────────────────────────────────────
+            UnifiedWidget(context).namedDivider(l10n.matrixSectionAuth),
             TextFormField(
               controller: _homeserverCtrl,
               decoration: InputDecoration(
@@ -290,26 +292,6 @@ class _MatrixConnectionDetailScreenState
               keyboardType: TextInputType.url,
               validator: (v) =>
                   v == null || v.trim().isEmpty ? l10n.required : null,
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _roomIdCtrl,
-              decoration: InputDecoration(
-                labelText: l10n.matrixRoomIdLabel,
-                hintText: l10n.matrixRoomIdHint,
-                border: const OutlineInputBorder(),
-              ),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? l10n.required : null,
-            ),
-
-            // ── Authentifizierung ───────────────────────────────────────────
-            UnifiedWidget(context).namedDivider(l10n.matrixSectionAuth),
-            Text(
-              l10n.matrixCredentialNote,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
             ),
             const SizedBox(height: 10),
             TextFormField(
@@ -336,6 +318,12 @@ class _MatrixConnectionDetailScreenState
                 ),
               ),
               obscureText: !_passwordVisible,
+            ),
+            Text(
+              l10n.matrixCredentialNote,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 8),
             SizedBox(
@@ -373,6 +361,18 @@ class _MatrixConnectionDetailScreenState
               validator: (v) =>
                   v == null || v.trim().isEmpty ? l10n.required : null,
             ),
+            UnifiedWidget(context).namedDivider('l10n.roomIdSection'),
+            TextFormField(
+              controller: _roomIdCtrl,
+              decoration: InputDecoration(
+                labelText: l10n.matrixRoomIdLabel,
+                hintText: l10n.matrixRoomIdHint,
+                border: const OutlineInputBorder(),
+              ),
+              validator: (v) =>
+                  v == null || v.trim().isEmpty ? l10n.required : null,
+            ),
+
             const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
@@ -394,7 +394,6 @@ class _MatrixConnectionDetailScreenState
               error: _membershipError,
               l10n: l10n,
             ),
-
             // ── Verbindung testen ───────────────────────────────────────────
             UnifiedWidget(context).namedDivider(l10n.matrixSectionTest),
             TextFormField(

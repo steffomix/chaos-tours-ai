@@ -2216,6 +2216,36 @@ abstract class AppLocalizations {
   /// **'123456:ABC-DEF…'**
   String get botTokenHint;
 
+  /// Telegram test section divider
+  ///
+  /// In de, this message translates to:
+  /// **'Verbindung testen'**
+  String get telegramSectionTest;
+
+  /// Telegram test message hint
+  ///
+  /// In de, this message translates to:
+  /// **'Testnachricht eingeben…'**
+  String get telegramTestMessageHint;
+
+  /// Telegram send test button
+  ///
+  /// In de, this message translates to:
+  /// **'Senden'**
+  String get telegramSendTestButton;
+
+  /// Telegram test sent success
+  ///
+  /// In de, this message translates to:
+  /// **'Nachricht erfolgreich gesendet'**
+  String get telegramTestSent;
+
+  /// Telegram test send error
+  ///
+  /// In de, this message translates to:
+  /// **'Fehler beim Senden: {error}'**
+  String telegramTestError(String error);
+
   /// Matrix connections screen title
   ///
   /// In de, this message translates to:
