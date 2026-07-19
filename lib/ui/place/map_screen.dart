@@ -70,17 +70,6 @@ class _MapScreenState extends State<MapScreen> {
     );
     _loadPlaces();
     _loadTrackingPoints();
-    // Move map to initial center (if given) or current location once ready.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final ic = widget.initialCenter;
-      if (ic != null) {
-        Future.delayed(const Duration(milliseconds: 300), () {
-          _mapController.move(ic, 16);
-        });
-      } else {
-        _goToCurrentLocation();
-      }
-    });
   }
 
   @override
@@ -368,6 +357,17 @@ class _MapScreenState extends State<MapScreen> {
                     options: MapOptions(
                       initialCenter: const LatLng(48.1351, 11.5820),
                       initialZoom: 13,
+                      onMapReady: () {
+                        // Refresh to show tracking points if enabled.
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          final ic = widget.initialCenter;
+                          if (ic != null) {
+                            _mapController.move(ic, 16);
+                          } else {
+                            _goToCurrentLocation();
+                          }
+                        });
+                      },
                       onTap: _onMapTap,
                       onLongPress: _onLongPress,
                       onSecondaryTap: _onLongPress,
