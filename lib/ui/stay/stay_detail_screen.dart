@@ -119,6 +119,9 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
     );
     await DatabaseService.instance.updateStay(updated);
     widget.onUpdated?.call();
+    if (mounted) {
+      Navigator.pop(context);
+    }
   }
 
   Future<void> _pickDateTime({required bool isStart}) async {

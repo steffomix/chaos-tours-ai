@@ -1164,6 +1164,7 @@
   "nodeScanEvery": "Scan every {count} GPS intervals",
   "autoCreatePlacesMessengerNote": "Note: Location-bound messages of the P2P messenger strictly require a place as reference point. If automatic place creation is off, places can still be created as \"sync source\" on synchronization opportunities (see P2P messenger).",
   "locatorCopied": "Ham Radio QTH Locator copied",
+  "qthButtonText": "CB & Ham Radio QTH:",
   "compassTitle": "Compass",
   "compassRefHere": "From here",
   "compassRefPlace": "From place",

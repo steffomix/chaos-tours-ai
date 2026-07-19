@@ -3941,8 +3941,14 @@ abstract class AppLocalizations {
   /// No description provided for @locatorCopied.
   ///
   /// In de, this message translates to:
-  /// **'Amateurfunk QTH Locator kopiert'**
+  /// **'CB & Amateurfunk QTH Locator kopiert'**
   String get locatorCopied;
+
+  /// No description provided for @qthButtonText.
+  ///
+  /// In de, this message translates to:
+  /// **'CB & Amateurfunk QTH:'**
+  String get qthButtonText;
 
   /// No description provided for @compassTitle.
   ///

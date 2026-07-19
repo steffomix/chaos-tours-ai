@@ -2172,6 +2172,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locatorCopied => 'Ham Radio QTH Locator copied';
 
   @override
+  String get qthButtonText => 'CB & Ham Radio QTH:';
+
+  @override
   String get compassTitle => 'Compass';
 
   @override

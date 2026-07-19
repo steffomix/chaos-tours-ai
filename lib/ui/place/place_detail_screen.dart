@@ -1119,13 +1119,18 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                 label: Text(l10n.visitNow),
               ),
               // ── Besuchs-Intervall ──────────────────────────────────────
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
+              ListTile(
+                leading: const Icon(Icons.schedule),
                 title: Text(l10n.visitInterval),
                 subtitle: Text(l10n.visitIntervalSubtitle),
-                value: _intervalEnabled,
-                onChanged: (v) => setState(() => _intervalEnabled = v),
+                trailing: Switch(
+                  value: _intervalEnabled,
+                  onChanged: (v) => setState(() => _intervalEnabled = v),
+                ),
+                onTap: () =>
+                    setState(() => _intervalEnabled = !_intervalEnabled),
               ),
+
               if (_intervalEnabled) ...[
                 const SizedBox(height: 4),
                 TextFormField(
@@ -1515,7 +1520,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'QTH: ${Maidenhead.format(Maidenhead.encodeId(widget.place.lat, widget.place.lng))}',
+                          '${l10n.qthButtonText}: ${Maidenhead.format(Maidenhead.encode(widget.place.lat, widget.place.lng, pairs: Maidenhead.fullPairs))}',
                         ),
                       ),
                       const Icon(Icons.copy, size: 16, color: Colors.grey),
