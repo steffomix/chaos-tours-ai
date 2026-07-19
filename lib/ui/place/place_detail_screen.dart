@@ -14,6 +14,7 @@ import '../../services/database_service.dart';
 import '../../services/sync_service.dart';
 import '../../services/telegram_service.dart';
 import '../../services/settings_service.dart';
+import '../../utils/custom_icons.dart';
 import '../../utils/maidenhead.dart';
 import '../../utils/unified_widget.dart';
 import '../photo/photos_section.dart';
@@ -966,7 +967,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.map_outlined),
+            icon: const ColoredLocationPinIcon(),
             tooltip: l10n.openInGoogleMaps,
             onPressed: _openInMaps,
           ),

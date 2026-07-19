@@ -27,6 +27,38 @@ import '../models/message.dart';
 import 'sync_service.dart' show SyncOptions;
 import 'settings_service.dart';
 
+enum TableName {
+  placeGroups('place_groups', isSyncable: true),
+  savedPlaces('saved_places', isSyncable: true),
+  stays('stays', isSyncable: true),
+  persons('persons', isSyncable: true),
+  activities('activities', isSyncable: true),
+  stayPersons('stay_persons', isSyncable: true),
+  stayActivities('stay_activities', isSyncable: true),
+  trackingPoints('tracking_points', isSyncable: false),
+  virtualDevices('virtual_devices', isSyncable: true),
+  syncSources('sync_sources', isSyncable: true),
+  placeExperiences('place_experiences', isSyncable: true),
+  syncSourceExperiences('sync_source_experiences', isSyncable: true),
+  placePhotos('place_photos', isSyncable: true),
+  p2pMessages('p2p_messages', isSyncable: true),
+  telegramConnections('telegram_connections', isSyncable: true),
+  matrixConnections('matrix_connections', isSyncable: true),
+  trustedSources('trusted_sources', isSyncable: true);
+
+  final bool isSyncable;
+
+  final String name;
+  const TableName(this.name, {this.isSyncable = false});
+
+  @override
+  String toString() => name;
+
+  static List<String> all() => TableName.values.map((e) => e.name).toList();
+  static List<String> syncable() =>
+      TableName.values.where((e) => e.isSyncable).map((e) => e.name).toList();
+}
+
 class DatabaseService {
   DatabaseService._();
   static final DatabaseService instance = DatabaseService._();
