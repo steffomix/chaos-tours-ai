@@ -9,7 +9,6 @@ import '../../models/stay.dart';
 import '../../models/stay_activity.dart';
 import '../../models/stay_person.dart';
 import '../../services/database_service.dart';
-import '../../services/settings_service.dart';
 import '../../utils/unified_widget.dart';
 import '../photo/photos_section.dart';
 import '../p2p_message/p2p_messages_screen.dart';

@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/place_experience.dart';
 import '../../models/saved_place.dart';
+import '../../models/trusted_source.dart';
 import '../../services/database_service.dart';
+import '../../services/settings_service.dart';
 import '../../utils/geo_utils.dart';
 import '../../utils/unified_widget.dart';
 import 'places_filter_panel.dart';
@@ -52,7 +54,12 @@ class PlacesScreenCard extends StatefulWidget {
 
 class _PlacesScreenCardState extends State<PlacesScreenCard> {
   List<PlaceExperience>? _experiences;
-  bool _loading = false;
+  final ValueNotifier<bool> _isOwnDevice = ValueNotifier(false);
+  bool _loadingExperiences = false;
+  bool _loadingTrustedSource = false;
+  final ValueNotifier<TrustedSource?> _trustedSourceNotifier = ValueNotifier(
+    null,
+  );
 
   @override
   void initState() {
@@ -63,30 +70,53 @@ class _PlacesScreenCardState extends State<PlacesScreenCard> {
   }
 
   @override
+  void dispose() {
+    _isOwnDevice.dispose();
+    _trustedSourceNotifier.dispose();
+    super.dispose();
+  }
+
+  @override
   void didUpdateWidget(PlacesScreenCard oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _loadTrustedSource();
     if (widget.filter.specificFilterActive &&
         _experiences == null &&
-        !_loading) {
+        !_loadingExperiences) {
       _loadExperiences();
     }
   }
 
-  Future<void> _loadExperiences() async {
-    if (_loading || widget.place.uuid.isEmpty) return;
-    setState(() => _loading = true);
+  Future<void> _loadTrustedSource() async {
+    if (_loadingTrustedSource) return;
+    _loadingTrustedSource = true;
     try {
-      final exps = await DatabaseService.instance.loadExperiencesForPlace(
-        widget.place.uuid,
-      );
+      final db = DatabaseService.instance;
+      final ts = await db.loadTrustedSource(widget.place.deviceId);
+      if (!mounted) return;
+      _isOwnDevice.value =
+          SettingsService.instance.deviceId == widget.place.deviceId;
+      _trustedSourceNotifier.value = ts;
+      _loadingTrustedSource = false;
+    } catch (_) {
+      _loadingTrustedSource = false;
+    }
+  }
+
+  Future<void> _loadExperiences() async {
+    if (_loadingExperiences || widget.place.uuid.isEmpty) return;
+    setState(() => _loadingExperiences = true);
+    try {
+      final db = DatabaseService.instance;
+      final exps = await db.loadExperiencesForPlace(widget.place.uuid);
       if (mounted) {
         setState(() {
           _experiences = exps;
-          _loading = false;
+          _loadingExperiences = false;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() => _loadingExperiences = false);
     }
   }
 
@@ -112,7 +142,7 @@ class _PlacesScreenCardState extends State<PlacesScreenCard> {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
 
-    if (_loading) {
+    if (_loadingExperiences) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
@@ -223,6 +253,7 @@ class _PlacesScreenCardState extends State<PlacesScreenCard> {
 
   @override
   Widget build(BuildContext context) {
+    _loadTrustedSource();
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
@@ -256,13 +287,36 @@ class _PlacesScreenCardState extends State<PlacesScreenCard> {
                 Icon(
                   widget.place.placeType.icon,
                   color: widget.place.placeType.dotColor,
-                  size: 20,
+                  size: 16,
+                ),
+                ValueListenableBuilder(
+                  valueListenable: _trustedSourceNotifier,
+                  builder: (context, trustedSource, _) {
+                    return Icon(
+                      trustedSource == null
+                          ? Icons.help_outline
+                          : trustedSource.trusted == true
+                          ? Icons.security
+                          : Icons.warning,
+                      color: trustedSource?.trusted == true
+                          ? Colors.green
+                          : Colors.red,
+                      size: 16,
+                    );
+                  },
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   flex: 5,
                   child: OutlinedButton.icon(
-                    icon: Icon(Icons.edit, size: 16),
+                    icon: ValueListenableBuilder<bool>(
+                      valueListenable: _isOwnDevice,
+                      builder: (context, isOwnDevice, _) {
+                        return isOwnDevice
+                            ? Icon(Icons.phone_android, size: 16)
+                            : SizedBox(width: 16);
+                      },
+                    ),
                     onPressed: widget.onTap,
                     label: Text(
                       widget.place.name,

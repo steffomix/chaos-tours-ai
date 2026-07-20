@@ -72,7 +72,6 @@ class _P2pMessageCardState extends State<P2pMessageCard> {
   }
 
   String _authorLabel(AppLocalizations l10n) {
-    if (widget.message.deviceId == _ownDeviceId) return l10n.messageAuthorSelf;
     final id = widget.message.deviceId;
     if (id.contains('@')) {
       return id.split('@').first;
@@ -84,6 +83,31 @@ class _P2pMessageCardState extends State<P2pMessageCard> {
     final dt = DateTime.fromMillisecondsSinceEpoch(widget.message.createdAt);
     String two(int n) => n.toString().padLeft(2, '0');
     return '${two(dt.day)}.${two(dt.month)}.${dt.year} ${two(dt.hour)}:${two(dt.minute)}';
+  }
+
+  Future<void> _editTrustedSource() async {
+    final db = DatabaseService.instance;
+    if (_trusted == null) {
+      widget.refreshTrustedStatus();
+      return;
+    }
+    final deviceId = widget.message.deviceId;
+    final source = await db.loadTrustedSource(deviceId);
+    if (source != null) {
+      if (!mounted) return;
+      final result = await showModalBottomSheet<TrustedSource>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (_) => TrustedSourceEditSheet(source: source),
+      );
+      if (result != null) {
+        await DatabaseService.instance.upsertTrustedSource(result);
+        widget.trustedStateRefreshNotifier.value++;
+      }
+      // Refresh trust status after sheet is closed.
+      _loadTrustedStatus();
+    }
   }
 
   @override
@@ -106,41 +130,14 @@ class _P2pMessageCardState extends State<P2pMessageCard> {
                 const SizedBox(width: 4),
                 Expanded(
                   flex: 10,
-                  child: TextButton.icon(
+                  child: OutlinedButton.icon(
                     icon: _trusted == null
                         ? Icon(Icons.question_mark, color: theme.hintColor)
                         : Icon(
                             _trusted! ? Icons.security : Icons.warning,
                             color: _trusted! ? Colors.green : Colors.red,
                           ),
-                    onPressed: () async {
-                      final db = DatabaseService.instance;
-                      if (_trusted == null) {
-                        widget.refreshTrustedStatus();
-                        return;
-                      }
-                      final deviceId = widget.message.deviceId;
-                      final source = await db.loadTrustedSource(deviceId);
-                      if (source != null) {
-                        if (!context.mounted) return;
-                        final result =
-                            await showModalBottomSheet<TrustedSource>(
-                              context: context,
-                              isScrollControlled: true,
-                              useSafeArea: true,
-                              builder: (_) =>
-                                  TrustedSourceEditSheet(source: source),
-                            );
-                        if (result != null) {
-                          await DatabaseService.instance.upsertTrustedSource(
-                            result,
-                          );
-                          widget.trustedStateRefreshNotifier.value++;
-                        }
-                        // Refresh trust status after sheet is closed.
-                        _loadTrustedStatus();
-                      }
-                    },
+                    onPressed: _editTrustedSource,
                     label: Text(
                       _authorLabel(l10n),
                       style: theme.textTheme.bodyMedium?.copyWith(

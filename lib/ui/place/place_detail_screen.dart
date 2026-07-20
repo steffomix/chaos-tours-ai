@@ -6,6 +6,7 @@ import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../models/trusted_source.dart';
 import '../../models/virtual_device.dart';
 import '../../models/place_group.dart';
 import '../../models/saved_place.dart';
@@ -14,11 +15,11 @@ import '../../models/sync_source.dart';
 import '../../services/database_service.dart';
 import '../../services/sync_service.dart';
 import '../../services/telegram_service.dart';
-import '../../services/settings_service.dart';
 import '../../utils/custom_icons.dart';
 import '../../utils/maidenhead.dart';
 import '../../utils/unified_widget.dart';
 import '../photo/photos_section.dart';
+import '../settings/trusted_source_edit_sheet.dart';
 import 'place_experiences_screen.dart';
 import 'place_map_reposition_screen.dart';
 import '../stay/stays_screen.dart';
@@ -78,6 +79,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   List<String> _distinctPersonNames = [];
   bool _statsLoaded = false;
 
+  TrustedSource? _trustedSource;
+
   @override
   void initState() {
     super.initState();
@@ -103,6 +106,16 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     _loadGroups();
     _loadVisitStats();
     _loadImportProtectedVirtualDevices();
+    _loadTrustedSource();
+  }
+
+  Future<void> _loadTrustedSource() async {
+    final source = await DatabaseService.instance.loadTrustedSource(
+      widget.place.deviceId,
+    );
+    if (mounted) {
+      setState(() => _trustedSource = source);
+    }
   }
 
   Future<void> _loadGroups() async {
@@ -315,6 +328,26 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     await DatabaseService.instance.updatePlace(updated);
     widget.onUpdated();
     if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _editTrustedSource() async {
+    final db = DatabaseService.instance;
+    final source = await db.loadTrustedSource(widget.place.deviceId);
+    if (!mounted) return;
+    if (source != null) {
+      final result = await showModalBottomSheet<TrustedSource>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (_) => TrustedSourceEditSheet(source: source),
+      );
+      if (result != null) {
+        await DatabaseService.instance.upsertTrustedSource(result);
+      }
+      if (mounted) {
+        setState(() => _trustedSource = result);
+      }
+    }
   }
 
   /// Shows a dialog to pick one of the import-protected VirtualDevices, then
@@ -1009,6 +1042,16 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              OutlinedButton.icon(
+                onPressed: _editTrustedSource,
+                icon: _trustedSource == null
+                    ? const Icon(Icons.question_mark)
+                    : _trustedSource?.trusted ?? false
+                    ? const Icon(Icons.security, color: Colors.green)
+                    : const Icon(Icons.warning, color: Colors.red),
+                label: Text(widget.place.deviceId),
+              ),
+              const SizedBox(height: 8),
               // ── Origin badge ────────────────────────────────────────────
               if (widget.place.originType != PlaceOriginType.self)
                 Row(
