@@ -758,6 +758,7 @@ class _SqlEditorDialogState extends State<_SqlEditorDialog> {
         Navigator.of(context).pop();
         widget.onMutated();
         ScaffoldMessenger.of(context).showSnackBar(
+          // TODO Translate next line
           const SnackBar(content: Text('Query erfolgreich ausgeführt.')),
         );
       }
@@ -793,6 +794,7 @@ class _SqlEditorDialogState extends State<_SqlEditorDialog> {
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
+                      // TODO Translate next line
                       'SQL Query Editor',
                       style: TextStyle(
                         fontSize: 18,
@@ -815,6 +817,7 @@ class _SqlEditorDialogState extends State<_SqlEditorDialog> {
                   onCopy: () {
                     Clipboard.setData(ClipboardData(text: _error!));
                     ScaffoldMessenger.of(context).showSnackBar(
+                      // TODO Translate next line
                       const SnackBar(content: Text('Fehlermeldung kopiert.')),
                     );
                   },
@@ -828,6 +831,7 @@ class _SqlEditorDialogState extends State<_SqlEditorDialog> {
                   expands: true,
                   textAlignVertical: TextAlignVertical.top,
                   decoration: const InputDecoration(
+                    // TODO Translate next line
                     hintText: 'SQL eingeben, z.B. SELECT * FROM places …',
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.all(10),
@@ -847,6 +851,8 @@ class _SqlEditorDialogState extends State<_SqlEditorDialog> {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
+
+                    // TODO Translate next line
                     child: const Text('Schließen'),
                   ),
                   const SizedBox(width: 8),
@@ -859,6 +865,8 @@ class _SqlEditorDialogState extends State<_SqlEditorDialog> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.play_arrow),
+
+                    // TODO Translate next line
                     label: const Text('Ausführen'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
@@ -906,6 +914,7 @@ class _ErrorBanner extends StatelessWidget {
             ),
           ),
           IconButton(
+            // TODO Translate next line
             tooltip: 'In Zwischenablage kopieren',
             icon: const Icon(Icons.copy, size: 18, color: Colors.red),
             padding: EdgeInsets.zero,

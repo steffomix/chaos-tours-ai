@@ -122,6 +122,7 @@ class _FotoViewerState extends State<FotoViewer> {
           ),
         ],
       ),
+      // TODO Translate this section
       body: Column(
         children: [
           Expanded(

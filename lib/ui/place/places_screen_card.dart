@@ -9,6 +9,9 @@ import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/geo_utils.dart';
 import '../../utils/unified_widget.dart';
+import '../settings/trusted_source_edit_sheet.dart';
+//import 'experiences_screen.dart';
+import 'place_experiences_screen.dart';
 import 'places_filter_panel.dart';
 
 class PlacesScreenCard extends StatefulWidget {
@@ -60,10 +63,12 @@ class _PlacesScreenCardState extends State<PlacesScreenCard> {
   final ValueNotifier<TrustedSource?> _trustedSourceNotifier = ValueNotifier(
     null,
   );
+  final TrustedSourceObserver _trustedSourceObserver = TrustedSourceObserver();
 
   @override
   void initState() {
     super.initState();
+    _trustedSourceObserver.addListener(_onTrustedSourceChanged);
     if (widget.filter.specificFilterActive) {
       _loadExperiences();
     }
@@ -71,6 +76,7 @@ class _PlacesScreenCardState extends State<PlacesScreenCard> {
 
   @override
   void dispose() {
+    _trustedSourceObserver.removeListener(_onTrustedSourceChanged);
     _isOwnDevice.dispose();
     _trustedSourceNotifier.dispose();
     super.dispose();
@@ -79,12 +85,21 @@ class _PlacesScreenCardState extends State<PlacesScreenCard> {
   @override
   void didUpdateWidget(PlacesScreenCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _loadTrustedSource();
     if (widget.filter.specificFilterActive &&
         _experiences == null &&
         !_loadingExperiences) {
       _loadExperiences();
     }
+  }
+
+  Future<void> _onTrustedSourceChanged() async {
+    if (_trustedSourceObserver.trustedSource?.deviceId !=
+        widget.place.deviceId) {
+      return;
+    }
+    _trustedSourceNotifier.value = _trustedSourceObserver.trustedSource;
+    _isOwnDevice.value =
+        SettingsService.instance.deviceId == widget.place.deviceId;
   }
 
   Future<void> _loadTrustedSource() async {
@@ -103,6 +118,29 @@ class _PlacesScreenCardState extends State<PlacesScreenCard> {
     }
   }
 
+  Future<void> _editTrustedSource() async {
+    final deviceId = widget.place.deviceId;
+    if (_trustedSourceNotifier.value == null) {
+      await DatabaseService.instance.refreshTrustedSources();
+    }
+    final source = await DatabaseService.instance.loadTrustedSource(deviceId);
+    if (source != null) {
+      if (!mounted) return;
+      final result = await showModalBottomSheet<TrustedSource>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (_) => TrustedSourceEditSheet(source: source),
+      );
+      if (result != null) {
+        await DatabaseService.instance.upsertTrustedSource(result);
+        _trustedSourceObserver.trustedSource = result;
+      }
+      // Refresh trust status after sheet is closed.
+      _loadTrustedSource();
+    }
+  }
+
   Future<void> _loadExperiences() async {
     if (_loadingExperiences || widget.place.uuid.isEmpty) return;
     setState(() => _loadingExperiences = true);
@@ -117,6 +155,18 @@ class _PlacesScreenCardState extends State<PlacesScreenCard> {
       }
     } catch (_) {
       if (mounted) setState(() => _loadingExperiences = false);
+    }
+  }
+
+  Future<void> _editExperiences() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => ExperiencesScreen(place: widget.place),
+      ),
+    );
+    if (mounted) {
+      _loadExperiences();
     }
   }
 
@@ -284,38 +334,46 @@ class _PlacesScreenCardState extends State<PlacesScreenCard> {
           children: [
             Row(
               children: [
-                Icon(
-                  widget.place.placeType.icon,
-                  color: widget.place.placeType.dotColor,
-                  size: 16,
+                OutlinedButton(
+                  onPressed: _editTrustedSource,
+                  child: Row(
+                    children: [
+                      ValueListenableBuilder<bool>(
+                        valueListenable: _isOwnDevice,
+                        builder: (context, isOwnDevice, _) {
+                          return isOwnDevice
+                              ? Icon(Icons.phone_android, size: 16)
+                              : SizedBox(width: 16);
+                        },
+                      ),
+                      ValueListenableBuilder(
+                        valueListenable: _trustedSourceNotifier,
+                        builder: (context, trustedSource, _) {
+                          return Icon(
+                            trustedSource == null
+                                ? Icons.help_outline
+                                : trustedSource.trusted == true
+                                ? Icons.security
+                                : Icons.warning,
+                            color: trustedSource?.trusted == true
+                                ? Colors.green
+                                : Colors.red,
+                            size: 16,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-                ValueListenableBuilder(
-                  valueListenable: _trustedSourceNotifier,
-                  builder: (context, trustedSource, _) {
-                    return Icon(
-                      trustedSource == null
-                          ? Icons.help_outline
-                          : trustedSource.trusted == true
-                          ? Icons.security
-                          : Icons.warning,
-                      color: trustedSource?.trusted == true
-                          ? Colors.green
-                          : Colors.red,
-                      size: 16,
-                    );
-                  },
-                ),
+
                 const SizedBox(width: 8),
                 Expanded(
                   flex: 5,
                   child: OutlinedButton.icon(
-                    icon: ValueListenableBuilder<bool>(
-                      valueListenable: _isOwnDevice,
-                      builder: (context, isOwnDevice, _) {
-                        return isOwnDevice
-                            ? Icon(Icons.phone_android, size: 16)
-                            : SizedBox(width: 16);
-                      },
+                    icon: Icon(
+                      widget.place.placeType.icon,
+                      color: widget.place.placeType.dotColor,
+                      size: 16,
                     ),
                     onPressed: widget.onTap,
                     label: Text(
@@ -337,14 +395,24 @@ class _PlacesScreenCardState extends State<PlacesScreenCard> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                if (headlineRating != null) ...[
-                  const SizedBox(width: 8),
-                  Icon(Icons.star, size: 14, color: Colors.amber),
-                  Text(
-                    headlineRating.toStringAsFixed(1),
-                    style: textTheme.bodySmall,
+                OutlinedButton.icon(
+                  onPressed: _editExperiences,
+                  icon: Icon(
+                    Icons.star,
+                    size: 14,
+                    color: headlineRating == null
+                        ? Colors.grey
+                        : expRatingToColor(headlineRating),
                   ),
-                ],
+                  label: headlineRating == null
+                      ? Icon(Icons.help_outline, size: 14)
+                      : Text(
+                          headlineRating.toStringAsFixed(1),
+                          style: textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
               ],
             ),
             // ── Kompass-Zeile (Peilung + Distanz) ────────────────────

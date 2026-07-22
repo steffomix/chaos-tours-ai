@@ -709,7 +709,7 @@ class _PlacesScreenState extends State<PlacesScreen>
                 controller: _tabController,
                 children: [
                   _buildList(),
-                  const MessagesScreen(filter: MessagesFilter.all),
+                  const MessagesScreen(messagesListMode: MessagesListMode.all),
                   _buildMap(),
                 ],
               ),

@@ -40,6 +40,7 @@ class PhotoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // TODO Translate this section
           // ── Photo ──────────────────────────────────────────────────────
           GestureDetector(
             onTap: onTap,

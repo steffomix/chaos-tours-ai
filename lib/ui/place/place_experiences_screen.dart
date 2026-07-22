@@ -2,20 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:chaos_tours_ai/l10n/app_localizations.dart';
 
 import '../../models/place_experience.dart';
+import '../../models/saved_place.dart';
 import '../../services/database_service.dart';
 import '../../utils/unified_widget.dart';
+
+Color expRatingToColor(double value) {
+  final clampedValue = value.clamp(-9.0, 9.0);
+
+  if (clampedValue < 0) {
+    // Bereich -9 bis 0: Interpolation von Rot nach Gelb
+    final t = (clampedValue + 9) / 9.0; // t geht von 0.0 bis 1.0
+    return Color.lerp(Colors.red, Colors.yellow, t)!;
+  } else {
+    // Bereich 0 bis +9: Interpolation von Gelb nach Grün
+    final t = clampedValue / 9.0; // t geht von 0.0 bis 1.0
+    return Color.lerp(Colors.yellow, Colors.green, t)!;
+  }
+}
 
 /// Full-screen list of survival experiences for a single place.
 /// Items are loaded in chunks as the user scrolls (chunk loader).
 class ExperiencesScreen extends StatefulWidget {
-  final String placeUuid;
-  final String placeName;
+  final SavedPlace place;
 
-  const ExperiencesScreen({
-    super.key,
-    required this.placeUuid,
-    required this.placeName,
-  });
+  const ExperiencesScreen({super.key, required this.place});
 
   @override
   State<ExperiencesScreen> createState() => _ExperiencesScreenState();
@@ -56,7 +66,7 @@ class _ExperiencesScreenState extends State<ExperiencesScreen> {
     if (_loading || !_hasMore) return;
     setState(() => _loading = true);
     final chunk = await DatabaseService.instance.loadExperiencesForPlacePaged(
-      widget.placeUuid,
+      widget.place.uuid,
       limit: _chunkSize,
       offset: _offset,
     );
@@ -212,7 +222,7 @@ class _ExperiencesScreenState extends State<ExperiencesScreen> {
     if (existing == null) {
       await DatabaseService.instance.insertPlaceExperience(
         PlaceExperience(
-          savedPlaceUuid: widget.placeUuid,
+          savedPlaceUuid: widget.place.uuid,
           text: textCtrl.text.trim(),
           ratingDangerousFriendly: rDangerFriendly,
           ratingFraudReliable: rFraudReliable,
@@ -302,7 +312,7 @@ class _ExperiencesScreenState extends State<ExperiencesScreen> {
           children: [
             Text(l10n.survivalExperiences),
             Text(
-              widget.placeName,
+              widget.place.name,
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.normal,

@@ -10,7 +10,7 @@ import 'p2p_message_card.dart';
 import 'p2p_message_composer.dart';
 
 /// Scope of the shared [MessagesScreen].
-enum MessagesFilter {
+enum MessagesListMode {
   /// All messages across all places, newest first.
   all,
 
@@ -21,33 +21,20 @@ enum MessagesFilter {
   region,
 }
 
-class TrustedMessage {
-  final Message message;
-  bool trusted = false;
-
-  TrustedMessage(this.message);
-
-  Future<void> loadTrustedStatus() async {
-    final db = DatabaseService.instance;
-    final source = await db.loadTrustedSource(message.deviceId);
-    trusted = source?.trusted ?? false;
-  }
-}
-
 /// A single unified screen that renders the P2P message feed in one of three
-/// scopes ([MessagesFilter]). Sharing one screen keeps the look consistent and
+/// scopes ([MessagesListMode]). Sharing one screen keeps the look consistent and
 /// simplifies maintenance. Messages are paginated (chunk-loaded) because the
 /// volume can be large.
 class MessagesScreen extends StatefulWidget {
   @override
   State<MessagesScreen> createState() => _MessagesScreenState();
 
-  final MessagesFilter filter;
+  final MessagesListMode messagesListMode;
 
-  /// Required when [filter] is [MessagesFilter.place].
-  final String? placeUuid;
+  /// Required when [messagesListMode] is [MessagesListMode.place].
+  final SavedPlace? place;
 
-  /// Required when [filter] is [MessagesFilter.region].
+  /// Required when [messagesListMode] is [MessagesListMode.region].
   final double? lat;
   final double? lng;
   final double? radiusKm;
@@ -57,8 +44,8 @@ class MessagesScreen extends StatefulWidget {
 
   const MessagesScreen({
     super.key,
-    this.filter = MessagesFilter.all,
-    this.placeUuid,
+    this.messagesListMode = MessagesListMode.all,
+    this.place,
     this.lat,
     this.lng,
     this.radiusKm,
@@ -67,9 +54,9 @@ class MessagesScreen extends StatefulWidget {
 
   const MessagesScreen.place({
     super.key,
-    required String this.placeUuid,
+    required SavedPlace this.place,
     this.title,
-  }) : filter = MessagesFilter.place,
+  }) : messagesListMode = MessagesListMode.place,
        lat = null,
        lng = null,
        radiusKm = null;
@@ -80,8 +67,8 @@ class MessagesScreen extends StatefulWidget {
     required double this.lng,
     required double this.radiusKm,
     this.title,
-  }) : filter = MessagesFilter.region,
-       placeUuid = null;
+  }) : messagesListMode = MessagesListMode.region,
+       place = null;
 }
 
 class _MessagesScreenState extends State<MessagesScreen> {
@@ -122,16 +109,16 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   Future<List<Message>> _fetchChunk(int offset) {
     final db = DatabaseService.instance;
-    switch (widget.filter) {
-      case MessagesFilter.all:
+    switch (widget.messagesListMode) {
+      case MessagesListMode.all:
         return db.loadMessagesPaged(limit: _chunkSize, offset: offset);
-      case MessagesFilter.place:
+      case MessagesListMode.place:
         return db.loadMessagesForPlace(
-          widget.placeUuid!,
+          widget.place!.uuid,
           limit: _chunkSize,
           offset: offset,
         );
-      case MessagesFilter.region:
+      case MessagesListMode.region:
         return db.loadMessagesForRegion(
           lat: widget.lat!,
           lng: widget.lng!,
@@ -146,12 +133,12 @@ class _MessagesScreenState extends State<MessagesScreen> {
     if (_loading || !_hasMore) return;
     setState(() => _loading = true);
     final chunk = await _fetchChunk(_offset);
-    await _hydrate(chunk);
+    final hydratedChunk = await _hydrateAndClean(chunk);
     if (!mounted) return;
     setState(() {
-      _messages.addAll(chunk);
-      _offset += chunk.length;
-      _hasMore = chunk.length == _chunkSize;
+      _messages.addAll(hydratedChunk);
+      _offset += hydratedChunk.length;
+      _hasMore = hydratedChunk.length == _chunkSize;
       _loading = false;
     });
   }
@@ -165,25 +152,35 @@ class _MessagesScreenState extends State<MessagesScreen> {
     await _loadNextChunk();
   }
 
-  /// Loads place metadata and attached photos referenced by the chunk.
-  Future<void> _hydrate(List<Message> chunk) async {
+  /// Loads place of the messages in the chunk and removes messages with missing places.
+  Future<List<Message>> _hydrateAndClean(List<Message> chunk) async {
     final db = DatabaseService.instance;
+    List<Message> brokenMessages = [];
     for (final m in chunk) {
       if (!_placeCache.containsKey(m.placeUuid)) {
         final place = await db.getSavedPlace(m.placeUuid);
-        if (place != null) _placeCache[m.placeUuid] = place;
+
+        if (place != null) {
+          _placeCache[m.placeUuid] = place;
+        } else {
+          brokenMessages.add(m);
+        }
       }
     }
+    for (final m in brokenMessages) {
+      chunk.remove(m);
+    }
+    return chunk;
   }
 
   String _titleFor(AppLocalizations l10n) {
     if (widget.title != null) return widget.title!;
-    switch (widget.filter) {
-      case MessagesFilter.all:
+    switch (widget.messagesListMode) {
+      case MessagesListMode.all:
         return l10n.messagesTitle;
-      case MessagesFilter.place:
-        return _placeCache[widget.placeUuid]?.name ?? l10n.messagesPlaceTitle;
-      case MessagesFilter.region:
+      case MessagesListMode.place:
+        return _placeCache[widget.place!.uuid]?.name ?? l10n.messagesPlaceTitle;
+      case MessagesListMode.region:
         return l10n.messagesRegionTitle;
     }
   }
@@ -209,20 +206,17 @@ class _MessagesScreenState extends State<MessagesScreen> {
                           child: Center(child: CircularProgressIndicator()),
                         );
                       }
+                      SavedPlace? pl = _placeCache[_messages[i].placeUuid];
+                      if (pl == null) {
+                        return const SizedBox.shrink(); // Place not found, skip rendering this message
+                      }
                       return P2pMessageCard(
                         message: _messages[i],
-                        place: _placeCache[_messages[i].placeUuid],
-                        showPlace: widget.filter != MessagesFilter.place,
+                        place: pl,
+                        messagesListMode: widget.messagesListMode,
                         onReply: () => setState(() => _replyTo = _messages[i]),
                         onDelete: () => _deleteMessage(_messages[i]),
                         onDeletePhoto: _reload,
-                        refreshTrustedStatus: () async {
-                          await DatabaseService.instance
-                              .refreshTrustedSources();
-                          trustedStateRefreshNotifier.value++;
-                        },
-                        trustedStateRefreshNotifier:
-                            trustedStateRefreshNotifier,
                       );
                     },
                   ),
@@ -230,7 +224,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
         ),
         P2pMessageComposer(
           replyTo: _replyTo,
-          defaultPlaceUuid: widget.placeUuid,
+          defaultPlaceUuid: widget.place?.uuid,
           onCancelReply: () => setState(() => _replyTo = null),
           onSend: _sendMessage,
         ),
@@ -239,7 +233,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
     // When embedded as a tab (place filter used inside PlaceDetailScreen keeps
     // its own Scaffold), the 'all' filter tab has no AppBar of its own.
-    if (widget.filter == MessagesFilter.all && widget.title == null) {
+    if (widget.messagesListMode == MessagesListMode.all &&
+        widget.title == null) {
       return body;
     }
     return Scaffold(
@@ -276,7 +271,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 
   Future<void> _sendMessage(String body, List<Uint8List> newPhotos) async {
-    final placeUuid = _replyTo?.placeUuid ?? widget.placeUuid;
+    final placeUuid = _replyTo?.placeUuid ?? widget.place?.uuid;
     if (placeUuid == null) {
       // Without a place there is nothing to anchor to.
       if (mounted) {

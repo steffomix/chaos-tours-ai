@@ -1,8 +1,42 @@
+import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+import '../services/database_service.dart';
 
 import '../services/settings_service.dart';
 
 const _uuid = Uuid();
+
+// turn this into a singleton
+class TrustedSourceObserver {
+  static final TrustedSourceObserver _instance =
+      TrustedSourceObserver._internal();
+  TrustedSourceObserver._internal();
+
+  factory TrustedSourceObserver() {
+    return _instance;
+  }
+
+  final ValueNotifier<int> _trustedSourceNotifier = ValueNotifier<int>(0);
+  TrustedSource? _trustedSource;
+  TrustedSource? get trustedSource => _trustedSource;
+  set trustedSource(TrustedSource? ts) {
+    _trustedSource = ts;
+    _trustedSourceNotifier.value++;
+  }
+
+  void addListener(VoidCallback listener) {
+    _trustedSourceNotifier.addListener(listener);
+  }
+
+  void removeListener(VoidCallback listener) {
+    _trustedSourceNotifier.removeListener(listener);
+  }
+
+  Future<void> refreshTrustedSource() async {
+    await DatabaseService.instance.refreshTrustedSources();
+    _trustedSourceNotifier.value++;
+  }
+}
 
 /// Represents a known device found anywhere in the database.
 /// All device IDs collected from any table are represented here; the user can

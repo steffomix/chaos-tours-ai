@@ -344,7 +344,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
       if (result != null) {
         await DatabaseService.instance.upsertTrustedSource(result);
       }
-      if (mounted) {
+      if (mounted && result != null) {
         setState(() => _trustedSource = result);
       }
     }
@@ -1281,10 +1281,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                           : () => Navigator.push(
                               context,
                               MaterialPageRoute<void>(
-                                builder: (_) => ExperiencesScreen(
-                                  placeUuid: widget.place.uuid,
-                                  placeName: widget.place.name,
-                                ),
+                                builder: (_) =>
+                                    ExperiencesScreen(place: widget.place),
                               ),
                             ),
                       icon: const Icon(Icons.night_shelter),
@@ -1312,16 +1310,15 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     : () => Navigator.push(
                         context,
                         MaterialPageRoute<void>(
-                          builder: (_) => MessagesScreen.place(
-                            placeUuid: widget.place.uuid,
-                            title: widget.place.name,
-                          ),
+                          builder: (_) =>
+                              MessagesScreen.place(place: widget.place),
                         ),
                       ),
                 icon: const Icon(Icons.forum),
                 label: Text(l10n.placeMessagesButton),
               ),
               // ── P2P Sync Konfiguration ─────────────────────────────────
+              // TODO Translate this section
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
                 leading: const Icon(Icons.sync),
@@ -1379,6 +1376,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     maxLines: 2,
                   ),
                   const SizedBox(height: 8),
+                  // TODO Translate this section
                   // ── Sync-Optionen ──────────────────────────────────────
                   ListTile(
                     contentPadding: EdgeInsets.zero,
@@ -1400,6 +1398,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                       }
                     },
                   ),
+                  // TODO Translate this section
                   // ── Auto-Sync Intervall ────────────────────────────────
                   const SizedBox(height: 4),
                   ListTile(
@@ -1440,6 +1439,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     ),
                   ],
                   const SizedBox(height: 8),
+                  // TODO Translate this section
                   // ── Jetzt Synchronisieren ─────────────────────────────
                   Row(
                     children: [
@@ -1491,6 +1491,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
+                  // TODO Translate this section
                   // ── P2P Nachrichten ────────────────────────────────────
                   OutlinedButton.icon(
                     onPressed: widget.place.uuid.isEmpty
@@ -1498,10 +1499,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                         : () => Navigator.push(
                             context,
                             MaterialPageRoute<void>(
-                              builder: (_) => MessagesScreen.place(
-                                placeUuid: widget.place.uuid,
-                                title: widget.place.name,
-                              ),
+                              builder: (_) =>
+                                  MessagesScreen.place(place: widget.place),
                             ),
                           ),
                     icon: const Icon(Icons.forum),

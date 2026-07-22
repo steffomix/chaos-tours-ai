@@ -8,29 +8,27 @@ import '../../models/trusted_source.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/unified_widget.dart';
+import '../place/place_detail_screen.dart';
 import '../settings/trusted_source_edit_sheet.dart';
 import 'p2p_message_photo_viewer.dart';
+import 'p2p_messages_screen.dart';
 import 'p2p_reply_reference.dart';
 
 class P2pMessageCard extends StatefulWidget {
   final Message message;
-  final SavedPlace? place;
-  final bool showPlace;
+  final SavedPlace place;
+  final MessagesListMode messagesListMode;
   final VoidCallback onReply;
   final VoidCallback onDelete;
   final VoidCallback? onDeletePhoto;
-  final VoidCallback refreshTrustedStatus;
-  final ValueNotifier<int> trustedStateRefreshNotifier;
 
   const P2pMessageCard({
     super.key,
     required this.message,
     required this.place,
-    required this.showPlace,
+    required this.messagesListMode,
     required this.onReply,
     required this.onDelete,
-    required this.refreshTrustedStatus,
-    required this.trustedStateRefreshNotifier,
     this.onDeletePhoto,
   });
 
@@ -39,36 +37,41 @@ class P2pMessageCard extends StatefulWidget {
 }
 
 class _P2pMessageCardState extends State<P2pMessageCard> {
-  bool? _trusted;
-  bool _ownDeviceId = false;
+  final ValueNotifier<bool?> _ownDeviceIdNotifier = ValueNotifier(null);
+  final ValueNotifier<TrustedSource?> _trustedSourceNotifier = ValueNotifier(
+    null,
+  );
+  final TrustedSourceObserver _trustedSourceObserver = TrustedSourceObserver();
 
   @override
   void initState() {
     super.initState();
-    _ownDeviceId = SettingsService.instance.deviceId == widget.message.deviceId;
-    _loadTrustedStatus();
-    widget.trustedStateRefreshNotifier.addListener(_onRefreshTrustedStatus);
+    _trustedSourceObserver.addListener(_onTrustedSourceChanged);
   }
 
   @override
   void dispose() {
-    widget.trustedStateRefreshNotifier.removeListener(_onRefreshTrustedStatus);
+    _trustedSourceObserver.removeListener(_onTrustedSourceChanged);
+    _ownDeviceIdNotifier.dispose();
+    _trustedSourceNotifier.dispose();
     super.dispose();
   }
 
-  Future<void> _onRefreshTrustedStatus() async {
-    await _loadTrustedStatus();
-
-    setState(() {});
+  void _onTrustedSourceChanged() {
+    if (_trustedSourceObserver.trustedSource?.deviceId !=
+        widget.message.deviceId) {
+      return;
+    }
+    _trustedSourceNotifier.value = _trustedSourceObserver.trustedSource;
+    _ownDeviceIdNotifier.value =
+        widget.message.deviceId == SettingsService.instance.deviceId;
   }
 
   Future<void> _loadTrustedStatus() async {
-    final source = await DatabaseService.instance.loadTrustedSource(
-      widget.message.deviceId,
-    );
-    if (mounted) {
-      setState(() => _trusted = source?.trusted);
-    }
+    _trustedSourceNotifier.value = await DatabaseService.instance
+        .loadTrustedSource(widget.message.deviceId);
+    _ownDeviceIdNotifier.value =
+        widget.message.deviceId == SettingsService.instance.deviceId;
   }
 
   String _authorLabel(AppLocalizations l10n) {
@@ -86,13 +89,11 @@ class _P2pMessageCardState extends State<P2pMessageCard> {
   }
 
   Future<void> _editTrustedSource() async {
-    final db = DatabaseService.instance;
-    if (_trusted == null) {
-      widget.refreshTrustedStatus();
-      return;
-    }
     final deviceId = widget.message.deviceId;
-    final source = await db.loadTrustedSource(deviceId);
+    if (_trustedSourceNotifier.value == null) {
+      await DatabaseService.instance.refreshTrustedSources();
+    }
+    final source = await DatabaseService.instance.loadTrustedSource(deviceId);
     if (source != null) {
       if (!mounted) return;
       final result = await showModalBottomSheet<TrustedSource>(
@@ -103,7 +104,7 @@ class _P2pMessageCardState extends State<P2pMessageCard> {
       );
       if (result != null) {
         await DatabaseService.instance.upsertTrustedSource(result);
-        widget.trustedStateRefreshNotifier.value++;
+        _trustedSourceObserver.trustedSource = result;
       }
       // Refresh trust status after sheet is closed.
       _loadTrustedStatus();
@@ -112,6 +113,7 @@ class _P2pMessageCardState extends State<P2pMessageCard> {
 
   @override
   Widget build(BuildContext context) {
+    _loadTrustedStatus();
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     return Card(
@@ -123,21 +125,80 @@ class _P2pMessageCardState extends State<P2pMessageCard> {
           children: [
             Row(
               children: [
-                if (_ownDeviceId)
-                  Icon(Icons.phone_android, color: Colors.green)
-                else
-                  SizedBox(width: 24),
+                OutlinedButton(
+                  onPressed: _editTrustedSource,
+                  child: Row(
+                    children: [
+                      ValueListenableBuilder<bool?>(
+                        valueListenable: _ownDeviceIdNotifier,
+                        builder: (context, ownDeviceId, _) {
+                          if (ownDeviceId == true) {
+                            return Icon(Icons.phone_android, size: 16);
+                          } else {
+                            return SizedBox(width: 16, height: 16);
+                          }
+                        },
+                      ),
+                      ValueListenableBuilder(
+                        valueListenable: _trustedSourceNotifier,
+                        builder: (context, trustedSource, _) {
+                          return Icon(
+                            trustedSource == null
+                                ? Icons.help_outline
+                                : trustedSource.trusted == true
+                                ? Icons.security
+                                : Icons.warning,
+                            color: trustedSource?.trusted == true
+                                ? Colors.green
+                                : Colors.red,
+                            size: 16,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(width: 4),
                 Expanded(
                   flex: 10,
                   child: OutlinedButton.icon(
-                    icon: _trusted == null
-                        ? Icon(Icons.question_mark, color: theme.hintColor)
-                        : Icon(
-                            _trusted! ? Icons.security : Icons.warning,
-                            color: _trusted! ? Colors.green : Colors.red,
+                    icon: null,
+                    onPressed: () {
+                      if (widget.messagesListMode == MessagesListMode.all) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) =>
+                                MessagesScreen.place(place: widget.place),
                           ),
-                    onPressed: _editTrustedSource,
+                        );
+                      }
+
+                      // TODO copy from places_screen.dart Line 406 does not work from here
+                      if (widget.messagesListMode == MessagesListMode.place) {
+                        // Navigator.of(context).push(
+                        //   MaterialPageRoute<void>(
+                        //     builder: (_) => PlaceDetailScreen(
+                        //       place: place,
+                        //       onUpdated: _loadPlaces,
+                        //       onDeleted: _loadPlaces,
+                        //       onShowOnMap: () => _showOnMap(place),
+                        //     ),
+                        //   ),
+                        // );
+
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => PlaceDetailScreen(
+                              place: widget.place,
+                              onUpdated: () {},
+                              onDeleted: () {},
+                              onShowOnMap: () {},
+                            ),
+                          ),
+                        );
+                      }
+                    },
                     label: Text(
                       _authorLabel(l10n),
                       style: theme.textTheme.bodyMedium?.copyWith(
@@ -155,20 +216,20 @@ class _P2pMessageCardState extends State<P2pMessageCard> {
                 ),
               ],
             ),
-            if (widget.showPlace && widget.place != null)
+            if (widget.messagesListMode == MessagesListMode.place)
               Padding(
                 padding: const EdgeInsets.only(top: 2),
                 child: Row(
                   children: [
                     Icon(
-                      widget.place!.placeType.icon,
+                      widget.place.placeType.icon,
                       size: 13,
                       color: theme.hintColor,
                     ),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        widget.place!.name,
+                        widget.place.name,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.hintColor,
                         ),
@@ -213,7 +274,7 @@ class _P2pMessageCardState extends State<P2pMessageCard> {
                       builder: (_) => P2pMessagePhotoViewer(
                         photoData: widget.message.photoData,
                         messageUuid: widget.message.uuid,
-                        isOwn: _ownDeviceId,
+                        isOwn: _ownDeviceIdNotifier.value == true,
                         onDeleted: widget.onDeletePhoto,
                       ),
                     ),

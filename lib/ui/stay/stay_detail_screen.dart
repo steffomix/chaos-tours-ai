@@ -82,13 +82,16 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        // TODO Translate next line
         title: const Text('Aufenthalt löschen'),
         content: const Text(
+          // TODO Translate next line
           'Soll dieser Aufenthalt wirklich gelöscht werden? Diese Aktion kann nicht rückgängig gemacht werden.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
+            // TODO Translate next line
             child: const Text('Abbrechen'),
           ),
           FilledButton(
@@ -96,6 +99,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
               backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
             onPressed: () => Navigator.pop(ctx, true),
+            // TODO Translate next line
             child: const Text('Löschen'),
           ),
         ],
@@ -180,7 +184,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
   Future<void> _copyReport() async {
     final stay = widget.stay;
     final buf = StringBuffer();
-
+    // TODO Translate writeln lines
     buf.writeln('# Aufenthalt${_place != null ? ': ${_place!.name}' : ''}');
     buf.writeln();
     buf.writeln('| Feld | Wert |');
@@ -228,6 +232,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
     if (mounted) {
       ScaffoldMessenger.of(
         context,
+        // TODO Translate next line
       ).showSnackBar(const SnackBar(content: Text('Bericht kopiert')));
     }
   }
@@ -505,13 +510,11 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                       onPressed: () => Navigator.push(
                         context,
                         MaterialPageRoute<void>(
-                          builder: (_) => MessagesScreen.place(
-                            placeUuid: _place!.uuid,
-                            title: _place!.name,
-                          ),
+                          builder: (_) => MessagesScreen.place(place: _place!),
                         ),
                       ),
                       icon: const Icon(Icons.forum),
+                      // TODO Translate next line
                       label: const Text('P2P Nachrichten'),
                     ),
                     const SizedBox(height: 8),
@@ -598,6 +601,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                     OutlinedButton.icon(
                       onPressed: _copyReport,
                       icon: const Icon(Icons.copy_all),
+                      // TODO Translate next line
                       label: const Text('Bericht kopieren'),
                     ),
                   ],
