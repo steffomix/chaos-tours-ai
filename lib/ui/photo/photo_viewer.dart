@@ -145,10 +145,19 @@ class _FotoViewerState extends State<FotoViewer> {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Icon(Icons.broken_image),
-                                        // TODO Translate next line
-                                        Text('Error loading image'),
                                         Builder(
                                           builder: (context) {
+                                            final l10n = AppLocalizations.of(
+                                              context,
+                                            )!;
+                                            return Text(l10n.imageLoadingError);
+                                          },
+                                        ),
+                                        Builder(
+                                          builder: (context) {
+                                            final l10n = AppLocalizations.of(
+                                              context,
+                                            )!;
                                             final mime = lookupMimeType(
                                               '*',
                                               headerBytes: bytes.sublist(
@@ -158,12 +167,14 @@ class _FotoViewerState extends State<FotoViewer> {
                                             );
                                             if (mime != null) {
                                               return Text(
-                                                // TODO Translate next line
-                                                'File type looks like: $mime',
+                                                l10n.imageFileTypeLooksLike(
+                                                  mime,
+                                                ),
                                               );
                                             } else {
-                                              // TODO Translate next line
-                                              return Text('Unknown file type');
+                                              return Text(
+                                                l10n.imageFileHasUnknownType,
+                                              );
                                             }
                                           },
                                         ),

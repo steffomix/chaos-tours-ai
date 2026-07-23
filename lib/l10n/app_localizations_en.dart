@@ -2332,4 +2332,118 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get maidenheadInfoPrecision =>
       'Section 6: Optional extra precision for manual place creation.';
+
+  @override
+  String get stay => 'Stay';
+
+  @override
+  String get p2pMessages => 'P2P Messages';
+
+  @override
+  String get copyReport => 'Copy report';
+
+  @override
+  String get p2pSyncConfigure => 'Configure P2P Sync';
+
+  @override
+  String get notConfigured => 'Not configured';
+
+  @override
+  String get serverUrl => 'Server URL';
+
+  @override
+  String get port => 'Port';
+
+  @override
+  String get autoSyncOff => 'Auto-Sync: Off';
+
+  @override
+  String autoSyncEvery(int minutes) {
+    return 'Auto-Sync: every $minutes min';
+  }
+
+  @override
+  String get syncIntervalSubtitle => '0 = disabled, otherwise 10–600 min';
+
+  @override
+  String get off => 'Off';
+
+  @override
+  String syncMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String syncLastAt(String date) {
+    return 'Last sync: $date';
+  }
+
+  @override
+  String get queryExecutedSuccess => 'Query executed successfully.';
+
+  @override
+  String get sqlQueryEditor => 'SQL Query Editor';
+
+  @override
+  String get errorMessageCopied => 'Error message copied.';
+
+  @override
+  String get sqlInputHint => 'Enter SQL, e.g. SELECT * FROM places …';
+
+  @override
+  String get execute => 'Execute';
+
+  @override
+  String get copyToClipboard => 'Copy to clipboard';
+
+  @override
+  String get duration => 'Duration';
+
+  @override
+  String get created => 'Created';
+
+  @override
+  String get updatedAt => 'Updated at';
+
+  @override
+  String get totalVisits => 'Total visits';
+
+  @override
+  String get firstVisit => 'First visit';
+
+  @override
+  String get lastVisitLabel => 'Last visit';
+
+  @override
+  String get shortestVisit => 'Shortest visit';
+
+  @override
+  String get longestVisit => 'Longest visit';
+
+  @override
+  String get average => 'Average';
+
+  @override
+  String get reportField => 'Field';
+
+  @override
+  String get reportValue => 'Value';
+
+  @override
+  String get originUuid => 'Origin UUID';
+
+  @override
+  String get gpsCoordinates => 'GPS coordinates';
+
+  @override
+  String get qthCoordinates => 'QTH coordinates';
+
+  @override
+  String get rating => 'Rating';
+
+  @override
+  String get category => 'Category';
+
+  @override
+  String get visits => 'Visits';
 }

@@ -1486,7 +1486,7 @@
   "@syncAddressHint": {
     "description": "Sync address hint"
   },
-  "apiKey": "API-Key",
+  "apiKey": "API-Schlüssel",
   "@apiKey": {
     "description": "API key label"
   },
@@ -2915,6 +2915,56 @@
   "maidenheadLocatorTitle": "Maidenhead-Locator",
   "maidenheadInfoBase": "Sektionen 1\u20133: Standard 6-stelliger Maidenhead-Locator (erforderlich). Es wird immer das Zentrum des gew\u00e4hlten Rasters verwendet.",
   "maidenheadInfoDeterministic": "Sektionen 4\u20135: Deterministisches Rasterelement f\u00fcr UUID-v5-Generierung bei automatischer Ortserstellung \u2013 gemeinsamer Sync-Schl\u00fcssel auf allen Ger\u00e4ten.",
-  "maidenheadInfoPrecision": "Sektion 6: Optionale zus\u00e4tzliche Genauigkeit f\u00fcr die manuelle Ortserstellung."
-
+  "maidenheadInfoPrecision": "Sektion 6: Optionale zusätzliche Genauigkeit für die manuelle Ortserstellung.",
+  "stay": "Aufenthalt",
+  "p2pMessages": "P2P Nachrichten",
+  "copyReport": "Bericht kopieren",
+  "p2pSyncConfigure": "P2P Sync konfigurieren",
+  "notConfigured": "Nicht konfiguriert",
+  "serverUrl": "Server URL",
+  "port": "Port",
+  "autoSyncOff": "Auto-Sync: Aus",
+  "autoSyncEvery": "Auto-Sync: alle {minutes} Min",
+  "@autoSyncEvery": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "syncIntervalSubtitle": "0 = deaktiviert, sonst 10–600 Min",
+  "off": "Aus",
+  "syncMinutes": "{minutes} Min",
+  "@syncMinutes": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "syncLastAt": "Letzter Sync: {date}",
+  "@syncLastAt": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "queryExecutedSuccess": "Query erfolgreich ausgeführt.",
+  "sqlQueryEditor": "SQL Query Editor",
+  "errorMessageCopied": "Fehlermeldung kopiert.",
+  "sqlInputHint": "SQL eingeben, z.B. SELECT * FROM places …",
+  "execute": "Ausführen",
+  "copyToClipboard": "In Zwischenablage kopieren",
+  "duration": "Dauer",
+  "created": "Erstellt",
+  "updatedAt": "Aktualisiert am",
+  "totalVisits": "Besuche gesamt",
+  "firstVisit": "Erster Besuch",
+  "lastVisitLabel": "Letzter Besuch",
+  "shortestVisit": "Kürzester Besuch",
+  "longestVisit": "Längster Besuch",
+  "average": "Durchschnitt",
+  "reportField": "Feld",
+  "reportValue": "Wert",
+  "originUuid": "Ursprung UUID",
+  "gpsCoordinates": "GPS Koordinaten",
+  "qthCoordinates": "QTH Koordinaten",
+  "rating": "Bewertung",
+  "category": "Kategorie",
+  "visits": "Besuche"
 }

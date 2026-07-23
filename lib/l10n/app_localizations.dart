@@ -2003,7 +2003,7 @@ abstract class AppLocalizations {
   /// API key label
   ///
   /// In de, this message translates to:
-  /// **'API-Key'**
+  /// **'API-Schlüssel'**
   String get apiKey;
 
   /// Info URL optional label
@@ -4219,6 +4219,222 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Sektion 6: Optionale zusätzliche Genauigkeit für die manuelle Ortserstellung.'**
   String get maidenheadInfoPrecision;
+
+  /// No description provided for @stay.
+  ///
+  /// In de, this message translates to:
+  /// **'Aufenthalt'**
+  String get stay;
+
+  /// No description provided for @p2pMessages.
+  ///
+  /// In de, this message translates to:
+  /// **'P2P Nachrichten'**
+  String get p2pMessages;
+
+  /// No description provided for @copyReport.
+  ///
+  /// In de, this message translates to:
+  /// **'Bericht kopieren'**
+  String get copyReport;
+
+  /// No description provided for @p2pSyncConfigure.
+  ///
+  /// In de, this message translates to:
+  /// **'P2P Sync konfigurieren'**
+  String get p2pSyncConfigure;
+
+  /// No description provided for @notConfigured.
+  ///
+  /// In de, this message translates to:
+  /// **'Nicht konfiguriert'**
+  String get notConfigured;
+
+  /// No description provided for @serverUrl.
+  ///
+  /// In de, this message translates to:
+  /// **'Server URL'**
+  String get serverUrl;
+
+  /// No description provided for @port.
+  ///
+  /// In de, this message translates to:
+  /// **'Port'**
+  String get port;
+
+  /// No description provided for @autoSyncOff.
+  ///
+  /// In de, this message translates to:
+  /// **'Auto-Sync: Aus'**
+  String get autoSyncOff;
+
+  /// No description provided for @autoSyncEvery.
+  ///
+  /// In de, this message translates to:
+  /// **'Auto-Sync: alle {minutes} Min'**
+  String autoSyncEvery(int minutes);
+
+  /// No description provided for @syncIntervalSubtitle.
+  ///
+  /// In de, this message translates to:
+  /// **'0 = deaktiviert, sonst 10–600 Min'**
+  String get syncIntervalSubtitle;
+
+  /// No description provided for @off.
+  ///
+  /// In de, this message translates to:
+  /// **'Aus'**
+  String get off;
+
+  /// No description provided for @syncMinutes.
+  ///
+  /// In de, this message translates to:
+  /// **'{minutes} Min'**
+  String syncMinutes(int minutes);
+
+  /// No description provided for @syncLastAt.
+  ///
+  /// In de, this message translates to:
+  /// **'Letzter Sync: {date}'**
+  String syncLastAt(String date);
+
+  /// No description provided for @queryExecutedSuccess.
+  ///
+  /// In de, this message translates to:
+  /// **'Query erfolgreich ausgeführt.'**
+  String get queryExecutedSuccess;
+
+  /// No description provided for @sqlQueryEditor.
+  ///
+  /// In de, this message translates to:
+  /// **'SQL Query Editor'**
+  String get sqlQueryEditor;
+
+  /// No description provided for @errorMessageCopied.
+  ///
+  /// In de, this message translates to:
+  /// **'Fehlermeldung kopiert.'**
+  String get errorMessageCopied;
+
+  /// No description provided for @sqlInputHint.
+  ///
+  /// In de, this message translates to:
+  /// **'SQL eingeben, z.B. SELECT * FROM places …'**
+  String get sqlInputHint;
+
+  /// No description provided for @execute.
+  ///
+  /// In de, this message translates to:
+  /// **'Ausführen'**
+  String get execute;
+
+  /// No description provided for @copyToClipboard.
+  ///
+  /// In de, this message translates to:
+  /// **'In Zwischenablage kopieren'**
+  String get copyToClipboard;
+
+  /// No description provided for @duration.
+  ///
+  /// In de, this message translates to:
+  /// **'Dauer'**
+  String get duration;
+
+  /// No description provided for @created.
+  ///
+  /// In de, this message translates to:
+  /// **'Erstellt'**
+  String get created;
+
+  /// No description provided for @updatedAt.
+  ///
+  /// In de, this message translates to:
+  /// **'Aktualisiert am'**
+  String get updatedAt;
+
+  /// No description provided for @totalVisits.
+  ///
+  /// In de, this message translates to:
+  /// **'Besuche gesamt'**
+  String get totalVisits;
+
+  /// No description provided for @firstVisit.
+  ///
+  /// In de, this message translates to:
+  /// **'Erster Besuch'**
+  String get firstVisit;
+
+  /// No description provided for @lastVisitLabel.
+  ///
+  /// In de, this message translates to:
+  /// **'Letzter Besuch'**
+  String get lastVisitLabel;
+
+  /// No description provided for @shortestVisit.
+  ///
+  /// In de, this message translates to:
+  /// **'Kürzester Besuch'**
+  String get shortestVisit;
+
+  /// No description provided for @longestVisit.
+  ///
+  /// In de, this message translates to:
+  /// **'Längster Besuch'**
+  String get longestVisit;
+
+  /// No description provided for @average.
+  ///
+  /// In de, this message translates to:
+  /// **'Durchschnitt'**
+  String get average;
+
+  /// No description provided for @reportField.
+  ///
+  /// In de, this message translates to:
+  /// **'Feld'**
+  String get reportField;
+
+  /// No description provided for @reportValue.
+  ///
+  /// In de, this message translates to:
+  /// **'Wert'**
+  String get reportValue;
+
+  /// No description provided for @originUuid.
+  ///
+  /// In de, this message translates to:
+  /// **'Ursprung UUID'**
+  String get originUuid;
+
+  /// No description provided for @gpsCoordinates.
+  ///
+  /// In de, this message translates to:
+  /// **'GPS Koordinaten'**
+  String get gpsCoordinates;
+
+  /// No description provided for @qthCoordinates.
+  ///
+  /// In de, this message translates to:
+  /// **'QTH Koordinaten'**
+  String get qthCoordinates;
+
+  /// No description provided for @rating.
+  ///
+  /// In de, this message translates to:
+  /// **'Bewertung'**
+  String get rating;
+
+  /// No description provided for @category.
+  ///
+  /// In de, this message translates to:
+  /// **'Kategorie'**
+  String get category;
+
+  /// No description provided for @visits.
+  ///
+  /// In de, this message translates to:
+  /// **'Besuche'**
+  String get visits;
 }
 
 class _AppLocalizationsDelegate

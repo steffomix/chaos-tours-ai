@@ -1106,7 +1106,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get syncAddressHint => 'http://192.168.1.10:8000';
 
   @override
-  String get apiKey => 'API-Key';
+  String get apiKey => 'API-Schlüssel';
 
   @override
   String get infoUrlOptional => 'Info-URL (optional)';
@@ -2348,4 +2348,118 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get maidenheadInfoPrecision =>
       'Sektion 6: Optionale zusätzliche Genauigkeit für die manuelle Ortserstellung.';
+
+  @override
+  String get stay => 'Aufenthalt';
+
+  @override
+  String get p2pMessages => 'P2P Nachrichten';
+
+  @override
+  String get copyReport => 'Bericht kopieren';
+
+  @override
+  String get p2pSyncConfigure => 'P2P Sync konfigurieren';
+
+  @override
+  String get notConfigured => 'Nicht konfiguriert';
+
+  @override
+  String get serverUrl => 'Server URL';
+
+  @override
+  String get port => 'Port';
+
+  @override
+  String get autoSyncOff => 'Auto-Sync: Aus';
+
+  @override
+  String autoSyncEvery(int minutes) {
+    return 'Auto-Sync: alle $minutes Min';
+  }
+
+  @override
+  String get syncIntervalSubtitle => '0 = deaktiviert, sonst 10–600 Min';
+
+  @override
+  String get off => 'Aus';
+
+  @override
+  String syncMinutes(int minutes) {
+    return '$minutes Min';
+  }
+
+  @override
+  String syncLastAt(String date) {
+    return 'Letzter Sync: $date';
+  }
+
+  @override
+  String get queryExecutedSuccess => 'Query erfolgreich ausgeführt.';
+
+  @override
+  String get sqlQueryEditor => 'SQL Query Editor';
+
+  @override
+  String get errorMessageCopied => 'Fehlermeldung kopiert.';
+
+  @override
+  String get sqlInputHint => 'SQL eingeben, z.B. SELECT * FROM places …';
+
+  @override
+  String get execute => 'Ausführen';
+
+  @override
+  String get copyToClipboard => 'In Zwischenablage kopieren';
+
+  @override
+  String get duration => 'Dauer';
+
+  @override
+  String get created => 'Erstellt';
+
+  @override
+  String get updatedAt => 'Aktualisiert am';
+
+  @override
+  String get totalVisits => 'Besuche gesamt';
+
+  @override
+  String get firstVisit => 'Erster Besuch';
+
+  @override
+  String get lastVisitLabel => 'Letzter Besuch';
+
+  @override
+  String get shortestVisit => 'Kürzester Besuch';
+
+  @override
+  String get longestVisit => 'Längster Besuch';
+
+  @override
+  String get average => 'Durchschnitt';
+
+  @override
+  String get reportField => 'Feld';
+
+  @override
+  String get reportValue => 'Wert';
+
+  @override
+  String get originUuid => 'Ursprung UUID';
+
+  @override
+  String get gpsCoordinates => 'GPS Koordinaten';
+
+  @override
+  String get qthCoordinates => 'QTH Koordinaten';
+
+  @override
+  String get rating => 'Bewertung';
+
+  @override
+  String get category => 'Kategorie';
+
+  @override
+  String get visits => 'Besuche';
 }

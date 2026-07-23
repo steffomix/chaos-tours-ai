@@ -81,29 +81,26 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
   Future<void> _deleteStay() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        // TODO Translate next line
-        title: const Text('Aufenthalt löschen'),
-        content: const Text(
-          // TODO Translate next line
-          'Soll dieser Aufenthalt wirklich gelöscht werden? Diese Aktion kann nicht rückgängig gemacht werden.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            // TODO Translate next line
-            child: const Text('Abbrechen'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
+        return AlertDialog(
+          title: Text(l10n.deleteStayTitle),
+          content: Text(l10n.deleteStayContent),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.cancel),
             ),
-            onPressed: () => Navigator.pop(ctx, true),
-            // TODO Translate next line
-            child: const Text('Löschen'),
-          ),
-        ],
-      ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(ctx).colorScheme.error,
+              ),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l10n.delete),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed != true || !mounted) return;
     await DatabaseService.instance.deleteStay(widget.stay.uuid);
@@ -182,40 +179,40 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
   }
 
   // creates a markdown report of the stay and copies it to the clipboard
-  // TODO Translate all buf.writeln lines
   Future<void> _copyReport() async {
+    final l10n = AppLocalizations.of(context)!;
     final stay = widget.stay;
     final buf = StringBuffer();
-    buf.writeln('# Aufenthalt${_place != null ? ': ${_place!.name}' : ''}');
+    buf.writeln('# ${l10n.stay}${_place != null ? ': ${_place!.name}' : ''}');
     buf.writeln();
-    buf.writeln('| Feld | Wert |');
+    buf.writeln('| ${l10n.reportField} | ${l10n.reportValue} |');
     buf.writeln('|------|------|');
-    buf.writeln('| Start | ${_fmtDt(_startDt)} |');
+    buf.writeln('| ${l10n.begin} | ${_fmtDt(_startDt)} |');
     if (_endDt != null) {
-      buf.writeln('| Ende | ${_fmtDt(_endDt!)} |');
+      buf.writeln('| ${l10n.end} | ${_fmtDt(_endDt!)} |');
       final dur = _endDt!.difference(_startDt);
-      buf.writeln('| Dauer | ${_fmtDuration(dur)} |');
+      buf.writeln('| ${l10n.duration} | ${_fmtDuration(dur)} |');
     }
     if (stay.address != null && (stay.address?.isNotEmpty ?? false)) {
-      buf.writeln('| Adresse | ${stay.address} |');
+      buf.writeln('| ${l10n.address} | ${stay.address} |');
     }
-    if (_isInterval) buf.writeln('| Typ | Intervall-Besuch |');
+    if (_isInterval) buf.writeln('| ${l10n.type} | ${l10n.intervalVisit} |');
     buf.writeln();
 
     if (_notesCtrl.text.trim().isNotEmpty) {
-      buf.writeln('**Notiz:** ${_notesCtrl.text.trim()}');
+      buf.writeln('**${l10n.notes}:** ${_notesCtrl.text.trim()}');
       buf.writeln();
     }
 
     if (_stayPersons.isNotEmpty) {
       buf.writeln(
-        '**Personen:** ${_stayPersons.map((p) => p.name).join(', ')}',
+        '**${l10n.persons}:** ${_stayPersons.map((p) => p.name).join(', ')}',
       );
       buf.writeln();
     }
 
     if (_stayActivities.isNotEmpty) {
-      buf.writeln('**Aktivitäten:**');
+      buf.writeln('**${l10n.activities}:**');
       for (final a in _stayActivities) {
         buf.writeln('- ${a.description}');
       }
@@ -226,15 +223,14 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
       widget.stay.uuid,
     );
     if (stayPhotos.isNotEmpty) {
-      buf.writeln('**Fotos:** ${stayPhotos.length}');
+      buf.writeln('**${l10n.photos}:** ${stayPhotos.length}');
     }
 
     await Clipboard.setData(ClipboardData(text: buf.toString()));
     if (mounted) {
       ScaffoldMessenger.of(
         context,
-        // TODO Translate next line
-      ).showSnackBar(const SnackBar(content: Text('Bericht kopiert')));
+      ).showSnackBar(SnackBar(content: Text(l10n.reportCopied)));
     }
   }
 
@@ -515,8 +511,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                         ),
                       ),
                       icon: const Icon(Icons.forum),
-                      // TODO Translate next line
-                      label: const Text('P2P Nachrichten'),
+                      label: Text(l10n.p2pMessages),
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -602,8 +597,7 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
                     OutlinedButton.icon(
                       onPressed: _copyReport,
                       icon: const Icon(Icons.copy_all),
-                      // TODO Translate next line
-                      label: const Text('Bericht kopieren'),
+                      label: Text(l10n.copyReport),
                     ),
                   ],
                   const SizedBox(height: 16),

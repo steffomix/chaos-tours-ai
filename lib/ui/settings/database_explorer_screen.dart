@@ -758,8 +758,9 @@ class _SqlEditorDialogState extends State<_SqlEditorDialog> {
         Navigator.of(context).pop();
         widget.onMutated();
         ScaffoldMessenger.of(context).showSnackBar(
-          // TODO Translate next line
-          const SnackBar(content: Text('Query erfolgreich ausgeführt.')),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.queryExecutedSuccess),
+          ),
         );
       }
     } catch (e) {
@@ -794,7 +795,6 @@ class _SqlEditorDialogState extends State<_SqlEditorDialog> {
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
-                      // TODO Translate next line
                       'SQL Query Editor',
                       style: TextStyle(
                         fontSize: 18,
@@ -817,8 +817,11 @@ class _SqlEditorDialogState extends State<_SqlEditorDialog> {
                   onCopy: () {
                     Clipboard.setData(ClipboardData(text: _error!));
                     ScaffoldMessenger.of(context).showSnackBar(
-                      // TODO Translate next line
-                      const SnackBar(content: Text('Fehlermeldung kopiert.')),
+                      SnackBar(
+                        content: Text(
+                          AppLocalizations.of(context)!.errorMessageCopied,
+                        ),
+                      ),
                     );
                   },
                 ),
@@ -830,11 +833,10 @@ class _SqlEditorDialogState extends State<_SqlEditorDialog> {
                   maxLines: null,
                   expands: true,
                   textAlignVertical: TextAlignVertical.top,
-                  decoration: const InputDecoration(
-                    // TODO Translate next line
-                    hintText: 'SQL eingeben, z.B. SELECT * FROM places …',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.all(10),
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context)!.sqlInputHint,
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.all(10),
                   ),
                   style: const TextStyle(
                     fontFamily: 'monospace',
@@ -851,9 +853,7 @@ class _SqlEditorDialogState extends State<_SqlEditorDialog> {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-
-                    // TODO Translate next line
-                    child: const Text('Schließen'),
+                    child: Text(AppLocalizations.of(context)!.close),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton.icon(
@@ -866,8 +866,7 @@ class _SqlEditorDialogState extends State<_SqlEditorDialog> {
                           )
                         : const Icon(Icons.play_arrow),
 
-                    // TODO Translate next line
-                    label: const Text('Ausführen'),
+                    label: Text(AppLocalizations.of(context)!.execute),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       foregroundColor: Colors.white,
@@ -914,8 +913,7 @@ class _ErrorBanner extends StatelessWidget {
             ),
           ),
           IconButton(
-            // TODO Translate next line
-            tooltip: 'In Zwischenablage kopieren',
+            tooltip: AppLocalizations.of(context)!.copyToClipboard,
             icon: const Icon(Icons.copy, size: 18, color: Colors.red),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),

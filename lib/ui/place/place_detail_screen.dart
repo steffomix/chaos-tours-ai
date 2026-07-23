@@ -595,8 +595,9 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   }
 
   // creates a markdown report of the place and copies it to the clipboard
-  // TODO Translate all buf.writeln lines
+  // Translate all buf.writeln lines - done
   Future<void> _copyReport({bool basicReport = false}) async {
+    final l10n = AppLocalizations.of(context)!;
     final place = widget.place;
     final db = DatabaseService.instance;
     final uuid = place.uuid;
@@ -636,31 +637,31 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     // ── Header ──────────────────────────────────────────────────────────
     buf.writeln('# ${place.name}');
     buf.writeln();
-    buf.writeln('| Feld | Wert |');
+    buf.writeln('| ${l10n.reportField} | ${l10n.reportValue} |');
     buf.writeln('|------|------|');
     buf.writeln('| Typ | ${place.placeType.l10nLabel(context)} |');
 
     buf.writeln('| UUID | ${place.uuid} |');
     if (place.originSourceUuid != null) {
-      buf.writeln('| Ursprung UUID | ${place.originSourceUuid} |');
+      buf.writeln('| ${l10n.originUuid} | ${place.originSourceUuid} |');
     }
-    buf.writeln('| Device ID | ${place.deviceId} |');
+    buf.writeln('| ${l10n.deviceId} | ${place.deviceId} |');
     buf.writeln(
-      '| GPS Koordinaten | ${place.lat.toStringAsFixed(6)}, ${place.lng.toStringAsFixed(6)} |',
+      '| ${l10n.gpsCoordinates} | ${place.lat.toStringAsFixed(6)}, ${place.lng.toStringAsFixed(6)} |',
     );
     buf.writeln(
-      '| QTH Koordinaten | ${Maidenhead.encode(place.lat, place.lng, pairs: 6)} |',
+      '| ${l10n.qthCoordinates} | ${Maidenhead.encode(place.lat, place.lng, pairs: 6)} |',
     );
-    buf.writeln('| Email | ${place.email} |');
-    buf.writeln('| Telefon | ${place.phone} |');
+    buf.writeln('| ${l10n.email} | ${place.email} |');
+    buf.writeln('| ${l10n.phone} | ${place.phone} |');
     buf.writeln('| Radius | ${place.radius.toStringAsFixed(0)} m |');
-    if (group != null) buf.writeln('| Gruppe | ${group.name} |');
-    buf.writeln('| Erstellt | ${fmtDt(place.createdAt)} |');
-    buf.writeln('| Aktualisiert am | ${fmtDt(place.updatedAt)} |');
-    buf.writeln('| Besuche gesamt | ${completed.length} |');
+    if (group != null) buf.writeln('| ${l10n.group} | ${group.name} |');
+    buf.writeln('| ${l10n.created} | ${fmtDt(place.createdAt)} |');
+    buf.writeln('| ${l10n.updatedAt} | ${fmtDt(place.updatedAt)} |');
+    buf.writeln('| ${l10n.totalVisits} | ${completed.length} |');
     if (place.notes.isNotEmpty) {
       buf.writeln();
-      buf.writeln('**Notiz:** ${place.notes}');
+      buf.writeln('**${l10n.notes}:** ${place.notes}');
     }
     buf.writeln();
 
@@ -678,24 +679,28 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
       final shortest = durations.reduce((a, b) => a < b ? a : b);
       final longest = durations.reduce((a, b) => a > b ? a : b);
 
-      buf.writeln('## Statistik');
+      buf.writeln('## ${l10n.statistics}');
       buf.writeln();
       buf.writeln('| | |');
       buf.writeln('|---|---|');
-      buf.writeln('| Erster Besuch | ${fmtDt(completed.first.startTime)} |');
-      buf.writeln('| Letzter Besuch | ${fmtDt(completed.last.startTime)} |');
-      buf.writeln('| Kürzester Besuch | ${_fmtDuration(shortest)} |');
-      buf.writeln('| Längster Besuch | ${_fmtDuration(longest)} |');
-      buf.writeln('| Durchschnitt | ${_fmtDuration(avgDuration)} |');
+      buf.writeln(
+        '| ${l10n.firstVisit} | ${fmtDt(completed.first.startTime)} |',
+      );
+      buf.writeln(
+        '| ${l10n.lastVisitLabel} | ${fmtDt(completed.last.startTime)} |',
+      );
+      buf.writeln('| ${l10n.shortestVisit} | ${_fmtDuration(shortest)} |');
+      buf.writeln('| ${l10n.longestVisit} | ${_fmtDuration(longest)} |');
+      buf.writeln('| ${l10n.average} | ${_fmtDuration(avgDuration)} |');
       buf.writeln('| Median | ${_fmtDuration(median)} |');
 
       if (_distinctPersonNames.isNotEmpty) {
-        buf.writeln('| Personen | ${_distinctPersonNames.join(', ')} |');
+        buf.writeln('| ${l10n.persons} | ${_distinctPersonNames.join(', ')} |');
       } else {
         // load if not already loaded
         final persons = await db.loadDistinctPersonNamesForPlace(uuid);
         if (persons.isNotEmpty) {
-          buf.writeln('| Personen | ${persons.join(', ')} |');
+          buf.writeln('| ${l10n.persons} | ${persons.join(', ')} |');
         }
       }
       buf.writeln();
@@ -703,31 +708,31 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
 
     // ── Visits ──────────────────────────────────────────────────────────
     if (completed.isNotEmpty) {
-      buf.writeln('## Besuche');
+      buf.writeln('## ${l10n.visits}');
       buf.writeln();
       for (final stay in completed) {
         buf.writeln('### ${fmtDt(stay.startTime)}');
         buf.writeln();
         buf.writeln('| | |');
         buf.writeln('|---|---|');
-        buf.writeln('| Start | ${fmtDt(stay.startTime)} |');
-        buf.writeln('| Ende | ${fmtDt(stay.endTime!)} |');
-        buf.writeln('| Dauer | ${_fmtDuration(stay.duration)} |');
+        buf.writeln('| ${l10n.begin} | ${fmtDt(stay.startTime)} |');
+        buf.writeln('| ${l10n.end} | ${fmtDt(stay.endTime!)} |');
+        buf.writeln('| ${l10n.duration} | ${_fmtDuration(stay.duration)} |');
         if (stay.address != null && stay.address!.isNotEmpty) {
-          buf.writeln('| Adresse | ${stay.address} |');
+          buf.writeln('| ${l10n.address} | ${stay.address} |');
         }
         buf.writeln();
 
         final persons = await db.loadPersonsForStay(stay.uuid);
         if (persons.isNotEmpty) {
           buf.writeln(
-            '**Personen:** ${persons.map((p) => p.name).join(', ')}  ',
+            '**${l10n.persons}:** ${persons.map((p) => p.name).join(', ')}  ',
           );
           buf.writeln();
         }
         final activities = await db.loadActivitiesForStay(stay.uuid);
         if (activities.isNotEmpty) {
-          buf.writeln('**Aktivitäten:**  ');
+          buf.writeln('**${l10n.activities}:**  ');
           for (final a in activities) {
             buf.writeln('- ${a.description}');
           }
@@ -735,7 +740,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
         }
 
         if (stay.notes.isNotEmpty) {
-          buf.writeln('**Notiz:** ${stay.notes}  ');
+          buf.writeln('**${l10n.notes}:** ${stay.notes}  ');
           buf.writeln();
         }
       }
@@ -745,7 +750,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     if (uuid.isNotEmpty) {
       final experiences = await db.loadExperiencesForPlace(uuid);
       if (experiences.isNotEmpty) {
-        buf.writeln('## Survival-Erfahrungen');
+        buf.writeln('## ${l10n.survivalExperiences}');
         buf.writeln();
         for (final exp in experiences) {
           buf.writeln(
@@ -753,25 +758,21 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
             '  _(${fmtDt(exp.createdAt)})_',
           );
           buf.writeln();
-          buf.writeln('| Kategorie | Bewertung |');
+          buf.writeln('| ${l10n.category} | ${l10n.rating} |');
           buf.writeln('|-----------|-----------|');
           buf.writeln(
-            '| Gefährlich ↔ Freundlich | ${exp.ratingDangerousFriendly} |',
+            '| ${l10n.ratingDangerFriendly} | ${exp.ratingDangerousFriendly} |',
           );
           buf.writeln(
-            '| Betrügerisch ↔ Zuverlässig | ${exp.ratingFraudReliable} |',
+            '| ${l10n.ratingFraudReliable} | ${exp.ratingFraudReliable} |',
           );
           buf.writeln(
-            '| Abweisend ↔ Bietet Unterkunft | ${exp.ratingDismissiveAccommodation} |',
+            '| ${l10n.ratingDismissiveAccommodation} | ${exp.ratingDismissiveAccommodation} |',
           );
-          buf.writeln('| Fordert ↔ Bietet Verpflegung | ${exp.ratingFood} |');
-          buf.writeln(
-            '| Fordert ↔ Bietet Equipment | ${exp.ratingEquipment} |',
-          );
-          buf.writeln(
-            '| Fordert ↔ Bietet Transport | ${exp.ratingTransport} |',
-          );
-          buf.writeln('| Fordert ↔ Bietet Medizin | ${exp.ratingMedicine} |');
+          buf.writeln('| ${l10n.ratingFood} | ${exp.ratingFood} |');
+          buf.writeln('| ${l10n.ratingEquipment} | ${exp.ratingEquipment} |');
+          buf.writeln('| ${l10n.ratingTransport} | ${exp.ratingTransport} |');
+          buf.writeln('| ${l10n.ratingMedicine} | ${exp.ratingMedicine} |');
           if (exp.text.isNotEmpty) {
             buf.writeln();
             buf.writeln('> ${exp.text}');
@@ -1330,13 +1331,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
                 leading: const Icon(Icons.sync),
-                // TODO Translate next line
-                title: const Text('P2P Sync konfigurieren'),
+                title: Text(l10n.p2pSyncConfigure),
                 subtitle: widget.place.syncUrl.isEmpty
-                    ? const Text(
-                        // TODO Translate next line
-                        'Nicht konfiguriert',
-                        style: TextStyle(fontSize: 12),
+                    ? Text(
+                        l10n.notConfigured,
+                        style: const TextStyle(fontSize: 12),
                       )
                     : Text(
                         '${widget.place.syncUrl}:${widget.place.syncPort}',
@@ -1348,44 +1347,40 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                   TextField(
                     controller: _syncUrlCtrl,
                     keyboardType: TextInputType.url,
-                    decoration: const InputDecoration(
-                      // TODO Translate next line
-                      labelText: 'Server URL',
+                    decoration: InputDecoration(
+                      labelText: l10n.serverUrl,
                       hintText: 'http://192.168.4.1',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.link),
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.link),
                     ),
                   ),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _syncPortCtrl,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      // TODO Translate next line
-                      labelText: 'Port',
+                    decoration: InputDecoration(
+                      labelText: l10n.port,
                       hintText: '8000',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.settings_ethernet),
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.settings_ethernet),
                     ),
                   ),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _syncApiKeyCtrl,
-                    decoration: const InputDecoration(
-                      // TODO Translate next line
-                      labelText: 'API Key',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.key),
+                    decoration: InputDecoration(
+                      labelText: l10n.apiKey,
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.key),
                     ),
                   ),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _syncNotesCtrl,
-                    decoration: const InputDecoration(
-                      // TODO Translate next line
-                      labelText: 'Notizen',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.notes),
+                    decoration: InputDecoration(
+                      labelText: l10n.notes,
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.notes),
                     ),
                     maxLines: 2,
                   ),
@@ -1394,8 +1389,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.tune),
-                    // TODO Translate next line
-                    title: const Text('Sync-Optionen'),
+                    title: Text(l10n.syncOptionsMenu),
                     subtitle: Text(
                       _syncOptionsSummary(_syncOptions),
                       style: const TextStyle(fontSize: 12),
@@ -1418,15 +1412,13 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.timer_outlined),
                     title: Text(
-                      // TODO Translate next line
                       _syncIntervalMinutes == 0
-                          ? 'Auto-Sync: Aus'
-                          : 'Auto-Sync: alle $_syncIntervalMinutes Min',
+                          ? l10n.autoSyncOff
+                          : l10n.autoSyncEvery(_syncIntervalMinutes),
                     ),
-                    // TODO Translate next line
-                    subtitle: const Text(
-                      '0 = deaktiviert, sonst 10–600 Min',
-                      style: TextStyle(fontSize: 12),
+                    subtitle: Text(
+                      l10n.syncIntervalSubtitle,
+                      style: const TextStyle(fontSize: 12),
                     ),
                   ),
                   Slider(
@@ -1434,10 +1426,9 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     min: 0,
                     max: 600,
                     divisions: 60,
-                    // TODO Translate next line
                     label: _syncIntervalMinutes == 0
-                        ? 'Aus'
-                        : '$_syncIntervalMinutes Min',
+                        ? l10n.off
+                        : l10n.syncMinutes(_syncIntervalMinutes),
                     onChanged: (v) => setState(
                       () => _syncIntervalMinutes = (v / 10).round() * 10,
                     ),
@@ -1446,8 +1437,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 4),
                       child: Text(
-                        // TODO Translate next line
-                        'Letzter Sync: ${_formatDate(widget.place.syncLastMs)}',
+                        l10n.syncLastAt(_formatDate(widget.place.syncLastMs)),
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.grey,
@@ -1481,8 +1471,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                                   setState(() => _isSyncing = false);
                                   final msg = result.success
                                       ? '✓ ${result.sourceName}: ↓${result.pulled} ↑${result.pushed}'
-                                      // TODO Translate next line
-                                      : '✗ ${result.errorMessage ?? 'Fehler'}';
+                                      : '✗ ${result.errorMessage ?? l10n.unknown}';
                                   // ignore: use_build_context_synchronously
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -1502,8 +1491,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                                   ),
                                 )
                               : const Icon(Icons.sync),
-                          // TODO Translate next line
-                          label: const Text('Jetzt Synchronisieren'),
+                          label: Text(l10n.syncNow),
                         ),
                       ),
                     ],
@@ -1521,8 +1509,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                             ),
                           ),
                     icon: const Icon(Icons.forum),
-                    // TODO Translate next line
-                    label: const Text('P2P Nachrichten'),
+                    label: Text(l10n.p2pMessages),
                   ),
                   const SizedBox(height: 8),
                 ],
@@ -1772,8 +1759,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               const SizedBox(height: 4),
               // ── Device ID ────────────────────────────────────────────
               Text(
-                // TODO Translate next line
-                "Device ID",
+                l10n.deviceId,
                 style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,

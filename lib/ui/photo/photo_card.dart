@@ -53,20 +53,20 @@ class PhotoCard extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.broken_image),
-                            // TODO Translate next line
-                            Text('Error loading image'),
+                            Text(l10n.imageLoadingError),
                             Builder(
                               builder: (context) {
+                                final l10n = AppLocalizations.of(context)!;
                                 final mime = lookupMimeType(
                                   '*',
                                   headerBytes: bytes.sublist(0, 100),
                                 );
                                 if (mime != null) {
-                                  // TODO Translate next line
-                                  return Text('File type looks like: $mime');
+                                  return Text(
+                                    l10n.imageFileTypeLooksLike(mime),
+                                  );
                                 } else {
-                                  // TODO Translate next line
-                                  return Text('Unknown file type');
+                                  return Text(l10n.imageFileHasUnknownType);
                                 }
                               },
                             ),

@@ -1250,5 +1250,56 @@
   "maidenheadLocatorTitle": "Maidenhead locator",
   "maidenheadInfoBase": "Sections 1\u20133: Standard 6-character Maidenhead locator (required). The centre of the selected cell is used.",
   "maidenheadInfoDeterministic": "Sections 4\u20135: Deterministic grid cell for UUID v5 generation on automatic place creation \u2013 shared sync key across all devices.",
-  "maidenheadInfoPrecision": "Section 6: Optional extra precision for manual place creation."
+  "maidenheadInfoPrecision": "Section 6: Optional extra precision for manual place creation.",
+  "stay": "Stay",
+  "p2pMessages": "P2P Messages",
+  "copyReport": "Copy report",
+  "p2pSyncConfigure": "Configure P2P Sync",
+  "notConfigured": "Not configured",
+  "serverUrl": "Server URL",
+  "port": "Port",
+  "autoSyncOff": "Auto-Sync: Off",
+  "autoSyncEvery": "Auto-Sync: every {minutes} min",
+  "@autoSyncEvery": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "syncIntervalSubtitle": "0 = disabled, otherwise 10–600 min",
+  "off": "Off",
+  "syncMinutes": "{minutes} min",
+  "@syncMinutes": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "syncLastAt": "Last sync: {date}",
+  "@syncLastAt": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "queryExecutedSuccess": "Query executed successfully.",
+  "sqlQueryEditor": "SQL Query Editor",
+  "errorMessageCopied": "Error message copied.",
+  "sqlInputHint": "Enter SQL, e.g. SELECT * FROM places …",
+  "execute": "Execute",
+  "copyToClipboard": "Copy to clipboard",
+  "duration": "Duration",
+  "created": "Created",
+  "updatedAt": "Updated at",
+  "totalVisits": "Total visits",
+  "firstVisit": "First visit",
+  "lastVisitLabel": "Last visit",
+  "shortestVisit": "Shortest visit",
+  "longestVisit": "Longest visit",
+  "average": "Average",
+  "reportField": "Field",
+  "reportValue": "Value",
+  "originUuid": "Origin UUID",
+  "gpsCoordinates": "GPS coordinates",
+  "qthCoordinates": "QTH coordinates",
+  "rating": "Rating",
+  "category": "Category",
+  "visits": "Visits"
 }
