@@ -6,6 +6,7 @@ import '../../models/message.dart';
 import '../../models/saved_place.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
+import '../../utils/data_observer.dart';
 import 'p2p_message_card.dart';
 import 'p2p_message_composer.dart';
 
@@ -78,7 +79,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
   final List<Message> _messages = [];
   final Map<String, SavedPlace> _placeCache = {};
 
-  ValueNotifier<int> trustedStateRefreshNotifier = ValueNotifier(0);
+  final SavedPlaceObserver _savedPlaceObserver = SavedPlaceObserver();
 
   bool _loading = false;
   bool _hasMore = true;
@@ -90,13 +91,29 @@ class _MessagesScreenState extends State<MessagesScreen> {
   void initState() {
     super.initState();
     _scrollCtrl.addListener(_onScroll);
+    _savedPlaceObserver.addListener(_onSavedPlaceChanged);
     _loadNextChunk();
   }
 
   @override
   void dispose() {
     _scrollCtrl.dispose();
+    _savedPlaceObserver.removeListener(_onSavedPlaceChanged);
     super.dispose();
+  }
+
+  void _onSavedPlaceChanged() {
+    if (widget.messagesListMode == MessagesListMode.place &&
+        _savedPlaceObserver.data == null) {
+      if (mounted) {
+        Navigator.pushNamed(context, '/places').then((value) {
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
+        });
+        return;
+      }
+    }
   }
 
   void _onScroll() {
@@ -217,6 +234,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
                         onReply: () => setState(() => _replyTo = _messages[i]),
                         onDelete: () => _deleteMessage(_messages[i]),
                         onDeletePhoto: _reload,
+                        onPlaceUpdated: _reload,
+                        onPlaceDeleted: () => Navigator.of(context).pop(),
                       );
                     },
                   ),

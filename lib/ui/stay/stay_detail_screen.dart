@@ -181,10 +181,11 @@ class _StayDetailSheetState extends State<StayDetailSheet> {
     return '${m}min';
   }
 
+  // creates a markdown report of the stay and copies it to the clipboard
+  // TODO Translate all buf.writeln lines
   Future<void> _copyReport() async {
     final stay = widget.stay;
     final buf = StringBuffer();
-    // TODO Translate writeln lines
     buf.writeln('# Aufenthalt${_place != null ? ': ${_place!.name}' : ''}');
     buf.writeln();
     buf.writeln('| Feld | Wert |');

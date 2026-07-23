@@ -40,7 +40,6 @@ class PhotoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // TODO Translate this section
           // ── Photo ──────────────────────────────────────────────────────
           GestureDetector(
             onTap: onTap,
@@ -54,6 +53,7 @@ class PhotoCard extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.broken_image),
+                            // TODO Translate next line
                             Text('Error loading image'),
                             Builder(
                               builder: (context) {
@@ -62,8 +62,10 @@ class PhotoCard extends StatelessWidget {
                                   headerBytes: bytes.sublist(0, 100),
                                 );
                                 if (mime != null) {
+                                  // TODO Translate next line
                                   return Text('File type looks like: $mime');
                                 } else {
+                                  // TODO Translate next line
                                   return Text('Unknown file type');
                                 }
                               },

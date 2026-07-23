@@ -7,6 +7,7 @@ import '../../models/saved_place.dart';
 import '../../models/trusted_source.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
+import '../../utils/data_observer.dart';
 import '../../utils/unified_widget.dart';
 import '../place/place_detail_screen.dart';
 import '../settings/trusted_source_edit_sheet.dart';
@@ -21,6 +22,8 @@ class P2pMessageCard extends StatefulWidget {
   final VoidCallback onReply;
   final VoidCallback onDelete;
   final VoidCallback? onDeletePhoto;
+  final VoidCallback? onPlaceUpdated;
+  final VoidCallback? onPlaceDeleted;
 
   const P2pMessageCard({
     super.key,
@@ -30,6 +33,8 @@ class P2pMessageCard extends StatefulWidget {
     required this.onReply,
     required this.onDelete,
     this.onDeletePhoto,
+    this.onPlaceUpdated,
+    this.onPlaceDeleted,
   });
 
   @override
@@ -43,28 +48,44 @@ class _P2pMessageCardState extends State<P2pMessageCard> {
   );
   final TrustedSourceObserver _trustedSourceObserver = TrustedSourceObserver();
 
+  final SavedPlaceObserver _savedPlaceObserver = SavedPlaceObserver();
+  late SavedPlace _place;
+
   @override
   void initState() {
     super.initState();
     _trustedSourceObserver.addListener(_onTrustedSourceChanged);
+
+    // _place may be updated by the SavedPlaceObserver
+    _place = widget.place;
+    _savedPlaceObserver.addListener(_onSavedPlaceChanged);
   }
 
   @override
   void dispose() {
     _trustedSourceObserver.removeListener(_onTrustedSourceChanged);
+    _savedPlaceObserver.removeListener(_onSavedPlaceChanged);
     _ownDeviceIdNotifier.dispose();
     _trustedSourceNotifier.dispose();
     super.dispose();
   }
 
   void _onTrustedSourceChanged() {
-    if (_trustedSourceObserver.trustedSource?.deviceId !=
-        widget.message.deviceId) {
+    if (_trustedSourceObserver.data?.deviceId != widget.message.deviceId) {
       return;
     }
-    _trustedSourceNotifier.value = _trustedSourceObserver.trustedSource;
+    _trustedSourceNotifier.value = _trustedSourceObserver.data;
     _ownDeviceIdNotifier.value =
         widget.message.deviceId == SettingsService.instance.deviceId;
+  }
+
+  void _onSavedPlaceChanged() {
+    if (_savedPlaceObserver.data?.uuid != _place.uuid) {
+      return;
+    }
+    setState(() {
+      _place = _savedPlaceObserver.data!;
+    });
   }
 
   Future<void> _loadTrustedStatus() async {
@@ -104,7 +125,7 @@ class _P2pMessageCardState extends State<P2pMessageCard> {
       );
       if (result != null) {
         await DatabaseService.instance.upsertTrustedSource(result);
-        _trustedSourceObserver.trustedSource = result;
+        _trustedSourceObserver.data = result;
       }
       // Refresh trust status after sheet is closed.
       _loadTrustedStatus();
@@ -174,26 +195,16 @@ class _P2pMessageCardState extends State<P2pMessageCard> {
                         );
                       }
 
-                      // TODO copy from places_screen.dart Line 406 does not work from here
                       if (widget.messagesListMode == MessagesListMode.place) {
-                        // Navigator.of(context).push(
-                        //   MaterialPageRoute<void>(
-                        //     builder: (_) => PlaceDetailScreen(
-                        //       place: place,
-                        //       onUpdated: _loadPlaces,
-                        //       onDeleted: _loadPlaces,
-                        //       onShowOnMap: () => _showOnMap(place),
-                        //     ),
-                        //   ),
-                        // );
-
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(
                             builder: (_) => PlaceDetailScreen(
                               place: widget.place,
-                              onUpdated: () {},
-                              onDeleted: () {},
-                              onShowOnMap: () {},
+                              onUpdated: () => widget.onPlaceUpdated?.call(),
+                              onDeleted: () {
+                                Navigator.of(context).pop();
+                              },
+                              onShowOnMap: null,
                             ),
                           ),
                         );
@@ -229,7 +240,7 @@ class _P2pMessageCardState extends State<P2pMessageCard> {
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        widget.place.name,
+                        _place.name,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.hintColor,
                         ),

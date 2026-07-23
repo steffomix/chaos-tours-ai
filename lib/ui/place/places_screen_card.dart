@@ -7,6 +7,7 @@ import '../../models/saved_place.dart';
 import '../../models/trusted_source.dart';
 import '../../services/database_service.dart';
 import '../../services/settings_service.dart';
+import '../../utils/data_observer.dart';
 import '../../utils/geo_utils.dart';
 import '../../utils/unified_widget.dart';
 import '../settings/trusted_source_edit_sheet.dart';
@@ -93,11 +94,10 @@ class _PlacesScreenCardState extends State<PlacesScreenCard> {
   }
 
   Future<void> _onTrustedSourceChanged() async {
-    if (_trustedSourceObserver.trustedSource?.deviceId !=
-        widget.place.deviceId) {
+    if (_trustedSourceObserver.data?.deviceId != widget.place.deviceId) {
       return;
     }
-    _trustedSourceNotifier.value = _trustedSourceObserver.trustedSource;
+    _trustedSourceNotifier.value = _trustedSourceObserver.data;
     _isOwnDevice.value =
         SettingsService.instance.deviceId == widget.place.deviceId;
   }
@@ -134,7 +134,7 @@ class _PlacesScreenCardState extends State<PlacesScreenCard> {
       );
       if (result != null) {
         await DatabaseService.instance.upsertTrustedSource(result);
-        _trustedSourceObserver.trustedSource = result;
+        _trustedSourceObserver.data = result;
       }
       // Refresh trust status after sheet is closed.
       _loadTrustedSource();

@@ -122,7 +122,6 @@ class _FotoViewerState extends State<FotoViewer> {
           ),
         ],
       ),
-      // TODO Translate this section
       body: Column(
         children: [
           Expanded(
@@ -146,6 +145,7 @@ class _FotoViewerState extends State<FotoViewer> {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Icon(Icons.broken_image),
+                                        // TODO Translate next line
                                         Text('Error loading image'),
                                         Builder(
                                           builder: (context) {
@@ -158,9 +158,11 @@ class _FotoViewerState extends State<FotoViewer> {
                                             );
                                             if (mime != null) {
                                               return Text(
+                                                // TODO Translate next line
                                                 'File type looks like: $mime',
                                               );
                                             } else {
+                                              // TODO Translate next line
                                               return Text('Unknown file type');
                                             }
                                           },

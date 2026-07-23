@@ -16,6 +16,7 @@ import '../../services/database_service.dart';
 import '../../services/sync_service.dart';
 import '../../services/telegram_service.dart';
 import '../../utils/custom_icons.dart';
+import '../../utils/data_observer.dart';
 import '../../utils/maidenhead.dart';
 import '../../utils/unified_widget.dart';
 import '../photo/photos_section.dart';
@@ -47,25 +48,28 @@ class PlaceDetailScreen extends StatefulWidget {
 }
 
 class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
+  // notify on Change and onDelete
+  final SavedPlaceObserver _savedPlaceObserver = SavedPlaceObserver();
+  // ── Basic fields ─────────────────────────────────────────────────────
   late TextEditingController _nameCtrl;
   late TextEditingController _notesCtrl;
-  late double _radius;
-  String? _groupUuid;
-  List<PlaceGroup> _groups = [];
-
   late TextEditingController _websiteCtrl;
   late TextEditingController _emailCtrl;
   late TextEditingController _phoneCtrl;
-
-  bool _intervalEnabled = false;
-  late TextEditingController _intervalDaysCtrl;
-
   // ── P2P Sync fields ─────────────────────────────────────────────────────
   late TextEditingController _syncUrlCtrl;
   late TextEditingController _syncPortCtrl;
   late TextEditingController _syncApiKeyCtrl;
   late TextEditingController _syncNotesCtrl;
   late SyncSourceOptions _syncOptions;
+  late double _radius;
+
+  String? _groupUuid;
+  List<PlaceGroup> _groups = [];
+
+  bool _intervalEnabled = false;
+  late TextEditingController _intervalDaysCtrl;
+
   int _syncIntervalMinutes = 0;
   bool _isSyncing = false;
 
@@ -328,6 +332,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     await DatabaseService.instance.updatePlace(updated);
     widget.onUpdated();
     if (mounted) Navigator.pop(context);
+    _savedPlaceObserver.data = updated; // notify listeners of the update
   }
 
   Future<void> _editTrustedSource() async {
@@ -495,6 +500,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     await DatabaseService.instance.deletePlace(widget.place.uuid);
     widget.onDeleted();
     if (mounted) Navigator.pop(context);
+    _savedPlaceObserver.data =
+        null; // notify listeners that the place was deleted
   }
 
   String _formatDate(int ms) {
@@ -587,6 +594,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     }
   }
 
+  // creates a markdown report of the place and copies it to the clipboard
+  // TODO Translate all buf.writeln lines
   Future<void> _copyReport({bool basicReport = false}) async {
     final place = widget.place;
     final db = DatabaseService.instance;
@@ -1318,13 +1327,14 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                 label: Text(l10n.placeMessagesButton),
               ),
               // ── P2P Sync Konfiguration ─────────────────────────────────
-              // TODO Translate this section
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
                 leading: const Icon(Icons.sync),
+                // TODO Translate next line
                 title: const Text('P2P Sync konfigurieren'),
                 subtitle: widget.place.syncUrl.isEmpty
                     ? const Text(
+                        // TODO Translate next line
                         'Nicht konfiguriert',
                         style: TextStyle(fontSize: 12),
                       )
@@ -1339,6 +1349,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     controller: _syncUrlCtrl,
                     keyboardType: TextInputType.url,
                     decoration: const InputDecoration(
+                      // TODO Translate next line
                       labelText: 'Server URL',
                       hintText: 'http://192.168.4.1',
                       border: OutlineInputBorder(),
@@ -1350,6 +1361,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     controller: _syncPortCtrl,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
+                      // TODO Translate next line
                       labelText: 'Port',
                       hintText: '8000',
                       border: OutlineInputBorder(),
@@ -1360,6 +1372,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                   TextField(
                     controller: _syncApiKeyCtrl,
                     decoration: const InputDecoration(
+                      // TODO Translate next line
                       labelText: 'API Key',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.key),
@@ -1369,6 +1382,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                   TextField(
                     controller: _syncNotesCtrl,
                     decoration: const InputDecoration(
+                      // TODO Translate next line
                       labelText: 'Notizen',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.notes),
@@ -1376,11 +1390,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     maxLines: 2,
                   ),
                   const SizedBox(height: 8),
-                  // TODO Translate this section
                   // ── Sync-Optionen ──────────────────────────────────────
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.tune),
+                    // TODO Translate next line
                     title: const Text('Sync-Optionen'),
                     subtitle: Text(
                       _syncOptionsSummary(_syncOptions),
@@ -1398,17 +1412,18 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                       }
                     },
                   ),
-                  // TODO Translate this section
                   // ── Auto-Sync Intervall ────────────────────────────────
                   const SizedBox(height: 4),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.timer_outlined),
                     title: Text(
+                      // TODO Translate next line
                       _syncIntervalMinutes == 0
                           ? 'Auto-Sync: Aus'
                           : 'Auto-Sync: alle $_syncIntervalMinutes Min',
                     ),
+                    // TODO Translate next line
                     subtitle: const Text(
                       '0 = deaktiviert, sonst 10–600 Min',
                       style: TextStyle(fontSize: 12),
@@ -1419,6 +1434,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     min: 0,
                     max: 600,
                     divisions: 60,
+                    // TODO Translate next line
                     label: _syncIntervalMinutes == 0
                         ? 'Aus'
                         : '$_syncIntervalMinutes Min',
@@ -1430,6 +1446,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 4),
                       child: Text(
+                        // TODO Translate next line
                         'Letzter Sync: ${_formatDate(widget.place.syncLastMs)}',
                         style: const TextStyle(
                           fontSize: 12,
@@ -1439,7 +1456,6 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     ),
                   ],
                   const SizedBox(height: 8),
-                  // TODO Translate this section
                   // ── Jetzt Synchronisieren ─────────────────────────────
                   Row(
                     children: [
@@ -1465,6 +1481,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                                   setState(() => _isSyncing = false);
                                   final msg = result.success
                                       ? '✓ ${result.sourceName}: ↓${result.pulled} ↑${result.pushed}'
+                                      // TODO Translate next line
                                       : '✗ ${result.errorMessage ?? 'Fehler'}';
                                   // ignore: use_build_context_synchronously
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -1485,13 +1502,13 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                                   ),
                                 )
                               : const Icon(Icons.sync),
+                          // TODO Translate next line
                           label: const Text('Jetzt Synchronisieren'),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  // TODO Translate this section
                   // ── P2P Nachrichten ────────────────────────────────────
                   OutlinedButton.icon(
                     onPressed: widget.place.uuid.isEmpty
@@ -1504,6 +1521,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                             ),
                           ),
                     icon: const Icon(Icons.forum),
+                    // TODO Translate next line
                     label: const Text('P2P Nachrichten'),
                   ),
                   const SizedBox(height: 8),
@@ -1754,6 +1772,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               const SizedBox(height: 4),
               // ── Device ID ────────────────────────────────────────────
               Text(
+                // TODO Translate next line
                 "Device ID",
                 style: const TextStyle(
                   fontSize: 10,

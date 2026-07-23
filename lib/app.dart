@@ -30,6 +30,13 @@ class App extends StatefulWidget {
   State<App> createState() => _AppState();
 }
 
+// Bottom nav screens
+final _homeScreen = const HomeScreen();
+final _placesMapScreen = const PlacesMapScreen();
+final _placesScreen = const PlacesScreen();
+final _placesTimelineScreen = const PlacesTimelineScreen();
+final _photosScreen = const PhotosScreen.global();
+
 class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
@@ -43,6 +50,13 @@ class _AppState extends State<App> {
         useMaterial3: true,
       ),
       routes: {
+        // bottom nav screens
+        '/home-screen': (_) => _homeScreen,
+        '/places-map': (_) => _placesMapScreen,
+        '/places': (_) => _placesScreen,
+        '/places-timeline': (_) => _placesTimelineScreen,
+        '/photos': (_) => _photosScreen,
+        // other screens
         '/settings': (_) => const SettingsScreen(),
         '/place-groups': (_) => const PlaceGroupsScreen(),
         '/persons': (_) => const PersonsScreen(),
@@ -73,11 +87,11 @@ class _AppHomeState extends State<_AppHome> {
   TextEditingController? _deviceNameCtrl;
 
   final List<Widget> _screens = [
-    const HomeScreen(),
-    const PlacesMapScreen(),
-    const PlacesScreen(),
-    const PlacesTimelineScreen(),
-    const PhotosScreen.global(),
+    _homeScreen,
+    _placesMapScreen,
+    _placesScreen,
+    _placesTimelineScreen,
+    _photosScreen,
   ];
 
   @override

@@ -6,7 +6,7 @@ import '../../models/saved_place.dart';
 import '../../services/database_service.dart';
 import '../../utils/unified_widget.dart';
 
-Color expRatingToColor(double value) {
+Color expRatingToColorInterpolated(double value) {
   final clampedValue = value.clamp(-9.0, 9.0);
 
   if (clampedValue < 0) {
@@ -18,6 +18,19 @@ Color expRatingToColor(double value) {
     final t = clampedValue / 9.0; // t geht von 0.0 bis 1.0
     return Color.lerp(Colors.yellow, Colors.green, t)!;
   }
+}
+
+Color expRatingToColor(double value) {
+  // Wert sicherheitshalber auf den Bereich [-9.0, 9.0] begrenzen
+  final clampedValue = value.clamp(-9.0, 9.0);
+
+  // Umrechnung von [-9, +9] auf den Hue-Winkel [0°, 120°]
+  // -9.0 -> 0°   (Rot)
+  //  0.0 -> 60°  (Gelb)
+  // +9.0 -> 120° (Grün)
+  final hue = ((clampedValue + 9) / 18) * 120.0;
+
+  return HSVColor.fromAHSV(1.0, hue, 1.0, 1.0).toColor();
 }
 
 /// Full-screen list of survival experiences for a single place.
